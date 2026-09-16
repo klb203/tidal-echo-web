@@ -2279,7 +2279,7 @@
 
       <div class="settings-section-label">云端后端</div>
       <label class="fld"><span>后端地址</span>
-        <input id="fCloud" type="text" placeholder="https://tidal-echo-relay.onrender.com" autocomplete="off" spellcheck="false">
+        <input id="fCloud" type="text" placeholder="https://tidal-echo-relay-1-vudb.onrender.com" autocomplete="off" spellcheck="false">
       </label>
       <label class="fld"><span>访问令牌（后端没开鉴权就留空）</span>
         <input id="fCloudToken" type="password" placeholder="可留空" autocomplete="off" spellcheck="false">
@@ -2873,7 +2873,7 @@ function syncEditorFields(){
   const isCloud = isDirect && isCloudPv(pid);
   $('[data-f="provider"]').style.display = isDirect ? "" : "none";
   $("#lblBase").textContent = isDirect ? (isCloud ? "后端地址（自动，可改）" : "API 根地址") : "中转站地址";
-  $("#fBase").placeholder = isDirect ? (isCloud ? "https://tidal-echo-relay.onrender.com/relay/deepseek" : "https://api.deepseek.com") : "https://你的域名/relay";
+  $("#fBase").placeholder = isDirect ? (isCloud ? "https://tidal-echo-relay-1-vudb.onrender.com/relay/deepseek" : "https://api.deepseek.com") : "https://你的域名/relay";
   $("#lblKey").textContent = isDirect ? (isCloud ? "API Key（可留空，后端配了就自动用）" : "API Key") : "连接密钥";
   $("#fKey").placeholder = isDirect ? (isCloud ? "sk-...（留空也行）" : "sk-...") : "中转站密钥";
   $('[data-f="model"]').style.display = isDirect ? "" : "none";
@@ -4043,6 +4043,7 @@ async function deepseekHealth(conn){
 // 复用 queueStreamDelta 把流式 delta 喂进 UI(reply 气泡);结束后用 done 清掉草稿并落库真实消息
 async function deepseekStream(userText, streamId, conn){
   const base = connChatUrl(conn);
+  if (!base) throw new Error("没配置云端后端地址 —— 打开「设置 → 云端后端」填入 https://tidal-echo-relay-1-vudb.onrender.com ，或在这个连接里把「接口地址」填成 https://tidal-echo-relay-1-vudb.onrender.com/relay/deepseek/v1");
   const model = conn.model || "deepseek-chat";
   const sys = (conn.persona && conn.persona.trim()) ? [{ role: "system", content: conn.persona }] : [];
   const prior = directHistory(conn)

@@ -1946,6 +1946,9 @@
   }
   .fld{ display:flex; flex-direction: column; gap: 6px; }
   .fld > span{ font-size: 12.5px; color: var(--text-soft); }
+  .fld.switch-row{ flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+  .fld.switch-row > span{ font-size: 14px; color: var(--text); }
+  .fld.switch-row input[type="checkbox"]{ width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--accent, #7aa2ff); cursor: pointer; }
   .fld input, .fld select, .fld textarea{
     width: 100%; box-sizing: border-box;
     padding: 11px 12px; border-radius: 11px;
@@ -1960,7 +1963,9 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7aa2ff) 22%, transparent);
   }
   .model-row{ display:flex; gap: 8px; align-items: stretch; }
-  .model-row select{ flex: 1 1 auto; }
+  .model-row select{ flex: 1 1 auto; min-width: 0; }
+  .model-row #fModelCustom{ flex: 1 1 auto; min-width: 0; }
+  .model-hint{ font-size: 11.5px; color: var(--text-faint); margin-top: 6px; line-height: 1.5; }
   .model-row button, .editor-actions button{
     border: 1px solid var(--hairline); border-radius: 11px;
     padding: 0 14px; background: var(--glass-strong); color: var(--text);
@@ -2396,10 +2401,11 @@
         <div class="fld" data-f="model">
           <span>模型</span>
           <div class="model-row">
-            <input id="fModel" list="modelList" type="text" placeholder="如 deepseek-chat（可手填）" autocomplete="off" spellcheck="false">
-            <datalist id="modelList"></datalist>
+            <select id="fModel" class="model-select"></select>
+            <input id="fModelCustom" type="text" placeholder="自定义模型名" autocomplete="off" spellcheck="false" style="display:none">
             <button id="fFetch" type="button">拉取模型</button>
           </div>
+          <div class="model-hint" id="modelHint" style="display:none"></div>
         </div>
         <label class="fld"><span>人格 / 系统提示（可选）</span><textarea id="fPersona" rows="3" placeholder="你是一个温柔、懂我的伴侣……"></textarea></label>
         <div class="editor-actions">
@@ -2409,6 +2415,21 @@
         </div>
         <div class="conn-status" id="connStatus"></div>
       </div>
+
+      <div class="settings-section-label">语音 · MiniMax 声音克隆</div>
+      <label class="fld switch-row"><span>启用 MiniMax 语音</span>
+        <input type="checkbox" id="mmEnable">
+      </label>
+      <label class="fld"><span>Group ID</span><input id="mmGroup" type="text" placeholder="你的 MiniMax GroupId" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>API Key</span><input id="mmKey" type="password" placeholder="MiniMax API Key" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>克隆声音 ID</span><input id="mmVoice" type="text" placeholder="在 MiniMax 平台克隆好声音后得到的 Voice ID" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>语速（0.5–2，默认 1）</span><input id="mmSpeed" type="number" step="0.1" min="0.5" max="2" value="1"></label>
+      <div class="conn-sub" id="mmStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.5"></div>
+      <button class="conn-add" id="mmTest" type="button" style="margin-bottom:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h1v-7H5v-1a7 7 0 0 1 14 0v1h-2v7h1a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9z"/></svg>
+        测试克隆声音
+      </button>
+      <div class="settings-tip">在 <a href="https://www.minimax.io/" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">MiniMax</a> 平台克隆好一个声音后会得到一个 Voice ID；填进来并启用，伴侣在语音通话里就会用这个克隆声音朗读（经你的后端 /relay/minimax/tts 转发，绕过浏览器 CORS）。</div>
 
       <div class="settings-tip">保存并使用后，会立即以该连接对话。连接信息、API Key 都只存在本机浏览器里，不上传任何地方。<br>
       <b>「浏览器直连」</b>只在 DeepSeek 这类放行 CORS 的家能用；其余请选 <b>「☁ 云端」</b>，走后端转发就不会被拦。</div>
@@ -2685,14 +2706,73 @@ const PROVIDERS = {
                 models: [] }
 };
 function providerOf(conn){ return PROVIDERS[(conn && conn.provider) || "deepseek"] || PROVIDERS.custom; }
-// 把模型列表(去重)填进 datalist,并选中指定项
+// 把模型列表填进「分组」下拉框（不再合并成一个扁平 datalist）
+// groups: [{ label:"", models:[...] }] 或 [{ label:"DeepSeek", pid:"deepseek", ver:"v1", models:[...], note:"" }]
 function fillModelList(arr, selected){
-  const dl = $("#modelList"); if (!dl) return;
-  const seen = new Set(); const opts = [];
-  (arr || []).forEach((m) => { if (m && !seen.has(m)) { seen.add(m); opts.push(m); } });
-  dl.innerHTML = "";
-  opts.forEach((m) => { const o = document.createElement("option"); o.value = m; dl.appendChild(o); });
-  const inp = $("#fModel"); if (inp){ inp.value = selected || (opts[0] || ""); }
+  fillModelGroups([{ label: "", models: arr }], selected);
+}
+function fillModelGroups(groups, selected, curPid){
+  const sel = $("#fModel"); if (!sel) return;
+  sel.innerHTML = "";
+  (groups || []).forEach((g) => {
+    const models = (g.models || []).filter(Boolean);
+    if (!models.length) return;
+    let og = null;
+    if (g.label){
+      og = document.createElement("optgroup");
+      og.label = (g.label || "") + (g.note ? " · " + g.note : "");
+    }
+    models.forEach((m) => {
+      const o = document.createElement("option");
+      o.value = m;
+      if (g.pid){ o.dataset.pid = g.pid; o.dataset.ver = g.ver || "v1"; }
+      if (og) og.appendChild(o); else sel.appendChild(o);
+    });
+    if (og) sel.appendChild(og);
+  });
+  // 末尾放一个「自定义模型名」入口
+  const custom = document.createElement("option");
+  custom.value = "__custom__"; custom.textContent = "✎ 自定义模型名…";
+  sel.appendChild(custom);
+  const have = Array.from(sel.options).some((o) => o.value === (selected || ""));
+  sel.value = have ? (selected || "") : "";
+  if (!have) sel.selectedIndex = Math.max(0, sel.options.length - 2 < 0 ? 0 : 0);
+  syncModelCustom();
+}
+// 选中「自定义」时显示手填框
+function syncModelCustom(){
+  const sel = $("#fModel"), ci = $("#fModelCustom"); if (!sel || !ci) return;
+  if (sel.value === "__custom__"){ ci.style.display = ""; if (!ci.value) ci.focus(); }
+  else ci.style.display = "none";
+}
+// 当前连接对应的供应商 pid（用于分组排序 / 切换判断）
+function currentPid(){
+  const p = $("#fProvider").value || "";
+  if (isCloudPv(p)) return pvPid(p);
+  const rh = relayHostFrom($("#fBase").value);
+  if (rh) return "";
+  return "";
+}
+// 从「中转站地址」里抠出后端 host（去掉末尾 /relay 或 /relay/xxx）
+function relayHostFrom(base){
+  const b = (base || "").trim();
+  const m = b.match(/^(https?:\/\/[^\/]+)(?:\/relay(?:\/[^\/]+)?)?/i);
+  return m ? m[1] : "";
+}
+// 拉取中继（中转站）已注册的供应商列表，按供应商分组
+async function fetchRelayProviders(host, token){
+  const url = host.replace(/\/+$/, "") + "/relay/providers";
+  const headers = {};
+  if (token) headers["X-Relay-Token"] = token;
+  const r = await fetch(url, { headers });
+  if (!r.ok) throw new Error("拉取供应商列表失败 HTTP " + r.status);
+  const d = await r.json();
+  let arr = [];
+  if (Array.isArray(d)) arr = d;
+  else if (Array.isArray(d.data)) arr = d.data;
+  else if (Array.isArray(d.providers)) arr = d.providers;
+  if (!arr.length) throw new Error("后端未返回任何供应商");
+  return arr;
 }
 // 参照 Operit EndpointCompleter:把根地址补全为 chat/completions 与 models 完整 URL
 function completeApiUrl(root, ver, tail){
@@ -2932,12 +3012,68 @@ function openSettings(){
   renderConnList();
   closeEditor();
   syncCloudFields();
+  syncMiniMaxFields();
   settingsPanel.classList.remove("hidden");
   requestAnimationFrame(() => settingsPanel.classList.add("open"));
 }
 function closeSettings(){
   settingsPanel.classList.remove("open");
   setTimeout(() => settingsPanel.classList.add("hidden"), 360);
+}
+/* ── MiniMax 声音克隆（TTS）·存本机 ───────────────────────────────────────
+   伴侣在语音通话里朗读时，若已启用就用克隆声音（经后端 /relay/minimax/tts）。 */
+const MM_KEY = "tidal_mm";
+function loadMiniMax(){
+  try{ return JSON.parse(localStorage.getItem(MM_KEY) || "null") || {}; }catch(e){ return {}; }
+}
+function saveMiniMax(cfg){
+  try{ localStorage.setItem(MM_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+function minimaxEnabled(){
+  const c = loadMiniMax();
+  return !!(c.enable && c.group && c.key && c.voice);
+}
+function syncMiniMaxFields(){
+  const c = loadMiniMax();
+  const en = $("#mmEnable"), g = $("#mmGroup"), k = $("#mmKey"), v = $("#mmVoice"), s = $("#mmSpeed"), st = $("#mmStatus");
+  if (en) en.checked = !!c.enable;
+  if (g) g.value = c.group || "";
+  if (k) k.value = c.key || "";
+  if (v) v.value = c.voice || "";
+  if (s) s.value = (c.speed != null && !isNaN(c.speed)) ? c.speed : 1;
+  if (st) st.innerHTML = minimaxEnabled()
+    ? '✅ 已启用：语音通话会用克隆声音「<b>' + escapeHtml(c.voice) + '</b>」朗读。'
+    : '未启用（四项都填好并勾选「启用」后才会用克隆声音）。';
+}
+function persistMiniMax(){
+  const c = {
+    enable: $("#mmEnable") ? $("#mmEnable").checked : false,
+    group: $("#mmGroup") ? $("#mmGroup").value.trim() : "",
+    key: $("#mmKey") ? $("#mmKey").value.trim() : "",
+    voice: $("#mmVoice") ? $("#mmVoice").value.trim() : "",
+    speed: parseFloat(($("#mmSpeed") ? $("#mmSpeed").value : "1")) || 1
+  };
+  saveMiniMax(c);
+  syncMiniMaxFields();
+  showToast(minimaxEnabled() ? "MiniMax 语音已启用" : "MiniMax 设置已保存（未启用）");
+}
+async function minimaxTts(text){
+  const c = loadMiniMax();
+  if (!c.enable || !c.group || !c.key || !c.voice) return null;
+  const host = cloudHost() || "";
+  const url = (host ? host.replace(/\/+$/, "") : apiBase()) + "/relay/minimax/tts";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ group: c.group, key: c.key, voice_id: c.voice, text, speed: c.speed || 1 })
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  if (!r.ok){
+    let msg = "MiniMax TTS " + r.status;
+    try{ const j = await r.json(); if (j && j.error && j.error.message) msg = j.error.message; }catch(_){}
+    throw new Error(msg);
+  }
+  return await r.blob();
 }
 function isCloudPv(pid){ return /^cloud:/.test(pid || ""); }
 function pvPid(pid){ return (pid || "").replace(/^cloud:/, ""); }
@@ -3058,15 +3194,24 @@ async function saveConn({ use }){
   }
   if (type === "relay"){ if (!root) return setConnStatus("请填写中转站地址。", "err"); }
   else if (type === "direct"){ if (!key && !isCloud) return setConnStatus("请填写 API Key。", "err"); }
-  const model = $("#fModel").value.trim() || "deepseek-chat";
-  const models = Array.from($("#modelList").options).map((o) => o.value).filter(Boolean);
+  const modelSel = $("#fModel");
+  const useCustom = (modelSel && modelSel.value === "__custom__");
+  const model = useCustom ? ($("#fModelCustom").value.trim() || "deepseek-chat")
+                          : (modelSel ? modelSel.value.trim() : "") || "deepseek-chat";
+  const models = Array.from(modelSel ? modelSel.options : []).map((o) => o.value).filter((v) => v && v !== "__custom__");
   if (model && !models.includes(model)) models.unshift(model);
   const persona = $("#fPersona").value;
   let conn = connById(editingConnId) || null;
   if (!conn) conn = { id: "c" + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36) };
   conn.name = name; conn.type = type;
-  if (type === "relay"){ conn.url = root; conn.key = key; conn.model = model; delete conn.cloud; }
-  else {
+  if (type === "relay"){
+    const opt = modelSel && modelSel.selectedOptions[0];
+    conn.url = root; conn.key = key; conn.model = model;
+    conn.root = root;                                  // 让 effectiveRoot 走这里(而非 cloudRoot)
+    conn.ver = (opt && opt.dataset && opt.dataset.ver) || (pv && pv.ver) || "v1";
+    conn.provider = conn.provider || "custom";
+    delete conn.cloud;
+  } else {
     conn.provider = provider; conn.root = root || pv.root; conn.ver = pv.ver;
     conn.key = key; conn.model = model; conn.models = models; conn.temp = 0.7;
     if (isCloud){ conn.cloud = true; const t = cloudToken(); if (t) conn.relayToken = t; }
@@ -3123,6 +3268,29 @@ function applyCloudHost(){
 }
 if ($("#fCloud")) $("#fCloud").addEventListener("change", applyCloudHost);
 if ($("#fCloudToken")) $("#fCloudToken").addEventListener("change", applyCloudHost);
+/* MiniMax 声音克隆设置：改动即存本机 */
+["mmEnable", "mmGroup", "mmKey", "mmVoice", "mmSpeed"].forEach((id) => {
+  const el = $("#" + id);
+  if (el) el.addEventListener("change", persistMiniMax);
+});
+if ($("#mmTest")) $("#mmTest").addEventListener("click", async () => {
+  persistMiniMax();
+  const st = $("#mmStatus");
+  if (!minimaxEnabled()){ if (st) st.innerHTML = "⚠️ 请先填好 Group ID / API Key / 克隆声音 ID，并勾选「启用 MiniMax 语音」。"; return; }
+  const btn = $("#mmTest"); btn.disabled = true; const old = btn.textContent; btn.textContent = "合成中…";
+  try{
+    const blob = await minimaxTts("你好呀，我是你的专属声音，今天也想陪着你。");
+    if (!blob || !blob.size) throw new Error("未返回音频");
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => { try{ URL.revokeObjectURL(url); }catch(_){} };
+    await audio.play();
+    if (st) st.innerHTML = "✅ 合成成功（" + (blob.size/1024).toFixed(1) + " KB），正在播放克隆声音…";
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ 测试失败：" + ((e && e.message) ? e.message : e) + "（检查 GroupId / Key / Voice ID 是否正确，以及后端 /relay/minimax/tts 是否部署）";
+  }
+  finally{ btn.disabled = false; btn.textContent = old; }
+});
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
 function cloudSelfTest(){
   const s = $("#cloudStatus"); if (!s) return;
@@ -3170,6 +3338,7 @@ if ($("#fFetch")) $("#fFetch").addEventListener("click", async () => {
   const provider = $("#fProvider").value;
   const pv = PROVIDERS[provider] || PROVIDERS.custom;
   const isCloud = isCloudPv(provider);
+  const isRelayConn = (type === "relay");
   let base = $("#fBase").value.trim() || pv.root || "";
   if (isCloud && !base){
     if (!cloudHost()) return setConnStatus("还没设置云端后端地址（设置 → 云端后端）。", "err");
@@ -3185,12 +3354,37 @@ if ($("#fFetch")) $("#fFetch").addEventListener("click", async () => {
   }
   const btn = $("#fFetch"); btn.disabled = true; const old = btn.textContent; btn.textContent = "拉取中…";
   try{
-    const tok = cloudToken();
-    const models = await fetchDeepseekModels(base, key, pv.ver, tok ? { "X-Relay-Token": tok } : null);
-    if (!models.length){ throw new Error("该端点未返回模型列表（可能不支持 /models）"); }
-    const merged = builtIn.concat(models);
-    fillModelList(merged, models[0] || $("#fModel").value || builtIn[0] || "");
-    setConnStatus("已拉取 " + models.length + " 个模型（已合并内置列表）。", "ok");
+    if (isCloud || isRelayConn){
+      // 走中转站（Relay）的 /relay/providers：按供应商分组展示，**不合并成一大坨**
+      const host = isCloud ? cloudHost() : relayHostFrom(base);
+      if (!host) return setConnStatus("还没设置中转站地址（设置 → 云端后端，或本连接填「中转站地址」）。", "err");
+      const provs = await fetchRelayProviders(host, cloudToken());
+      const curPid = isCloud ? pvPid(provider) : "";
+      const groups = provs.map((p) => ({
+        label: (p.name || p.id) + (p.has_key ? "" : "（未配 Key）"),
+        pid: p.id,
+        ver: (PROVIDERS["cloud:" + p.id] || {}).ver || "v1",
+        models: p.models || [],
+        note: p.has_key ? "" : "后端未配该家 Key，可能拉不到"
+      })).sort((a, b) => (a.pid === curPid ? -1 : 0) - (b.pid === curPid ? -1 : 0));
+      const total = groups.reduce((n, g) => n + (g.models || []).length, 0);
+      const prev = $("#fModel").value;
+      const sel = (prev && prev !== "__custom__" && groups.some((g) => (g.models || []).includes(prev)))
+        ? prev : (builtIn[0] || (groups[0] && groups[0].models[0]) || "");
+      fillModelGroups(groups, sel, curPid);
+      setConnStatus("已从后端拉取 " + provs.length + " 个供应商、共 " + total + " 个模型（**按供应商分组**，未合并）。选中其他供应商的模型会自动切换到该供应商入口。", "ok");
+    } else {
+      // 浏览器直连：向 base/models 拉，分组显示（已拉取 / 内置参考）
+      if (!base) return setConnStatus("请先填 API 根地址。", "err");
+      const tok = cloudToken();
+      const models = await fetchDeepseekModels(base, key, pv.ver, tok ? { "X-Relay-Token": tok } : null);
+      if (!models.length){ throw new Error("该端点未返回模型列表（可能不支持 /models）"); }
+      fillModelGroups([
+        { label: "已拉取（" + base + "）", models },
+        { label: "内置（参考）", models: builtIn }
+      ], models[0] || $("#fModel").value || builtIn[0] || "");
+      setConnStatus("已拉取 " + models.length + " 个模型（已与内置列表分组显示）。", "ok");
+    }
   }catch(err){
     // 拉取失败 → 回退到内置列表,仍可继续
     fillModelList(builtIn, $("#fModel").value || builtIn[0] || "");
@@ -3199,6 +3393,30 @@ if ($("#fFetch")) $("#fFetch").addEventListener("click", async () => {
     else setConnStatus("拉取失败：" + reason, "err");
   }
   finally{ btn.disabled = false; btn.textContent = old; }
+});
+// 切换模型：选中其他供应商的模型时，自动把连接切到该供应商入口
+if ($("#fModel")) $("#fModel").addEventListener("change", () => {
+  syncModelCustom();
+  const sel = $("#fModel");
+  const opt = sel.selectedOptions[0];
+  const pid = opt && opt.dataset ? opt.dataset.pid : "";
+  if (!pid) return;
+  if (pid === currentPid()) return;
+  const ver = (opt.dataset && opt.dataset.ver) || "v1";
+  const host = cloudHost();
+  if (host){
+    // 转成「☁ 云端 · <供应商>」连接
+    if (!isCloudPv($("#fProvider").value)) $("#fType").value = "direct";
+    $("#fProvider").value = "cloud:" + pid;
+    $("#fBase").value = cloudRoot(pid);
+    setConnStatus("已切换到「" + ((PROVIDERS["cloud:" + pid] || { name: pid }).name) + "」的模型入口。", "ok");
+  } else {
+    // 没有云端后端地址：尽力把中转站根地址切到该供应商
+    const rh = relayHostFrom($("#fBase").value);
+    if (rh){ $("#fBase").value = rh + "/relay/" + pid; setConnStatus("已切换中转站入口到 " + pid + "。", "ok"); }
+  }
+  if (typeof syncEditorFields === "function") syncEditorFields();
+  if (typeof syncPvHint === "function") syncPvHint();
 });
 if ($("#fSaveUse")) $("#fSaveUse").addEventListener("click", () => saveConn({ use: true }));
 if ($("#fSave")) $("#fSave").addEventListener("click", () => saveConn({ use: false }));
@@ -3746,9 +3964,23 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
 
   async function speakOne(text){
     try{
-      console.log("[speak] fetching TTS…");
-      const blob = await apiTts(text);
-      console.log("[speak] blob:", blob && blob.size);
+      let blob = null;
+      // 优先用 MiniMax 克隆声音（若已启用）
+      if (minimaxEnabled()){
+        try{
+          console.log("[speak] fetching MiniMax TTS…");
+          blob = await minimaxTts(text);
+          console.log("[speak] minimax blob:", blob && blob.size);
+        }catch(e){ console.error("[speak] minimax failed, fallback:", e); blob = null; }
+      }
+      // 兜底：后端 /app/tts（未配 MiniMax 或失败时）
+      if (!blob && open){
+        try{
+          console.log("[speak] fetching TTS…");
+          blob = await apiTts(text);
+          console.log("[speak] blob:", blob && blob.size);
+        }catch(e){ console.error("[speak] apiTts failed:", e); blob = null; }
+      }
       if (blob && open){
         const ctx = ensureTtsCtx();
         if (ctx){

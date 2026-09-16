@@ -196,7 +196,8 @@
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 0 76px;
+    padding: 0 clamp(10px, 5vw, 76px);   /* 原来是固定 76px 内边距，窄屏会把标题撑到按钮底下 */
+    min-width: 0;
   }
   .peerpill .name{
     font-family: "Songti SC", "Noto Serif SC", "STSong", "SimSun", serif;
@@ -205,6 +206,7 @@
     color: var(--text);
     letter-spacing: 0;
     text-shadow: 0 1px 18px rgba(255,255,255,0.3);
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .peerpill .status{
     font-family: var(--font-en), var(--font-cn);
@@ -212,6 +214,7 @@
     color: var(--text-soft);
     margin-top: 4px;
     letter-spacing: 0;
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .app[data-conn="reconnecting"] .peerpill .status{ color:#9a8061; }
   .peerpill .status.typing{
@@ -1136,15 +1139,18 @@
       --header-h: 56px;
       --avatar-size: 32px;
     }
-    .peerpill{ padding: 0 44px; }
-    .peerpill .name{ font-size: 18px; }
-    .peerpill .status{ font-size: 12px; margin-top: 3px; }
-    .backbtn{ left: 16px; top: calc(env(safe-area-inset-top) + 16px); width: 32px; height: 32px; }
+    /* 顶部栏：手机上改成真正的 flex 三栏 —— 返回键 | 标题(吃掉中间剩余宽度) | 操作按钮。
+       原来是「标题绝对居中 + 按钮绝对靠右」，408px 宽的手机上右侧 4 个按钮会压到标题文字上。 */
+    .topbar{ justify-content: flex-start; gap: 2px; padding-left: 8px; padding-right: 8px; }
+    .backbtn{ position: static; left: auto; top: auto; flex: 0 0 auto; width: 34px; height: 34px; }
     .backbtn svg{ width: 20px; height: 20px; }
-    .header-actions{ right: 16px; top: calc(env(safe-area-inset-top) + 16px); gap: 26px; height:32px; }
-    .topbtn{ width:32px; height:32px; }
-    .topbtn svg{ width:22px; height:22px; }
-    .topbtn.more svg{ width:20px; height:20px; }
+    .peerpill{ position: static; flex: 1 1 auto; min-width: 0; padding: 0 4px; }
+    .peerpill .name{ font-size: 17px; }
+    .peerpill .status{ font-size: 11.5px; margin-top: 2px; }
+    .header-actions{ position: static; right: auto; top: auto; flex: 0 0 auto; gap: 6px; height: auto; }
+    .topbtn{ width: 34px; height: 34px; }
+    .topbtn svg{ width: 21px; height: 21px; }
+    .topbtn.more svg{ width: 19px; height: 19px; }
     .avatar{ right: 16px; top: calc(env(safe-area-inset-top) + 16px); }
     .row{ margin-top: 18px; }
     .row.grouped{ margin-top: 8px; }

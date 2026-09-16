@@ -1987,7 +1987,7 @@
      它们继承了 .conn-sub 的 nowrap，里面又塞了一整条后端地址 + 四家入口，
      手机上必然溢出（实测 scroll 516 > client 343），被 .settings-page 的
      overflow:hidden 硬切在屏幕边上。 */
-  #cloudStatus, #pvHint, #mmStatus{
+  #cloudStatus, #pvHint, #mmStatus, #apStatus{
     display: block; -webkit-line-clamp: none;   /* 覆盖手机端 .conn-sub 的 2 行 clamp */
     white-space: normal; overflow: visible; text-overflow: clip;
     overflow-wrap: anywhere; word-break: break-word;
@@ -2519,6 +2519,24 @@
         测试克隆声音
       </button>
       <div class="settings-tip">在 <a href="https://www.minimax.io/" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">MiniMax</a> 平台克隆好一个声音后会得到一个 Voice ID；填进来并启用，伴侣在语音通话里就会用这个克隆声音朗读（经你的后端 /relay/minimax/tts 转发，绕过浏览器 CORS）。</div>
+
+      <div class="settings-section-label">AI 与记忆（后端存储 · Supabase）</div>
+      <label class="fld"><span>系统提示词（人格）</span><textarea id="apSys" rows="3" placeholder="你是一个温柔、细腻、懂我的伴侣……"></textarea></label>
+      <label class="fld"><span>主模型</span><input id="apModel" type="text" placeholder="deepseek-chat / claude-3-5-sonnet-latest …" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>压缩用辅助模型</span><input id="apHelper" type="text" placeholder="deepseek-chat" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>温度（0–2）</span><input id="apTemp" type="number" step="0.1" min="0" max="2" placeholder="0.7"></label>
+      <label class="fld"><span>最大 Token</span><input id="apMax" type="number" step="64" min="64" max="32768" placeholder="1024"></label>
+      <label class="fld"><span>触发压缩的 Token 阈值</span><input id="apTrig" type="number" step="500" min="0" max="200000" placeholder="6000"></label>
+      <label class="fld"><span>每次保留的近期轮数</span><input id="apKeep" type="number" step="1" min="1" max="50" placeholder="8"></label>
+      <div class="conn-sub" id="apStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+      <div class="editor-actions" style="margin-bottom:16px">
+        <button id="apLoad" type="button">读取设置</button>
+        <button id="apSave" type="button" class="primary">保存设置</button>
+        <button id="apTest" type="button">测试数据库</button>
+      </div>
+      <div class="settings-tip">这些设置存在后端（Supabase 的 settings 表），换设备也在；对话走 <b>/app/chat</b>：
+      存消息 → 取历史 → 拼「系统提示词 + 记忆摘要 + 近几轮」→ 超阈值自动压缩 → 调主模型 → 存回复。
+      改完点 <b>「保存设置」</b>；点 <b>「测试数据库」</b> 看后端读写是否正常。</div>
 
       <div class="settings-tip">保存并使用后，会立即以该连接对话。连接信息、API Key 都只存在本机浏览器里，不上传任何地方。<br>
       <b>「浏览器直连」</b>只在 DeepSeek 这类放行 CORS 的家能用；其余请选 <b>「☁ 云端」</b>，走后端转发就不会被拦。</div>
@@ -3103,6 +3121,7 @@ function openSettings(){
   closeEditor();
   syncCloudFields();
   syncMiniMaxFields();
+  if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
   settingsPanel.classList.remove("hidden");
   requestAnimationFrame(() => settingsPanel.classList.add("open"));
 }
@@ -3661,6 +3680,100 @@ if ($("#qkMem")) $("#qkMem").addEventListener("input", () => {
   const mm = $("#qkMemMsg"); if (mm) mm.textContent = v * 2;
   saveQuick({ memoryRounds: v });
 });
+
+/* ── AI 与记忆设置（后端 /app/settings）─────────────────────────────────
+   系统提示词 / 主模型 / 压缩辅助模型 / 温度 / max_tokens / 压缩阈值 / 保留轮数 */
+const AP_FIELDS = {
+  system_prompt: "apSys", main_model: "apModel", helper_model: "apHelper",
+  temperature: "apTemp", max_tokens: "apMax",
+  compress_trigger_tokens: "apTrig", compress_keep_turns: "apKeep"
+};
+let apLoadedOnce = false;
+/* /app/* 挂在 relay 根上（不是 /relay/<pid>）——从「云端后端地址」取根 */
+function appBase(){
+  const h = (typeof cloudHost === "function") ? cloudHost() : "";
+  if (h) return h.replace(/\/+$/, "");
+  return String(apiBase() || "").replace(/\/relay\/?$/, "").replace(/\/+$/, "");
+}
+function apStatus(msg, kind){
+  const el = $("#apStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function fillAppSettings(s){
+  Object.keys(AP_FIELDS).forEach((k) => {
+    const el = $("#" + AP_FIELDS[k]);
+    if (el && s && s[k] != null) el.value = s[k];
+  });
+}
+async function loadAppSettings(verbose){
+  const base = appBase();
+  if (!base){ apStatus("还没设「云端后端地址」，不知道后端在哪。", "err"); return null; }
+  try{
+    const r = await fetch(base + "/app/settings", { headers: { ...authHeaders() } });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    fillAppSettings(d.settings || {});
+    apStatus("已从 " + base + " 读到设置。", "ok");
+    if (verbose) showToast("已读取后端设置");
+    return d.settings || {};
+  }catch(e){
+    apStatus("读取失败：" + ((e && e.message) || e) + "（确认「云端后端地址」正确、后端已部署）", "err");
+    if (verbose) showToast("读取后端设置失败");
+    return null;
+  }
+}
+async function saveAppSettings(){
+  const base = appBase();
+  if (!base){ apStatus("还没设「云端后端地址」。", "err"); return; }
+  const body = {};
+  Object.keys(AP_FIELDS).forEach((k) => {
+    const el = $("#" + AP_FIELDS[k]); if (!el) return;
+    let v = el.value.trim(); if (v === "") return;
+    if (k === "temperature") v = parseFloat(v);
+    else if (k === "max_tokens" || k === "compress_trigger_tokens" || k === "compress_keep_turns") v = parseInt(v, 10);
+    if (v !== "" && !Number.isNaN(v)) body[k] = v;
+  });
+  try{
+    const r = await fetch(base + "/app/settings", {
+      method: "PUT",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    fillAppSettings(d.settings || {});
+    apStatus("已保存到后端 ✅（" + Object.keys(body).length + " 项）", "ok");
+    showToast("设置已保存到后端");
+  }catch(e){
+    apStatus("保存失败：" + ((e && e.message) || e), "err");
+  }
+}
+async function testAppDb(){
+  const base = appBase();
+  if (!base){ apStatus("还没设「云端后端地址」。", "err"); return; }
+  apStatus("正在测试后端数据库…");
+  try{
+    const r = await fetch(base + "/app/dbhealth", { headers: { ...authHeaders() } });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.ok){
+      apStatus("数据库读写正常 ✅　表：sessions / messages / settings / memories 全部就绪。", "ok");
+      return;
+    }
+    let msg = "未通过：" + (d.write_probe || (d.error && d.error.message) || "未知");
+    if (d.hint) msg += "\n" + d.hint;
+    const miss = d.missing_columns || {};
+    const missKeys = Object.keys(miss);
+    if (missKeys.length) msg += "\n缺失列：" + missKeys.map((t) => t + " → " + miss[t].join("、")).join("；");
+    if (d.alter_sql && d.alter_sql.length) msg += "\n\n把仓库里的 supabase_schema.sql 在 Supabase → SQL Editor 跑一遍即可修好。";
+    apStatus(msg, "err");
+  }catch(e){
+    apStatus("测试失败：" + ((e && e.message) || e) + "（后端可能正在冷启动，等 30–60 秒再试）", "err");
+  }
+}
+if ($("#apLoad")) $("#apLoad").addEventListener("click", () => loadAppSettings(true));
+if ($("#apSave")) $("#apSave").addEventListener("click", saveAppSettings);
+if ($("#apTest")) $("#apTest").addEventListener("click", testAppDb);
 
 /* 设置页 #themeSeg 分段控件 — 手动切 5 套主题,持久化,联动壁纸/theme-color */
 const THEME_KEY = "companion_theme";

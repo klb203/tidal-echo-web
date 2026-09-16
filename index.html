@@ -3064,7 +3064,7 @@ async function minimaxTts(text){
   const url = (host ? host.replace(/\/+$/, "") : apiBase()) + "/relay/minimax/tts";
   const r = await fetch(url, {
     method: "POST",
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    headers: { ...authHeaders(), "X-Relay-Token": cloudToken() || "", "Content-Type": "application/json" },
     body: JSON.stringify({ group: c.group, key: c.key, voice_id: c.voice, text, speed: c.speed || 1 })
   });
   if (r.status === 401){ handle401(); throw new Error("401"); }

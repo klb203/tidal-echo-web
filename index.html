@@ -1986,7 +1986,7 @@
      它们继承了 .conn-sub 的 nowrap，里面又塞了一整条后端地址 + 四家入口，
      手机上必然溢出（实测 scroll 516 > client 343），被 .settings-page 的
      overflow:hidden 硬切在屏幕边上。 */
-  #cloudStatus, #pvHint{
+  #cloudStatus, #pvHint, #mmStatus{
     display: block; -webkit-line-clamp: none;   /* 覆盖手机端 .conn-sub 的 2 行 clamp */
     white-space: normal; overflow: visible; text-overflow: clip;
     overflow-wrap: anywhere; word-break: break-word;
@@ -2016,6 +2016,57 @@
     .fld input, .fld select, .fld textarea{ font-size: 15px; text-overflow: ellipsis; }
     .settings-title{ margin-right: 38px; }
   }
+
+  /* ── 聊天快捷设置（底部栏 ⋮ → 向上弹出的面板）──────────────────────────
+     内容：切换中转站/连接、切换模型、思考模式开关、最大 token 控制+显示、AI 记忆轮数 */
+  #quickBtn{ color: var(--text-soft); }
+  .quick-sheet{
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    height: 100%; pointer-events: none;
+  }
+  .quick-sheet.hidden{ display: none; }
+  .quick-scrim{
+    position: absolute; inset: 0; background: rgba(20,28,40,.28);
+    opacity: 0; transition: opacity .24s ease; pointer-events: auto;
+  }
+  .quick-sheet.open .quick-scrim{ opacity: 1; }
+  .quick-body{
+    position: relative; pointer-events: auto;
+    margin: 0 auto calc(var(--composer-zone) + 2px);
+    width: min(94vw, 460px);
+    max-height: min(70vh, 620px); overflow: auto;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 20px;
+    background: var(--panel-bg, #fff);
+    border: 1px solid var(--card-line, rgba(120,140,170,.22));
+    box-shadow: 0 20px 60px rgba(30,45,62,.22);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    transform: translateY(14px) scale(.985); opacity: 0;
+    transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .26s ease;
+  }
+  .quick-sheet.open .quick-body{ transform: translateY(0) scale(1); opacity: 1; }
+  .quick-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 2px 10px; }
+  .quick-head > span{ font-size:13.5px; font-weight:600; color: var(--text); letter-spacing:.02em; }
+  .quick-close{
+    border:0; background:transparent; color: var(--text-faint); width:30px; height:30px;
+    border-radius:50%; display:grid; place-items:center; cursor:pointer; padding:0; font-size:15px; line-height:1;
+  }
+  .quick-close:hover{ color: var(--accent); background: var(--seg-track, rgba(120,140,170,.12)); }
+  .quick-row{ display:flex; flex-direction:column; gap:7px; padding:9px 2px; border-top:1px solid var(--hairline); }
+  .quick-row:first-of-type{ border-top:0; }
+  .quick-row > label{ font-size:12.5px; color: var(--text-soft); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .quick-row > label > b{ color: var(--accent, #7aa2ff); font-weight:600; font-family: var(--font-en), var(--font-cn); }
+  .quick-row select{
+    width:100%; box-sizing:border-box; padding:10px 12px; border-radius:11px;
+    border:1px solid var(--hairline); background: var(--bg-soft, rgba(255,255,255,.5));
+    color: var(--text); font-size:14px; font-family:inherit; outline:none; text-overflow:ellipsis;
+  }
+  .quick-row input[type="range"]{ width:100%; accent-color: var(--accent, #7aa2ff); }
+  .quick-row.qk-switch{ flex-direction: row; align-items:center; justify-content:space-between; }
+  .quick-row.qk-switch > label{ flex:1 1 auto; }
+  .quick-row input[type="checkbox"]{ width:22px; height:22px; flex:0 0 auto; accent-color: var(--accent, #7aa2ff); cursor:pointer; }
+  .quick-hint{ font-size:11px; color: var(--text-faint); line-height:1.55; padding:6px 2px 0; }
 
 </style>
 </head>
@@ -2083,6 +2134,9 @@
       <button class="emojibtn" id="emojiBtn" aria-label="表情" title="表情">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.3a4.2 4.2 0 0 0 7 0"/><line x1="9" y1="9.3" x2="9" y2="10"/><line x1="15" y1="9.3" x2="15" y2="10"/></svg>
       </button>
+      <button class="emojibtn" id="quickBtn" type="button" aria-label="聊天快捷设置" title="聊天快捷设置">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
+      </button>
     </div>
     <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/></svg>
@@ -2095,6 +2149,38 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
     <span>新消息</span>
   </button>
+
+  <!-- ── 聊天快捷设置（底部栏 ⋮ → 向上弹出）── -->
+  <div class="quick-sheet hidden" id="quickSheet" role="dialog" aria-modal="false" aria-label="聊天快捷设置">
+    <div class="quick-scrim" id="quickScrim"></div>
+    <div class="quick-body">
+      <div class="quick-head">
+        <span>聊天快捷设置</span>
+        <button class="quick-close" id="quickClose" type="button" aria-label="关闭">✕</button>
+      </div>
+      <div class="quick-row">
+        <label>中转站 / 连接</label>
+        <select id="qkConn"></select>
+      </div>
+      <div class="quick-row">
+        <label>模型</label>
+        <select id="qkModel"></select>
+      </div>
+      <div class="quick-row qk-switch">
+        <label>思考模式（先推理再回答）</label>
+        <input type="checkbox" id="qkThink">
+      </div>
+      <div class="quick-row">
+        <label>最大 Token <b id="qkTokensVal">1024</b></label>
+        <input type="range" id="qkTokens" min="256" max="8192" step="128" value="1024">
+      </div>
+      <div class="quick-row">
+        <label>AI 记忆轮数 <b id="qkMemVal">12</b>（约 <b id="qkMemMsg">24</b> 条上下文）</label>
+        <input type="range" id="qkMem" min="1" max="50" step="1" value="12">
+      </div>
+      <div class="quick-hint" id="qkHint"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ── Terminal renderer (same conversation, different skin) ── -->
@@ -3423,6 +3509,138 @@ if ($("#fSave")) $("#fSave").addEventListener("click", () => saveConn({ use: fal
 if ($("#fCancel")) $("#fCancel").addEventListener("click", closeEditor);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDays(); });
 
+/* ── 聊天快捷设置（底部栏 ⋮ → 向上弹出）────────────────────────────────
+   中转站/连接切换 · 模型切换 · 思考模式 · 最大 token 控制+显示 · AI 记忆轮数 */
+const QUICK_KEY = "companion_quick";
+function loadQuick(){
+  let q = {};
+  try{ q = JSON.parse(localStorage.getItem(QUICK_KEY) || "{}") || {}; }catch(e){ q = {}; }
+  return {
+    maxTokens: (q.maxTokens != null ? q.maxTokens : 1024),
+    memoryRounds: (q.memoryRounds != null ? q.memoryRounds : 12),
+    thinking: !!q.thinking
+  };
+}
+function saveQuick(patch){
+  const q = Object.assign(loadQuick(), patch || {});
+  try{ localStorage.setItem(QUICK_KEY, JSON.stringify(q)); }catch(e){}
+  return q;
+}
+function connDisplayName(c){
+  if (!c) return "（无连接）";
+  return c.name || c.model || "未命名连接";
+}
+function populateQuickConn(){
+  const sel = $("#qkConn"); if (!sel) return;
+  const list = loadConnections();
+  const a = activeConn();
+  sel.innerHTML = "";
+  if (!list.length){
+    const o = document.createElement("option"); o.value = ""; o.textContent = "（设置里还没有连接）"; sel.appendChild(o);
+    return;
+  }
+  list.forEach((c) => {
+    const o = document.createElement("option");
+    o.value = c.id;
+    const tag = c.cloud ? "☁ " : (c.type === "relay" ? "中继 " : "");
+    o.textContent = tag + connDisplayName(c);
+    sel.appendChild(o);
+  });
+  const aid = (a && a.id) ? a.id : ((list[0] && list[0].id) || "");
+  if (aid) sel.value = aid;
+}
+function modelsForConn(c){
+  if (!c) return [];
+  const pv = PROVIDERS[c.provider] || {};
+  const out = []; const seen = new Set();
+  const push = (m) => { if (m && !seen.has(m)){ seen.add(m); out.push(m); } };
+  if (Array.isArray(c.models)) c.models.forEach(push);
+  (pv.models || []).forEach(push);
+  if (c.model) push(c.model);
+  return out;
+}
+function populateQuickModel(){
+  const sel = $("#qkModel"); if (!sel) return;
+  const a = activeConn();
+  const models = modelsForConn(a);
+  sel.innerHTML = "";
+  if (!models.length){
+    const o = document.createElement("option"); o.value = ""; o.textContent = "（该连接还没模型，去设置里「拉取模型」）"; sel.appendChild(o);
+    return;
+  }
+  models.forEach((m) => { const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
+  if (a && a.model) sel.value = a.model;
+}
+function renderQuick(){
+  const q = loadQuick();
+  const t = $("#qkTokens"), tv = $("#qkTokensVal"), mem = $("#qkMem"), mv = $("#qkMemVal"), mm = $("#qkMemMsg"), th = $("#qkThink");
+  if (t) t.value = q.maxTokens;
+  if (tv) tv.textContent = q.maxTokens;
+  if (mem) mem.value = q.memoryRounds;
+  if (mv) mv.textContent = q.memoryRounds;
+  if (mm) mm.textContent = q.memoryRounds * 2;
+  if (th) th.checked = q.thinking;
+  populateQuickConn();
+  populateQuickModel();
+  const hint = $("#qkHint");
+  if (hint){
+    const a = activeConn();
+    hint.textContent = "当前：" + (a ? (connDisplayName(a) + " · " + (a.model || "-")) : "未选择连接") +
+      " · 思考模式" + (q.thinking ? "开" : "关") + " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。";
+  }
+}
+function openQuick(){
+  const sh = $("#quickSheet"); if (!sh) return;
+  renderQuick();
+  sh.classList.remove("hidden");
+  requestAnimationFrame(() => sh.classList.add("open"));
+}
+function closeQuick(){
+  const sh = $("#quickSheet"); if (!sh) return;
+  sh.classList.remove("open");
+  setTimeout(() => sh.classList.add("hidden"), 260);
+}
+if ($("#quickBtn")) $("#quickBtn").addEventListener("click", () => {
+  const sh = $("#quickSheet");
+  if (sh && !sh.classList.contains("hidden")) closeQuick(); else openQuick();
+});
+if ($("#quickClose")) $("#quickClose").addEventListener("click", closeQuick);
+if ($("#quickScrim")) $("#quickScrim").addEventListener("click", closeQuick);
+if ($("#qkConn")) $("#qkConn").addEventListener("change", () => {
+  const c = loadConnections().find((x) => x.id === $("#qkConn").value);
+  if (!c) return;
+  setActiveConn(c);
+  showToast("已切换到「" + connDisplayName(c) + "」");
+  renderQuick();
+});
+if ($("#qkModel")) $("#qkModel").addEventListener("change", () => {
+  const m = $("#qkModel").value; if (!m) return;
+  const a = activeConn(); if (!a) return;
+  a.model = m; setActiveConn(a);
+  const list = loadConnections();
+  const i = list.findIndex((x) => x.id === a.id);
+  if (i >= 0){ list[i].model = m; saveConnections(list); }
+  showToast("模型已切换：" + m);
+  renderQuick();
+});
+if ($("#qkThink")) $("#qkThink").addEventListener("change", () => {
+  const on = $("#qkThink").checked;
+  saveQuick({ thinking: on });
+  showToast("思考模式已" + (on ? "开启" : "关闭"));
+  renderQuick();
+});
+if ($("#qkTokens")) $("#qkTokens").addEventListener("input", () => {
+  const v = parseInt($("#qkTokens").value, 10) || 1024;
+  const tv = $("#qkTokensVal"); if (tv) tv.textContent = v;
+  saveQuick({ maxTokens: v });
+});
+if ($("#qkMem")) $("#qkMem").addEventListener("input", () => {
+  const v = parseInt($("#qkMem").value, 10) || 12;
+  const mv = $("#qkMemVal"); if (mv) mv.textContent = v;
+  const mm = $("#qkMemMsg"); if (mm) mm.textContent = v * 2;
+  saveQuick({ memoryRounds: v });
+});
+
 /* 设置页 #themeSeg 分段控件 — 手动切 5 套主题,持久化,联动壁纸/theme-color */
 const THEME_KEY = "companion_theme";
 const themeSeg = $("#themeSeg");
@@ -4449,18 +4667,26 @@ async function deepseekStream(userText, streamId, conn){
     "\n模型：" + model;
   if (!chatUrl) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
     "\n\n修法：设置 → 云端后端，填 https://tidal-echo-relay-1-vudb.onrender.com，再点「保存」");
-  const sys = (conn.persona && conn.persona.trim()) ? [{ role: "system", content: conn.persona }] : [];
+  /* 快捷设置：记忆轮数 / 思考模式 / 最大 token（底部栏 ⋮ 里调）*/
+  const qk = (typeof loadQuick === "function") ? loadQuick() : { maxTokens: 1024, memoryRounds: 12, thinking: false };
+  const sys = [];
+  if (conn.persona && conn.persona.trim()) sys.push({ role: "system", content: conn.persona });
+  if (qk.thinking) sys.push({ role: "system", content: "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。" });
+  const keepMsgs = Math.max(1, qk.memoryRounds) * 2;      // 1 轮 = 用户 + AI 各 1 条
   const prior = directHistory(conn)
     .filter((m) => m.kind === "reply" || m.kind === "user")
+    .slice(-keepMsgs)
     .map((m) => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text }));
   const messages = sys.concat(prior, [{ role: "user", content: userText }]);
+  const bodyObj = { model, messages, stream: true, temperature: (conn.temp != null ? conn.temp : 0.7) };
+  if (qk.maxTokens) bodyObj.max_tokens = qk.maxTokens;
   const headers = connHeaders(conn);
   let res;
   try{
     res = await fetch(chatUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify({ model, messages, stream: true, temperature: (conn.temp != null ? conn.temp : 0.7) })
+      body: JSON.stringify(bodyObj)
     });
   }catch(e){
     throw new Error("请求发不出去：" + (e && e.message ? e.message : e) + "\n\n" + diag +

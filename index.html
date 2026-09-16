@@ -3748,7 +3748,13 @@ async function saveAppSettings(){
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
     fillAppSettings(d.settings || {});
-    apStatus("已保存到后端 ✅（" + Object.keys(body).length + " 项）", "ok");
+    const skipped = Array.isArray(d.skipped) ? d.skipped : [];
+    if (skipped.length){
+      apStatus("已保存 ✅，但库里没有对应列、跳过了：" + skipped.join("、") +
+               "（其余已生效；要持久化这俩就给 settings 表加列）", "ok");
+    } else {
+      apStatus("已保存到后端 ✅（" + Object.keys(body).length + " 项）", "ok");
+    }
     showToast("设置已保存到后端");
   }catch(e){
     apStatus("保存失败：" + ((e && e.message) || e), "err");

@@ -2017,35 +2017,39 @@
     .settings-title{ margin-right: 38px; }
   }
 
-  /* ── 聊天快捷设置（底部栏 ⋮ → 向上弹出的面板）──────────────────────────
+  /* ── 聊天快捷设置（顶栏 ⋮ → 从顶部向下拉出的面板，位置同 #sessionPop）──
      内容：切换中转站/连接、切换模型、思考模式开关、最大 token 控制+显示、AI 记忆轮数 */
-  #quickBtn{ color: var(--text-soft); }
   .quick-sheet{
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    height: 100%; pointer-events: none;
+    position: fixed; inset: 0; z-index: 60; pointer-events: none;
   }
   .quick-sheet.hidden{ display: none; }
   .quick-scrim{
-    position: absolute; inset: 0; background: rgba(20,28,40,.28);
-    opacity: 0; transition: opacity .24s ease; pointer-events: auto;
+    position: absolute; inset: 0; background: rgba(20,28,40,.20);
+    opacity: 0; transition: opacity .22s ease; pointer-events: auto;
   }
   .quick-sheet.open .quick-scrim{ opacity: 1; }
   .quick-body{
-    position: relative; pointer-events: auto;
-    margin: 0 auto calc(var(--composer-zone) + 2px);
-    width: min(94vw, 460px);
-    max-height: min(70vh, 620px); overflow: auto;
-    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
-    border-radius: 20px;
+    position: absolute; pointer-events: auto;
+    top: calc(env(safe-area-inset-top) + clamp(58px, 8vw, 82px));
+    right: var(--side-pad);
+    width: min(92vw, 400px);
+    max-height: min(72vh, 640px); overflow: auto;
+    padding: 14px 16px;
+    border-radius: 18px;
     background: var(--panel-bg, #fff);
     border: 1px solid var(--card-line, rgba(120,140,170,.22));
-    box-shadow: 0 20px 60px rgba(30,45,62,.22);
+    box-shadow: 0 18px 50px rgba(30,45,62,.20);
     -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-    transform: translateY(14px) scale(.985); opacity: 0;
-    transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .26s ease;
+    transform: translateY(-10px) scale(.985); transform-origin: top right; opacity: 0;
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
   }
   .quick-sheet.open .quick-body{ transform: translateY(0) scale(1); opacity: 1; }
+  .quick-link{
+    width:100%; border:0; background:transparent; color: var(--text-soft); font:inherit; font-size:13px;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:11px 2px 2px; margin-top:6px; border-top:1px solid var(--hairline); cursor:pointer;
+  }
+  .quick-link:hover{ color: var(--accent); }
   .quick-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 2px 10px; }
   .quick-head > span{ font-size:13.5px; font-weight:600; color: var(--text); letter-spacing:.02em; }
   .quick-close{
@@ -2134,9 +2138,6 @@
       <button class="emojibtn" id="emojiBtn" aria-label="表情" title="表情">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.3a4.2 4.2 0 0 0 7 0"/><line x1="9" y1="9.3" x2="9" y2="10"/><line x1="15" y1="9.3" x2="15" y2="10"/></svg>
       </button>
-      <button class="emojibtn" id="quickBtn" type="button" aria-label="聊天快捷设置" title="聊天快捷设置">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>
-      </button>
     </div>
     <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21.5"/></svg>
@@ -2179,6 +2180,7 @@
         <input type="range" id="qkMem" min="1" max="50" step="1" value="12">
       </div>
       <div class="quick-hint" id="qkHint"></div>
+      <button class="quick-link" id="qkProfile" type="button">个人信息 · profile</button>
     </div>
   </div>
 </div>
@@ -3033,7 +3035,8 @@ applyAvatar(localStorage.getItem(AVATAR_KEY));
 applyRemark(localStorage.getItem(REMARK_KEY));
 /* 主题只由日夜 toggle 控制(持久化),不再实时跟随系统;首次打开的初始值由 <head> 早期脚本取一次系统值 */
 if (avatarBtn) avatarBtn.addEventListener("click", openProfile);
-if (moreBtn) moreBtn.addEventListener("click", openProfile);
+/* 顶栏 ⋮ → 打开/收起「聊天快捷设置」下拉面板（个人信息入口移进面板底部）*/
+if (moreBtn) moreBtn.addEventListener("click", () => toggleQuick());
 if (profileAvatarBtn) profileAvatarBtn.addEventListener("click", () => avatarInput && avatarInput.click());
 if (profileClose) profileClose.addEventListener("click", closeProfile);
 document.addEventListener("keydown", (e) => {
@@ -3509,7 +3512,7 @@ if ($("#fSave")) $("#fSave").addEventListener("click", () => saveConn({ use: fal
 if ($("#fCancel")) $("#fCancel").addEventListener("click", closeEditor);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDays(); });
 
-/* ── 聊天快捷设置（底部栏 ⋮ → 向上弹出）────────────────────────────────
+/* ── 聊天快捷设置（顶栏 ⋮ → 向下拉出）──────────────────────────────────
    中转站/连接切换 · 模型切换 · 思考模式 · 最大 token 控制+显示 · AI 记忆轮数 */
 const QUICK_KEY = "companion_quick";
 function loadQuick(){
@@ -3598,14 +3601,17 @@ function openQuick(){
 function closeQuick(){
   const sh = $("#quickSheet"); if (!sh) return;
   sh.classList.remove("open");
-  setTimeout(() => sh.classList.add("hidden"), 260);
+  setTimeout(() => sh.classList.add("hidden"), 220);
 }
-if ($("#quickBtn")) $("#quickBtn").addEventListener("click", () => {
+function isQuickOpen(){
   const sh = $("#quickSheet");
-  if (sh && !sh.classList.contains("hidden")) closeQuick(); else openQuick();
-});
+  return !!(sh && !sh.classList.contains("hidden"));
+}
+function toggleQuick(){ if (isQuickOpen()) closeQuick(); else openQuick(); }
 if ($("#quickClose")) $("#quickClose").addEventListener("click", closeQuick);
 if ($("#quickScrim")) $("#quickScrim").addEventListener("click", closeQuick);
+if ($("#qkProfile")) $("#qkProfile").addEventListener("click", () => { closeQuick(); openProfile(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isQuickOpen()) closeQuick(); });
 if ($("#qkConn")) $("#qkConn").addEventListener("change", () => {
   const c = loadConnections().find((x) => x.id === $("#qkConn").value);
   if (!c) return;

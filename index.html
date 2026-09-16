@@ -2285,6 +2285,10 @@
         <input id="fCloudToken" type="password" placeholder="可留空" autocomplete="off" spellcheck="false">
       </label>
       <div class="conn-sub" id="cloudStatus" style="padding:2px 2px 10px;color:var(--text-faint);line-height:1.55"></div>
+      <button class="conn-add" id="cloudTest" type="button" style="margin-bottom:16px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        测试后端连接
+      </button>
 
       <div class="settings-section-label">连接</div>
       <div class="conn-list" id="connList"></div>
@@ -2600,8 +2604,18 @@ function completeApiUrl(root, ver, tail){
   if (/(^|\/)v\d+$/i.test(root)) return root + "/" + tail;          // 已含 /vN
   return root + "/" + (ver || "v1") + "/" + tail;
 }
-function connChatUrl(conn){ return completeApiUrl(conn.root || providerOf(conn).root, conn.ver || providerOf(conn).ver, "chat/completions"); }
-function connModelsUrl(conn){ return completeApiUrl(conn.root || providerOf(conn).root, conn.ver || providerOf(conn).ver, "models"); }
+// 云端连接的地址一律以「设置 → 云端后端」为准(CONFIG.CLOUD_RELAY 优先)，
+// 忽略连接里可能残留的历史「接口地址」，否则换过后端域名后请求仍会打到旧地址上。
+function effectiveRoot(conn){
+  const pv = providerOf(conn) || {};
+  if (pv.cloud){
+    const r = cloudRoot(pvPid(conn && conn.provider));
+    if (r) return r;
+  }
+  return conn.root || pv.root || "";
+}
+function connChatUrl(conn){ return completeApiUrl(effectiveRoot(conn), conn.ver || providerOf(conn).ver, "chat/completions"); }
+function connModelsUrl(conn){ return completeApiUrl(effectiveRoot(conn), conn.ver || providerOf(conn).ver, "models"); }
 
 const LS_KEY    = "companion_secret";
 
@@ -2983,7 +2997,7 @@ function syncCloudFields(){
   if (s){
     const host = cloudHost();
     if (!host){
-      s.innerHTML = '还没填。<b>先把你部署好的 tidal-echo-relay 地址填到上面</b>（例如 https://tidal-echo-relay.onrender.com），保存后就能在「添加连接」里选「☁ 云端 · DeepSeek」等。';
+      s.innerHTML = '还没填。<b>先把你部署好的 tidal-echo-relay 地址填到上面</b>（例如 https://tidal-echo-relay-1-vudb.onrender.com），保存后就能在「添加连接」里选「☁ 云端 · DeepSeek」等。';
     }else{
       s.innerHTML = '当前后端：<b>' + escapeHtml(host) + '</b><br>四家入口：/relay/deepseek/v1 · /relay/siliconflow/v1 · /relay/zhipu/v4 · /relay/moonshot/v1' +
         '<br><a href="' + escapeHtml(host) + '" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">打开后端状态页 ↗</a>';
@@ -3011,6 +3025,33 @@ function applyCloudHost(){
 }
 if ($("#fCloud")) $("#fCloud").addEventListener("change", applyCloudHost);
 if ($("#fCloudToken")) $("#fCloudToken").addEventListener("change", applyCloudHost);
+/* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
+function cloudSelfTest(){
+  const s = $("#cloudStatus"); if (!s) return;
+  const host = (cloudHost() || "").replace(/\/+$/, "");
+  if (!host){ s.innerHTML = '还没填后端地址，先在上面填入你的 relay 地址。'; return; }
+  s.innerHTML = '正在测试 <b>' + escapeHtml(host) + '</b> …';
+  const t0 = Date.now();
+  fetch(host + "/health", { cache: "no-store" })
+    .then((r) => r.json().then((j) => ({ code: r.status, j: j })).catch(() => ({ code: r.status, j: null })))
+    .then(({ code, j }) => {
+      const ms = Date.now() - t0;
+      if (code === 200 && j && j.ok){
+        const ks = j.keys_configured || [];
+        s.innerHTML = '✅ 后端连通（' + ms + ' ms）· ' + escapeHtml(j.service || "") +
+          '<br>已配置 Key：<b>' + (ks.length ? escapeHtml(ks.join("、")) : "无") + '</b>' +
+          (ks.length ? '<br>现在去「添加连接」选「☁ 云端」，就能聊天了。'
+                     : '<br>后端还没填 Key：去 Render → Environment 加 DEEPSEEK_API_KEY 等，然后重新部署。');
+      }else{
+        s.innerHTML = '⚠️ 后端有响应但不是 relay（HTTP ' + code + '）。这个地址可能不是你的后端，检查有没有写错域名。';
+      }
+    })
+    .catch((e) => {
+      s.innerHTML = '❌ 连不上 <b>' + escapeHtml(host) + '</b>：' + escapeHtml((e && e.message) || String(e)) +
+        '<br><span style="color:var(--text-faint)">免费档休眠后首次唤醒要等 30~60 秒，稍等再点一次。</span>';
+    });
+}
+if ($("#cloudTest")) $("#cloudTest").addEventListener("click", cloudSelfTest);
 if ($("#settingsBack")) $("#settingsBack").addEventListener("click", () => { closeEditor(); closeSettings(); openMenu(); });
 if ($("#settingsClose")) $("#settingsClose").addEventListener("click", closeSettings);
 if ($("#connAdd")) $("#connAdd").addEventListener("click", () => openEditor(null));

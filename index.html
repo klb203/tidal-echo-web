@@ -1905,19 +1905,25 @@
   }
   .conn-ic svg{ width: 18px; height: 18px; }
   .conn-main{ flex: 1 1 auto; min-width: 0; }
-  .conn-name{ font-size: 15px; font-weight: 600; color: var(--text); }
-  .conn-sub{ font-size: 12px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* ⚠️ 这两行原本是 inline <span>，而 text-overflow/overflow 对非替换 inline 盒子无效，
+     所以长地址会直接溢出卡片、压到「使用/删除」上面。必须显式 display:block。 */
+  .conn-name{ display: block; max-width: 100%; font-size: 15px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conn-sub{ display: block; max-width: 100%; font-size: 12px; color: var(--text-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .conn-badge{
-    font-size: 10.5px; letter-spacing:.08em;
+    font-size: 10.5px; letter-spacing:.08em; white-space: nowrap;
     padding: 3px 8px; border-radius: 999px;
     background: var(--glass-strong); color: var(--text-soft);
     flex: 0 0 auto;
   }
   .conn-card.active .conn-badge{ background: var(--accent, #7aa2ff); color: #fff; }
-  .conn-actions{ display:flex; gap: 6px; }
+  .conn-actions{ display:flex; gap: 6px; flex: 0 0 auto; align-items: center; }
   .conn-mini{
     border: none; border-radius: 9px; padding: 6px 9px;
     font-size: 12px; cursor: pointer;
+    white-space: nowrap; line-height: 1.35; min-height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
     background: var(--glass-strong); color: var(--text);
     transition: background .2s ease;
   }
@@ -1970,6 +1976,41 @@
   .conn-status.ok{ color: #2e9e5b; }
   .conn-status.err{ color: #e5484d; }
   .settings-tip{ font-size: 11.5px; color: var(--text-faint); line-height: 1.6; margin-top: 2px; }
+
+  /* ── 状态/提示文字（cloudStatus / pvHint）允许换行 ──────────────────────
+     它们继承了 .conn-sub 的 nowrap，里面又塞了一整条后端地址 + 四家入口，
+     手机上必然溢出（实测 scroll 516 > client 343），被 .settings-page 的
+     overflow:hidden 硬切在屏幕边上。 */
+  #cloudStatus, #pvHint{
+    display: block; -webkit-line-clamp: none;   /* 覆盖手机端 .conn-sub 的 2 行 clamp */
+    white-space: normal; overflow: visible; text-overflow: clip;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  #cloudStatus a{ word-break: break-all; }
+
+  /* ── 手机适配：连接卡片改两行（图标+徽章+按钮 / 名称+地址）──────────────
+     单行时「名称+地址」被徽章和按钮挤到只剩 ~170px，长 URL 必被截断；
+     两行后地址独占整行宽度，能看清 https://xxx.onrender.com/relay/... 全貌。 */
+  @media (max-width: 640px){
+    .settings-scroll{
+      gap: 12px;
+      padding-left: clamp(14px, 4.5vw, 40px);
+      padding-right: clamp(14px, 4.5vw, 40px);
+    }
+    .conn-card{
+      flex-wrap: wrap; align-items: center;
+      gap: 4px 10px; padding: 12px 13px;
+    }
+    .conn-main{ order: 2; flex: 1 1 100%; }
+    .conn-badge{ margin-left: auto; }
+    .conn-sub{
+      white-space: normal; word-break: break-all;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    /* 输入框 15px 起：太小在手机上看着挤，且长地址需要一点省略提示 */
+    .fld input, .fld select, .fld textarea{ font-size: 15px; text-overflow: ellipsis; }
+    .settings-title{ margin-right: 38px; }
+  }
 
 </style>
 </head>

@@ -4107,13 +4107,19 @@ async function deepseekStream(userText, streamId, conn){
   const pv = providerOf(conn) || {};
   const model = conn.model || (pv.models && pv.models[0]) || "deepseek-chat";
   const isCloud = !!(conn && (conn.cloud || isCloudPv(conn.provider)));
+  /* connChatUrl() 返回的**已经是**完整对话地址(以 /chat/completions 结尾)，
+     这里绝不能再拼一次，否则会变成 .../chat/completions/chat/completions → 404。
+     做一次防御性归一：只补缺的那一段。 */
+  const chatUrl = /\/chat\/completions\/?$/.test(base || "")
+    ? base.replace(/\/+$/, "")
+    : (base ? base.replace(/\/+$/, "") + "/chat/completions" : "");
   /* 出错时把「到底请求了哪里」摊开，省得靠猜 */
   const diag = "连接：" + ((conn && conn.name) || "-") +
     "\n类型：" + (isCloud ? "云端转发（经你的后端）" : "浏览器直连（会被 CORS 拦）") +
     "\n供应商：" + ((conn && conn.provider) || "-") +
-    "\n请求地址：" + (base || "(空)") + "/chat/completions" +
+    "\n请求地址：" + (chatUrl || "(空)") +
     "\n模型：" + model;
-  if (!base) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
+  if (!chatUrl) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
     "\n\n修法：设置 → 云端后端，填 https://tidal-echo-relay-1-vudb.onrender.com，再点「保存」");
   const sys = (conn.persona && conn.persona.trim()) ? [{ role: "system", content: conn.persona }] : [];
   const prior = directHistory(conn)
@@ -4123,7 +4129,7 @@ async function deepseekStream(userText, streamId, conn){
   const headers = connHeaders(conn);
   let res;
   try{
-    res = await fetch(base + "/chat/completions", {
+    res = await fetch(chatUrl, {
       method: "POST",
       headers,
       body: JSON.stringify({ model, messages, stream: true, temperature: (conn.temp != null ? conn.temp : 0.7) })

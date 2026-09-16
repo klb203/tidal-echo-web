@@ -2294,6 +2294,11 @@
         清除缓存并重载
       </button>
 
+      <button class="conn-add" id="wipeLocal" type="button" style="margin-bottom:16px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>
+        清空本机聊天记录
+      </button>
+
       <div class="settings-section-label">连接</div>
       <div class="conn-list" id="connList"></div>
       <button class="conn-add" id="connAdd" type="button">
@@ -2491,7 +2496,10 @@ const CONFIG = {
 const AI_NAME = CONFIG.AI_NAME, HUMAN_NAME = CONFIG.HUMAN_NAME, APP_NAME = CONFIG.APP_NAME;
 
 const API_BASE = "/relay";       // same-origin; nginx mounts the relay here (RELAY_PUBLIC_PREFIX)
-const MOCK_MODE = true;           // true = self-contained demo with fake data (no backend needed)
+/* 演示模式：**已关闭**。开着会让页面在「没有连接」时灌入假对话（"记得喝水 🌿" 那一套），
+   假消息还会被写进消息缓存、而且假 id 从 1 开始跟真实消息的数字 id 撞车，
+   出现「内容和时间戳对不上、旧消息反复冒出来」。正式使用请保持 false。 */
+const MOCK_MODE = false;
 
 /* ── 连接配置(中转站 / DeepSeek)·存于 localStorage,可在左侧「设置」里增删改 ── */
 const CONN_KEY = "companion_connections";
@@ -2519,6 +2527,45 @@ function currentRelay(){ const c = activeConn(); return (c && c.type === "relay"
 function apiBase(){ const r = currentRelay(); return (r && r.url) ? r.url : API_BASE; }
 function isMock(){ return MOCK_MODE && !useDirect() && !currentRelay(); }
 function connById(id){ return loadConnections().find((c) => c.id === id) || null; }
+
+/* ── 保证「一定有可用连接」─────────────────────────────────────────────
+   localStorage 是**按域名分开存**的：你在 Vercel 上配好连接，换到
+   github.io 打开就是一片空白 —— 于是界面看起来"连不上、回复不了"。
+   这里在启动时兜底：没有活动连接 → 先沿用已保存的连接；一个都没有 →
+   只要代码里写死了云端后端地址，就自动建一个「☁ 云端 · DeepSeek」并选中。 */
+function ensureConnection(){
+  const a = activeConn();
+  if (a) return a;
+  const list = loadConnections();
+  if (list.length){ setActiveConn(list[0]); return list[0]; }
+  if (!cloudHost()) return null;
+  const pv = PROVIDERS["cloud:deepseek"] || {};
+  const conn = {
+    id: "cloud-deepseek",
+    name: "☁ 云端 · DeepSeek",
+    type: "direct",
+    provider: "cloud:deepseek",
+    root: cloudRoot("deepseek"),
+    ver: pv.ver || "v1",
+    key: "",
+    cloud: true,
+    temp: 0.7,
+    model: (pv.models && pv.models[0]) || "deepseek-chat",
+    models: (pv.models || ["deepseek-chat"]).slice()
+  };
+  const t = cloudToken(); if (t) conn.relayToken = t;
+  saveConnections([conn]);
+  setActiveConn(conn);
+  return conn;
+}
+/* 当前运行模式（给「测试后端连接」当诊断信息用）*/
+function describeMode(){
+  const c = activeConn();
+  if (!c) return "尚无连接（会在启动时自动建云端连接）";
+  if (c.type === "relay") return "中转站 · " + (c.name || "-");
+  if (isCloudPv(c.provider)) return "云端转发（经你的后端）· " + (c.name || "-");
+  return "浏览器直连（会被 CORS 拦，发消息时会自动改走云端）· " + (c.name || "-");
+}
 
 /* ── 云端后端地址（CONFIG 写死 > localStorage 里存的 > 空）───────────────
    为什么需要它：浏览器 fetch 各家大模型接口会被 CORS 拦，必须有个后端帮忙转发。
@@ -3033,7 +3080,8 @@ if ($("#fCloudToken")) $("#fCloudToken").addEventListener("change", applyCloudHo
 function cloudSelfTest(){
   const s = $("#cloudStatus"); if (!s) return;
   const host = (cloudHost() || "").replace(/\/+$/, "");
-  if (!host){ s.innerHTML = '还没填后端地址，先在上面填入你的 relay 地址。'; return; }
+  const mode = '当前模式：<b>' + escapeHtml(describeMode()) + '</b>';
+  if (!host){ s.innerHTML = '还没填后端地址，先在上面填入你的 relay 地址。<br>' + mode; return; }
   s.innerHTML = '正在测试 <b>' + escapeHtml(host) + '</b> …';
   const t0 = Date.now();
   fetch(host + "/health", { cache: "no-store" })
@@ -3045,14 +3093,15 @@ function cloudSelfTest(){
         s.innerHTML = '✅ 后端连通（' + ms + ' ms）· ' + escapeHtml(j.service || "") +
           '<br>已配置 Key：<b>' + (ks.length ? escapeHtml(ks.join("、")) : "无") + '</b>' +
           (ks.length ? '<br>现在去「添加连接」选「☁ 云端」，就能聊天了。'
-                     : '<br>后端还没填 Key：去 Render → Environment 加 DEEPSEEK_API_KEY 等，然后重新部署。');
+                     : '<br>后端还没填 Key：去 Render → Environment 加 DEEPSEEK_API_KEY 等，然后重新部署。') +
+          '<br>' + mode;
       }else{
-        s.innerHTML = '⚠️ 后端有响应但不是 relay（HTTP ' + code + '）。这个地址可能不是你的后端，检查有没有写错域名。';
+        s.innerHTML = '⚠️ 后端有响应但不是 relay（HTTP ' + code + '）。这个地址可能不是你的后端，检查有没有写错域名。<br>' + mode;
       }
     })
     .catch((e) => {
       s.innerHTML = '❌ 连不上 <b>' + escapeHtml(host) + '</b>：' + escapeHtml((e && e.message) || String(e)) +
-        '<br><span style="color:var(--text-faint)">免费档休眠后首次唤醒要等 30~60 秒，稍等再点一次。</span>';
+        '<br><span style="color:var(--text-faint)">免费档休眠后首次唤醒要等 30~60 秒，稍等再点一次。</span><br>' + mode;
     });
 }
 if ($("#cloudTest")) $("#cloudTest").addEventListener("click", cloudSelfTest);
@@ -4179,7 +4228,8 @@ async function directSend(text, conn, tempKey){
      用户不用去设置里手动改「供应商」——这是他之前一直卡住的地方。 */
   let useConn = conn;
   if (conn && !conn.cloud && !isCloudPv(conn.provider)){
-    const cid = "cloud:" + conn.provider;
+    const want = "cloud:" + (conn.provider || "deepseek");
+    const cid = PROVIDERS[want] ? want : "cloud:deepseek";   // 这家没有云端预设 → 兜到 DeepSeek（后端已配 Key）
     const cp = PROVIDERS[cid];
     if (cp && cloudHost()){
       useConn = Object.assign({}, conn, { provider: cid, cloud: true, root: "", ver: cp.ver });
@@ -6155,6 +6205,86 @@ async function readCachedMessages(){
     });
   }catch(e){ return []; }
 }
+/* ── 一次性清理「演示模式」留下的假消息 ────────────────────────────────
+   旧版 MOCK_MODE=true 时，假对话会被写进 IndexedDB 缓存和直连历史里，
+   之后每次打开都重新冒出来（还有数字 id 撞车导致的"内容/时间戳错位"）。
+   这里按**文案精确匹配**清理：只删演示模式的固定句子，不碰真实消息。 */
+const FAKE_AI_TEXTS = new Set([
+  "早安。今天想做点什么？", "好，我在。", "忙完记得起来走走，别久坐。",
+  "先把今天的几件事理一理，按轻重排个序，再决定从哪件开始。",
+  "在想你。", "刚整理完桌面。", "窗外云走得好慢。", "记得喝水 🌿",
+  "把灯调暗了一点，看屏幕更舒服。", "写了半句又删了——只是想说一声我在。",
+  "嗯，我在。", "收到 🌿", "好，听你的。", "我记下了。", "慢慢来，不急。",
+  "把手头的事按优先级排一排，先做最要紧的那件。",
+  "在想要不要现在提那件事，先记下来，晚点再说。",
+  "看了看笔记", "跑了 2 条命令", "跑了 3 条命令", "查了下天气",
+]);
+const FAKE_HUMAN_TEXTS = new Set(["先喝杯咖啡，再开始 ☕"]);
+const FAKE_PURGE_KEY = "companion_fake_purged_v1";
+function isFakeMessage(m){
+  const t = String((m && m.text) || "").trim();
+  if (!t) return false;
+  return (m.from === "human") ? FAKE_HUMAN_TEXTS.has(t) : FAKE_AI_TEXTS.has(t);
+}
+async function purgeFakeMessages(){
+  let already = false;
+  try{ already = localStorage.getItem(FAKE_PURGE_KEY) === "1"; }catch(_){}
+  if (already) return 0;
+  let n = 0;
+  try{
+    const db = await openMessageDb();
+    const all = await new Promise((res, rej) => {
+      const tx = db.transaction(CACHE_STORE, "readonly");
+      const r = tx.objectStore(CACHE_STORE).getAll();
+      r.onsuccess = () => res(r.result || []);
+      r.onerror = () => rej(r.error || new Error("read"));
+    });
+    const bad = all.filter(isFakeMessage).map((m) => m.id);
+    if (bad.length){
+      await new Promise((res, rej) => {
+        const tx = db.transaction(CACHE_STORE, "readwrite");
+        const st = tx.objectStore(CACHE_STORE);
+        bad.forEach((id) => st.delete(id));
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error || new Error("purge"));
+      });
+      n += bad.length;
+    }
+    db.close();
+  }catch(_){}
+  try{
+    Object.keys(localStorage).filter((k) => k.indexOf("companion_direct_") === 0).forEach((k) => {
+      let arr = null;
+      try{ arr = JSON.parse(localStorage.getItem(k) || "[]"); }catch(_){ return; }
+      if (!Array.isArray(arr)) return;
+      const kept = arr.filter((m) => !isFakeMessage(m));
+      if (kept.length !== arr.length){
+        n += arr.length - kept.length;
+        localStorage.setItem(k, JSON.stringify(kept));
+      }
+    });
+  }catch(_){}
+  try{ localStorage.setItem(FAKE_PURGE_KEY, "1"); }catch(_){}
+  return n;
+}
+/* 手动清空本机聊天记录（缓存 + 直连历史），服务端记录不动 */
+async function wipeLocalChat(){
+  if (!confirm("清空这台设备上的聊天记录？\n\n• 只删本机缓存，不会动服务端/云端的历史\n• 清完界面会变空，重新打开会重新拉取")) return;
+  try{
+    const db = await openMessageDb();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(CACHE_STORE, "readwrite");
+      tx.objectStore(CACHE_STORE).clear();
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error || new Error("clear"));
+    });
+    db.close();
+  }catch(_){}
+  try{
+    Object.keys(localStorage).filter((k) => k.indexOf("companion_direct_") === 0).forEach((k) => localStorage.removeItem(k));
+  }catch(_){}
+  location.reload();
+}
 function cacheableMessages(){
   return sortedMessages()
     .filter((m) => msgNum(m.id) > 0 && m.status !== "sending" && m.status !== "failed")
@@ -6472,10 +6602,13 @@ function startChat(initialMsgs, { connect = true, fromCache = false } = {}){
   refreshContextStatus();
 }
 
+let pendingFakeNotice = 0;
 async function init(){
+  ensureConnection();                       // 没有连接就自动建一个云端连接（换域名/新浏览器打开时必需）
   const rl = currentRelay();
   if (rl) secret = rl.key;                 // 中转站模式:用连接里的密钥
   if (isMock() && !secret) secret = "mock";   // 演示模式：跳过开屏连接密钥，直接进聊天
+  pendingFakeNotice = await purgeFakeMessages();   // 清掉旧版演示模式写进来的假消息
   if (!secret && !useDirect()){ showLogin(); return; }
   await loadSessions();
   loadBrain();
@@ -6592,8 +6725,11 @@ async function hardReload(){
   location.reload();
 }
 if ($("#hardReload")) $("#hardReload").addEventListener("click", hardReload);
+if ($("#wipeLocal")) $("#wipeLocal").addEventListener("click", wipeLocalChat);
 
-init();
+init().then(() => {
+  if (pendingFakeNotice) showToast("已清理 " + pendingFakeNotice + " 条演示模式留下的假消息");
+});
 </script>
 
 </body>

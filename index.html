@@ -779,7 +779,8 @@
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 12px; line-height: 1.6;
     color: var(--think-body);
-    overflow-x: auto;
+    max-height: min(46vh, 360px);          /* MCP 的 output 可能很长:限高可滚,别撑爆气泡 */
+    overflow: auto;
     animation: pop .2s cubic-bezier(.2,.8,.2,1) both;
   }
   .act-step + .act-step{
@@ -5485,17 +5486,17 @@ function terminalStepResultHtml(result){
 function terminalActHtml(m){
   const meta = m.meta || {};
   const a = (meta.act && typeof meta.act === "object") ? meta.act : meta;
-  const rawSteps = Array.isArray(a.steps) ? a.steps : [];
-  const steps = rawSteps.length ? rawSteps : ((a.tool || a.cmd || a.result) ? [a] : []);
+  const steps = actStepsOf(a);
   if (!steps.length) return renderText(terminalVisibleText(m) || "# tool use");
   return steps.map((s) => {
-    if (!s || typeof s !== "object") return "";
-    const tool = s.tool || s.name || "";
-    const cmd = s.cmd || s.command || "";
-    const result = terminalStepResultHtml(s.result || s.output || s.stdout || "");
+    if (!s || typeof s !== "object" || Array.isArray(s)) return "";
+    const f = actStepFields(s);
+    const tool = actVal(f.tool);
+    const cmd = actVal(f.cmd);
+    const result = terminalStepResultHtml(actVal(f.result));
     const head = [
-      tool ? `<span class="term-muted"># ${escapeHtml(String(tool))}</span>` : "",
-      cmd ? `<span class="term-cmd">$ ${escapeHtml(String(cmd))}</span>` : ""
+      tool ? `<span class="term-muted"># ${escapeHtml(tool)}</span>` : "",
+      cmd ? `<span class="term-cmd">$ ${escapeHtml(cmd)}</span>` : ""
     ].filter(Boolean).join("\n");
     return [head, result].filter(Boolean).join("\n");
   }).filter(Boolean).join("\n");
@@ -5945,27 +5946,62 @@ function makeThinking(rowData){
    m.meta.steps = 可选的原始工具调用 [{tool,cmd,result}…],非空才显示「· 展开」。
    字段也容忍平铺在 meta 顶层(relay 把 /channel/out 的 body 摊进 meta)。 */
 function actGlyph(name){
-  switch (name){
-    case "terminal": case "shell": case "loop": return "∞";
-    case "search": case "grep": return "✱";
-    case "web": case "fetch": return "❍";
-    case "memory": case "spark": default: return "✦";
+  const n = String(name == null ? "" : name).toLowerCase().trim();
+  switch (n){
+    case "terminal": case "shell": case "loop": case "bash": case "command": case "exec": return "∞";
+    case "search": case "grep": case "mcp": case "tool": case "plugin": return "✱";
+    case "web": case "fetch": case "http": case "url": case "browse": return "❍";
+    case "memory": case "spark": case "note": return "✦";
   }
+  if (/mcp|plugin|tool/.test(n)) return "✱";
+  if (/shell|term|bash|cmd|exec|command/.test(n)) return "∞";
+  if (/web|http|fetch|url|browse/.test(n)) return "❍";
+  return "✦";
+}
+/* 各家后端给的工具字段名不一样：
+   tool = tool / name / tool_name / server / mcp ；
+   cmd  = cmd / command / args / arguments / input / query / params ；
+   result = result / output / stdout / content / text / response / error / message。
+   对象一律 JSON 美化 —— 否则 MCP 的 args / output 会渲染成一坨 [object Object]。 */
+function actStepFields(s){
+  const pick = (...ks) => { for (const k of ks){ if (s[k] != null && s[k] !== "") return s[k]; } return ""; };
+  return {
+    tool:   pick("tool", "name", "tool_name", "server", "service", "mcp"),
+    cmd:    pick("cmd", "command", "args", "arguments", "input", "query", "params", "url"),
+    result: pick("result", "output", "stdout", "content", "text", "response", "error", "message")
+  };
+}
+function actVal(v){
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  try{ return JSON.stringify(v, null, 2); }catch(_){ return String(v); }
 }
 function renderActStep(s){
-  if (!s || typeof s !== "object") return "";
-  const line = (k, v) => (v == null || String(v) === "") ? ""
-    : `<div class="act-line"><span class="act-k">${k}: </span><span class="act-v">${escapeHtml(String(v))}</span></div>`;
-  const body = line("tool", s.tool) + line("cmd", s.cmd) + line("result", s.result);
+  if (s == null) return "";
+  if (typeof s !== "object" || Array.isArray(s)) return "";
+  const f = actStepFields(s);
+  const line = (k, v) => { const t = actVal(v); return (t === "") ? ""
+    : `<div class="act-line"><span class="act-k">${k}: </span><span class="act-v">${escapeHtml(t)}</span></div>`; };
+  const body = line("tool", f.tool) + line("cmd", f.cmd) + line("result", f.result);
   return body ? `<div class="act-step">${body}</div>` : "";
+}
+/* 统一取「步骤数组」：优先 steps[]；否则把单个 {tool,cmd,result} 摊平在 meta/meta.act 上也认
+   （terminal 视图一直是这么容忍的，chat 的动作 chip 之前漏了这一步 → 摊平式工具调用展开是空的）。 */
+function actStepsOf(a){
+  if (!a || typeof a !== "object") return [];
+  const raw = Array.isArray(a.steps) ? a.steps : [];
+  if (raw.length) return raw;
+  const keys = ["tool","name","tool_name","cmd","command","args","arguments","input","result","output","stdout","content","error"];
+  return keys.some((k) => a[k] != null && a[k] !== "") ? [a] : [];
 }
 function makeAct(rowData){
   const m = rowData.message;
   const meta = m.meta || {};
   const a = (meta.act && typeof meta.act === "object") ? meta.act : meta;   // 嵌套或平铺都吃
-  const steps = (Array.isArray(a.steps) ? a.steps : []).map(renderActStep).filter(Boolean);
-  const glyph = actGlyph(a.glyph || meta.glyph);
-  const label = m.text || "做了点什么";
+  const first = actStepsOf(a)[0] || {};
+  const steps = actStepsOf(a).map(renderActStep).filter(Boolean);
+  const glyph = actGlyph(a.glyph || meta.glyph || first.tool || first.name || "");
+  const label = m.text || (steps.length ? ("调用了 " + (first.tool || first.name || "工具")) : "做了点什么");
   const expandable = steps.length > 0;
 
   const row = document.createElement("div");

@@ -3793,7 +3793,23 @@ function showToast(msg){
   void toastEl.offsetWidth;                       // reflow，确保过渡触发
   toastEl.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
+}
+/* 持久错误条：toast 1.6 秒就没了，长报错根本看不清。这里留在屏幕上，点一下才关，方便截图排查。 */
+function showError(msg){
+  let el = document.getElementById("errBar");
+  if (!el){
+    el = document.createElement("div");
+    el.id = "errBar";
+    el.style.cssText = "position:fixed;left:10px;right:10px;bottom:14px;z-index:9999;" +
+      "background:#FCEBEB;color:#501313;border:1px solid #A32D2D;border-radius:10px;" +
+      "padding:10px 12px;font-size:12px;line-height:1.55;word-break:break-word;" +
+      "max-height:46vh;overflow:auto;box-shadow:0 4px 16px rgba(0,0,0,.18)";
+    el.addEventListener("click", () => el.remove());
+    document.body.appendChild(el);
+  }
+  el.textContent = msg + "\n\n（点这里关闭）";
+  el.style.whiteSpace = "pre-wrap";
 }
 
 function wireSegmented(seg, storeKey){
@@ -4088,8 +4104,17 @@ async function deepseekHealth(conn){
 // 复用 queueStreamDelta 把流式 delta 喂进 UI(reply 气泡);结束后用 done 清掉草稿并落库真实消息
 async function deepseekStream(userText, streamId, conn){
   const base = connChatUrl(conn);
-  if (!base) throw new Error("没配置云端后端地址 —— 打开「设置 → 云端后端」填入 https://tidal-echo-relay-1-vudb.onrender.com ，或在这个连接里把「接口地址」填成 https://tidal-echo-relay-1-vudb.onrender.com/relay/deepseek/v1");
-  const model = conn.model || "deepseek-chat";
+  const pv = providerOf(conn) || {};
+  const model = conn.model || (pv.models && pv.models[0]) || "deepseek-chat";
+  const isCloud = !!(conn && (conn.cloud || isCloudPv(conn.provider)));
+  /* 出错时把「到底请求了哪里」摊开，省得靠猜 */
+  const diag = "连接：" + ((conn && conn.name) || "-") +
+    "\n类型：" + (isCloud ? "云端转发（经你的后端）" : "浏览器直连（会被 CORS 拦）") +
+    "\n供应商：" + ((conn && conn.provider) || "-") +
+    "\n请求地址：" + (base || "(空)") + "/chat/completions" +
+    "\n模型：" + model;
+  if (!base) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
+    "\n\n修法：设置 → 云端后端，填 https://tidal-echo-relay-1-vudb.onrender.com，再点「保存」");
   const sys = (conn.persona && conn.persona.trim()) ? [{ role: "system", content: conn.persona }] : [];
   const prior = directHistory(conn)
     .filter((m) => m.kind === "reply" || m.kind === "user")
@@ -4104,8 +4129,9 @@ async function deepseekStream(userText, streamId, conn){
       body: JSON.stringify({ model, messages, stream: true, temperature: (conn.temp != null ? conn.temp : 0.7) })
     });
   }catch(e){
-    throw new Error("连不上 " + base + "：" + (e && e.message ? e.message : e) +
-      (conn.cloud ? "（检查「设置 → 云端后端」地址是否正确、后端是否已唤醒）" : "（浏览器直连被 CORS 拦了，改用「☁ 云端」供应商）"));
+    throw new Error("请求发不出去：" + (e && e.message ? e.message : e) + "\n\n" + diag +
+      (isCloud ? "\n\n可能原因：后端在休眠（等 30~60 秒再试）、地址写错、或手机网络不通。"
+               : "\n\n你选的是「浏览器直连」，大模型接口不允许网页直接调用，会被浏览器拦下。请在「供应商」里改选带 ☁ 的「云端」选项。"));
   }
   if (!res.ok){
     let msg = "HTTP " + res.status;
@@ -4113,8 +4139,9 @@ async function deepseekStream(userText, streamId, conn){
       const j = await res.json();
       if (j && j.error && j.error.message) msg = j.error.message;
       else if (j && j.detail) msg = Array.isArray(j.detail) ? j.detail.map((d) => d.msg || d.message || String(d)).join("；") : String(j.detail);
-    }catch(_){}
-    throw new Error(msg);
+      else msg = "HTTP " + res.status + " " + JSON.stringify(j).slice(0, 200);
+    }catch(_){ msg = "HTTP " + res.status + "（响应不是 JSON，可能打到了别的服务）"; }
+    throw new Error("后端返回错误：" + msg + "\n\n" + diag);
   }
   const reader = res.body.getReader();
   const dec = new TextDecoder();
@@ -4140,27 +4167,47 @@ async function deepseekStream(userText, streamId, conn){
   return acc;
 }
 
+let cloudAutoSwitchNotified = false;
 async function directSend(text, conn, tempKey){
-  let last = directLastId(conn);
+  /* 浏览器直连大模型接口会被 CORS 拦死。只要云端后端已配好，就自动改走云端转发，
+     用户不用去设置里手动改「供应商」——这是他之前一直卡住的地方。 */
+  let useConn = conn;
+  if (conn && !conn.cloud && !isCloudPv(conn.provider)){
+    const cid = "cloud:" + conn.provider;
+    const cp = PROVIDERS[cid];
+    if (cp && cloudHost()){
+      useConn = Object.assign({}, conn, { provider: cid, cloud: true, root: "", ver: cp.ver });
+      if (!useConn.model && cp.models && cp.models[0]) useConn.model = cp.models[0];
+      if (!cloudAutoSwitchNotified){
+        cloudAutoSwitchNotified = true;
+        showError("已自动改走【云端转发】—— 你原来那个连接选的是「浏览器直连」，大模型接口不允许网页直接调用，会被浏览器拦下。\n\n" +
+          "想让这个改动永久生效：设置 → 连接 → 编辑它 → 「供应商」改选带 ☁ 的「云端 · DeepSeek」→ 保存并使用。\n\n这条提示只出现一次，点一下关闭即可。");
+      }
+    }
+  }
+  let last = directLastId(useConn);
   const humanId = String(++last);
   const humanMsg = { id: humanId, ts: new Date().toISOString(), from: "human", kind: "user", text, meta: {}, status: "sent" };
   confirmOptimistic(tempKey, humanId, humanMsg);
-  saveDirectMessage(humanMsg, conn);
+  saveDirectMessage(humanMsg, useConn);
   showTyping();
   const streamId = "ds-" + Date.now();
   let reply = "";
   try{
-    reply = await deepseekStream(text, streamId, conn);
+    reply = await deepseekStream(text, streamId, useConn);
   }catch(err){
     hideTyping();
-    showToast("模型出错：" + (err.message || err));
+    const detail = (err && err.message) || String(err);
+    showToast("模型出错，详情看下方红色提示条");
+    showError("模型出错 —— " + detail);
+    try{ console.error("[Tidal Echo] 模型请求失败：", err); }catch(_){}
     return { id: humanId };
   }
   hideTyping();
   const aiId = String(++last);
   const aiMsg = { id: aiId, ts: new Date().toISOString(), from: "ai", kind: "reply", text: reply, meta: {}, status: "sent" };
   setMessage(aiMsg, { render: true });
-  saveDirectMessage(aiMsg, conn);
+  saveDirectMessage(aiMsg, useConn);
   return { id: humanId };
 }
 

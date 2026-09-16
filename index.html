@@ -2750,10 +2750,12 @@ const CLOUD_TOKEN_KEY = "companion_relay_token";
 function lsGet(k){ try{ return (localStorage.getItem(k) || "").trim(); }catch(e){ return ""; } }
 function lsSet(k, v){ try{ localStorage.setItem(k, v || ""); }catch(e){} }
 function cloudHost(){
-  const h = (CONFIG.CLOUD_RELAY || "").trim() || lsGet(CLOUD_HOST_KEY);
+  // 顺序：设置里填的(localStorage) > 代码里写死的默认值。
+  // 以前是反的 —— 于是「设置 → 云端后端」改完地址、提示"已保存"，实际请求却仍打到旧地址（改了没用）。
+  const h = lsGet(CLOUD_HOST_KEY) || (CONFIG.CLOUD_RELAY || "").trim();
   return h.replace(/\/+$/, "");
 }
-function cloudToken(){ return ((CONFIG.CLOUD_RELAY_TOKEN || "").trim() || lsGet(CLOUD_TOKEN_KEY)); }
+function cloudToken(){ return (lsGet(CLOUD_TOKEN_KEY) || (CONFIG.CLOUD_RELAY_TOKEN || "").trim()); }
 function cloudRoot(pid){ const h = cloudHost(); return h ? (h + "/relay/" + pid) : ""; }
 // 模型请求都带上这个头；后端没开鉴权时带上也无害
 function connHeaders(conn){
@@ -3695,6 +3697,9 @@ function appBase(){
   if (h) return h.replace(/\/+$/, "");
   return String(apiBase() || "").replace(/\/relay\/?$/, "").replace(/\/+$/, "");
 }
+/* /app/* 一律打后端的**根**（不是 /relay/<pid>）。直连/云端连接下 apiBase() 返回的是 "/relay"，
+   那是同源路径、在 GitHub Pages 上必 404 —— 会话列表与历史以前就是死在这。 */
+function appUrl(path){ return appBase() + (path || ""); }
 function apStatus(msg, kind){
   const el = $("#apStatus"); if (!el) return;
   el.textContent = msg || "";
@@ -4966,7 +4971,7 @@ function setSessionPopover(open){
 async function loadSessions(){
   if (isMock() || !secret){ activeApiSession = LEGACY_SESSION_ID; renderSessionList(); return; }
   try{
-    const r = await fetch(`${apiBase()}/app/sessions`, { headers: authHeaders() });
+    const r = await fetch(appUrl("/app/sessions"), { headers: authHeaders() });
     if (!r.ok) throw new Error("sessions " + r.status);
     const d = await r.json();
     apiSessions = Array.isArray(d.sessions) ? d.sessions : [];
@@ -4988,7 +4993,7 @@ async function activateSession(sessionId, { reload = true } = {}){
   const sid = effectiveApiSession();
   if (sid){
     try{
-      await fetch(`${apiBase()}/app/sessions/${encodeURIComponent(sid)}`, {
+      await fetch(appUrl("/app/sessions/" + encodeURIComponent(sid)), {
         method:"PATCH",
         headers:{ ...authHeaders(), "Content-Type":"application/json" },
         body:JSON.stringify({ active:true })
@@ -5002,7 +5007,7 @@ async function activateSession(sessionId, { reload = true } = {}){
 }
 async function createNewSession(){
   try{
-    const r = await fetch(`${apiBase()}/app/sessions`, {
+    const r = await fetch(appUrl("/app/sessions"), {
       method:"POST",
       headers:{ ...authHeaders(), "Content-Type":"application/json" },
       body:JSON.stringify({ title:"新对话", activate:true })
@@ -5029,7 +5034,7 @@ async function renameSession(sessionId){
   const title = next.trim();
   if (!title) return;
   try{
-    const r = await fetch(`${apiBase()}/app/sessions/${encodeURIComponent(sessionId)}`, {
+    const r = await fetch(appUrl("/app/sessions/" + encodeURIComponent(sessionId)), {
       method:"PATCH",
       headers:{ ...authHeaders(), "Content-Type":"application/json" },
       body:JSON.stringify({ title })
@@ -5094,7 +5099,7 @@ async function apiHistory({ since = 0, beforeId = null, latest = false, limit = 
   ensureServerHistoryCache();
   const params = new URLSearchParams({ since: String(since || 0), limit: String(limit) });
   if (activeApiSession) params.set("session_id", activeApiSession);
-  const r = await fetch(`${apiBase()}/app/history?${params.toString()}`, { headers: authHeaders() });
+  const r = await fetch(appUrl("/app/history") + "?" + params.toString(), { headers: authHeaders() });
   if (r.status === 401){ handle401(); throw new Error("401"); }
   if (!r.ok) throw new Error("history " + r.status);
   const msgs = (await r.json()).messages || [];

@@ -2521,6 +2521,10 @@
       <div class="settings-tip">在 <a href="https://www.minimax.io/" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">MiniMax</a> 平台克隆好一个声音后会得到一个 Voice ID；填进来并启用，伴侣在语音通话里就会用这个克隆声音朗读（经你的后端 /relay/minimax/tts 转发，绕过浏览器 CORS）。</div>
 
       <div class="settings-section-label">AI 与记忆（后端存储 · Supabase）</div>
+      <label class="fld switch-row"><span>聊天走后端（记忆入库）
+        <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">开启后消息存进 Supabase、超阈值自动压缩成长期记忆、上下文由后端按「系统提示词 + 记忆摘要 + 近几轮」组装；仍然是流式输出，打字机效果不丢。关掉则退回浏览器直连模型 + 本机历史（不写数据库）。</span></span>
+        <input type="checkbox" id="apBackend">
+      </label>
       <label class="fld"><span>系统提示词（人格）</span><textarea id="apSys" rows="3" placeholder="你是一个温柔、细腻、懂我的伴侣……"></textarea></label>
       <label class="fld"><span>主模型</span><input id="apModel" type="text" placeholder="deepseek-chat / claude-3-5-sonnet-latest …" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>压缩用辅助模型</span><input id="apHelper" type="text" placeholder="deepseek-chat" autocomplete="off" spellcheck="false"></label>
@@ -2534,9 +2538,10 @@
         <button id="apSave" type="button" class="primary">保存设置</button>
         <button id="apTest" type="button">测试数据库</button>
       </div>
-      <div class="settings-tip">这些设置存在后端（Supabase 的 settings 表），换设备也在；对话走 <b>/app/chat</b>：
-      存消息 → 取历史 → 拼「系统提示词 + 记忆摘要 + 近几轮」→ 超阈值自动压缩 → 调主模型 → 存回复。
-      改完点 <b>「保存设置」</b>；点 <b>「测试数据库」</b> 看后端读写是否正常。</div>
+      <div class="settings-tip">这些设置存在后端（Supabase 的 settings 表），换设备也在；开启上面的开关后对话走 <b>/app/chat/stream</b>：
+      存消息 → 取历史 → 拼「系统提示词 + 记忆摘要 + 近几轮」→ 超阈值自动压缩 → 流式调主模型 → 存回复（SSE，逐字下发）。
+      改完点 <b>「保存设置」</b>；点 <b>「测试数据库」</b> 看后端读写是否正常。<br>
+      小提示：顶栏 ⋮ 里的「最大 Token / 记忆轮数 / 思考模式」会覆盖这里的对应参数（思考模式还会自动挑推理模型）。</div>
 
       <div class="settings-tip">保存并使用后，会立即以该连接对话。连接信息、API Key 都只存在本机浏览器里，不上传任何地方。<br>
       <b>「浏览器直连」</b>只在 DeepSeek 这类放行 CORS 的家能用；其余请选 <b>「☁ 云端」</b>，走后端转发就不会被拦。</div>
@@ -3625,7 +3630,8 @@ function renderQuick(){
     }
     hint.textContent = "当前：" + (a ? (connDisplayName(a) + " · " + (a.model || "-")) : "未选择连接") +
       " · 思考模式" + (q.thinking ? "开" : "关") + extra +
-      " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。";
+      " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。" +
+      (hasBackendChat() ? " 记忆存后端、超阈值自动压缩。" : " 历史只在本机（未开后端对话）。");
   }
 }
 function openQuick(){
@@ -3700,6 +3706,20 @@ function appBase(){
 /* /app/* 一律打后端的**根**（不是 /relay/<pid>）。直连/云端连接下 apiBase() 返回的是 "/relay"，
    那是同源路径、在 GitHub Pages 上必 404 —— 会话列表与历史以前就是死在这。 */
 function appUrl(path){ return appBase() + (path || ""); }
+
+/* ── 后端对话模式（记忆入库）──────────────────────────────────────────────
+   开启后：聊天走 后端 /app/chat/stream —— 消息落 Supabase、记忆自动压缩、
+   上下文三层组装都在后端做；但仍是 SSE 流式，打字机与「✦ thinking」块都不丢。
+   关掉则退回原来的「浏览器直连模型 + 本机历史」。 */
+const BACKEND_CHAT_KEY = "companion_backend_chat";
+function backendChatOn(){
+  try{ const v = localStorage.getItem(BACKEND_CHAT_KEY); return v === null ? true : v === "1"; }catch(_){ return true; }
+}
+function setBackendChat(on){
+  try{ localStorage.setItem(BACKEND_CHAT_KEY, on ? "1" : "0"); }catch(_){}
+}
+function hasBackendChat(){ return backendChatOn() && !!appBase(); }
+
 function apStatus(msg, kind){
   const el = $("#apStatus"); if (!el) return;
   el.textContent = msg || "";
@@ -3785,6 +3805,23 @@ async function testAppDb(){
 if ($("#apLoad")) $("#apLoad").addEventListener("click", () => loadAppSettings(true));
 if ($("#apSave")) $("#apSave").addEventListener("click", saveAppSettings);
 if ($("#apTest")) $("#apTest").addEventListener("click", testAppDb);
+/* 「聊天走后端」开关：存本机，立刻生效（下次发消息即走 /app/chat/stream） */
+if ($("#apBackend")){
+  const el = $("#apBackend");
+  el.checked = backendChatOn();
+  if (!appBase()){
+    el.disabled = true;
+    apStatus("还没有「云端后端地址」，无法开启后端对话（设置 → 云端后端）。", "err");
+  }
+  el.addEventListener("change", () => {
+    setBackendChat(el.checked);
+    resetServerHistoryCache();
+    apStatus(el.checked
+      ? "已开启后端对话 —— 消息会存进 Supabase，超阈值自动压缩记忆；聊天仍是流式，打字机与思考块都在。"
+      : "已关闭 —— 聊天改回浏览器直连模型 + 本机历史，不再写数据库。", "ok");
+    showToast(el.checked ? "后端对话已开启" : "后端对话已关闭");
+  });
+}
 
 /* 设置页 #themeSeg 分段控件 — 手动切 5 套主题,持久化,联动壁纸/theme-color */
 const THEME_KEY = "companion_theme";
@@ -4934,6 +4971,164 @@ async function directSend(text, conn, tempKey){
   return { id: humanId };
 }
 
+/* ════════════ 后端对话（记忆入库 · SSE 流式）════════════
+   走 /app/chat/stream：用户消息与回复都进 Supabase、超阈值自动压缩记忆、
+   上下文由后端三层组装。仍然是流式的（meta/delta/thinking/usage/done），
+   所以打字机效果与「✦ thinking」块都保留。 */
+function backendQuick(){
+  const qk = (typeof loadQuick === "function") ? loadQuick() : {};
+  return {
+    thinking: !!qk.thinking,
+    maxTokens: parseInt(qk.maxTokens, 10) || 1024,
+    memoryRounds: parseInt(qk.memoryRounds, 10) || 12
+  };
+}
+const THINKING_SYS = "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。";
+
+async function appChatStream(text, streamId, conn, onMeta){
+  const qk = backendQuick();
+  let model = (conn && conn.model) || "";
+  if (qk.thinking && typeof pickThinkingModel === "function") model = pickThinkingModel(conn, model);
+
+  const payload = { message: text, max_tokens: qk.maxTokens, max_context_rounds: qk.memoryRounds };
+  const sid = effectiveApiSession();
+  if (sid) payload.session_id = sid;
+  if (model) payload.main_model = model;
+  const persona = ((conn && conn.persona) || "").trim();
+  if (persona) payload.system_prompt = qk.thinking ? (persona + "\n\n" + THINKING_SYS) : persona;
+  else if (qk.thinking) payload.system_prompt = THINKING_SYS;
+  if (conn && conn.temp != null) payload.temperature = conn.temp;
+
+  const r = await fetch(appUrl("/app/chat/stream"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok || !r.body){
+    let msg = "后端对话 HTTP " + r.status;
+    try{ const j = await r.json(); msg = (j.error && j.error.message) || j.detail || msg; }catch(_){}
+    throw new Error(msg);
+  }
+
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "", acc = "", think = "";
+  const out = { text: "", reasoning: "", model: model, sessionId: "", assistantId: null, usage: null, error: "" };
+  while (true){
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n"); buf = lines.pop() || "";
+    for (const line of lines){
+      const t = line.trim();
+      if (!t.startsWith("data:")) continue;
+      const raw = t.slice(5).trim();
+      if (!raw || raw === "[DONE]") continue;
+      let ev; try{ ev = JSON.parse(raw); }catch(_){ continue; }
+      if (ev.type === "meta"){
+        out.sessionId = ev.session_id || "";
+        out.model = ev.model || out.model;
+        if (ev.compressed) showToast("上下文超阈值，已自动压缩早期记忆");
+        if (onMeta) onMeta(ev);
+      }else if (ev.type === "delta"){
+        acc += ev.text || "";
+        queueStreamDelta({ type:"reply_delta", stream_id: streamId, text: acc });
+      }else if (ev.type === "thinking"){
+        think += ev.text || "";
+        queueStreamDelta({ type:"thinking_delta", stream_id: streamId, text: think });
+      }else if (ev.type === "usage"){
+        out.usage = ev.usage;
+      }else if (ev.type === "done"){
+        out.text = (ev.reply != null && ev.reply !== "") ? ev.reply : acc;
+        out.reasoning = (ev.reasoning != null && ev.reasoning !== "") ? ev.reasoning : think;
+        out.assistantId = ev.assistant_message_id;
+        out.usage = ev.usage || out.usage;
+        out.sessionId = ev.session_id || out.sessionId;
+        if (ev.error) out.error = ev.error;
+      }else if (ev.type === "error"){
+        throw new Error(ev.message || "后端对话出错");
+      }
+    }
+  }
+  if (!out.text) out.text = acc;
+  if (!out.reasoning) out.reasoning = think;
+  if (out.error) throw new Error(out.error);
+  return out;
+}
+
+/* 思考块排在回复正前方：拿回复 id 减 0.5 当合成 id，天然排在它前面且不与真实 id 冲突 */
+function thinkingIdFor(assistantId){
+  const n = Number(assistantId);
+  return Number.isFinite(n) && n > 0 ? (n - 0.5) : ("think-" + assistantId);
+}
+/* 后端把思维链存在回复行的 reasoning 列里 → 拆成独立的 thinking 气泡，刷新后思考块也还在 */
+function expandBackendThinking(msgs){
+  const out = [];
+  (msgs || []).forEach((m) => {
+    const meta = m.meta || {};
+    const rea = meta.reasoning;
+    if (m.from === "ai" && m.kind === "reply" && rea && String(rea).trim()){
+      out.push({ id: thinkingIdFor(m.id), ts: m.ts, from: "ai", kind: "thinking",
+                 text: String(rea).trim(), meta: {} });
+      const nm = Object.assign({}, m, { meta: Object.assign({}, meta) });
+      delete nm.meta.reasoning;
+      out.push(nm);
+    }else{
+      out.push(m);
+    }
+  });
+  return out;
+}
+
+async function backendSend(text, tempKey){
+  const conn = activeConn();
+  showTyping();
+  const streamId = "bk-" + Date.now();
+  let userKey = tempKey, out = null, errMsg = "";
+  try{
+    out = await appChatStream(text, streamId, conn, (ev) => {
+      if (ev.user_message_id == null) return;
+      userKey = msgKey(ev.user_message_id);
+      const cur = messageByKey.get(msgKey(tempKey));
+      confirmOptimistic(tempKey, userKey, Object.assign({}, cur || { text: text, ts: new Date().toISOString(),
+        from: "human", kind: "user", meta: {} }, { id: userKey, status: "sent" }));
+    });
+  }catch(err){
+    errMsg = (err && err.message) || String(err);
+  }
+  hideTyping();
+
+  if (errMsg){
+    setMessage({ id: userKey, ts: new Date().toISOString(), from: "human", kind: "user",
+                 text: text, meta: {}, status: "failed" });
+    showError("后端对话出错 —— " + errMsg + "\n\n（消息已存进数据库，回复失败。可在设置里关掉「后端对话」临时改走浏览器直连。）");
+    showToast("后端对话出错，详情见下方红色提示条");
+    return { id: userKey };
+  }
+
+  /* 收尾：先把流式草稿气泡换成真实消息（草稿 key 是 stream:*，必须显式 done 才清） */
+  queueStreamDelta({ type: "reply_delta", stream_id: streamId, text: out.text, done: true });
+  queueStreamDelta({ type: "thinking_delta", stream_id: streamId, text: out.reasoning, done: true });
+
+  const thinkText = (out.reasoning || "").trim();
+  if (thinkText){
+    setMessage({ id: thinkingIdFor(out.assistantId), ts: new Date().toISOString(), from: "ai",
+                 kind: "thinking", text: thinkText, meta: {}, status: "sent" }, { render: true });
+  }
+  setMessage({ id: (out.assistantId != null ? out.assistantId : ("bk-" + Date.now())),
+               ts: new Date().toISOString(), from: "ai", kind: "reply", text: out.text,
+               meta: { backend: true, model: out.model, usage: out.usage }, status: "sent" }, { render: true });
+
+  /* 后端可能刚建了新会话 → 同步侧边栏，之后的历史都从库里读 */
+  if (out.sessionId && (!activeApiSession || activeApiSession === LEGACY_SESSION_ID)){
+    activeApiSession = out.sessionId;
+    try{ localStorage.setItem(SESSION_PICK_KEY, out.sessionId); }catch(_){}
+    resetServerHistoryCache();
+    loadSessions();
+  }
+  return { id: userKey };
+}
+
 /* ════════════ API 层 ════════════ */
 function authHeaders(){ return { "Authorization": "Bearer " + secret }; }
 
@@ -4947,6 +5142,9 @@ function effectiveApiSession(){
 }
 function msgInActiveSession(m){
   const meta = (m && m.meta) || {};
+  /* 后端对话：/app/history 已经按 session_id 过滤过了，行里没有 api_session 标记，
+     若还按标记过滤会把整个历史都滤没。 */
+  if (hasBackendChat()) return true;
   if (!activeApiSession || activeApiSession === LEGACY_SESSION_ID) return !meta.api_session;
   return meta.api_session === activeApiSession;
 }
@@ -4975,7 +5173,7 @@ function setSessionPopover(open){
   if (sessionPop) sessionPop.hidden = !open;
 }
 async function loadSessions(){
-  if (isMock() || !secret){ activeApiSession = LEGACY_SESSION_ID; renderSessionList(); return; }
+  if (isMock() || (!secret && !hasBackendChat())){ activeApiSession = LEGACY_SESSION_ID; renderSessionList(); return; }
   try{
     const r = await fetch(appUrl("/app/sessions"), { headers: authHeaders() });
     if (!r.ok) throw new Error("sessions " + r.status);
@@ -5100,22 +5298,25 @@ function mergeServerHistoryCache(msgs){
   return serverHistoryCache;
 }
 async function apiHistory({ since = 0, beforeId = null, latest = false, limit = 200 } = {}){
-  const d = useDirect(); if (d) return directHistory(d);
-  if (isMock()) return Mock.history({ since, beforeId, latest, limit });
+  const bc = hasBackendChat();
+  const d = useDirect(); if (d && !bc) return directHistory(d);
+  if (isMock() && !bc) return Mock.history({ since, beforeId, latest, limit });
   ensureServerHistoryCache();
   const params = new URLSearchParams({ since: String(since || 0), limit: String(limit) });
-  if (activeApiSession) params.set("session_id", activeApiSession);
+  const sid = (activeApiSession && activeApiSession !== LEGACY_SESSION_ID) ? activeApiSession : "";
+  if (sid) params.set("session_id", sid);
   const r = await fetch(appUrl("/app/history") + "?" + params.toString(), { headers: authHeaders() });
   if (r.status === 401){ handle401(); throw new Error("401"); }
   if (!r.ok) throw new Error("history " + r.status);
-  const msgs = (await r.json()).messages || [];
+  const raw = (await r.json()).messages || [];
+  const msgs = bc ? expandBackendThinking(raw) : raw;   // 后端的 reasoning 列 → 拆出「✦ thinking」气泡
   mergeServerHistoryCache(msgs);
   return msgs;
 }
 async function loadCompleteServerHistory(){
-  const d = useDirect(); if (d) return directHistory(d);
+  const d = useDirect(); if (d && !hasBackendChat()) return directHistory(d);
   ensureServerHistoryCache();
-  if (isMock()) return Mock.history({ latest:true, limit:1000000 });
+  if (isMock() && !hasBackendChat()) return Mock.history({ latest:true, limit:1000000 });
   if (serverHistoryComplete) return serverHistoryCache.slice();
   if (serverHistoryPromise) return serverHistoryPromise;
   serverHistoryPromise = (async () => {
@@ -5133,19 +5334,19 @@ async function loadCompleteServerHistory(){
   return serverHistoryPromise;
 }
 async function apiLatestHistory(limit = HISTORY_PAGE_SIZE){
-  const d = useDirect(); if (d) return directHistory(d).slice(-limit);
-  if (isMock()) return apiHistory({ latest:true, limit });
+  const d = useDirect(); if (d && !hasBackendChat()) return directHistory(d).slice(-limit);
+  if (isMock() && !hasBackendChat()) return apiHistory({ latest:true, limit });
   const all = await loadCompleteServerHistory();
   return sessionFiltered(all).slice(-limit);
 }
 async function apiOlderHistory(beforeId, limit = HISTORY_PAGE_SIZE){
-  const d = useDirect(); if (d){ const all = directHistory(d); return all.filter((m) => msgNum(m.id) < msgNum(beforeId)).slice(-limit); }
+  const d = useDirect(); if (d && !hasBackendChat()){ const all = directHistory(d); return all.filter((m) => msgNum(m.id) < msgNum(beforeId)).slice(-limit); }
   const all = await loadCompleteServerHistory();
   return sessionFiltered(all).filter((m) => msgNum(m.id) < msgNum(beforeId)).slice(-limit);
 }
 async function apiNewerHistory(since, limit = 200){
-  const d = useDirect(); if (d) return directHistory(d).filter((m) => msgNum(m.id) > msgNum(since));
-  if (isMock()) return apiHistory({ since, limit });
+  const d = useDirect(); if (d && !hasBackendChat()) return directHistory(d).filter((m) => msgNum(m.id) > msgNum(since));
+  if (isMock() && !hasBackendChat()) return apiHistory({ since, limit });
   const rows = [];
   let cursor = since || 0;
   for (let guard = 0; guard < 50; guard++){
@@ -5160,6 +5361,7 @@ async function apiNewerHistory(since, limit = 200){
 }
 
 async function apiSend(text, attachments, tempKey){
+  if (hasBackendChat() && !isMock()) return backendSend(text, tempKey);
   const d = useDirect(); if (d) return directSend(text, d, tempKey);
   if (isMock()) return Mock.send(text);
   const payload = { text: text || "" };
@@ -5261,6 +5463,9 @@ function openStream(){
   markStreamEvent();
   const d = useDirect();
   if (d){                       // 直连模式无服务端推送:标记在线即可
+    connected = true; markStreamEvent(); setConn("online"); return;
+  }
+  if (hasBackendChat()){        // 后端对话：聊天走 /app/chat/stream 一问一答，没有长连接推送通道
     connected = true; markStreamEvent(); setConn("online"); return;
   }
   if (isMock()){
@@ -7273,7 +7478,7 @@ function startRealtime(){
 
   if (backfillTimer) clearInterval(backfillTimer);
   backfillTimer = setInterval(() => {
-    if (!document.hidden && secret) backfill();
+    if (!document.hidden && (secret || hasBackendChat())) backfill();
   }, BACKFILL_MS);
 
   // healthz 兜底:stream 没连上时也能反映在线/离线
@@ -7311,11 +7516,13 @@ async function init(){
   if (rl) secret = rl.key;                 // 中转站模式:用连接里的密钥
   if (isMock() && !secret) secret = "mock";   // 演示模式：跳过开屏连接密钥，直接进聊天
   pendingFakeNotice = await purgeFakeMessages();   // 清掉旧版演示模式写进来的假消息
-  if (!secret && !useDirect()){ showLogin(); return; }
+  if (!secret && !useDirect() && !hasBackendChat()){ showLogin(); return; }
   await loadSessions();
   loadBrain();
   let showedCache = false;
-  const cached = await readCachedMessages();
+  /* 后端对话模式下，本机 IndexedDB 缓存不再是权威来源（历史以后端为准），
+     别再把它读出来和库里的记录混在一起。 */
+  const cached = hasBackendChat() ? [] : await readCachedMessages();
   if (cached.length){
     startChat(sessionFiltered(cached), { connect:false, fromCache:true });
     showedCache = true;
@@ -7330,14 +7537,14 @@ async function init(){
       startChat(msgs);
     }
   }catch(err){
-    if (String(err.message) !== "401" && !showedCache && !useDirect()) showLogin("连不上,请确认密钥。");
-    else if (showedCache || useDirect()) startRealtime();
+    if (String(err.message) !== "401" && !showedCache && !useDirect() && !hasBackendChat()) showLogin("连不上,请确认密钥。");
+    else if (showedCache || useDirect() || hasBackendChat()) startRealtime();
   }
 }
 
 /* 回前台重同步:iOS 后台会挂起连接 */
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible" || !secret) return;
+  if (document.visibilityState !== "visible" || (!secret && !hasBackendChat())) return;
   backfill();
   refreshContextStatus();
   if (!es || es.readyState !== 1 || Date.now() - lastStreamEventAt > STREAM_STALE_MS) openStream();

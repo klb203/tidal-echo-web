@@ -3562,6 +3562,14 @@ function modelsForConn(c){
   if (c.model) push(c.model);
   return out;
 }
+/* 思考模式用哪个模型：当前模型已带推理就用它，否则在连接可用模型里找一个「推理款」 */
+function pickThinkingModel(conn, baseModel){
+  const isReasoner = (m) => /reasoner|reason|thinking|deepseek-r1|(^|[/\-_])r1([\-_/]|$)|(^|[/\-_])o[13]([\-_/]|$)/i.test(m || "");
+  if (isReasoner(baseModel)) return baseModel;
+  const models = modelsForConn(conn);
+  const cand = models.find((m) => isReasoner(m));
+  return cand || baseModel;
+}
 function populateQuickModel(){
   const sel = $("#qkModel"); if (!sel) return;
   const a = activeConn();
@@ -3588,8 +3596,14 @@ function renderQuick(){
   const hint = $("#qkHint");
   if (hint){
     const a = activeConn();
+    let extra = "";
+    if (q.thinking && a){
+      const tm = pickThinkingModel(a, a.model);
+      extra = (tm && tm !== a.model) ? (" · 思考用模型：" + tm) : " · 该模型本身支持推理";
+    }
     hint.textContent = "当前：" + (a ? (connDisplayName(a) + " · " + (a.model || "-")) : "未选择连接") +
-      " · 思考模式" + (q.thinking ? "开" : "关") + " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。";
+      " · 思考模式" + (q.thinking ? "开" : "关") + extra +
+      " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。";
   }
 }
 function openQuick(){
@@ -4657,7 +4671,11 @@ async function deepseekHealth(conn){
 async function deepseekStream(userText, streamId, conn){
   const base = connChatUrl(conn);
   const pv = providerOf(conn) || {};
-  const model = conn.model || (pv.models && pv.models[0]) || "deepseek-chat";
+  /* 快捷设置：记忆轮数 / 思考模式 / 最大 token（顶栏 ⋮ 里调）*/
+  const qk = (typeof loadQuick === "function") ? loadQuick() : { maxTokens: 1024, memoryRounds: 12, thinking: false };
+  const baseModel = conn.model || (pv.models && pv.models[0]) || "deepseek-chat";
+  /* 思考模式：优先用能输出推理的模型（如 deepseek-reasoner），这样聊天里才看得到「思考」*/
+  const model = qk.thinking ? (pickThinkingModel(conn, baseModel) || baseModel) : baseModel;
   const isCloud = !!(conn && (conn.cloud || isCloudPv(conn.provider)));
   /* connChatUrl() 返回的**已经是**完整对话地址(以 /chat/completions 结尾)，
      这里绝不能再拼一次，否则会变成 .../chat/completions/chat/completions → 404。
@@ -4673,8 +4691,6 @@ async function deepseekStream(userText, streamId, conn){
     "\n模型：" + model;
   if (!chatUrl) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
     "\n\n修法：设置 → 云端后端，填 https://tidal-echo-relay-1-vudb.onrender.com，再点「保存」");
-  /* 快捷设置：记忆轮数 / 思考模式 / 最大 token（底部栏 ⋮ 里调）*/
-  const qk = (typeof loadQuick === "function") ? loadQuick() : { maxTokens: 1024, memoryRounds: 12, thinking: false };
   const sys = [];
   if (conn.persona && conn.persona.trim()) sys.push({ role: "system", content: conn.persona });
   if (qk.thinking) sys.push({ role: "system", content: "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。" });
@@ -4711,7 +4727,7 @@ async function deepseekStream(userText, streamId, conn){
   }
   const reader = res.body.getReader();
   const dec = new TextDecoder();
-  let buf = "", acc = "";
+  let buf = "", acc = "", think = "";
   while (true){
     const { done, value } = await reader.read();
     if (done) break;
@@ -4724,13 +4740,18 @@ async function deepseekStream(userText, streamId, conn){
       if (data === "[DONE]") continue;
       try{
         const j = JSON.parse(data);
-        const delta = (j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content) || "";
+        const d0 = (j.choices && j.choices[0] && j.choices[0].delta) || {};
+        /* 推理模型(deepseek-reasoner 等)会把推理过程放在 reasoning_content / reasoning */
+        const rsn = d0.reasoning_content || d0.reasoning || "";
+        if (rsn){ think += rsn; queueStreamDelta({ type: "thinking_delta", stream_id: streamId, text: think }); }
+        const delta = d0.content || "";
         if (delta){ acc += delta; queueStreamDelta({ type: "reply_delta", stream_id: streamId, text: acc }); }
       }catch(_){ /* 跳过心跳/非 JSON 帧 */ }
     }
   }
+  if (think){ queueStreamDelta({ type: "thinking_delta", stream_id: streamId, text: think, done: true }); }
   queueStreamDelta({ type: "reply_delta", stream_id: streamId, text: acc, done: true });
-  return acc;
+  return { text: acc, reasoning: think, model };
 }
 
 let cloudAutoSwitchNotified = false;
@@ -4759,9 +4780,9 @@ async function directSend(text, conn, tempKey){
   saveDirectMessage(humanMsg, useConn);
   showTyping();
   const streamId = "ds-" + Date.now();
-  let reply = "";
+  let out = null;
   try{
-    reply = await deepseekStream(text, streamId, useConn);
+    out = await deepseekStream(text, streamId, useConn);
   }catch(err){
     hideTyping();
     const detail = (err && err.message) || String(err);
@@ -4771,8 +4792,18 @@ async function directSend(text, conn, tempKey){
     return { id: humanId };
   }
   hideTyping();
+  const result = (typeof out === "string") ? { text: out, reasoning: "" } : (out || { text: "", reasoning: "" });
+  /* 思考过程：先落一条 kind:"thinking" 的消息 —— 聊天里渲染成可展开的「✦ thinking」块，
+     排在回复上面。只有模型真返回了 reasoning_content 才会有（推理模型）。 */
+  if (result.reasoning && result.reasoning.trim()){
+    const thinkId = String(++last);
+    const thinkMsg = { id: thinkId, ts: new Date().toISOString(), from: "ai", kind: "thinking",
+                       text: result.reasoning.trim(), meta: {}, status: "sent" };
+    setMessage(thinkMsg, { render: true });
+    saveDirectMessage(thinkMsg, useConn);
+  }
   const aiId = String(++last);
-  const aiMsg = { id: aiId, ts: new Date().toISOString(), from: "ai", kind: "reply", text: reply, meta: {}, status: "sent" };
+  const aiMsg = { id: aiId, ts: new Date().toISOString(), from: "ai", kind: "reply", text: result.text, meta: {}, status: "sent" };
   setMessage(aiMsg, { render: true });
   saveDirectMessage(aiMsg, useConn);
   return { id: humanId };

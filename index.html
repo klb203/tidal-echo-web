@@ -1424,7 +1424,8 @@
 
   /* ══════════ 收藏馆（整页 · 三 Tab）══════════ */
   .fav-panel{
-    position: fixed; inset: 0; z-index: 160;
+    /* 195 = 和设置页/记忆页同级的「整页」层；必须 > 菜单的 190 */
+    position: fixed; inset: 0; z-index: 195;
     display:flex; flex-direction: column; justify-content: center;
     background: var(--bg);
   }
@@ -1531,7 +1532,8 @@
 
   /* ══════════ 主题美化 ══════════ */
   .th-panel{
-    position: fixed; inset: 0; z-index: 160;
+    /* 同上：从左侧边栏（菜单）点进来，必须盖住菜单 */
+    position: fixed; inset: 0; z-index: 195;
     background: var(--bg); display:flex; justify-content:center;
   }
   .th-panel.hidden{ display:none; }

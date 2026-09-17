@@ -2030,8 +2030,8 @@
 
   /* ── 记忆页 · 玻璃卡片体系（照设计稿）─────────────────────────────────
      磨砂面 + 发丝描边 + 顶部一道内高光；大号衬线数字当视觉重音。
-     全部用 --mg-* 令牌并只挂在 #memoryPanel 上，设置页一点不受影响。 */
-  #memoryPanel{
+     全部用 --mg-* 令牌并只挂在 .glass-scope 上，设置页一点不受影响。 */
+  .glass-scope{
     --mg-surface: rgba(255,255,255,.62);
     --mg-surface-2: rgba(255,255,255,.40);
     --mg-line: rgba(122,146,168,.16);
@@ -2042,14 +2042,14 @@
     --mg-heat: 122,148,176;
     --mg-warm: #c9895f;
   }
-  :root[data-theme="harbor"] #memoryPanel{
+  :root[data-theme="harbor"] .glass-scope{
     --mg-surface: rgba(255,255,255,.66);
     --mg-surface-2: rgba(255,255,255,.44);
     --mg-heat: 150,138,120;
     --mg-warm: #b0754a;
   }
-  #memoryPanel .settings-scroll{ gap: 15px; }
-  #memoryPanel .settings-head{ margin-bottom: 0; }
+  .glass-scope .settings-scroll{ gap: 15px; }
+  .glass-scope .settings-head{ margin-bottom: 0; }
   .mem-hero{ text-align: center; padding: 2px 0 8px; }
   .mem-hero-num{
     font-family: var(--font-en); font-weight: 500;
@@ -2116,44 +2116,44 @@
   .cal-legend{ display: inline-flex; gap: 3px; align-items: center; }
   .cal-legend i{ width: 10px; height: 10px; border-radius: 3px; display: block; }
   /* 记忆页里的折叠卡 / 条目：统一成同一套玻璃面 */
-  #memoryPanel .set-card{
+  .glass-scope .set-card{
     border-radius: 20px; background: var(--mg-surface); border: 1px solid var(--mg-line);
     box-shadow: var(--mg-shadow), inset 0 1px 0 var(--mg-hi);
     -webkit-backdrop-filter: blur(18px) saturate(1.12); backdrop-filter: blur(18px) saturate(1.12);
   }
-  #memoryPanel .set-card.open{ background: var(--mg-surface); }
-  #memoryPanel .set-card-head{ padding: 15px 16px; gap: 11px; }
-  #memoryPanel .set-card-ico{
+  .glass-scope .set-card.open{ background: var(--mg-surface); }
+  .glass-scope .set-card-head{ padding: 15px 16px; gap: 11px; }
+  .glass-scope .set-card-ico{
     width: 32px; height: 32px; border-radius: 11px;
     background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
     color: var(--accent);
   }
-  #memoryPanel .set-card-name{ font-size: 14px; }
-  #memoryPanel .lib-item{
+  .glass-scope .set-card-name{ font-size: 14px; }
+  .glass-scope .lib-item{
     border-radius: 16px; padding: 12px 13px;
     background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
     box-shadow: inset 0 1px 0 var(--mg-hi);
   }
-  #memoryPanel .lib-item + .lib-item{ margin-top: 9px; }
-  #memoryPanel .li-title{ font-size: 14px; font-weight: 500; }
-  #memoryPanel .li-body{ font-size: 12.5px; line-height: 1.6; }
-  #memoryPanel .li-kind{
+  .glass-scope .lib-item + .lib-item{ margin-top: 9px; }
+  .glass-scope .li-title{ font-size: 14px; font-weight: 500; }
+  .glass-scope .li-body{ font-size: 12.5px; line-height: 1.6; }
+  .glass-scope .li-kind{
     display: inline-block; margin-top: 6px; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
     border: 1px solid var(--mg-edge); color: var(--text-soft); background: var(--mg-surface);
     vertical-align: middle;
   }
-  #memoryPanel .li-ts{ display: inline-block; margin: 6px 0 0 8px; vertical-align: middle; }
-  #memoryPanel .nf-chip{ border-radius: 999px; background: var(--mg-surface-2); border-color: var(--mg-edge); }
-  #memoryPanel .nf-chip.on{ background: var(--accent); border-color: transparent; }
-  #memoryPanel .nf-box, #memoryPanel .nf-md{
+  .glass-scope .li-ts{ display: inline-block; margin: 6px 0 0 8px; vertical-align: middle; }
+  .glass-scope .nf-chip{ border-radius: 999px; background: var(--mg-surface-2); border-color: var(--mg-edge); }
+  .glass-scope .nf-chip.on{ background: var(--accent); border-color: transparent; }
+  .glass-scope .nf-box, .glass-scope .nf-md{
     border-color: var(--mg-edge); background: var(--mg-surface-2); border-radius: 14px;
   }
-  #memoryPanel .galaxy-card{ border-radius: 20px; }
+  .glass-scope .galaxy-card{ border-radius: 20px; }
 
   /* ══ 记忆页 · 胶囊按钮（参考稿那一排「批量总结 / 导入·清洗 / 备份」）════════
      先把面板内所有按钮默认成胶囊，再把「不该长成胶囊的」逐个豁免（顺序要紧）。 */
-  #memoryPanel button,
-  #memoryPanel select.pill-select{
+  .glass-scope button,
+  .glass-scope select.pill-select{
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     padding: 9px 15px; border-radius: 999px;
     border: 1px solid var(--mg-edge);
@@ -2163,40 +2163,40 @@
     cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
     transition: background .18s ease, box-shadow .18s ease, transform .12s ease, color .18s ease;
   }
-  #memoryPanel select.pill-select{ justify-content: flex-start; padding-right: 10px; }
-  #memoryPanel button:hover{ background: #fff; box-shadow: 0 4px 14px rgba(70,92,108,.11); }
-  #memoryPanel button:active{ transform: scale(.97); }
-  #memoryPanel button.primary{
+  .glass-scope select.pill-select{ justify-content: flex-start; padding-right: 10px; }
+  .glass-scope button:hover{ background: #fff; box-shadow: 0 4px 14px rgba(70,92,108,.11); }
+  .glass-scope button:active{ transform: scale(.97); }
+  .glass-scope button.primary{
     background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600;
     box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 26%, transparent);
   }
-  #memoryPanel button.primary:hover{ filter: brightness(1.06); background: var(--accent); }
-  #memoryPanel button[disabled]{ opacity: .55; pointer-events: none; }
-  #memoryPanel button svg{ width: 15px; height: 15px; flex: 0 0 auto; }
+  .glass-scope button.primary:hover{ filter: brightness(1.06); background: var(--accent); }
+  .glass-scope button[disabled]{ opacity: .55; pointer-events: none; }
+  .glass-scope button svg{ width: 15px; height: 15px; flex: 0 0 auto; }
   /* 豁免：圆形图标按钮 / 卡头 / 日期 chip / 银河角标 / 条目小图标 */
-  #memoryPanel .settings-back, #memoryPanel .settings-close{
+  .glass-scope .settings-back, .glass-scope .settings-close{
     width: 38px; height: 38px; padding: 0; border-radius: 50%;
     border: none; background: var(--mg-surface); box-shadow: none;
   }
-  #memoryPanel .cal-nav button{
+  .glass-scope .cal-nav button{
     width: 30px; height: 30px; padding: 0; border-radius: 50%;
     border: none; background: transparent; box-shadow: none; font-size: 17px;
   }
-  #memoryPanel .set-card-head{
+  .glass-scope .set-card-head{
     padding: 15px 16px; border-radius: 20px 20px 0 0;
     border: none; background: transparent; box-shadow: none; transform: none !important;
   }
-  #memoryPanel .gx-open{
+  .glass-scope .gx-open{
     padding: 6px 11px; font-size: 11.5px;
     background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2);
     color: #f3eeff; box-shadow: none; backdrop-filter: blur(6px);
   }
-  #memoryPanel .gx-open:hover{ background: rgba(255,255,255,.2); }
-  #memoryPanel .nf-chip{
+  .glass-scope .gx-open:hover{ background: rgba(255,255,255,.2); }
+  .glass-scope .nf-chip{
     padding: 6px 11px; font-size: 12px; border-radius: 999px; box-shadow: none;
     background: var(--mg-surface); border-color: var(--mg-edge);
   }
-  #memoryPanel .nf-chip.on{ background: var(--accent); border-color: transparent; color: var(--accent-fg); }
+  .glass-scope .nf-chip.on{ background: var(--accent); border-color: transparent; color: var(--accent-fg); }
 
   /* ══ 记忆页 · 档案室（年份文件夹 → 月份 → TIME LOGS 条目）════════════════
      结构照参考稿：顶部总字数/总条目 + 面包屑，下面是三级下钻，条目卡
@@ -2216,9 +2216,9 @@
     max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .arc-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
-  /* ⚠️ 下面这些必须带 #memoryPanel：上面的胶囊规则是 `#memoryPanel button`（0,1,1 里 id 占优），
+  /* ⚠️ 下面这些必须带 .glass-scope：上面的胶囊规则是 `.glass-scope button`（0,1,1 里 id 占优），
      只写 `.arc-card` 会被它盖掉 —— 卡片会被排成一行、圆角被改成 999px（实测踩过）。 */
-  #memoryPanel .arc-card{
+  .glass-scope .arc-card{
     position: relative; display: block; text-align: left;
     padding: 15px 14px 14px; border-radius: 18px;
     background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
@@ -2227,8 +2227,8 @@
     /* ⚠️ 还要显式复位 nowrap：grid 子项在 nowrap 下会撑破列宽 → 整页横向滚动 */
     white-space: normal; min-width: 0; overflow: hidden;
   }
-  #memoryPanel .arc-card:hover{ background: var(--mg-surface); }
-  #memoryPanel .arc-card .arc-ico{ margin-bottom: 2px; }
+  .glass-scope .arc-card:hover{ background: var(--mg-surface); }
+  .glass-scope .arc-card .arc-ico{ margin-bottom: 2px; }
   .arc-ico{
     width: 40px; height: 40px; border-radius: 13px;
     display: flex; align-items: center; justify-content: center;
@@ -2282,12 +2282,12 @@
     background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text-soft);
   }
   .arc-acts{ position: absolute; right: 10px; top: 10px; display: flex; gap: 1px; }
-  #memoryPanel .arc-act{
+  .glass-scope .arc-act{
     width: 28px; height: 28px; padding: 0; border: none; border-radius: 9px;
     background: transparent; box-shadow: none; color: var(--mg-dim);
   }
-  #memoryPanel .arc-act:hover{ background: var(--row-press); color: var(--text); box-shadow: none; }
-  #memoryPanel .arc-eye{ padding: 0; }
+  .glass-scope .arc-act:hover{ background: var(--row-press); color: var(--text); box-shadow: none; }
+  .glass-scope .arc-eye{ padding: 0; }
   .arc-act svg{ width: 15px; height: 15px; }
   .arc-title{ font-size: 13.5px; font-weight: 600; color: var(--text); margin-top: 9px; cursor: pointer; }
   .arc-text{
@@ -2512,6 +2512,73 @@
   .quick-row input[type="checkbox"]{ width:22px; height:22px; flex:0 0 auto; accent-color: var(--accent, #7aa2ff); cursor:pointer; }
   .quick-hint{ font-size:11px; color: var(--text-faint); line-height:1.55; padding:6px 2px 0; }
 
+
+  /* ══ 记忆宫殿（Memory Palace）════════════════════════════════════════════
+     七房间仿脑结构 + 门牌 + 混合召回。玻璃卡片沿用 .glass-scope 那套，
+     这里只加房间卡 / 命中卡 / 门牌条 / 水位线这几个专属件。 */
+  .pal-acts{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pal-presets{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pal-presets button{ font-size: 12px; padding: 6px 12px; }
+  .pal-presets button.on{ background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600; }
+  .pal-status{ font-size: 11.5px; color: var(--mg-dim); line-height: 1.7; margin-top: 10px; white-space: pre-wrap; }
+
+  .pal-rooms{ display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 14px; }
+  /* ⚠️ 一定要带 .glass-scope：`.glass-scope button`（0,1,1）会盖掉纯类选择器（0,1,0），
+     房间卡会被排成一行、图标被 nowrap 挤出卡片（探针实测 left=-43）。 */
+  .glass-scope .pal-room{
+    position: relative; display: block; text-align: left; padding: 13px 13px 12px;
+    border-radius: 17px; background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+    box-shadow: inset 0 1px 0 var(--mg-hi); cursor: pointer;
+    white-space: normal; min-width: 0; overflow: hidden; transform: none !important;
+  }
+  .glass-scope .pal-room:hover{ background: var(--mg-surface); }
+  .glass-scope .pal-room.on{ box-shadow: inset 0 0 0 1.6px var(--pal-c, var(--accent)); }
+  .pal-room .pr-ico{ width: 34px; height: 34px; border-radius: 11px; display: flex;
+    align-items: center; justify-content: center; background: rgba(140,160,186,.14); color: var(--pal-c, var(--text-soft)); }
+  .pal-room .pr-ico svg{ width: 19px; height: 19px; }
+  .pal-room .pr-n{ font-size: 13.5px; font-weight: 600; color: var(--text); margin-top: 10px; }
+  .pal-room .pr-brain{ font-size: 10.5px; color: var(--mg-dim); margin-top: 2px; letter-spacing: .02em; }
+  .pal-room .pr-desc{ font-size: 11px; color: var(--text-soft); margin-top: 7px; line-height: 1.5; }
+  .pal-room .pr-cnt{ position: absolute; right: 12px; top: 12px; font-size: 11px; padding: 3px 9px;
+    border-radius: 999px; background: var(--mg-surface); border: 1px solid var(--mg-edge); color: var(--text-soft); }
+  .pal-room .pr-bar{ height: 3px; border-radius: 3px; margin-top: 9px; background: rgba(140,160,186,.16); overflow: hidden; }
+  .pal-room .pr-bar i{ display: block; height: 100%; background: var(--pal-c, var(--accent)); opacity: .55; }
+  .pal-room .pr-decay{ font-size: 10px; color: var(--mg-dim); margin-top: 5px; }
+
+  .pal-hit{ position: relative; margin-top: 10px; padding: 12px 13px; border-radius: 15px;
+    background: var(--mg-surface); border: 1px solid var(--mg-edge); }
+  .pal-hit .ph-head{ display: flex; align-items: center; gap: 8px; }
+  .pal-hit .ph-room{ font-size: 11.5px; font-weight: 600; }
+  .pal-hit .ph-date{ font-size: 11px; color: var(--mg-dim); }
+  .pal-hit .ph-score{ margin-left: auto; font-family: var(--font-en); font-size: 15px; color: var(--text); }
+  .pal-hit .ph-text{ font-size: 13px; line-height: 1.7; color: var(--text); margin-top: 8px; }
+  .pal-hit .ph-bars{ display: flex; gap: 4px; margin-top: 9px; }
+  .pal-hit .ph-bars i{ flex: 1 1 auto; height: 3px; border-radius: 2px; background: rgba(140,160,186,.16); overflow: hidden; }
+  .pal-hit .ph-bars i b{ display: block; height: 100%; background: var(--pal-c, var(--accent)); opacity: .6; }
+  .pal-hit .ph-why{ font-size: 10.5px; color: var(--mg-dim); margin-top: 7px; }
+  .pal-rum{ margin-top: 12px; padding: 12px 13px; border-radius: 15px;
+    background: rgba(var(--mg-heat), .10); border: 1px dashed var(--mg-edge);
+    font-size: 12.5px; line-height: 1.7; color: var(--text-soft); }
+
+  .pal-plate{ margin-top: 12px; padding: 13px 14px; border-radius: 16px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge); }
+  .pal-plate .pp-head{ display: flex; align-items: center; gap: 9px; }
+  .pal-plate .pp-title{ font-size: 13.5px; font-weight: 600; color: var(--text); }
+  .pal-plate .pp-cap{ font-size: 11px; color: var(--mg-dim); }
+  .pal-plate .pp-acts{ margin-left: auto; display: flex; gap: 4px; }
+  .pal-plate ul{ margin: 10px 0 0; padding: 0 0 0 2px; list-style: none; }
+  .pal-plate li{ position: relative; font-size: 13px; line-height: 1.65; color: var(--text);
+    padding: 4px 30px 4px 14px; margin-top: 3px; border-radius: 9px; }
+  .pal-plate li::before{ content: ""; position: absolute; left: 3px; top: 12px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--mg-dim); }
+  .pal-plate li:hover{ background: var(--row-press); }
+  .pal-plate li .pp-del{ position: absolute; right: 2px; top: 2px; }
+  .pal-plate .pp-empty{ font-size: 12px; color: var(--mg-dim); margin-top: 9px; }
+  .pal-plate .pp-add{ display: flex; gap: 7px; margin-top: 10px; }
+  .pal-plate .pp-add input{ flex: 1 1 auto; min-width: 0; }
+  .pal-chunk{ display: flex; gap: 9px; padding: 9px 0; border-bottom: 1px solid var(--mg-edge); font-size: 12px; color: var(--text-soft); }
+  .pal-chunk:last-child{ border-bottom: none; }
+  .pal-chunk b{ font-family: var(--font-en); color: var(--mg-dim); font-weight: 500; flex: 0 0 auto; }
 </style>
 </head>
 <body>
@@ -2820,6 +2887,12 @@
           <span class="menu-copy"><span class="menu-name">Memory</span><span class="menu-sub">The echoes we keep.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="palace">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.2 12 3.6l8.5 6.6"/><path d="M5.4 11.4V20h13.2v-8.6"/><path d="M9.6 20v-5.1h4.8V20"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">Palace</span><span class="menu-sub">Seven rooms of memory.</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="tides">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/><path d="M3 13c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/><path d="M3 17.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/></svg></span>
           <span class="menu-dot"></span>
@@ -3083,7 +3156,7 @@
 </div>
 
 <!-- ── Memory（记忆）· 从 hub 菜单「Memory」进入 ── -->
-<div class="settings-panel hidden" id="memoryPanel" role="dialog" aria-modal="true" aria-label="记忆">
+<div class="settings-panel hidden glass-scope" id="memoryPanel" role="dialog" aria-modal="true" aria-label="记忆">
   <div class="settings-page">
     <div class="settings-scroll">
       <div class="settings-head">
@@ -3199,6 +3272,98 @@
 
       <!-- ③ 记忆库分区卡（JS 生成） -->
       <div id="libCards" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 记忆宫殿（长期内置记忆库 · 七房间 + 门牌 + 混合召回）── -->
+<div class="settings-panel hidden glass-scope" id="palacePanel" role="dialog" aria-modal="true" aria-label="记忆宫殿">
+  <div class="settings-page">
+    <div class="settings-scroll">
+      <div class="settings-head">
+        <button class="settings-back" id="palaceBack" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button class="settings-close" id="palaceClose" type="button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="mem-hero">
+        <div class="mem-hero-num" id="palCount">—</div>
+        <div class="mem-hero-sub" id="palSub">记忆宫殿 · 七个房间</div>
+      </div>
+
+      <!-- ① 水位线 + 动作 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">水位线</div>
+            <div class="mg-sub" id="palWlSub">—</div>
+          </div>
+          <span class="mg-tag" id="palPreset">—</span>
+        </div>
+        <div class="pal-presets" id="palPresets"></div>
+        <div class="pal-acts">
+          <button id="palExtract" type="button" class="primary">整理最近的对话</button>
+          <button id="palExtractForce" type="button">强制整理一批</button>
+          <button id="palMaintain" type="button">维护五步</button>
+          <button id="palPlatesRefresh" type="button">整理门牌</button>
+          <button id="palRefresh" type="button">刷新</button>
+        </div>
+        <div class="pal-status" id="palStatus"></div>
+      </section>
+
+      <!-- ② 召回 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">召回</div>
+            <div class="mg-sub">向量 0.7 + 关键词 0.3 → 房间权重 → 扩散激活 → 反刍</div>
+          </div>
+        </div>
+        <div class="model-row" style="margin-top:13px">
+          <input id="palQ" class="nf-box" style="min-height:auto;padding:10px 13px" placeholder="问一句，看它想起了什么…">
+          <button id="palSearch" type="button" class="primary">搜索</button>
+        </div>
+        <div id="palHits"></div>
+      </section>
+
+      <!-- ③ 七个房间 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">七个房间</div>
+            <div class="mg-sub">点一个房间，看它装着什么</div>
+          </div>
+          <span class="mg-tag" id="palRoomTag">—</span>
+        </div>
+        <div class="pal-rooms" id="palRooms"></div>
+        <div id="palRoomBody"></div>
+      </section>
+
+      <!-- ④ 门牌 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">门牌</div>
+            <div class="mg-sub">情景记忆固化成的常驻认知 —— 每轮注入，不走召回、不衰减</div>
+          </div>
+        </div>
+        <div id="palPlatesBox"></div>
+      </section>
+
+      <!-- ⑤ 对话分块 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">对话分块</div>
+            <div class="mg-sub">每 10 条消息 → 1 块 → LLM 摘要；遗忘曲线只清块，不删消息</div>
+          </div>
+          <span class="mg-tag" id="palChunkTag">—</span>
+        </div>
+        <div id="palChunks"></div>
+      </section>
     </div>
   </div>
 </div>
@@ -3731,6 +3896,7 @@ const backBtn = $("#backBtn");
 const menuPanel = $("#menuPanel"), menuDaysEl = $("#menuDays");
 const settingsPanel = $("#settingsPanel");
 const memoryPanel = $("#memoryPanel");
+const palacePanel = $("#palacePanel");
 let editingConnId = null;
 const TOGETHER_START = (function(){
   const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(CONFIG.SINCE || "");
@@ -3768,6 +3934,7 @@ if (menuPanel){
     const item = e.target.closest(".menu-item");
     if (!item) return;
     if (item.dataset.menu === "chat") closeMenu();       // back to chat
+    else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
     else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
@@ -3776,7 +3943,8 @@ if (menuPanel){
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
-    if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
+    if (palacePanel && palacePanel.classList.contains("open")) closePalace();
+    else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
     else if (settingsPanel && settingsPanel.classList.contains("open")) closeSettings();
     else if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
   }
@@ -6909,6 +7077,367 @@ if ($("#gxOpen")) $("#gxOpen").addEventListener("click", (e) => {
 });
 if ($("#galaxyCard")) $("#galaxyCard").addEventListener("click", () => window.open(galaxyUrl(), "_blank", "noopener"));
 window.addEventListener("resize", () => { if (!$("#memoryPanel").classList.contains("hidden")) loadGalaxy(); });
+
+/* ════════════ 记忆宫殿（长期内置记忆库）════════════
+   七个房间 / 门牌 / 混合召回 / 水位线 / 维护五步。后端在 mem_palace.py。 */
+const PAL_ROOM_META = {
+  living_room: { c: "#7fa8d8", ico: '<path d="M3 14v3.6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V14"/><path d="M4 14V8.4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V14"/><path d="M2.4 14h19.2"/><path d="M7.4 14v-3.4h9.2V14"/>' },
+  bedroom:     { c: "#d98fa8", ico: '<path d="M3 18v-5.6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2V18"/><path d="M3 18h18"/><path d="M3 21v-3M21 21v-3"/><path d="M8 10.4V7.6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2.8"/>' },
+  study:       { c: "#b9a26a", ico: '<path d="M4 19.4A2.4 2.4 0 0 1 6.4 17H20"/><path d="M6.4 2.6H20v20H6.4A2.4 2.4 0 0 1 4 20.2V4.8a2.2 2.2 0 0 1 2.4-2.2Z"/><path d="M9 7.4h7M9 11.4h5"/>' },
+  user_room:   { c: "#63b596", ico: '<circle cx="12" cy="8" r="3.8"/><path d="M4.4 20.4c0-4.2 3.4-7.6 7.6-7.6s7.6 3.4 7.6 7.6"/>' },
+  self_room:   { c: "#9787d6", ico: '<path d="M12 3.4c.8 4.8 3.4 7.4 8.2 8.2-4.8.8-7.4 3.4-8.2 8.2-.8-4.8-3.4-7.4-8.2-8.2 4.8-.8 7.4-3.4 8.2-8.2Z"/>' },
+  attic:       { c: "#8a93a2", ico: '<path d="M3.6 9.6 12 3.6l8.4 6v10.8H3.6z"/><path d="M9 20.4v-5.6h6v5.6"/>' },
+  windowsill:  { c: "#e0a95f", ico: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/>' },
+};
+const PAL_MOOD_LABEL = { happy: "开心", sad: "难过", angry: "生气", anxious: "焦虑", tender: "温柔",
+  calm: "平静", excited: "兴奋", tired: "疲惫", lonely: "孤独", grateful: "感激", curious: "好奇", proud: "骄傲" };
+let palData = { status: null, room: "", nodes: [], editing: null };
+function palRoomOf(key){ return (palData.status && palData.status.rooms || []).filter((r) => r.key === key)[0] || null; }
+function palRoomName(key){ const r = palRoomOf(key); return r ? r.name : key; }
+
+function palStatus(msg, kind){
+  const el = $("#palStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--mg-dim)");
+}
+async function openPalace(){
+  if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
+  palacePanel.classList.remove("hidden");
+  requestAnimationFrame(() => palacePanel.classList.add("open"));
+  palData.room = "";
+  await palaceLoad(true);
+}
+function closePalace(){
+  palacePanel.classList.remove("open");
+  setTimeout(() => palacePanel.classList.add("hidden"), 360);
+}
+async function palaceLoad(verbose){
+  if (verbose) palStatus("读取中…");
+  try{
+    const d = await memApi("/app/palace");
+    palData.status = d.status || {};
+    try{
+      const c = await memApi("/app/palace/chunks");
+      palData.chunks = c.chunks || [];
+    }catch(_){ palData.chunks = palData.chunks || []; }
+    palRender();
+    if (verbose) palStatus("读好了 · " + (palData.status.total || 0) + " 条记忆在七个房间里", "ok");
+  }catch(err){
+    palStatus("读取失败：" + ((err && err.message) || err), "err");
+  }
+}
+function palRender(){
+  const st = palData.status || {};
+  const wl = st.waterline || {};
+  const n = $("#palCount"); if (n) n.textContent = st.total || 0;
+  const sub = $("#palSub");
+  if (sub) sub.textContent = (st.rooms || []).length + " 个房间 · 门牌 " +
+    (st.plates || []).length + " 块 · " + (st.embeddings || "");
+  const w = $("#palWlSub");
+  if (w) w.textContent = "热区 " + wl.hot + " 条 · 缓冲阈值 " + wl.buffer +
+    " · 待处理 " + wl.pending + "（可整理 " + wl.cold + "）· 已处理到 #" + wl.hwm;
+  const p = $("#palPreset");
+  if (p) p.textContent = wl.ready ? "缓冲已达标" : "水位线下";
+  // 预设
+  const pre = $("#palPresets");
+  if (pre){
+    const ps = st.presets || {};
+    pre.innerHTML = Object.keys(ps).map((k) => (
+      '<button type="button" data-pal-preset="' + k + '"' + (wl.preset === k ? ' class="on"' : "") + ">" +
+      escapeHtml(ps[k].label) + " · " + ps[k].keep + "/" + ps[k].buffer + "</button>"
+    )).join("");
+  }
+  // 房间
+  const rooms = $("#palRooms");
+  if (rooms){
+    rooms.innerHTML = (st.rooms || []).map((r) => {
+      const meta = PAL_ROOM_META[r.key] || {};
+      const cap = r.cap ? ("容量 " + r.cap) : "不限容量";
+      const dec = r.never_decay ? "永不衰减" : ("半衰期 " + r.half_life_h + "h");
+      const pct = r.cap ? Math.min(100, Math.round(100 * r.count / r.cap)) : (r.count ? 100 : 0);
+      return '<button class="pal-room' + (palData.room === r.key ? " on" : "") + '" type="button" data-pal-room="' + r.key +
+        '" style="--pal-c:' + (meta.c || "#8a93a2") + '">' +
+        '<span class="pr-cnt">' + r.count + "</span>" +
+        '<span class="pr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+        'stroke-linecap="round" stroke-linejoin="round">' + (meta.ico || "") + "</svg></span>" +
+        '<span class="pr-n">' + escapeHtml(r.name) + "</span>" +
+        '<div class="pr-brain">' + escapeHtml(r.brain) + " · " + cap + "</div>" +
+        '<div class="pr-desc">' + escapeHtml(r.desc) + "</div>" +
+        '<div class="pr-bar"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="pr-decay">' + dec + "</div>" +
+      "</button>";
+    }).join("");
+  }
+  const rt = $("#palRoomTag");
+  if (rt) rt.textContent = "共 " + (st.total || 0) + " 条";
+  palRenderPlates();
+  palRenderChunks();
+  palRenderRoomBody();
+}
+function palRenderRoomBody(){
+  const box = $("#palRoomBody"); if (!box) return;
+  if (!palData.room){ box.innerHTML = ""; return; }
+  const list = palData.nodes.filter((x) => x.room === palData.room);
+  const meta = PAL_ROOM_META[palData.room] || {};
+  let html = '<div class="arc-back" style="margin-top:16px">' +
+    '<span class="arc-title2" style="color:' + (meta.c || "inherit") + '">' + escapeHtml(palRoomName(palData.room)) + "</span>" +
+    '<span class="arc-crumb">' + list.length + " 条</span></div>";
+  html += '<div class="model-row" style="margin-top:11px">' +
+    '<input id="palNew" class="nf-box" style="min-height:auto;padding:10px 13px" placeholder="往这个房间手动放一条记忆…">' +
+    '<button type="button" id="palNewSave">放入</button></div>';
+  if (!list.length){
+    html += '<div class="arc-empty">这个房间还是空的。</div>';
+  }else{
+    html += list.slice().reverse().map(palNodeHtml).join("");
+  }
+  box.innerHTML = html;
+}
+function palNodeHtml(n){
+  if (palData.editing === String(n.id)){
+    const opts = Object.keys(PAL_ROOM_META).map((k) => (
+      '<option value="' + k + '"' + (k === n.room ? " selected" : "") + ">" + escapeHtml(palRoomName(k)) + "</option>"
+    )).join("");
+    return '<div class="arc-entry">' +
+      '<div class="model-row"><select class="pill-select" id="palEditRoom" style="flex:1 1 auto">' + opts + "</select>" +
+      '<select class="pill-select" id="palEditImp" style="flex:0 0 auto">' +
+      [3, 5, 7, 8, 9, 10].map((v) => '<option value="' + v + '"' + (v === n.importance ? " selected" : "") +
+        ">重要度 " + v + "</option>").join("") + "</select></div>" +
+      '<textarea class="nf-box arc-editbox" id="palEditText" rows="4">' + escapeHtml(n.text) + "</textarea>" +
+      '<div class="arc-editacts"><button type="button" class="primary" id="palEditSave">保存</button>' +
+      '<button type="button" id="palEditDel">删除</button>' +
+      '<button type="button" id="palEditCancel">取消</button></div></div>';
+  }
+  const meta = PAL_ROOM_META[n.room] || {};
+  return '<div class="arc-entry" data-pal-node="' + escapeHtml(String(n.id)) + '">' +
+    '<span class="arc-chip" style="color:' + (meta.c || "inherit") + '">#' + escapeHtml(palRoomName(n.room)) + "</span>" +
+    '<span class="arc-acts"><button class="arc-act" type="button" data-pal-edit="' + escapeHtml(String(n.id)) +
+      '" title="编辑">' + MEM_ICO.pen + "</button></span>" +
+    '<div class="arc-text">' + escapeHtml(n.text) + "</div>" +
+    '<div class="arc-sub" style="margin-top:8px">' + escapeHtml(String(n.created).slice(0, 16).replace("T", " ")) +
+      " · 重要度 " + n.importance +
+      (n.mood ? (" · " + escapeHtml(PAL_MOOD_LABEL[n.mood] || n.mood)) : "") +
+      (n.digested ? " · 已消化" : "") +
+      ((n.tags || []).length ? (" · " + n.tags.map((t) => "#" + escapeHtml(t)).join(" ")) : "") +
+    "</div></div>";
+}
+function palRenderPlates(){
+  const box = $("#palPlatesBox"); if (!box) return;
+  const ps = (palData.status && palData.status.plates) || [];
+  box.innerHTML = ps.map((p) => (
+    '<div class="pal-plate" data-plate="' + p.room + '">' +
+      '<div class="pp-head"><span class="pp-title">' + escapeHtml(p.title) + "</span>" +
+        '<span class="pp-cap">' + p.entries.length + "/" + p.cap + "</span>" +
+        '<span class="pp-acts"><button class="arc-act" type="button" data-pal-plate-help="' + p.room +
+          '" title="这块门牌收什么">?</button></span></div>' +
+      (p.entries.length
+        ? "<ul>" + p.entries.map((e, i) => '<li data-plate-item="' + i + '">' + escapeHtml(e.text) +
+            '<button class="arc-act pp-del" type="button" data-pal-plate-del="' + p.room + '" data-plate-idx="' + i +
+            '" title="删掉这条">' + MEM_ICO.trash + "</button></li>").join("") + "</ul>"
+        : '<div class="pp-empty">还没有条目 —— 点「整理门牌」让它自己长出来，或者在下面手动加一条。</div>') +
+      '<div class="pp-add"><input class="nf-box" id="palPlateNew-' + p.room +
+        '" style="min-height:auto;padding:9px 12px" placeholder="手动加一条（一句话）">' +
+        '<button type="button" data-pal-plate-add="' + p.room + '">加</button></div>' +
+    "</div>"
+  )).join("");
+}
+function palRenderChunks(){
+  const box = $("#palChunks"); if (!box) return;
+  const tag = $("#palChunkTag");
+  const n = palData.chunks || [];
+  if (tag) tag.textContent = ((palData.status || {}).chunks || n.length) + " 块";
+  box.innerHTML = n.length
+    ? n.slice(-12).reverse().map((c) => (
+        '<div class="pal-chunk"><b>#' + c.a + "–" + c.b + "</b><span>" + escapeHtml(c.summary || "") + "</span></div>"
+      )).join("")
+    : '<div class="arc-empty">还没有分块 —— 点「维护五步」里的分块/摘要会生成。</div>';
+}
+function palHitHtml(h, extra){
+  const meta = PAL_ROOM_META[h.room] || {};
+  const bar = (v) => '<i><b style="width:' + Math.max(2, Math.min(100, Math.round((v || 0) * 100))) + '%"></b></i>';
+  return '<div class="pal-hit" style="--pal-c:' + (meta.c || "#8a93a2") + '">' +
+    '<div class="ph-head"><span class="ph-room" style="color:' + (meta.c || "inherit") + '">' +
+      escapeHtml(palRoomName(h.room)) + '</span><span class="ph-date">' + escapeHtml(String(h.created).slice(0, 10)) +
+      '</span><span class="ph-score">' + (h.score || 0).toFixed(3) + "</span></div>" +
+    '<div class="ph-text">' + escapeHtml(h.text) + "</div>" +
+    (h.sim != null ? '<div class="ph-bars">' + bar(h.sim) + bar(h.bm25) + bar(h.recency) + "</div>" +
+      '<div class="ph-why">相似 ' + (h.sim || 0).toFixed(2) + " · 关键词 " + (h.bm25 || 0).toFixed(2) +
+      " · 时近 " + (h.recency || 0).toFixed(2) + " · 重要度 " + h.importance + (extra || "") + "</div>" : "") +
+  "</div>";
+}
+async function palSearchPal(){
+  const q = ($("#palQ") && $("#palQ").value.trim()) || "";
+  if (!q){ showToast("先写一句想问的"); return; }
+  const box = $("#palHits");
+  box.innerHTML = '<div class="arc-empty">在想…</div>';
+  try{
+    const d = await memApi("/app/palace/search?limit=8&q=" + encodeURIComponent(q));
+    let html = (d.hits || []).map((h) => palHitHtml(h)).join("");
+    if ((d.spread || []).length) html += '<div class="pal-rum">顺着链接又想起：</div>' +
+      (d.spread || []).map((h) => palHitHtml(h, " · 来自「" + (h.via || "关联") + "」链")).join("");
+    if (d.rumination) html += '<div class="pal-rum">阁楼里一直有件事没消化：' +
+      escapeHtml(d.rumination.text) + "</div>";
+    if (!html) html = '<div class="arc-empty">没想起什么相关的。记忆库共 ' + (d.counts || 0) + " 条。</div>";
+    box.innerHTML = html;
+  }catch(err){
+    box.innerHTML = '<div class="arc-empty">搜索失败：' + escapeHtml((err && err.message) || String(err)) + "</div>";
+  }
+}
+async function palRun(path, body, label){
+  palStatus(label + "…");
+  try{
+    const d = await memApi(path, { method: "POST", body: JSON.stringify(body || {}) });
+    return d;
+  }catch(err){
+    palStatus(label + "失败：" + ((err && err.message) || err), "err");
+    return null;
+  }
+}
+async function palExtract(force){
+  const d = await palRun("/app/palace/extract", force ? { force: true, batch: 60 } : {}, force ? "强制整理" : "整理");
+  if (!d) return;
+  if (!d.ok){ palStatus("没整理：" + (d.reason || ""), "err"); return; }
+  palStatus("整理完 " + d.msgs + " 条对话 → 提取 " + d.extracted + " 条记忆（去重 " + d.dup +
+            "，晋升 " + (d.promoted || 0) + "，淘汰 " + (d.evicted || 0) + "）", "ok");
+  await palaceLoad();
+}
+async function palMaintain(){
+  const d = await palRun("/app/palace/maintain", {}, "维护五步");
+  if (!d) return;
+  const r = d.report || {};
+  palStatus("维护完成：\n· 向量 " + (r.embed ? r.embed.mode + "(" + r.embed.nodes + ")" : "-") +
+            "\n· 新增分块 " + ((r.chunk || {}).added || 0) +
+            "\n· 摘要 " + ((r.summary || {}).summarized || 0) +
+            "\n· 图谱 " + ((r.graph || {}).edges || 0) + " 条边 / " + ((r.graph || {}).nodes || 0) + " 个节点" +
+            "\n· 遗忘曲线清理 " + ((r.forget || {}).dropped || 0) + " 块（原始消息不动）", "ok");
+  await palaceLoad();
+}
+async function palPlatesRefresh(){
+  const d = await palRun("/app/palace/plates/refresh", {}, "整理门牌");
+  if (!d) return;
+  const r = d.result || {};
+  palStatus("门牌整理完 · 更新了 " + ((r.changed || []).join("、") || "无") +
+            ((r.fallback || []).length ? ("（其中 " + r.fallback.join("、") + " 是兜底并入）") : ""), "ok");
+  await palaceLoad();
+}
+async function palSetPreset(k){
+  try{
+    await memApi("/app/palace/waterline", { method: "POST", body: JSON.stringify({ preset: k }) });
+    await palaceLoad();
+    showToast("水位线已切换");
+  }catch(err){ showToast("切换失败：" + ((err && err.message) || err)); }
+}
+async function palOpenRoom(k){
+  if (palData.room === k){ palData.room = ""; palData.nodes = []; palRender(); return; }
+  palData.room = k; palData.editing = null;
+  try{
+    const d = await memApi("/app/palace/nodes?room=" + encodeURIComponent(k) + "&limit=200");
+    palData.nodes = d.nodes || [];
+  }catch(err){ palData.nodes = []; }
+  palRender();
+}
+async function palSaveNode(id, text, room, importance){
+  try{
+    await memApi("/app/palace/node", { method: "POST", body: JSON.stringify(
+      { id: id, content: text, room: room, importance: Number(importance) }) });
+    palData.editing = null;
+    await palOpenRoomRefresh(room);
+    showToast("已保存");
+  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
+}
+async function palDeleteNode(id, room){
+  if (!confirm("删掉这条记忆？（它不会回到任何房间）")) return;
+  try{
+    await memApi("/app/palace/node?id=" + encodeURIComponent(id), { method: "DELETE" });
+    palData.editing = null;
+    await palOpenRoomRefresh(room);
+    showToast("已删除");
+  }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
+}
+async function palOpenRoomRefresh(room){
+  if (!room){ await palaceLoad(); return; }
+  try{
+    const d = await memApi("/app/palace/nodes?room=" + encodeURIComponent(room) + "&limit=200");
+    palData.nodes = d.nodes || [];
+  }catch(_){}
+  await palaceLoad();
+}
+async function palAddNode(room){
+  const el = $("#palNew");
+  const text = (el && el.value || "").trim();
+  if (text.length < 4){ showToast("至少写四个字"); return; }
+  try{
+    await memApi("/app/palace/node", { method: "POST", body: JSON.stringify(
+      { content: text, room: room, importance: 6 }) });
+    if (el) el.value = "";
+    await palOpenRoomRefresh(room);
+    showToast("放进「" + palRoomName(room) + "」了");
+  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
+}
+async function palPlateSave(room, entries){
+  try{
+    await memApi("/app/palace/plates", { method: "POST", body: JSON.stringify({ room: room, entries: entries }) });
+    await palaceLoad();
+  }catch(err){ showToast("门牌保存失败：" + ((err && err.message) || err)); }
+}
+async function palAddPlateEntry(room){
+  const el = $("#palPlateNew-" + room);
+  const text = (el && el.value || "").trim();
+  if (!text){ return; }
+  const p = ((palData.status || {}).plates || []).filter((x) => x.room === room)[0];
+  const entries = (p ? p.entries : []).map((e) => ({ text: e.text, basedOn: e.text }));
+  if (entries.length >= (p ? p.cap : 10)){ showToast("这块门牌满了（" + p.cap + " 条），先删一条"); return; }
+  entries.push({ text: text });
+  if (el) el.value = "";
+  await palPlateSave(room, entries);
+  showToast("加到「" + (p ? p.title : room) + "」了");
+}
+if ($("#palaceBack")) $("#palaceBack").addEventListener("click", closePalace);
+if ($("#palaceClose")) $("#palaceClose").addEventListener("click", closePalace);
+if ($("#palRefresh")) $("#palRefresh").addEventListener("click", () => palaceLoad(true));
+if ($("#palExtract")) $("#palExtract").addEventListener("click", () => palExtract(false));
+if ($("#palExtractForce")) $("#palExtractForce").addEventListener("click", () => palExtract(true));
+if ($("#palMaintain")) $("#palMaintain").addEventListener("click", palMaintain);
+if ($("#palPlatesRefresh")) $("#palPlatesRefresh").addEventListener("click", palPlatesRefresh);
+if ($("#palSearch")) $("#palSearch").addEventListener("click", palSearchPal);
+if ($("#palQ")) $("#palQ").addEventListener("keydown", (e) => { if (e.key === "Enter") palSearchPal(); });
+if ($("#palacePanel")) $("#palacePanel").addEventListener("click", async (e) => {
+  const pre = e.target.closest("[data-pal-preset]");
+  if (pre){ await palSetPreset(pre.dataset.palPreset); return; }
+  const rm = e.target.closest("[data-pal-room]");
+  if (rm){ await palOpenRoom(rm.dataset.palRoom); return; }
+  const ed = e.target.closest("[data-pal-edit]");
+  if (ed){ palData.editing = ed.dataset.palEdit; palRenderRoomBody(); return; }
+  const del = e.target.closest("[data-plate-del]");
+  if (del){
+    const room = del.dataset.palPlateDel;
+    const p = ((palData.status || {}).plates || []).filter((x) => x.room === room)[0];
+    if (!p) return;
+    const entries = p.entries.filter((_x, i) => i !== Number(del.dataset.plateIdx))
+      .map((x) => ({ text: x.text, basedOn: x.text }));
+    await palPlateSave(room, entries);
+    return;
+  }
+  const ph = e.target.closest("[data-pal-plate-help]");
+  if (ph){
+    const p = ((palData.status || {}).plates || []).filter((x) => x.room === ph.dataset.palPlateHelp)[0];
+    if (p) showToast(p.rule);
+    return;
+  }
+  const pa = e.target.closest("[data-pal-plate-add]");
+  if (pa){ await palAddPlateEntry(pa.dataset.palPlateAdd); return; }
+});
+/* 编辑态是动态生成的，挂的是 doc 级代理 */
+document.addEventListener("click", async (e) => {
+  if (palacePanel.classList.contains("hidden")) return;
+  if (e.target.id === "palEditSave"){
+    await palSaveNode(palData.editing, ($("#palEditText") || {}).value || "",
+                      ($("#palEditRoom") || {}).value || palData.room, ($("#palEditImp") || {}).value || 5);
+    return;
+  }
+  if (e.target.id === "palEditDel"){ await palDeleteNode(palData.editing, palData.room); return; }
+  if (e.target.id === "palEditCancel"){ palData.editing = null; palRenderRoomBody(); return; }
+  if (e.target.id === "palNewSave"){ await palAddNode(palData.room); return; }
+});
 
 /* ════════════ API 层 ════════════ */
 function authHeaders(){ return { "Authorization": "Bearer " + secret }; }

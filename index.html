@@ -901,6 +901,115 @@
     line-height: 1.5;
   }
 
+  /* ── 工作记忆 = 技术记忆（项目文件夹，折叠式）──
+     一个项目一个夹子：收起时只有「▸ 📁 名字 N 条」，点开才看得到里面的条目。
+     技术记忆跟情感记忆分开住，这里也不做「按月分组」那种时间线，而是按项目归拢。 */
+  .work-folder{
+    border: 1px solid var(--field-line);
+    border-radius: 12px;
+    background: rgba(127,142,157,0.05);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .work-folder.open{ background: rgba(127,142,157,0.075); }
+  .work-folder-head{
+    appearance: none; -webkit-appearance: none;
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; margin: 0; border: 0; background: transparent;
+    padding: 10px 12px; color: inherit; font: inherit;
+    text-align: left; cursor: pointer; min-width: 0;
+  }
+  .work-folder-head:active{ transform: translateY(1px); }
+  .work-folder-head:focus-visible{ outline: none; }
+  .work-chev{ flex: none; width: 12px; color: var(--think-flourish); font-size: 11px; }
+  .work-ico{ flex: none; display: grid; place-items: center; width: 17px; height: 17px;
+             color: var(--think-flourish); }
+  .work-ico svg{ width: 100%; height: 100%; }
+  .work-folder.open .work-ico{ color: var(--accent); }
+  .work-name{
+    flex: 1 1 auto; min-width: 0;
+    color: var(--text-soft);
+    font-family: var(--font-cn);
+    font-size: clamp(12.5px, 1.4vw, 14px);
+    letter-spacing: .01em;
+    white-space: normal; overflow-wrap: anywhere;
+  }
+  .work-count{ flex: none; color: var(--text-faint); font-size: 11.5px; white-space: nowrap; }
+  .work-desc{
+    padding: 0 12px 8px 37px;
+    color: var(--text-faint);
+    font-size: clamp(10.5px, 1.15vw, 12px);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .work-body{ padding: 2px 12px 10px 12px; border-top: 1px dashed var(--field-line); }
+  .work-empty{ color: var(--text-faint); font-size: 12px; padding: 10px 2px; }
+  .work-item{ padding: 9px 0; }
+  .work-item + .work-item{ border-top: 1px dashed var(--field-line); }
+  .work-item-head{ display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .work-item-date{ flex: none; color: var(--text-faint); font-size: 11px;
+                   font-variant-numeric: tabular-nums; }
+  .work-tags{ flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+  .work-tags i{
+    font-style: normal; font-size: 10.5px; line-height: 1.7;
+    padding: 0 6px; border-radius: 6px;
+    background: rgba(140,160,176,.14); color: var(--text-soft);
+  }
+  .work-text{
+    margin-top: 5px;
+    color: var(--think-body);
+    font-family: var(--font-cn);
+    font-size: clamp(12px, 1.34vw, 13.5px);
+    line-height: 1.6;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .work-folder-acts{ display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+  .work-folder-acts button{
+    appearance: none; -webkit-appearance: none;
+    font-size: 11.5px; line-height: 1.6;
+    padding: 3px 9px; border-radius: 8px;
+    border: 1px solid var(--field-line);
+    background: transparent; color: var(--text-faint);
+    cursor: pointer; white-space: nowrap;
+  }
+  .work-folder-acts button:hover{ color: var(--text-soft); border-color: var(--hairline); }
+
+  /* ── 哨兵 · 监控日志（设置页里可翻）── */
+  .sentinel-scroll{
+    margin-top: 10px;
+    max-height: min(46vh, 380px);
+    overflow: auto;
+    border: 1px solid var(--field-line);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(127,142,157,0.05);
+  }
+  .sentinel-scroll.hidden{ display: none !important; }
+  .sn-day + .sn-day{ margin-top: 10px; }
+  .sn-day-head{
+    display: flex; justify-content: space-between; align-items: baseline;
+    color: var(--text-faint); font-size: 11px; letter-spacing: .04em;
+    padding-bottom: 5px; margin-bottom: 6px;
+    border-bottom: 1px dashed var(--field-line);
+  }
+  .sn-log{ padding: 7px 0; }
+  .sn-log + .sn-log{ border-top: 1px dashed var(--field-line); }
+  .sn-log.woke{ border-left: 2px solid var(--accent); padding-left: 8px; }
+  .sn-log-head{ display: flex; align-items: center; gap: 6px; color: var(--text-faint); font-size: 11px; }
+  .sn-log-head i{ font-style: normal; }
+  .sn-conf{ opacity: .8; }
+  .sn-badge{
+    background: rgba(76,99,120,.16); color: var(--accent);
+    border-radius: 5px; padding: 0 5px; font-size: 10px; line-height: 1.7;
+  }
+  .sn-sum{ margin-top: 3px; color: var(--text-soft); font-size: 12px; line-height: 1.5; }
+  .sn-text{
+    margin-top: 3px; color: var(--think-body);
+    font-family: var(--font-cn); font-size: 12.5px; line-height: 1.6;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .sn-reason{ margin-top: 4px; color: var(--text-faint); font-size: 11.5px; line-height: 1.5; }
+
 
   /* ── Composer ── */
   .composer{
@@ -3361,6 +3470,64 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="sentinel">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 4.6 6v5.4c0 4.1 3.1 7.6 7.4 9.4 4.3-1.8 7.4-5.3 7.4-9.4V6Z"/><path d="M9.3 12.1l2 2 3.4-3.6"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">哨兵 · 定时巡逻</span><span class="set-card-sub" id="cardSubSentinel"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip">一个在后台<b>定时巡逻</b>的观察者：每隔一段时间看一眼「最近的对话 + 系统的样子」，
+            写一条<b>监控日志</b>；只有它明确判断<b>现在值得主动开口</b>时，才叫醒主模型 ——
+            并把「为什么叫你 + 它看到的原文」交给它自己决定要不要开口。
+            <br>参考的是 AionsHome 那套哨兵：<b>用户一发消息就重置计时器</b>（绝不在聊天中间插嘴）、
+            有静默时段、<b>宁可不叫也别乱叫</b>（低置信度一律不唤醒）。
+            <br>它和上面的「自动重铸」共用同一个空闲检查点：有人在等回复时，两边都不动手。</div>
+
+          <label class="fld switch-row" style="margin-top:12px"><span>开启巡逻
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就完全不上岗，一条日志也不会写。</span></span>
+            <input type="checkbox" id="snEnable">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>允许唤醒（叫醒主模型）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就只写日志、不打扰对话。开着也会有一小时冷却，不会连着叫。</span></span>
+            <input type="checkbox" id="snWake">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>静默时段
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">这段时间里不巡逻（默认凌晨 00:30–08:00）。</span></span>
+            <input type="checkbox" id="snQuietOn">
+          </label>
+
+          <div class="fld-pair" style="margin-top:12px">
+            <label class="fld"><span>巡逻间隔下限（分钟）</span><input id="snMin" type="number" min="1" max="1440" step="1" placeholder="30"></label>
+            <label class="fld"><span>上限（分钟）</span><input id="snMax" type="number" min="1" max="1440" step="1" placeholder="60"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>静默开始</span><input id="snQs" type="text" placeholder="00:30" autocomplete="off"></label>
+            <label class="fld"><span>静默结束</span><input id="snQe" type="text" placeholder="08:00" autocomplete="off"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>对话静下来多久才巡逻（秒）</span><input id="snIdle" type="number" min="0" max="86400" step="60" placeholder="900"></label>
+            <label class="fld"><span>快照带最近几轮</span><input id="snRounds" type="number" min="2" max="40" step="1" placeholder="12"></label>
+          </div>
+          <label class="fld" style="margin-top:10px"><span>哨兵用的模型（留空 = 用「记忆模型」）</span>
+            <input id="snModel" type="text" placeholder="留空就用 helper_model" autocomplete="off" spellcheck="false">
+          </label>
+
+          <div class="editor-actions om-acts">
+            <button id="snSave" type="button" class="primary">保存</button>
+            <button id="snPatrol" type="button">立即巡逻一次</button>
+            <button id="snReset" type="button">重置计时器</button>
+            <button id="snLogs" type="button">看监控日志</button>
+          </div>
+          <div class="om-status" id="snStatus"></div>
+          <div class="sentinel-scroll hidden" id="snLogBox"></div>
+          <div class="settings-tip" style="margin-top:10px">
+            「唤醒」不是系统消息，是**它自己观察到的**——注入的措辞明确写了：这是你在后台看到的，
+            不是用户告诉你的；判断时机不对就当没看见。这样才不会变成机械的定时问候。
+          </div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="ai">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
@@ -4249,6 +4416,7 @@ function openSettings(){
   if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
   if (!omLoadedOnce){ omLoadedOnce = true; omLoad(false); }              // OB 配置读一次就够
   if (!fgLoadedOnce){ fgLoadedOnce = true; fgLoad(false); }              // Forge 配置读一次就够
+  if (!snLoadedOnce){ snLoadedOnce = true; snLoad(false); }               // 哨兵配置读一次就够
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -4970,6 +5138,161 @@ if ($("#fgTick")) $("#fgTick").addEventListener("click", fgTickNow);
 if ($("#fgThreadsNow")) $("#fgThreadsNow").addEventListener("click", fgThreadsNow);
 if ($("#fgState")) $("#fgState").addEventListener("click", () => { fgStateText(); fgLoad(false); });
 ["fgEnable","fgThreads","fgLag","fgIdle"].forEach((id) => {
+  const el = $("#" + id); if (!el) return;
+  el.addEventListener("change", () => { el.dataset.touched = "1"; });
+});
+
+/* ── 哨兵 · 定时巡逻（参考 AionsHome 的哨兵系统）────────────────────────────
+   巡逻 = 看一眼「最近对话 + 系统状态」→ 写监控日志 → 只有它明确判断值得开口时才唤醒主模型。
+   用户一发消息后端就会重置计时器，所以它绝不会在聊天中间插嘴。 */
+let snData = {};
+let snLoadedOnce = false;
+const SN_FIELDS = ["snEnable","snWake","snQuietOn","snMin","snMax","snQs","snQe","snIdle","snRounds","snModel"];
+function snStatusEl(msg, kind){
+  const el = $("#snStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function snSetVal(id, v){
+  const el = $("#" + id); if (!el || el.dataset.touched) return;
+  if (el.type === "checkbox") el.checked = !!v; else el.value = (v == null ? "" : v);
+}
+function snRender(){
+  const s = (snData.status || {}).sentinel || {};
+  const el = $("#cardSubSentinel");
+  if (el){
+    el.textContent = s.enable === false
+      ? "已关闭"
+      : ("已上岗 · 每 " + (s.interval_min || 30) + "–" + (s.interval_max || 60) + " 分钟 · " +
+         (s.total_logs || 0) + " 条日志" +
+         (s.pending_wake ? " · 有唤醒待注入" : "") +
+         (s.in_quiet ? " · 静默中" : ""));
+  }
+  const c = s.config || {};
+  snSetVal("snEnable", c.enable !== false);
+  snSetVal("snWake", c.wake !== false);
+  snSetVal("snQuietOn", c.quiet_on !== false);
+  snSetVal("snMin", c.interval_min != null ? c.interval_min : 30);
+  snSetVal("snMax", c.interval_max != null ? c.interval_max : 60);
+  snSetVal("snQs", c.quiet_start || "00:30");
+  snSetVal("snQe", c.quiet_end || "08:00");
+  snSetVal("snIdle", c.idle != null ? c.idle : 900);
+  snSetVal("snRounds", c.rounds != null ? c.rounds : 12);
+  snSetVal("snModel", c.model || "");
+}
+function snBody(){
+  return {
+    enable: !!($("#snEnable") || {}).checked,
+    wake: !!($("#snWake") || {}).checked,
+    quiet_on: !!($("#snQuietOn") || {}).checked,
+    interval_min: Number(($("#snMin") || {}).value || 30),
+    interval_max: Number(($("#snMax") || {}).value || 60),
+    quiet_start: (($("#snQs") || {}).value || "00:30").trim(),
+    quiet_end: (($("#snQe") || {}).value || "08:00").trim(),
+    idle: Number(($("#snIdle") || {}).value || 900),
+    rounds: Number(($("#snRounds") || {}).value || 12),
+    model: (($("#snModel") || {}).value || "").trim()
+  };
+}
+function snStateText(){
+  const s = (snData.status || {}).sentinel || {};
+  const last = s.last || null;
+  const lines = [
+    "巡逻：" + (s.enable === false ? "关闭" : "开启") + "   ·   唤醒：" + (s.wake === false ? "关" : "开") +
+      "   ·   静默：" + (s.quiet_on === false ? "关" : (s.quiet_start + "–" + s.quiet_end)) + (s.in_quiet ? "（现在静默中）" : ""),
+    "间隔：" + s.interval_min + "–" + s.interval_max + " 分钟   ·   下次巡逻：" +
+      (s.next_in == null ? "—" : (Math.round(s.next_in / 60) + " 分钟后")) +
+      "   ·   守护线程：" + (s.watcher ? "在岗" : "还没启动（下条消息后自启）"),
+    "日志：" + (s.total_logs || 0) + " 条   ·   唤醒待注入：" + (s.pending_wake ? "有" : "无") +
+      "   ·   唤醒冷却剩余：" + Math.round(s.wake_cooldown_left || 0) + "s",
+  ];
+  if (last){
+    lines.push("");
+    lines.push("最近一次巡逻（" + String(last.at || "").slice(0, 16).replace("T", " ") +
+               " · " + (last.confidence || "-") + " · " + (last.model || "") + "）：");
+    lines.push("  " + (last.summary || "（无摘要）"));
+    lines.push("  " + String(last.log || "").slice(0, 200));
+    if (last.call_core) lines.push("  → 它判断：值得主动开口（" + (last.reason || "") + "）");
+  }
+  lines.push("");
+  lines.push(s.hint || "");
+  snStatusEl(lines.join("\n"), "");
+}
+async function snLoad(verbose){
+  try{
+    const d = await memApi("/app/sentinel/status");
+    snData.status = d || {};
+    snRender();
+    if (verbose) snStateText();
+  }catch(err){
+    snStatusEl("读取失败：" + ((err && err.message) || err), "err");
+  }
+}
+async function snSave(){
+  snStatusEl("保存中…");
+  try{
+    const d = await memApi("/app/sentinel/config", { method: "POST", body: JSON.stringify(snBody()) });
+    snData.status = d || {};
+    SN_FIELDS.forEach((id) => { const el = $("#" + id); if (el) delete el.dataset.touched; });
+    snRender();
+    snStatusEl(d.ok ? "已保存 ✅ 下一轮巡逻按新设置走" : ("保存失败：" + (d.error || "未知错误")), d.ok ? "ok" : "err");
+  }catch(err){ snStatusEl("保存失败：" + ((err && err.message) || err), "err"); }
+}
+async function snPatrol(){
+  snStatusEl("巡逻中…（会调一次模型，几秒）");
+  try{
+    const d = await memApi("/app/sentinel/patrol", { method: "POST", body: JSON.stringify({ force: true }) });
+    const r = (d || {}).result || {};
+    snData.status = d || {};
+    snRender();
+    if (r.skipped){
+      snStatusEl("这次没巡逻：" + r.skipped + (r.error ? ("（" + r.error + "）") : ""), "err");
+    }else{
+      snStatusEl("巡逻完成 ✅ " + (r.call_core ? "它判断值得主动开口" : "它认为不必打扰") +
+                 "\n" + (r.summary || "") + "\n" + String(r.log || "").slice(0, 220), "ok");
+    }
+    if (!$("#snLogBox").classList.contains("hidden")) await snLogs();
+  }catch(err){ snStatusEl("巡逻失败：" + ((err && err.message) || err), "err"); }
+}
+async function snLogs(){
+  const box = $("#snLogBox");
+  if (!box.classList.contains("hidden")){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="work-empty">读取中…</div>';
+  try{
+    const d = await memApi("/app/sentinel/logs?limit=30");
+    const logs = d.logs || [];
+    if (!logs.length){ box.innerHTML = '<div class="work-empty">还没有监控日志。</div>'; return; }
+    const byDay = {};
+    logs.forEach((x) => { (byDay[x.date || "?"] = byDay[x.date || "?"] || []).push(x); });
+    box.innerHTML = Object.keys(byDay).sort().reverse().map((day) => (
+      '<div class="sn-day"><div class="sn-day-head">' + escapeHtml(day) +
+        '<span>' + byDay[day].length + " 次</span></div>" +
+      byDay[day].map((x) => (
+        '<div class="sn-log' + (x.call_core ? " woke" : "") + '">' +
+          '<div class="sn-log-head">' + escapeHtml(x.clock || "") +
+            (x.confidence ? ('<i class="sn-conf">' + escapeHtml(x.confidence) + "</i>") : "") +
+            (x.call_core ? '<i class="sn-badge">唤醒</i>' : "") +
+          "</div>" +
+          (x.summary ? '<div class="sn-sum">' + escapeHtml(x.summary) + "</div>" : "") +
+          '<div class="sn-text">' + escapeHtml(x.log || "") + "</div>" +
+          (x.reason ? '<div class="sn-reason">为什么叫你：' + escapeHtml(x.reason) + "</div>" : "") +
+        "</div>"
+      )).join("") + "</div>"
+    )).join("");
+  }catch(err){
+    box.innerHTML = '<div class="work-empty">读取失败：' + escapeHtml((err && err.message) || "") + "</div>";
+  }
+}
+if ($("#snSave")) $("#snSave").addEventListener("click", snSave);
+if ($("#snPatrol")) $("#snPatrol").addEventListener("click", snPatrol);
+if ($("#snLogs")) $("#snLogs").addEventListener("click", snLogs);
+if ($("#snReset")) $("#snReset").addEventListener("click", async () => {
+  try{ const d = await memApi("/app/sentinel/reset", { method: "POST", body: "{}" });
+    snData.status = d || {}; snRender(); snStatusEl("计时器已重置", "ok");
+  }catch(err){ snStatusEl("重置失败：" + ((err && err.message) || err), "err"); }
+});
+SN_FIELDS.forEach((id) => {
   const el = $("#" + id); if (!el) return;
   el.addEventListener("change", () => { el.dataset.touched = "1"; });
 });
@@ -7258,6 +7581,7 @@ async function memLoad(verbose){
     });
     renderNearfield();
     renderLibs();
+    workLoad();
     memRenderStats();
     arcRender();
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
@@ -7453,19 +7777,41 @@ function buildLibCards(){
         '<svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
       "</button>" +
       '<div class="set-card-body">' +
-        '<div id="libList-' + d.kind + '"></div>' +
-        '<div class="nf-actions"><button type="button" data-lib-new="' + d.kind + '">＋ 新建一条</button></div>' +
-        '<div class="lib-edit hidden" id="libEdit-' + d.kind + '">' +
-          '<input class="nf-box" id="libTitle-' + d.kind + '" placeholder="标题（一句话）" style="min-height:auto;padding:9px 11px">' +
-          '<textarea class="nf-box" id="libBody-' + d.kind + '" rows="4" placeholder="正文"></textarea>' +
-          '<div class="nf-actions"><button type="button" class="primary" data-lib-save="' + d.kind + '">保存</button>' +
-          '<button type="button" data-lib-cancel="' + d.kind + '">取消</button></div>' +
-        "</div>" +
-        '<div class="settings-tip">' + escapeHtml(d.tip) + "（存在后端 memories 表，按 kind 分区）</div>" +
+        (d.kind === "working" ? (
+          /* 工作记忆不是「一堆条目」，而是「一堆装条目的文件夹」—— 结构不一样，所以单独一套控件 */
+          '<div id="workCards">' +
+            '<div id="libList-working"></div>' +
+            '<div class="nf-actions">' +
+              '<button type="button" id="workNewFolder">＋ 新建文件夹</button>' +
+              '<button type="button" id="workNew">＋ 记一条</button>' +
+            "</div>" +
+            '<div class="lib-edit hidden" id="workEdit">' +
+              '<input class="nf-box" id="workProj" placeholder="项目 / 文件夹名（不存在就新建一个）" style="min-height:auto;padding:9px 11px">' +
+              '<textarea class="nf-box" id="workText" rows="4" placeholder="这条技术记忆：做了什么、结论是什么、参数是多少、踩了什么坑"></textarea>' +
+              '<input class="nf-box" id="workTags" placeholder="标签（逗号分隔，可留空）" style="min-height:auto;padding:9px 11px">' +
+              '<div class="nf-actions"><button type="button" class="primary" id="workSaveBtn">保存</button>' +
+              '<button type="button" id="workCancelBtn">取消</button></div>' +
+            "</div>" +
+          "</div>"
+        ) : (
+          '<div id="libList-' + d.kind + '"></div>' +
+          '<div class="nf-actions"><button type="button" data-lib-new="' + d.kind + '">＋ 新建一条</button></div>' +
+          '<div class="lib-edit hidden" id="libEdit-' + d.kind + '">' +
+            '<input class="nf-box" id="libTitle-' + d.kind + '" placeholder="标题（一句话）" style="min-height:auto;padding:9px 11px">' +
+            '<textarea class="nf-box" id="libBody-' + d.kind + '" rows="4" placeholder="正文"></textarea>' +
+            '<div class="nf-actions"><button type="button" class="primary" data-lib-save="' + d.kind + '">保存</button>' +
+            '<button type="button" data-lib-cancel="' + d.kind + '">取消</button></div>' +
+          "</div>"
+        )) +
+        '<div class="settings-tip">' + escapeHtml(d.tip) +
+          (d.kind === "working"
+            ? "（技术记忆单独一层：按项目分文件夹、能真删、按项目查进度；情感记忆在 Ombre / 记忆宫殿那两层，两者互不干扰）"
+            : "（存在后端 memories 表，按 kind 分区）") + "</div>" +
       "</div>" +
     "</section>"
   )).join("");
   host.querySelectorAll(".set-card-head").forEach((h) => h.addEventListener("click", () => toggleSetCard(h.closest(".set-card"))));
+  wireWork();                       // 工作记忆那套控件是刚生成的，监听器得在这之后挂
   host.addEventListener("click", async (e) => {
     const nw = e.target.closest("[data-lib-new]");
     const sv = e.target.closest("[data-lib-save]");
@@ -7513,8 +7859,216 @@ async function libDelete(id){
     await memLoad();
   }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
 }
+/* ── 工作记忆 = 技术记忆（项目文件夹）──────────────────────────────────────
+   参考「机的独立工作室」Machine-studio 的分法：**技术归技术，情感归情感。**
+   · 情感 / 日常 / 羁绊 → Ombre（会浮现、会衰减、软删除）+ 记忆宫殿 + 近景；
+   · 技术 / 项目 / 踩坑 / 参数 → 这里：按**项目分文件夹**存，能**真删**、能按项目查进度。
+   理由很实在：技术是会过期的东西（今天的报错方案明天就是坑），留在会反复浮现的记忆里
+   只会变成噪音。所以它单独住一层，而且**只在聊到相关技术时**才被引用。
+   下面用「文件夹折叠」的方式呈现：一个项目一个夹子，点开才看得到里面的条目。 */
+let workData = { loaded:false, editId:null, projects:[], total:0, open:{}, items:{}, loading:{} };
+const WORK_ICO = {
+  folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.4l1.6 2h7.6a1.7 1.7 0 0 1 1.7 1.7v6.6a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7Z"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l9.5-9.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16Z"/><path d="M13.5 6.5 17.5 10.5"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15"/><path d="M9.5 7.5V5.8A1.3 1.3 0 0 1 10.8 4.5h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 7.5 7.4 19a1.4 1.4 0 0 0 1.4 1.3h6.4A1.4 1.4 0 0 0 16.6 19l.9-11.5"/></svg>'
+};
+async function workLoad(){
+  try{
+    const d = await memApi("/app/work/overview");
+    workData.projects = d.projects || [];
+    workData.total = d.total || 0;
+    workData.loaded = true;
+    renderWork();
+  }catch(_){ /* 后端还没这个模块时静默退回普通列表 */ }
+}
+async function workReloadOpen(){
+  const opens = Object.keys(workData.open).filter((k) => workData.open[k]);
+  workData.items = {};
+  await Promise.all(opens.map((n) => memApi("/app/work/log?name=" + encodeURIComponent(n) + "&limit=200")
+    .then((d) => { workData.items[n] = d.entries || []; }).catch(() => {})));
+}
+async function workToggle(name){
+  if (workData.open[name]){ workData.open[name] = false; renderWork(); return; }
+  workData.open[name] = true;
+  if (!workData.items[name]){
+    workData.loading[name] = true; renderWork();
+    try{
+      const d = await memApi("/app/work/log?name=" + encodeURIComponent(name) + "&limit=200");
+      workData.items[name] = d.entries || [];
+    }catch(err){
+      workData.items[name] = [];
+      showToast("读取文件夹失败：" + ((err && err.message) || err));
+    }
+    delete workData.loading[name];
+  }
+  renderWork();
+}
+function renderWork(){
+  const list = $("#libList-working"); if (!list) return;
+  const ps = workData.projects || [];
+  const sub = $("#libSub-working");
+  if (sub) sub.textContent = ps.length ? (ps.length + " 个文件夹 · " + workData.total + " 条")
+                                       : "还没有技术项目";
+  if (!ps.length){
+    list.innerHTML = '<div class="arc-empty">还没有技术项目。<br>' +
+      '按项目建文件夹（某台服务器 / 某个 App / 某次踩坑），把**会过期**的技术记在里面 —— ' +
+      '它和情感记忆是分开的两层：删就是真删，不会留下来反复浮现。</div>';
+    return;
+  }
+  list.innerHTML = ps.map((p) => {
+    const open = !!workData.open[p.name];
+    const items = workData.items[p.name] || [];
+    let body = "";
+    if (open){
+      if (workData.loading[p.name]) body = '<div class="work-empty">读取中…</div>';
+      else if (!items.length) body = '<div class="work-empty">这个文件夹还是空的。点下面「＋ 记一条到这个文件夹」。</div>';
+      else body = items.map((it) => (
+        '<div class="work-item">' +
+          '<div class="work-item-head">' +
+            '<span class="work-item-date">' + escapeHtml(String(it.created || "").slice(0, 16).replace("T", " ")) + "</span>" +
+            ((it.tags && it.tags.length) ? '<span class="work-tags">' + it.tags.map((t) => "<i>" + escapeHtml(String(t)) + "</i>").join("") + "</span>" : "") +
+            '<span class="arc-acts">' +
+              '<button class="arc-act" type="button" data-work-edit="' + escapeHtml(String(it.id)) + '" data-work-proj="' + escapeHtml(p.name) + '" title="原地改（id 不变）">' + WORK_ICO.pen + "</button>" +
+              '<button class="arc-act" type="button" data-work-del="' + escapeHtml(String(it.id)) + '" title="真删（不可恢复）">' + WORK_ICO.trash + "</button>" +
+            "</span>" +
+          "</div>" +
+          '<div class="work-text">' + escapeHtml(String(it.content || "")) + "</div>" +
+        "</div>"
+      )).join("");
+    }
+    return '<div class="work-folder' + (open ? " open" : "") + '">' +
+      '<button class="work-folder-head" type="button" data-work-open="' + escapeHtml(p.name) + '">' +
+        '<span class="work-chev">' + (open ? "▾" : "▸") + "</span>" +
+        '<span class="work-ico">' + WORK_ICO.folder + "</span>" +
+        '<span class="work-name">' + escapeHtml(p.name) + "</span>" +
+        '<span class="work-count">' + (p.count || 0) + " 条</span>" +
+      "</button>" +
+      (p.desc ? '<div class="work-desc">' + escapeHtml(p.desc) + "</div>" : "") +
+      (open ? '<div class="work-body">' + body + "</div>" : "") +
+      '<div class="work-folder-acts">' +
+        '<button type="button" data-work-add="' + escapeHtml(p.name) + '">＋ 记一条到这个文件夹</button>' +
+        '<button type="button" data-work-rename="' + escapeHtml(p.name) + '">改名 / 改说明</button>' +
+        '<button type="button" data-work-rmfolder="' + escapeHtml(p.name) + '">删文件夹</button>' +
+      "</div>" +
+    "</div>";
+  }).join("");
+}
+function workEditOpen(it, proj){
+  workData.editId = it ? it.id : null;
+  $("#workEdit").classList.remove("hidden");
+  $("#workProj").value = proj || "";
+  $("#workText").value = it ? it.content : "";
+  $("#workTags").value = (it && it.tags) ? it.tags.join(", ") : "";
+  const card = document.querySelector(".set-card[data-card='lib-working']");
+  if (card) card.classList.add("open");
+  $("#workText").focus();
+}
+async function workSubmit(){
+  const proj = ($("#workProj").value || "").trim();
+  const txt = ($("#workText").value || "").trim();
+  const tags = ($("#workTags").value || "").trim();
+  if (!proj){ showToast("先写项目名（没有就会新建一个文件夹）"); return; }
+  if (!txt){ showToast("正文不能为空"); return; }
+  const editId = workData.editId;
+  try{
+    if (editId){
+      await memApi("/app/work/item", { method: "PUT",
+        body: JSON.stringify({ id: editId, content: txt, tags: tags, project: proj }) });
+      showToast("已更新（原地改，id 不变）");
+    }else{
+      await memApi("/app/work/save", { method: "POST",
+        body: JSON.stringify({ project: proj, content: txt, tags: tags }) });
+      showToast("已记入「" + proj + "」");
+    }
+    workData.editId = null;
+    $("#workEdit").classList.add("hidden");
+    $("#workText").value = ""; $("#workTags").value = "";
+    workData.open[proj] = true;
+    await workLoad();
+    await workReloadOpen();
+    renderWork();
+  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
+}
+/* ⚠️ 这些元素是 buildLibCards() 动态生成出来的 —— 监听器必须在**生成之后**挂，
+   不能在脚本顶层 `if ($("#workCards"))` 里挂（那时 DOM 里还没有这个节点，
+   条件为假、监听器根本不会装，表现为「点了没反应」）。 */
+function wireWork(){
+  const host = $("#workCards");
+  if (!host || host.dataset.wired) return;
+  host.dataset.wired = "1";
+  host.addEventListener("click", async (e) => {
+    const op = e.target.closest("[data-work-open]");
+    const ad = e.target.closest("[data-work-add]");
+    const ed = e.target.closest("[data-work-edit]");
+    const dl = e.target.closest("[data-work-del]");
+    const rn = e.target.closest("[data-work-rename]");
+    const rf = e.target.closest("[data-work-rmfolder]");
+    if (op){ await workToggle(op.dataset.workOpen); return; }
+    if (ad){ workEditOpen(null, ad.dataset.workAdd); return; }
+    if (ed){
+      const proj = ed.dataset.workProj;
+      const it = (workData.items[proj] || []).find((x) => String(x.id) === String(ed.dataset.workEdit));
+      if (it) workEditOpen(it, proj);
+      return;
+    }
+    if (dl){
+      if (!confirm("真删这条技术记忆？（不可恢复 —— 技术记忆不软删除，过期的留着只会变噪音）")) return;
+      try{
+        await memApi("/app/work/item?id=" + encodeURIComponent(dl.dataset.workDel), { method: "DELETE" });
+        showToast("已删除");
+        await workLoad(); await workReloadOpen(); renderWork();
+      }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
+      return;
+    }
+    if (rn){
+      const name = rn.dataset.workRename;
+      const cur = (workData.projects || []).find((p) => p.name === name) || {};
+      const nn = prompt("文件夹改名（留空则不改名）", name);
+      if (nn === null) return;
+      const desc = prompt("一句话说明（这个夹子存什么）", cur.desc || "");
+      if (desc === null) return;
+      try{
+        await memApi("/app/work/projects", { method: "PUT",
+          body: JSON.stringify({ old: name, name: (nn.trim() || name), desc: desc }) });
+        showToast("已更新"); await workLoad(); renderWork();
+      }catch(err){ showToast("改名失败：" + ((err && err.message) || err)); }
+      return;
+    }
+    if (rf){
+      const name = rf.dataset.workRmfolder;
+      if (!confirm("删掉文件夹「" + name + "」以及里面的全部条目？（真删，不可恢复）")) return;
+      try{
+        await memApi("/app/work/projects?name=" + encodeURIComponent(name), { method: "DELETE" });
+        showToast("文件夹已删除");
+        delete workData.items[name]; delete workData.open[name];
+        await workLoad(); renderWork();
+      }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
+    }
+  });
+  ["workNewFolder", "workNew", "workSaveBtn", "workCancelBtn"].forEach((id) => {
+    const el = $("#" + id);
+    if (!el) return;
+    el.addEventListener("click", () => {
+      if (id === "workNewFolder"){
+        const name = prompt("新文件夹叫什么？（一个项目一个夹子）");
+        if (!name || !name.trim()) return;
+        const desc = prompt("一句话说明（可留空）") || "";
+        memApi("/app/work/projects", { method: "POST", body: JSON.stringify({ name: name.trim(), desc: desc }) })
+          .then(() => { showToast("文件夹已建好"); return workLoad(); })
+          .then(() => renderWork())
+          .catch((err) => showToast("建立失败：" + ((err && err.message) || err)));
+        return;
+      }
+      if (id === "workNew"){ workEditOpen(null, ""); return; }
+      if (id === "workSaveBtn"){ workSubmit(); return; }
+      workData.editId = null; $("#workEdit").classList.add("hidden");
+    });
+  });
+}
+
 function renderLibs(){
   LIB_DEFS.forEach((d) => {
+    if (d.kind === "working"){ renderWork(); return; }
     const items = memData.items[d.kind] || [];
     const sub = $("#libSub-" + d.kind);
     if (sub) sub.textContent = items.length ? (items.length + " 条" + (items[0].title ? (" · " + items[0].title.slice(0, 18)) : "")) : "还没有内容";

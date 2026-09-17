@@ -3365,7 +3365,7 @@
         <div class="pe-stat" id="peStat"></div>
         <div class="settings-tip" style="margin-top:10px">
           <b>硅基流动的 <code>BAAI/bge-m3</code> 是免费的</b>（1024 维，中英混，够用）。<br>
-          换了模型或维度 → 库里旧向量会**自动作废**，点「整库重建」补回来；
+          换了模型或维度 → 库里旧向量会<b>自动作废</b>，点「整库重建」补回来；
           在那之前这些记忆仍能被关键词（BM25）召回，只是不参与语义相似。
         </div>
       </section>
@@ -4582,7 +4582,7 @@ if ($("#fFetch")) $("#fFetch").addEventListener("click", async () => {
       const sel = (prev && prev !== "__custom__" && groups.some((g) => (g.models || []).includes(prev)))
         ? prev : (builtIn[0] || (groups[0] && groups[0].models[0]) || "");
       fillModelGroups(groups, sel, curPid);
-      setConnStatus("已从后端拉取 " + provs.length + " 个供应商、共 " + total + " 个模型（**按供应商分组**，未合并）。选中其他供应商的模型会自动切换到该供应商入口。", "ok");
+      setConnStatus("已从后端拉取 " + provs.length + " 个供应商、共 " + total + " 个模型（<b>按供应商分组</b>，未合并）。选中其他供应商的模型会自动切换到该供应商入口。", "ok");
     } else {
       // 浏览器直连：向 base/models 拉，分组显示（已拉取 / 内置参考）
       if (!base) return setConnStatus("请先填 API 根地址。", "err");
@@ -7490,7 +7490,7 @@ async function palSearchPal(){
       escapeHtml(d.rumination.text) + "</div>";
     if (!html) html = '<div class="arc-empty">没想起什么相关的。记忆库共 ' + (d.counts || 0) + " 条。</div>";
     if (d.degraded) html = '<div class="pal-rum">⚠️ 向量模型这轮没连上（' + escapeHtml(d.embed_error || "") +
-      "），这次是**只用关键词**的降级召回，可能不太准。</div>" + html;
+      "），这次是<b>只用关键词</b>的降级召回，可能不太准。</div>" + html;
     else if (d.pending) html = '<div class="pal-rum">有 ' + d.pending +
       " 条记忆还没有向量（刚换过模型？），它们的语义相似度暂时不算 —— 去上面点「补全向量」。</div>" + html;
     if (d.mode === "remote") html += '<div class="ph-why" style="margin-top:10px">向量模型：' +

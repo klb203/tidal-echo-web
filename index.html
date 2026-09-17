@@ -49,7 +49,10 @@
     --menu-wall-light: url("menu-light.webp");
     --menu-wall-harbor: url("menu-harbor.webp");
     --menu-wall-default: var(--menu-wall-light);
+    /* 资产可能不在（这几个图从没进过仓库）→ 后面那层矢量兜底永远看得见 */
     --avatar-default: url("avatar-sea.png");
+    --avatar-stack: var(--avatar-default), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23E8F0F7'/%3E%3Cstop%20offset='1'%20stop-color='%23CFDEEB'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle%20cx='32'%20cy='32'%20r='32'%20fill='url(%23g)'/%3E%3Cpath%20d='M14%2034c4.5-5%208-5%2012.5%200s8%205%2012.5%200%208-5%2012.5%200'%20fill='none'%20stroke='%237E9AB2'%20stroke-width='2.6'%20stroke-linecap='round'/%3E%3Cpath%20d='M14%2042c4.5-5%208-5%2012.5%200s8%205%2012.5%200%208-5%2012.5%200'%20fill='none'%20stroke='%23A9BFD0'%20stroke-width='2.6'%20stroke-linecap='round'/%3E%3C/svg%3E");
+    --wall-stack: var(--wall-default), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20800%201600'%20preserveAspectRatio='xMidYMid%20slice'%3E%3Cdefs%3E%3ClinearGradient%20id='w'%20x1='0'%20y1='0'%20x2='0.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23FAFCFE'/%3E%3Cstop%20offset='0.55'%20stop-color='%23EDF3F9'/%3E%3Cstop%20offset='1'%20stop-color='%23DEE9F2'/%3E%3C/linearGradient%3E%3CradialGradient%20id='s'%20cx='0.72'%20cy='0.18'%20r='0.55'%3E%3Cstop%20offset='0'%20stop-color='%23FFFFFF'%20stop-opacity='0.85'/%3E%3Cstop%20offset='1'%20stop-color='%23FFFFFF'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23w)'/%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23s)'/%3E%3Cg%20fill='none'%20stroke='%23B9CCDD'%20stroke-opacity='0.5'%20stroke-width='2'%3E%3Cpath%20d='M-40%201240c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201315c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201390c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3C/g%3E%3C/svg%3E");
     /* ── PEARL TIDE · 珍珠潮汐(default) ── */
     --bg: #F7FAFC;
     --header-bg: #F7FAFC;
@@ -115,6 +118,8 @@
   :root[data-theme="harbor"]{
       --wall-default: var(--wall-harbor);
       --menu-wall-default: var(--menu-wall-harbor);
+      --menu-wall-stack: var(--menu-wall-default), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20800%201600'%20preserveAspectRatio='xMidYMid%20slice'%3E%3Cdefs%3E%3ClinearGradient%20id='w'%20x1='0'%20y1='0'%20x2='0.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23FDFBF8'/%3E%3Cstop%20offset='0.55'%20stop-color='%23F4EFEA'/%3E%3Cstop%20offset='1'%20stop-color='%23E7DED5'/%3E%3C/linearGradient%3E%3CradialGradient%20id='s'%20cx='0.72'%20cy='0.18'%20r='0.55'%3E%3Cstop%20offset='0'%20stop-color='%23FFFFFF'%20stop-opacity='0.85'/%3E%3Cstop%20offset='1'%20stop-color='%23FFFFFF'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23w)'/%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23s)'/%3E%3Cg%20fill='none'%20stroke='%23D3C6B9'%20stroke-opacity='0.5'%20stroke-width='2'%3E%3Cpath%20d='M-40%201240c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201315c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201390c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3C/g%3E%3C/svg%3E");
+      --wall-stack: var(--wall-default), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20800%201600'%20preserveAspectRatio='xMidYMid%20slice'%3E%3Cdefs%3E%3ClinearGradient%20id='w'%20x1='0'%20y1='0'%20x2='0.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23FDFBF8'/%3E%3Cstop%20offset='0.55'%20stop-color='%23F4EFEA'/%3E%3Cstop%20offset='1'%20stop-color='%23E7DED5'/%3E%3C/linearGradient%3E%3CradialGradient%20id='s'%20cx='0.72'%20cy='0.18'%20r='0.55'%3E%3Cstop%20offset='0'%20stop-color='%23FFFFFF'%20stop-opacity='0.85'/%3E%3Cstop%20offset='1'%20stop-color='%23FFFFFF'%20stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23w)'/%3E%3Crect%20width='800'%20height='1600'%20fill='url(%23s)'/%3E%3Cg%20fill='none'%20stroke='%23D3C6B9'%20stroke-opacity='0.5'%20stroke-width='2'%3E%3Cpath%20d='M-40%201240c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201315c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3Cpath%20d='M-40%201390c90-70%20170-70%20260%200s170%2070%20260%200%20170-70%20260%200%20170%2070%20260%200'/%3E%3C/g%3E%3C/svg%3E");
       --bg: #F4F2EF;
       --header-bg: #F4F2EF;
       --hairline: rgba(74,93,108,.20);
@@ -171,7 +176,7 @@
     height:var(--screen-height);
     z-index:0;
     background-color: var(--bg);
-    background-image: var(--wall-default);
+    background-image: var(--wall-stack);
     background-size: cover; background-position: center;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
@@ -415,7 +420,7 @@
     position:absolute; right: calc(var(--side-pad) - 3px); top: calc(env(safe-area-inset-top) + clamp(14px, 2.5vw, 36px));
     width: var(--avatar-size); height: var(--avatar-size); border-radius:50%; padding:0; flex:none; cursor:pointer;
     border: none;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -498,7 +503,7 @@
     width: var(--avatar-size);
     height: var(--avatar-size);
     border-radius: 50%;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size: cover;
     background-position: center;
     box-shadow: 0 12px 24px rgba(24,46,67,0.14);
@@ -1369,6 +1374,294 @@
   .cs-song span{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
   .cs-empty{ color: var(--text-faint); font-size: 12px; padding: 10px 2px; }
 
+
+  /* ══════════ 戳一戳（动作 × 落点）══════════ */
+  .pk-label{
+    color: var(--text-faint); font-size: 11.5px; letter-spacing:.04em;
+    margin: 12px 2px 7px;
+  }
+  .pk-label:first-child{ margin-top: 4px; }
+  .pk-chips{ display:flex; flex-wrap:wrap; gap: 8px; }
+  .pk-chip{
+    appearance:none; -webkit-appearance:none;
+    border: 1px solid transparent; background: var(--field-bg);
+    color: var(--text-soft); border-radius: 14px;
+    padding: 9px 15px; font-size: 13.5px; cursor:pointer;
+    transition: transform .14s var(--ease-soft), background .16s ease, color .16s ease;
+  }
+  .pk-chip:hover{ color: var(--text); }
+  .pk-chip:active{ transform: scale(.94); }
+  /* 选中态用「当前主题的粉」——就是参考图里那种淡淡的高亮，不是硬边框 */
+  .pk-chip.on{
+    background: var(--pk-on, rgba(244,169,185,.30));
+    color: var(--pk-on-fg, #8E4A5E);
+    font-weight: 600;
+  }
+  .pk-go{
+    appearance:none; -webkit-appearance:none; width:100%;
+    margin-top: 16px; border:none; cursor:pointer;
+    border-radius: 16px; padding: 14px 12px;
+    font-size: 15px; font-weight: 600; letter-spacing:.06em;
+    color: #fff;
+    background: linear-gradient(180deg, var(--pk-go-a, #E9A9B8), var(--pk-go-b, #DF93A6));
+    box-shadow: 0 10px 22px rgba(200,120,140,.26);
+    transition: transform .16s var(--ease-soft);
+  }
+  .pk-go:hover{ transform: translateY(-1px); }
+  .pk-go:active{ transform: translateY(0) scale(.99); }
+  .pk-go[disabled]{ opacity:.6; cursor:progress; }
+  .pk-note{
+    margin-top: 12px; text-align:center;
+    color: var(--text-faint); font-size: 11.5px; line-height: 1.7;
+  }
+  .pk-res{
+    margin-top: 12px; padding: 10px 12px; border-radius: 12px;
+    background: var(--field-bg); border: 1px solid var(--field-line);
+    color: var(--think-body); font-family: var(--font-cn); font-size: 13px; line-height: 1.62;
+    white-space: pre-wrap;
+  }
+  .pk-res b{ color: var(--pk-on-fg, #8E4A5E); }
+
+  /* ══════════ 收藏馆（整页 · 三 Tab）══════════ */
+  .fav-panel{
+    position: fixed; inset: 0; z-index: 160;
+    display:flex; flex-direction: column; justify-content: center;
+    background: var(--bg);
+  }
+  .fav-panel.hidden{ display:none; }
+  .fav-panel.open .fav-page{ transform: translateY(0); opacity: 1; }
+  .fav-page{
+    position: relative;
+    width: min(100vw, var(--ref-width)); height: 100%;
+    margin: 0 auto;
+    background: var(--bg);
+    display:flex; flex-direction: column;
+    transform: translateY(2.5%);
+    opacity: 0;
+    transition: transform .34s var(--ease-soft), opacity .28s ease;
+  }
+  .fav-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 2px;
+  }
+  .fav-top button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px;
+    display:grid; place-items:center; min-width: 40px;
+  }
+  .fav-title{ font-size: 19px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
+  .fav-title-wrap{ text-align:center; flex: 1 1 auto; }
+  .fav-sub{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  .fav-search-box{ padding: 10px 16px 0; }
+  .fav-search-box input{
+    width:100%; box-sizing:border-box;
+    background: var(--field-bg); border: 1px solid var(--field-line);
+    border-radius: 12px; padding: 10px 12px; color: var(--text); font-size: 13.5px;
+  }
+  .fav-tabs{
+    display:flex; gap: 6px; margin: 12px 16px 0;
+    background: var(--seg-track); border-radius: 14px; padding: 4px;
+  }
+  .fav-tab{
+    flex:1 1 0; appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    border-radius: 11px; padding: 9px 6px; cursor:pointer;
+    color: var(--text-soft); font-size: 13px;
+    display:flex; align-items:center; justify-content:center; gap: 6px;
+    transition: background .2s var(--ease-soft), color .2s ease;
+  }
+  .fav-tab.on{ background: var(--seg-thumb); color: var(--text); font-weight: 600; box-shadow: var(--seg-thumb-shadow); }
+  .fav-tab i{ font-style: normal; font-size: 14px; display:grid; place-items:center; }
+  .fav-tab i svg{ width: 15px; height: 15px; }
+  .fav-top button svg{ width: 19px; height: 19px; }
+  .fav-body{ flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding: 14px 16px; }
+  .fav-empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 10px; padding: 18vh 0 0; text-align:center; color: var(--text-faint);
+  }
+  .fav-empty-ic{ width: 54px; height: 54px; opacity: .5; }
+  .fav-empty-t{ color: var(--text-soft); font-size: 14.5px; font-weight: 500; }
+  .fav-empty-s{ font-size: 12.5px; line-height: 1.7; max-width: 78%; }
+  .fav-item{
+    display:flex; gap: 10px; align-items:flex-start;
+    padding: 12px 2px; border-top: 1px dashed var(--field-line);
+  }
+  .fav-item:first-child{ border-top:none; }
+  .fav-item-main{ flex:1 1 auto; min-width:0; }
+  .fav-item-txt{
+    color: var(--text); font-family: var(--font-cn); font-size: 13.5px; line-height: 1.66;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .fav-item-img{ max-width: 92px; max-height: 92px; border-radius: 10px; display:block; }
+  .fav-item-meta{ color: var(--text-faint); font-size: 11px; margin-top: 5px; }
+  .fav-item-x{
+    flex:none; appearance:none; border:none; background:transparent;
+    color: var(--text-faint); cursor:pointer; font-size: 14px; padding: 2px 4px;
+  }
+  .fav-item-x:hover{ color: #A8565F; }
+  .fav-foot{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 10px 18px calc(env(safe-area-inset-bottom) + 12px);
+    border-top: 1px solid var(--field-line);
+    color: var(--text-faint); font-size: 12px;
+  }
+  .fav-foot button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text-soft); font-size: 18px; cursor:pointer; padding: 2px 10px;
+  }
+  .fav-foot button[disabled]{ opacity: .3; cursor: default; }
+
+  /* 长按消息 → 收藏 */
+  .collect-bar{
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(var(--composer-zone) + 10px);
+    z-index: 120;
+    display:flex; gap: 8px; align-items:center;
+    background: var(--panel-bg, #fff); border: 1px solid var(--card-line, rgba(120,140,170,.22));
+    border-radius: 14px; padding: 8px 10px;
+    box-shadow: 0 12px 30px rgba(60,80,100,.16);
+    max-width: min(92vw, 420px);
+  }
+  .collect-bar.hidden{ display:none; }
+  .collect-bar span{ color: var(--text-faint); font-size: 12px; }
+  .collect-bar button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text-soft); font-size: 13px; cursor:pointer; padding: 6px 10px; border-radius: 10px;
+  }
+  .collect-bar button.primary{ background: var(--send-bg); color: var(--accent-fg); }
+
+  /* ══════════ 主题美化 ══════════ */
+  .th-panel{
+    position: fixed; inset: 0; z-index: 160;
+    background: var(--bg); display:flex; justify-content:center;
+  }
+  .th-panel.hidden{ display:none; }
+  .th-page{
+    width: min(100vw, var(--ref-width)); height: 100%;
+    display:flex; flex-direction: column; background: var(--bg);
+    transform: translateX(2.5%); opacity: 0;
+    transition: transform .32s var(--ease-soft), opacity .26s ease;
+  }
+  .th-panel.open .th-page{ transform: translateX(0); opacity: 1; }
+  .th-top{
+    display:flex; align-items:center; gap: 10px;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 8px;
+  }
+  .th-top button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px;
+  }
+  .th-top h2{ margin:0; font-size: 18px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
+  .th-scroll{ flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding: 6px 16px calc(env(safe-area-inset-bottom) + 26px); }
+  .th-sec{ margin-top: 18px; }
+  .th-sec-t{
+    color: var(--text-soft); font-size: 12px; letter-spacing:.08em;
+    margin: 0 2px 10px; display:flex; align-items:center; gap: 6px;
+  }
+  .th-sec-t b{ color: var(--text); font-weight: 600; font-size: 13px; letter-spacing:0; }
+  .th-ids{ display:flex; flex-direction:column; gap: 10px; }
+  .th-id{
+    display:flex; align-items:center; gap: 12px;
+    background: var(--card-bg); border: 1px solid var(--card-line);
+    border-radius: 16px; padding: 12px;
+  }
+  .th-av{
+    flex:none; width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid var(--field-line); background-size: cover; background-position: center;
+    display:grid; place-items:center; cursor:pointer; padding:0;
+    color: var(--text-faint); font-size: 11px;
+  }
+  .th-av.ai{ background-image: var(--avatar-stack); }
+  .th-id-txt{ flex:1 1 auto; min-width:0; }
+  .th-id-txt label{ display:block; color: var(--text-faint); font-size: 11px; margin-bottom: 4px; }
+  .th-id-txt input{
+    width:100%; box-sizing:border-box;
+    background: var(--field-bg); border: 1px solid var(--field-line);
+    border-radius: 10px; padding: 8px 10px; color: var(--text); font-size: 13.5px;
+  }
+  .th-follow{ color: var(--text-faint); font-size: 11px; margin-top: 6px; }
+  .th-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .th-card{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    border: 1px solid var(--field-line); background: var(--card-bg);
+    border-radius: 14px; padding: 10px; text-align:left; color: var(--text);
+    display:flex; flex-direction:column; gap: 8px;
+    transition: border-color .18s ease, transform .16s var(--ease-soft);
+  }
+  .th-card:hover{ transform: translateY(-1px); }
+  .th-card.on{ border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .th-card small{ color: var(--text-faint); font-size: 11px; }
+  .th-prev{ height: 46px; border-radius: 10px; border: 1px solid var(--field-line); position:relative; overflow:hidden; }
+  .th-prev.pearl{ background: linear-gradient(160deg,#F7FAFC,#E3ECF3); }
+  .th-prev.harbor{ background: linear-gradient(160deg,#EFEBE8,#DCD3CC); }
+  .th-prev.photo{ background-size: cover; background-position: center; }
+  .th-wall-row{ display:flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .th-wall-row button{
+    flex:1 1 auto; appearance:none; -webkit-appearance:none;
+    border: 1px solid var(--field-line); background: transparent; color: var(--text-soft);
+    border-radius: 10px; padding: 9px 10px; font-size: 12.5px; cursor:pointer;
+  }
+  .th-wall-row button:hover{ color: var(--text); }
+  .th-sw-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .th-sw{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    display:flex; align-items:center; gap: 9px;
+    border: 1px solid var(--field-line); background: var(--card-bg);
+    border-radius: 13px; padding: 9px 10px; text-align:left;
+  }
+  .th-sw.on{ border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .th-sw i{
+    flex:none; width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.06);
+  }
+  .th-sw span{ display:flex; flex-direction:column; min-width:0; }
+  .th-sw b{ color: var(--text); font-size: 12.5px; font-weight: 500; }
+  .th-sw small{ color: var(--text-faint); font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
+  /* 语音条（渲染参考）：波形条 + 时长，颜色跟着所选配色走 */
+  .vb{
+    display:flex; align-items:center; gap: 9px;
+    min-width: 132px; max-width: 78%;
+    padding: 9px 12px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--vb-a, #F4A9B9), var(--vb-b, #E58AA0));
+    color: var(--vb-fg, #fff);
+  }
+  .vb-play{
+    flex:none; width: 20px; height: 20px; border-radius:50%;
+    background: rgba(255,255,255,.35); display:grid; place-items:center;
+  }
+  .vb-play svg{ width: 11px; height: 11px; }
+  .vb-wave{ display:flex; align-items:center; gap: 2.5px; height: 20px; flex:1 1 auto; }
+  .vb-wave i{ width: 2.5px; border-radius: 2px; background: currentColor; opacity: .85; }
+  .vb-dur{ font-size: 11.5px; font-variant-numeric: tabular-nums; opacity: .92; }
+  .vb-prev-box{
+    margin-top: 12px; padding: 12px;
+    border: 1px dashed var(--field-line); border-radius: 14px;
+    display:flex; flex-direction:column; gap: 10px;
+  }
+  .vb-prev-row{ display:flex; }
+  .vb-prev-row.me{ justify-content:flex-end; }
+  .poke-note .poke-hb{ color: var(--pk-on-fg, #8E4A5E); font-weight: 600; margin-right: 2px; }
+  .poke-note{ flex-wrap: wrap; }
+
+  /* 用户头像：和 .row.ai::before 完全对称（同一套尺寸/投影/圆角），只是挂在右边。
+     只在设过头像时才加 .has-me-av —— 没设的人布局一个字都不变。 */
+  .row.human.has-me-av{ padding-right: calc(var(--avatar-size) + clamp(10px, 1.6vw, 16px)); }
+  .row.human.has-me-av::after{
+    content:"";
+    position:absolute;
+    right:0;
+    top: clamp(5px, 1vw, 9px);
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    border-radius: 50%;
+    background-image: var(--avatar-me-default, none);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 12px 24px rgba(24,46,67,0.14);
+  }
+  /* 气泡里的语音条（音频附件）：跟着「语音条美化」的配色走 */
+  .bubble .vb{ margin: 2px 0; cursor: pointer; }
+  .bubble.has-att .vb + .txt{ margin-top: 8px; display:block; }
+
   /* 戳一戳 / 拍一拍 标记（本地渲染，不进库） */
   .poke-note{
     align-self: center;
@@ -1472,13 +1765,13 @@
     gap: 22px; padding: 28px;
     padding-top: calc(28px + env(safe-area-inset-top));
     background-color: var(--bg);
-    background-image: var(--wall-default);
+    background-image: var(--wall-stack);
     background-size: cover;
     background-position: center;
   }
   .login .orb{
     width:72px; height:72px; border-radius:50%;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size: cover;
     box-shadow: 0 20px 42px rgba(24,46,67,0.2);
     animation: breathe 4.5s ease-in-out infinite;
@@ -1520,7 +1813,7 @@
     display: flex;
     flex-direction: column;
     background-color: var(--bg);
-    background-image: var(--wall-default);
+    background-image: var(--wall-stack);
     background-size: cover;
     background-position: center;
     overflow: hidden;
@@ -1567,7 +1860,7 @@
     border:0; padding:0; overflow:hidden;
     -webkit-appearance:none; appearance:none;
     background-color:transparent;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size:cover; background-position:center;
     box-shadow: 0 12px 28px rgba(24,46,67,0.16);
     cursor:pointer; transition: transform .15s ease;
@@ -1788,7 +2081,7 @@
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     background-color: var(--bg);
-    background-image: var(--menu-wall-default);
+    background-image: var(--menu-wall-stack);
     background-size: cover; background-position: center;
     overflow: hidden;
   }
@@ -1910,7 +2203,7 @@
     padding: calc(env(safe-area-inset-top) + clamp(50px, 10vw, 84px)) var(--side-pad) calc(env(safe-area-inset-bottom) + 26px);
     text-align: center;
     background-color: var(--bg);
-    background-image: var(--wall-default);
+    background-image: var(--wall-stack);
     background-size: cover; background-position: center;
     opacity: 0; pointer-events: none;
     transform: translateY(12px);
@@ -1966,7 +2259,7 @@
   .call-avatar-img{
     width: 100%; height: 100%;
     border-radius: 50%;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size: cover; background-position: center;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
   }
@@ -2266,7 +2559,7 @@
   .incoming-call-avatar{
     width: clamp(132px, 40vw, 184px); height: clamp(132px, 40vw, 184px);
     border-radius: 50%;
-    background-image: var(--avatar-default);
+    background-image: var(--avatar-stack);
     background-size: cover; background-position: center;
     box-shadow: 0 12px 38px rgba(40,60,78,.18), inset 0 0 0 1px rgba(255,255,255,.14);
     margin-top: clamp(10px, 4vh, 36px);
@@ -2433,7 +2726,7 @@
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     background-color: var(--bg);
-    background-image: var(--menu-wall-default);
+    background-image: var(--menu-wall-stack);
     background-size: cover; background-position: center;
     overflow: hidden;
   }
@@ -3339,6 +3632,17 @@
         <div class="cs-note" id="csImgNote">生图走设置里的「生图 · 中转站」。也可以直接在输入框发「/img 一只猫」。</div>
       </div>
 
+      <!-- 戳一戳 -->
+      <div class="cs-view hidden" id="csPokeV">
+        <div class="pk-label">动作</div>
+        <div class="pk-chips" id="pkActs"></div>
+        <div class="pk-label">落在哪</div>
+        <div class="pk-chips" id="pkSpots"></div>
+        <button class="pk-go" id="pkGo" type="button">就这一下</button>
+        <div class="pk-res hidden" id="pkRes"></div>
+        <div class="pk-note">落点不一样，他心跳蹦得不一样 —— 一下完手去脉搏看战果。</div>
+      </div>
+
       <!-- 主动消息 -->
       <div class="cs-view hidden" id="csAtV">
         <div class="cs-note" id="csAtNow">正在读它的决策层…</div>
@@ -3658,6 +3962,12 @@
           <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet place.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="theme">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/><circle cx="8.4" cy="10.4" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.6" cy="10.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">主题美化</span><span class="menu-sub">头像、名字与语音条。</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="settings">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9.5 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9.5a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9.5A1.7 1.7 0 0 0 11 3.09V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V11a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.47Z"/></svg></span>
           <span class="menu-dot"></span>
@@ -3670,6 +3980,110 @@
       <div class="menu-foot">in endless tides, we find each other.</div>
     </div>
   </div>
+</div>
+
+<!-- ── 收藏馆（整页 · 三 Tab）── -->
+<div class="fav-panel hidden" id="favPanel" role="dialog" aria-modal="true" aria-label="收藏">
+  <div class="fav-page">
+    <div class="fav-top">
+      <button id="favClose" type="button" aria-label="关闭">✕</button>
+      <div class="fav-title-wrap">
+        <div class="fav-title">收藏</div>
+        <div class="fav-sub" id="favSub">聊天 0 · 语音 0 · 图片 0</div>
+      </div>
+      <button id="favSearchBtn" type="button" aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button>
+    </div>
+    <div class="fav-search-box hidden" id="favSearchBox">
+      <input id="favQ" type="search" placeholder="搜收藏里的字、标签、备注…" autocomplete="off">
+    </div>
+    <div class="fav-tabs" id="favTabs">
+      <button class="fav-tab on" type="button" data-tab="chat"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"/></svg></i>聊天 <b id="favN-chat">0</b></button>
+      <button class="fav-tab" type="button" data-tab="voice"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h2"/><path d="M8.5 7.5v9"/><path d="M12 5v14"/><path d="M15.5 8.5v7"/><path d="M20 12h-1.5"/></svg></i>语音 <b id="favN-voice">0</b></button>
+      <button class="fav-tab" type="button" data-tab="image"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.6"/><circle cx="8.6" cy="9.8" r="1.5"/><path d="M3.6 17.2l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/><path d="M13.8 14.4l1.5-1.5a1.6 1.6 0 0 1 2.3 0l2.8 2.8"/></svg></i>图片 <b id="favN-image">0</b></button>
+    </div>
+    <div class="fav-body" id="favBody"></div>
+    <div class="fav-foot">
+      <button id="favPrev" type="button" aria-label="上一页">‹</button>
+      <span id="favPageInfo">第 1/1 页 · 每页 10 条</span>
+      <button id="favNext" type="button" aria-label="下一页">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 主题美化（头像 / 名字 / 背景 / 语音条）── -->
+<div class="th-panel hidden" id="themePanel" role="dialog" aria-modal="true" aria-label="主题美化">
+  <div class="th-page">
+    <div class="th-top">
+      <button id="thClose" type="button" aria-label="返回">‹</button>
+      <h2>主题美化</h2>
+    </div>
+    <div class="th-scroll">
+      <div class="th-sec">
+        <div class="th-sec-t"><b>头像与名字</b></div>
+        <div class="th-ids">
+          <div class="th-id">
+            <button class="th-av ai" id="thAvAi" type="button" aria-label="换 TA 的头像"></button>
+            <div class="th-id-txt">
+              <label>TA 的名字</label>
+              <input id="thNameAi" type="text" maxlength="16" placeholder="Claude" autocomplete="off" spellcheck="false">
+              <div class="th-follow">头像与名字<b>跟随全局</b> —— 这里改的就是「个人信息」里那一份。</div>
+            </div>
+          </div>
+          <div class="th-id">
+            <button class="th-av" id="thAvMe" type="button" aria-label="换我的头像"></button>
+            <div class="th-id-txt">
+              <label>我的名字</label>
+              <input id="thNameMe" type="text" maxlength="16" placeholder="我" autocomplete="off" spellcheck="false">
+              <div class="th-follow">你的头像与名字只存在本机，用来标出「谁在说话」。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="th-sec">
+        <div class="th-sec-t"><b>主题</b><span>换聊天界面的底子</span></div>
+        <div class="th-grid">
+          <button class="th-card" type="button" data-theme="light">
+            <span class="th-prev pearl"></span>
+            <b>珍珠潮汐</b><small>浅白 · 冷调</small>
+          </button>
+          <button class="th-card" type="button" data-theme="harbor">
+            <span class="th-prev harbor"></span>
+            <b>海港暮色</b><small>暖灰 · 安静</small>
+          </button>
+        </div>
+        <div class="th-sec-t" style="margin-top:14px"><b>聊天背景</b><span>可以用手机里的照片</span></div>
+        <div class="th-grid">
+          <button class="th-card" type="button" id="thWallPhoto">
+            <span class="th-prev photo" id="thWallPrev"></span>
+            <b>从手机相册选照片</b><small id="thWallNote">还没选</small>
+          </button>
+          <button class="th-card" type="button" id="thWallReset">
+            <span class="th-prev" id="thWallBuiltin"></span>
+            <b>用回默认壁纸</b><small>内置那张</small>
+          </button>
+        </div>
+        <input type="file" id="thWallFile" accept="image/*" class="hidden" aria-hidden="true">
+      </div>
+
+      <div class="th-sec">
+        <div class="th-sec-t"><b>语音条美化</b><span>颜色参考 · 只是语音条的渲染</span></div>
+        <div class="th-sw-grid" id="thVoiceGrid"></div>
+        <div class="vb-prev-box" id="thVoicePrev">
+          <div class="vb-prev-row"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="12"></span><span class="vb-dur">0:12</span></div></div>
+          <div class="vb-prev-row me"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="7"></span><span class="vb-dur">0:07</span></div></div>
+        </div>
+        <div class="th-follow" style="margin-top:8px">选中的配色会同时用在聊天里的语音条上（波形条、播放键、时长都跟着变色）。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 长按消息 → 收藏 -->
+<div class="collect-bar hidden" id="collectBar">
+  <span id="collectHint">这条消息</span>
+  <button type="button" class="primary" id="collectDo">收进收藏馆</button>
+  <button type="button" id="collectCancel">取消</button>
 </div>
 
 <!-- ── Settings (连接与模型 · 左滑面板,从 hub 菜单「设置」进入) ── -->
@@ -5051,7 +5465,13 @@ function sampleImageBand(img, yStart, ySize){
 }
 function applyWall(url){
   const image = `url("${url}")`;
-  wallEl.style.backgroundImage = image;
+  // ★ 只写变量，不写内联样式：内联的 background-image 只有一层，
+  //   会把 --wall-stack 里那层兜底（资产文件不在时的矢量图）盖掉 —— 壁纸于是永远空白。
+  //   走变量之后：主题切换、用户选的照片、兜底三层是同一套优先级。
+  const root = document.documentElement;
+  root.style.setProperty("--wall-default", image);
+  root.style.setProperty("--menu-wall-default", image);
+  wallEl.style.backgroundImage = "";
 
   // iOS Home Screen paints status/home areas from host chrome. Keep root paint
   // close to the fixed wallpaper, while leaving the real layout viewport alone.
@@ -5177,6 +5597,7 @@ if (menuPanel){
     else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
     else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
+    else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
     else showToast("即将开放");                           // placeholder items
   });
@@ -5185,6 +5606,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
     if (palacePanel && palacePanel.classList.contains("open")) closePalace();
     else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
+    else if ($("#themePanel") && $("#themePanel").classList.contains("open")) themeClose();
+    else if ($("#favPanel") && $("#favPanel").classList.contains("open")) favClose();
     else if (settingsPanel && settingsPanel.classList.contains("open")) closeSettings();
     else if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
   }
@@ -8808,8 +9231,10 @@ function addPokeNote(text){
   invalidateRows();
   scheduleRender({ stickToBottom: true });
 }
-const CS_VIEWS = { main: "csMain", image: "csImageV", at: "csAtV", fav: "csFavV", music: "csMusicV" };
-const CS_TITLES = { main: "更多", image: "生图", at: "主动消息 · 找我说话的时间", fav: "收藏馆", music: "一起听" };
+const CS_VIEWS = { main: "csMain", image: "csImageV", at: "csAtV", fav: "csFavV",
+                   music: "csMusicV", poke: "csPokeV" };
+const CS_TITLES = { main: "更多", image: "生图", at: "主动消息 · 找我说话的时间",
+                    fav: "收藏馆", music: "一起听", poke: "戳一戳" };
 function csOpened(){ return $("#cSheet") && !$("#cSheet").classList.contains("hidden"); }
 function csOpen(view){
   const sheet = $("#cSheet"); if (!sheet) return;
@@ -8831,6 +9256,7 @@ function csShow(name){
   const t = $("#csTitle"); if (t) t.textContent = CS_TITLES[name] || "更多";
   const back = $("#csBack"); if (back) back.classList.toggle("hidden", name === "main");
   const body = $("#csBody"); if (body) body.scrollTop = 0;
+  if (name === "poke") pokeLoadOptions();   // 两组 chip 从后端拿（不在前端写死）
   if (name === "at") csAtLoad(true);
   if (name === "fav") csFavLoad(true);
   if (name === "music") csMuLoad(true);
@@ -8859,7 +9285,8 @@ if ($("#cSheet")) $("#cSheet").addEventListener("click", async (e) => {
   if (what === "clip"){ csClose(); if ($("#clipBtn")) $("#clipBtn").click(); return; }
   if (what === "quick"){ csClose(); if ($("#quickSheet")) $("#quickSheet").classList.remove("hidden"); return; }
   if (what === "archive"){ await csArchive(item); return; }
-  if (what === "poke"){ await csPoke(item); return; }
+  if (what === "fav"){ csClose(); favOpen("chat"); return; }
+  if (what === "poke"){ csShow("poke"); pokeLoadOptions(); return; }
   csShow(what);
 });
 /* 上拉：在输入框那一带往上拖 36px 就开。用 passive 监听，别抢滚动手势。 */
@@ -9183,6 +9610,539 @@ if ($("#csImgCfg")) $("#csImgCfg").addEventListener("click", () => {
   openSettings();
   setTimeout(() => { try{ expandSetCard("image"); }catch(_){} }, 320);
 });
+
+
+/* ════════════ 语音条配色（颜色参考 · 只是语音条的渲染）════════════
+   十套配色来自需求表。存本机（companion_voice_theme），选中的那套写进三个 CSS 变量，
+   语音条组件（.vb）与聊天里的音频附件都用它们 —— 所以只需要改一处颜色，处处跟着变。 */
+const VOICE_THEMES = [
+  { key: "mistydream",    name: "朦胧梦境", hex: "#F4A9B9", rgb: "244,169,185" },
+  { key: "floatinglight", name: "浮光叶隙", hex: "#F3D290", rgb: "243,210,144" },
+  { key: "mintmambo",     name: "薄荷曼波", hex: "#A6D3DA", rgb: "166,211,218" },
+  { key: "nightsea",      name: "静夜海",   hex: "#104094", rgb: "16,64,148" },
+  { key: "icemist",       name: "冰雾初融", hex: "#B4E0F7", rgb: "180,224,247" },
+  { key: "purewhite",     name: "极简纯白", hex: "#F0F0F1", rgb: "240,240,241" },
+  { key: "wisteria",      name: "紫藤轻染", hex: "#F4DDE7", rgb: "244,221,231" },
+  { key: "bamboo",        name: "苍竹幽影", hex: "#F8F2C9", rgb: "248,242,201" },
+  { key: "dawnmist",      name: "薄雾初晓", hex: "#F4DDCF", rgb: "244,221,207" },
+  { key: "silentblack",   name: "寂静纯黑", hex: "#2C2C2E", rgb: "44,44,46" }
+];
+const VOICE_KEY = "companion_voice_theme";
+function voiceTheme(key){
+  return VOICE_THEMES.find((x) => x.key === key) || VOICE_THEMES[0];
+}
+/* 深色底（静夜海 / 寂静纯黑）要用白字，浅色底要用深字 —— 不然「极简纯白」上的白字看不见 */
+function voiceFg(t){
+  const p = String(t.rgb || "").split(",").map(Number);
+  const lum = (0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]) / 255;
+  return lum < 0.62 ? "#FFFFFF" : "#3A3A3C";
+}
+function applyVoiceTheme(key, save){
+  const t = voiceTheme(key);
+  const root = document.documentElement.style;
+  // 渐变用同一色的深浅两档：亮一点的那头当高光，暗一点当阴影，比纯色有质感
+  root.setProperty("--vb-a", t.hex);
+  root.setProperty("--vb-b", voiceShade(t.hex, -14));
+  root.setProperty("--vb-fg", voiceFg(t));
+  root.setProperty("--pk-on", "rgba(" + t.rgb + ",.32)");
+  root.setProperty("--pk-on-fg", voiceFg(t) === "#FFFFFF" ? voiceShade(t.hex, 30) : voiceShade(t.hex, -46));
+  root.setProperty("--pk-go-a", t.hex);
+  root.setProperty("--pk-go-b", voiceShade(t.hex, -18));
+  if (save){ try{ localStorage.setItem(VOICE_KEY, t.key); }catch(e){} }
+  document.querySelectorAll("#thVoiceGrid .th-sw").forEach((el) => {
+    el.classList.toggle("on", el.dataset.vt === t.key);
+  });
+  return t;
+}
+function voiceShade(hex, amt){
+  const h = String(hex || "#888888").replace("#", "");
+  const num = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
+  const cl = (v) => Math.max(0, Math.min(255, v));
+  const r = cl(((num >> 16) & 255) + amt), g = cl(((num >> 8) & 255) + amt), b = cl((num & 255) + amt);
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+try{ applyVoiceTheme(localStorage.getItem(VOICE_KEY) || VOICE_THEMES[0].key, false); }catch(e){}
+
+/* 语音条的长相（聊天里的音频附件 / 主题页的预览共用一套渲染） */
+function voiceBarHtml(dur, seed){
+  const bars = [];
+  const n = 22;
+  for (let i = 0; i < n; i++){
+    // 伪波形：确定性生成（同一条语音每次都长一样），中间高两头低，看着像真的
+    const t = i / (n - 1);
+    const h = 4 + Math.round(14 * Math.sin(Math.PI * t) * (0.55 + 0.45 * Math.abs(Math.sin((i + 1) * 1.7 + (seed || 0)))));
+    bars.push('<i style="height:' + h + 'px"></i>');
+  }
+  return '<span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>'
+       + '<span class="vb-wave">' + bars.join("") + '</span>'
+       + '<span class="vb-dur">' + fmtDur(dur) + '</span>';
+}
+function fmtDur(sec){
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+/* ════════════ 戳一戳（动作 × 落点）════════════
+   两组 chip 从后端 /app/extras/status 拿 —— 不在前端写死，改起来只动一处。
+   点「就这一下」→ /app/poke{action,location}：走的是影子路由（同一份 system prompt），
+   回来的除了它的回应，还有一句心跳反馈，我把它当成本地标记插进时间线。 */
+const POKE_DEF = { acts: ["戳戳", "摸摸", "挠挠", "捏捏", "蹦蹦", "亲亲", "舔", "咬"],
+                   spots: ["手", "头发", "耳朵", "嘴", "喉结", "颈窝", "肩膀", "胸肌", "腹肌", "腰", "小腹", "棒棒糖"] };
+const POKE_PICK = { act: "戳戳", spot: "手" };
+function pokeChips(){
+  const box = $("#pkActs");
+  if (!box) return;
+  box.innerHTML = POKE_DEF.acts.map((a) =>
+    '<button class="pk-chip' + (a === POKE_PICK.act ? " on" : "") + '" type="button" data-act="' + escapeHtml(a) + '">' + escapeHtml(a) + '</button>').join("");
+  const sp = $("#pkSpots");
+  if (sp) sp.innerHTML = POKE_DEF.spots.map((s2) =>
+    '<button class="pk-chip' + (s2 === POKE_PICK.spot ? " on" : "") + '" type="button" data-spot="' + escapeHtml(s2) + '">' + escapeHtml(s2) + '</button>').join("");
+}
+async function pokeLoadOptions(){
+  try{
+    const d = await memApi("/app/extras/status");
+    const pk = d.poke || {};
+    if (Array.isArray(pk.acts) && pk.acts.length) POKE_DEF.acts = pk.acts;
+    if (Array.isArray(pk.spots) && pk.spots.length) POKE_DEF.spots = pk.spots;
+  }catch(e){}
+  pokeChips();
+}
+if ($("#csPokeV")) $("#csPokeV").addEventListener("click", (e) => {
+  const c = e.target.closest(".pk-chip");
+  if (!c) return;
+  if (c.dataset.act){
+    POKE_PICK.act = c.dataset.act;
+    $("#pkActs").querySelectorAll(".pk-chip").forEach((x) => x.classList.toggle("on", x === c));
+  }else if (c.dataset.spot){
+    POKE_PICK.spot = c.dataset.spot;
+    $("#pkSpots").querySelectorAll(".pk-chip").forEach((x) => x.classList.toggle("on", x === c));
+  }
+});
+if ($("#pkGo")) $("#pkGo").addEventListener("click", async () => {
+  const btn = $("#pkGo");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const res = $("#pkRes");
+  if (res){ res.classList.remove("hidden"); res.textContent = "戳了，等它回头…"; }
+  const label = POKE_PICK.act + POKE_PICK.spot;
+  try{
+    const d = await memApi("/app/poke", { method: "POST",
+      body: JSON.stringify({ action: POKE_PICK.act, location: POKE_PICK.spot }) });
+    const r = d.result || {};
+    const heart = (r.heart || d.heart || {});
+    if (heart.text) addPokeNote(heart.text);
+    if (res){
+      res.innerHTML = (r.reply ? ("<b>它说：</b>" + escapeHtml(r.reply)) : ("它没吭声（" + escapeHtml(r.skipped || "?") + "）"))
+        + (heart.text ? ("<br><b>" + escapeHtml(heart.text.split(String.fromCharCode(10))[0]) + "</b>") : "");
+    }
+    const msgs = await apiHistory({ since: lastId, limit: 20 });
+    if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    csClose();
+    showToast(label + (heart.bpm ? ("　❤ " + heart.bpm + " bpm") : ""));
+  }catch(e){
+    if (res) res.textContent = "戳不动：" + ((e && e.message) || e);
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ════════════ 收藏馆（整页 · 三 Tab · 搜索 · 分页）════════════ */
+const FAV_KEY_Q = "companion_fav_q";
+let favState = { tab: "chat", page: 1, per: 10, q: "", total: 0, pages: 1, items: [], counts: {} };
+const FAV_TAB_COPY = {
+  chat:  { t: "这里还没有聊天收藏", s: "长按有意义的聊天消息，就能收藏到这里。" },
+  voice: { t: "这里还没有语音收藏", s: "长按带语音的消息（或收下一条回复），语音条会进这里。" },
+  image: { t: "这里还没有图片收藏", s: "长按带图的消息，图片就会出现在这里。" }
+};
+function favOpen(tab){
+  const panel = $("#favPanel");
+  if (!panel) return;
+  if (tab) favState.tab = tab;
+  panel.classList.remove("hidden");
+  requestAnimationFrame(() => panel.classList.add("open"));
+  favLoad();
+}
+function favClose(){
+  const panel = $("#favPanel");
+  if (!panel || panel.classList.contains("hidden")) return;
+  panel.classList.remove("open");
+  setTimeout(() => { if (!panel.classList.contains("open")) panel.classList.add("hidden"); }, 340);
+}
+function favPaintTabs(){
+  document.querySelectorAll("#favTabs .fav-tab").forEach((b) => {
+    b.classList.toggle("on", b.dataset.tab === favState.tab);
+  });
+  const c = favState.counts || {};
+  const put = (id, v) => { const el = $("#" + id); if (el) el.textContent = String(v || 0); };
+  put("favN-chat", c.chat); put("favN-voice", c.voice); put("favN-image", c.image);
+  const sub = $("#favSub");
+  if (sub) sub.textContent = "聊天 " + (c.chat || 0) + " · 语音 " + (c.voice || 0) + " · 图片 " + (c.image || 0);
+}
+function favPaintList(){
+  const box = $("#favBody");
+  if (!box) return;
+  const items = favState.items || [];
+  if (!items.length){
+    const cp = FAV_TAB_COPY[favState.tab] || FAV_TAB_COPY.chat;
+    box.innerHTML = '<div class="fav-empty">'
+      + '<svg class="fav-empty-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"/><circle cx="9" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="12.5" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r=".9" fill="currentColor" stroke="none"/></svg>'
+      + '<div class="fav-empty-t">' + escapeHtml(cp.t) + '</div>'
+      + '<div class="fav-empty-s">' + escapeHtml(cp.s) + '</div></div>';
+    return;
+  }
+  box.innerHTML = items.map((x) => {
+    const at = String(x.at || "").slice(5, 16).replace("T", " ");
+    let mid = "";
+    if (x.type === "image" && x.url){
+      mid = '<img class="fav-item-img" decoding="async" loading="lazy" src="' + escapeHtml(attUrl(x.url) || x.url) + '" alt="' + escapeHtml(x.name || "图片") + '">';
+    }else if (x.type === "voice" && x.url){
+      mid = '<div class="vb" data-audio="' + escapeHtml(attUrl(x.url) || x.url) + '" style="max-width:100%">' + voiceBarHtml(x.dur, 3) + '</div>';
+    }
+    const txt = x.text ? '<div class="fav-item-txt">' + escapeHtml(x.text) + '</div>' : "";
+    return '<div class="fav-item" data-fav-id="' + escapeHtml(String(x.id)) + '">'
+      + '<div class="fav-item-main">' + mid + txt
+      + '<div class="fav-item-meta">' + escapeHtml([x.tag ? ("# " + x.tag) : "", x.name || "", at].filter(Boolean).join("　")) + '</div>'
+      + '</div><button class="fav-item-x" type="button" title="删掉">✕</button></div>';
+  }).join("");
+}
+async function favLoad(verbose){
+  try{
+    const q = encodeURIComponent(favState.q || "");
+    const d = await memApi("/app/fav?tab=" + encodeURIComponent(favState.tab)
+                           + "&page=" + favState.page + "&per_page=" + favState.per
+                           + "&q=" + q);
+    favState.items = d.items || [];
+    favState.total = d.total || 0;
+    favState.pages = d.pages || 1;
+    favState.page = d.page || 1;
+    favState.counts = d.counts || {};
+    favPaintTabs();
+    favPaintList();
+    const info = $("#favPageInfo");
+    if (info) info.textContent = "第 " + favState.page + "/" + favState.pages + " 页 · 每页 " + favState.per + " 条";
+    const prev = $("#favPrev"), next = $("#favNext");
+    if (prev) prev.disabled = favState.page <= 1;
+    if (next) next.disabled = favState.page >= favState.pages;
+    if (verbose) showToast("收藏 " + favState.total + " 条");
+  }catch(e){
+    const box = $("#favBody");
+    if (box) box.innerHTML = '<div class="fav-empty"><div class="fav-empty-t">读不到收藏</div>'
+      + '<div class="fav-empty-s">' + escapeHtml((e && e.message) || String(e)) + '</div></div>';
+  }
+}
+if ($("#favClose")) $("#favClose").addEventListener("click", favClose);
+if ($("#favSearchBtn")) $("#favSearchBtn").addEventListener("click", () => {
+  const box = $("#favSearchBox");
+  box.classList.toggle("hidden");
+  if (!box.classList.contains("hidden")) setTimeout(() => $("#favQ").focus(), 60);
+});
+if ($("#favQ")) $("#favQ").addEventListener("input", () => {
+  favState.q = $("#favQ").value.trim();
+  favState.page = 1;
+  clearTimeout(favState._t);
+  favState._t = setTimeout(() => favLoad(false), 260);
+});
+if ($("#favTabs")) $("#favTabs").addEventListener("click", (e) => {
+  const b = e.target.closest(".fav-tab");
+  if (!b) return;
+  favState.tab = b.dataset.tab;
+  favState.page = 1;
+  favLoad(false);
+});
+if ($("#favPrev")) $("#favPrev").addEventListener("click", () => {
+  if (favState.page > 1){ favState.page--; favLoad(false); }
+});
+if ($("#favNext")) $("#favNext").addEventListener("click", () => {
+  if (favState.page < favState.pages){ favState.page++; favLoad(false); }
+});
+if ($("#favBody")) $("#favBody").addEventListener("click", async (e) => {
+  const vb = e.target.closest(".vb[data-audio]");
+  if (vb){
+    // 语音条点一下就地播（列表里不跳页）
+    try{
+      if (vb._audio){ vb._audio.pause(); vb._audio = null; return; }
+      const a = new Audio(vb.dataset.audio);
+      vb._audio = a;
+      a.onended = () => { vb._audio = null; };
+      a.play().catch(() => showToast("这条语音播不了（可能只是链接失效）"));
+    }catch(err){ showToast("播不了：" + ((err && err.message) || err)); }
+    return;
+  }
+  const x = e.target.closest(".fav-item-x");
+  if (!x) return;
+  const id = x.closest("[data-fav-id]").dataset.favId;
+  if (!confirm("从收藏馆删掉这一条？")) return;
+  try{
+    const d = await memApi("/app/fav/item?id=" + encodeURIComponent(id), { method: "DELETE" });
+    favState.items = d.items || [];
+    favState.counts = d.counts || favState.counts;
+    favPaintTabs(); favPaintList();
+    showToast("删掉了");
+  }catch(err){ showToast("删不掉：" + ((err && err.message) || err)); }
+});
+
+/* 点气泡里的语音条就地播（事件委托：气泡是虚拟滚动里反复重建的，逐条挂监听会漏） */
+(function voiceBarPlay(){
+  const host = $("#scroll");
+  if (!host) return;
+  host.addEventListener("click", (e) => {
+    const vb = e.target.closest(".vb[data-audio]");
+    if (!vb) return;
+    const src = vb.dataset.audio;
+    if (!src) return;
+    try{
+      if (vb._audio && !vb._audio.paused){ vb._audio.pause(); vb._audio = null; return; }
+      const a = new Audio(src);
+      vb._audio = a;
+      vb.classList.add("playing");
+      a.onended = () => { vb._audio = null; vb.classList.remove("playing"); };
+      a.play().catch(() => showToast("播不了这条语音（链接可能失效了）"));
+    }catch(err){ showToast("播不了：" + ((err && err.message) || err)); }
+  });
+})();
+
+/* ── 长按消息 → 收进收藏馆 ── */
+let collectTarget = null;
+function collectShow(m){
+  const bar = $("#collectBar");
+  if (!bar || !m) return;
+  collectTarget = m;
+  const hint = $("#collectHint");
+  const atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
+  if (hint){
+    const t = String(m.text || "").replace(/\s+/g, " ").slice(0, 16);
+    hint.textContent = t ? ("「" + t + "…」") : (atts.length ? "这条附件" : "这条消息");
+  }
+  bar.classList.remove("hidden");
+}
+function collectHide(){ const bar = $("#collectBar"); if (bar) bar.classList.add("hidden"); collectTarget = null; }
+if ($("#collectCancel")) $("#collectCancel").addEventListener("click", collectHide);
+if ($("#collectDo")) $("#collectDo").addEventListener("click", async () => {
+  const m = collectTarget;
+  collectHide();
+  if (!m) return;
+  const atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
+  try{
+    let ok = 0;
+    if (String(m.text || "").trim()){
+      await memApi("/app/fav/save", { method: "POST", body: JSON.stringify({
+        text: m.text, source: m.from === "human" ? "user" : "assistant", msg_id: m.id, type: "chat" }) });
+      ok++;
+    }
+    for (const a of atts){
+      if (!a || !a.url) continue;
+      await memApi("/app/fav/save", { method: "POST", body: JSON.stringify({
+        text: a.prompt || a.name || "", source: m.from === "human" ? "user" : "assistant",
+        msg_id: m.id, type: a.kind || "chat", url: a.url, mime: a.mime || "",
+        dur: a.dur, name: a.name || "" }) });
+      ok++;
+    }
+    showToast(ok ? ("收好了（" + ok + " 条）") : "这条没什么可收的");
+  }catch(e){
+    showToast("收不进去：" + ((e && e.message) || e));
+  }
+});
+/* 长按检测：500ms 不动就算长按。用 pointer 事件，鼠标/触屏都吃 */
+(function collectLongPress(){
+  const host = $("#scroll");
+  if (!host) return;
+  let timer = null, sx = 0, sy = 0, key = null;
+  const clear = () => { if (timer){ clearTimeout(timer); timer = null; } key = null; };
+  host.addEventListener("pointerdown", (e) => {
+    const row = e.target.closest("[data-message-key]");
+    if (!row){ clear(); return; }
+    key = row.dataset.messageKey;
+    sx = e.clientX; sy = e.clientY;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      const m = messageByKey.get(key);
+      if (m) collectShow(m);
+    }, 500);
+  });
+  host.addEventListener("pointermove", (e) => {
+    if (!timer) return;
+    if (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10) clear();
+  }, { passive: true });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
+    host.addEventListener(ev, clear, { passive: true }));
+  host.addEventListener("scroll", clear, { passive: true });
+})();
+
+
+/* ════════════ 主题美化（头像 / 名字 / 主题 / 背景照片 / 语音条）════════════ */
+const ME_AVATAR_KEY = "companion_user_avatar";
+const ME_NAME_KEY = "companion_user_name";
+const WALL_KEY = "companion_wall";
+const ME_NAME_DEFAULT = (typeof HUMAN_NAME === "string" && HUMAN_NAME) || "我";
+function meAvatarUrl(){
+  try{ return localStorage.getItem(ME_AVATAR_KEY) || ""; }catch(e){ return ""; }
+}
+function meName(){
+  try{ return (localStorage.getItem(ME_NAME_KEY) || "").trim() || ME_NAME_DEFAULT; }catch(e){ return ME_NAME_DEFAULT; }
+}
+function applyMeAvatar(url){
+  // 用 CSS 变量：换头像不用重建任何一条消息，所有 .has-me-av 立刻跟着变
+  document.documentElement.style.setProperty("--avatar-me-default", url ? ("url(" + url + ")") : "none");
+}
+function themeOpen(){
+  const panel = $("#themePanel");
+  if (!panel) return;
+  panel.classList.remove("hidden");
+  requestAnimationFrame(() => panel.classList.add("open"));
+  thRender();
+}
+function themeClose(){
+  const panel = $("#themePanel");
+  if (!panel || panel.classList.contains("hidden")) return;
+  panel.classList.remove("open");
+  setTimeout(() => { if (!panel.classList.contains("open")) panel.classList.add("hidden"); }, 320);
+}
+function thPaintVoiceGrid(){
+  const box = $("#thVoiceGrid");
+  if (!box) return;
+  const cur = (localStorage.getItem(VOICE_KEY) || VOICE_THEMES[0].key);
+  box.innerHTML = VOICE_THEMES.map((t) =>
+    '<button class="th-sw' + (t.key === cur ? " on" : "") + '" type="button" data-vt="' + t.key + '">'
+    + '<i style="background:' + t.hex + '"></i>'
+    + '<span><b>' + escapeHtml(t.name) + '</b><small>' + t.hex.toLowerCase() + ' · ' + t.rgb + '</small></span>'
+    + '</button>').join("");
+}
+function thRender(){
+  const ai = $("#thNameAi"), me = $("#thNameMe");
+  if (ai && document.activeElement !== ai) ai.value = (localStorage.getItem(REMARK_KEY) || "").trim();
+  if (ai) ai.placeholder = AI_NAME;
+  if (me && document.activeElement !== me) me.value = (localStorage.getItem(ME_NAME_KEY) || "").trim();
+  if (me) me.placeholder = ME_NAME_DEFAULT;
+  const avMe = $("#thAvMe");
+  const u = meAvatarUrl();
+  if (avMe) avMe.style.backgroundImage = u ? ("url(" + u + ")") : "none";
+  const theme = document.documentElement.getAttribute("data-theme") || "light";
+  document.querySelectorAll(".th-card[data-theme]").forEach((c) => c.classList.toggle("on", c.dataset.theme === theme));
+  const note = $("#thWallNote");
+  let hasPhoto = false;
+  try{ hasPhoto = !!localStorage.getItem(WALL_KEY); }catch(e){}
+  if (note) note.textContent = hasPhoto ? "已选照片（点一下换一张）" : "还没选";
+  const prev = $("#thWallPrev");
+  if (prev){
+    const w = (function(){ try{ return localStorage.getItem(WALL_KEY) || ""; }catch(e){ return ""; } })();
+    prev.style.backgroundImage = w ? ("url(" + w + ")") : "none";
+    prev.style.opacity = w ? "1" : ".45";
+  }
+  thPaintVoiceGrid();
+  thPaintPreview();
+}
+/* 预览那两条语音条的波形要跟真实语音条一模一样 —— 同一个 voiceBarHtml，不另写一套"示意图形" */
+function thPaintPreview(){
+  document.querySelectorAll("#thVoicePrev .vb").forEach((vb, i) => {
+    const box = vb.querySelector(".vb-wave");
+    if (!box) return;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = voiceBarHtml(i ? 7 : 12, i ? 3 : 5);
+    const wave = tmp.querySelector(".vb-wave");
+    if (wave) box.innerHTML = wave.innerHTML;
+  });
+}
+function wallApply(url){
+  // 统一出口：自定义照片和「用回默认壁纸」都走 applyWall（它负责变量 + 主题色采样）
+  if (url){
+    try{ localStorage.setItem(WALL_KEY, url); }catch(e){ showToast("照片太大，存不下 —— 换一张小一点的"); }
+    applyWall(url);
+  }else{
+    try{ localStorage.removeItem(WALL_KEY); }catch(e){}
+    applyWall(currentWall());
+  }
+  thRender();
+}
+function wallFromFile(file){
+  // 压缩一下再存：手机原图动辄 5-10MB，localStorage 只有几 MB。
+  // 长边压到 1600、JPEG 0.82 —— 当背景完全够看。
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        try{
+          const MAX = 1600;
+          let w = img.width, h = img.height;
+          const sc = Math.min(1, MAX / Math.max(w, h));
+          w = Math.max(1, Math.round(w * sc)); h = Math.max(1, Math.round(h * sc));
+          const cv = document.createElement("canvas");
+          cv.width = w; cv.height = h;
+          cv.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(cv.toDataURL("image/jpeg", 0.82));
+        }catch(e){ resolve(String(fr.result || "")); }
+      };
+      img.onerror = () => resolve(String(fr.result || ""));
+      img.src = String(fr.result || "");
+    };
+    fr.onerror = () => reject(new Error("读不了这张图"));
+    fr.readAsDataURL(file);
+  });
+}
+if ($("#thClose")) $("#thClose").addEventListener("click", themeClose);
+if ($("#thAvAi")) $("#thAvAi").addEventListener("click", () => avatarInput && avatarInput.click());
+if ($("#thAvMe")) $("#thAvMe").addEventListener("click", () => {
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    try{
+      const url = await wallFromFile(f);
+      try{ localStorage.setItem(ME_AVATAR_KEY, url); }catch(e){ showToast("头像太大，存不下"); }
+      applyMeAvatar(url);
+      invalidateRows(); scheduleRender({ stickToBottom: false });   // 让 human 行重新带上 .has-me-av
+      thRender();
+      showToast("我的头像换好了");
+    }catch(e){ showToast("换不了：" + ((e && e.message) || e)); }
+  };
+  inp.click();
+});
+if ($("#thNameAi")) $("#thNameAi").addEventListener("change", () => {
+  const v = $("#thNameAi").value.trim();
+  try{
+    if (v) localStorage.setItem(REMARK_KEY, v); else localStorage.removeItem(REMARK_KEY);
+  }catch(e){}
+  applyRemark(v);
+  showToast("TA 的名字已更新（跟个人信息里是同一个）");
+});
+if ($("#thNameMe")) $("#thNameMe").addEventListener("change", () => {
+  const v = $("#thNameMe").value.trim();
+  try{
+    if (v) localStorage.setItem(ME_NAME_KEY, v); else localStorage.removeItem(ME_NAME_KEY);
+  }catch(e){}
+  showToast("我的名字已更新");
+});
+if ($("#themePanel")) $("#themePanel").addEventListener("click", (e) => {
+  const c = e.target.closest(".th-card[data-theme]");
+  if (c){ setTheme(c.dataset.theme); thRender(); showToast("主题换成「" + (c.dataset.theme === "harbor" ? "海港暮色" : "珍珠潮汐") + "」"); return; }
+  const sw = e.target.closest(".th-sw[data-vt]");
+  if (sw){ const t = applyVoiceTheme(sw.dataset.vt, true); showToast("语音条换成「" + t.name + "」"); return; }
+});
+if ($("#thWallPhoto")) $("#thWallPhoto").addEventListener("click", () => $("#thWallFile").click());
+if ($("#thWallFile")) $("#thWallFile").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try{
+    const url = await wallFromFile(f);
+    wallApply(url);
+    showToast("背景换成这张照片了");
+  }catch(err){ showToast("换不了：" + ((err && err.message) || err)); }
+});
+if ($("#thWallReset")) $("#thWallReset").addEventListener("click", () => {
+  wallApply("");
+  showToast("换回默认壁纸");
+});
+/* 启动时把存过的照片与我的头像装回去 */
+(function bootTheme(){
+  try{
+    const w = localStorage.getItem(WALL_KEY);
+    if (w) applyWall(w);            // 用户自己选的照片优先于默认壁纸
+  }catch(e){}
+  applyMeAvatar(meAvatarUrl());
+})();
 
 /* ════════════ 记忆页：银河 + 近景 + 记忆库分区 ════════════ */
 const LIB_DEFS = [
@@ -11286,6 +12246,12 @@ function renderAttachments(atts){
       const ratio = Number(a.width) > 0 && Number(a.height) > 0 ? Math.max(0.35, Math.min(2.6, Number(a.width) / Number(a.height))) : 1.04;
       return `<a class="att-img-link${up}${fail}" style="--att-ratio:${ratio.toFixed(4)}" href="${escapeHtml(href)}" target="_blank" rel="noopener"><img class="att-img" decoding="async" src="${escapeHtml(src)}" alt="${escapeHtml(a.name || "图片")}" loading="lazy"></a>`;
     }
+    if (a.kind === "voice" || a.kind === "audio"){
+      /* 语音条：波形条 + 播放键 + 时长，颜色由「主题美化 → 语音条美化」那套配色决定。
+         点一下就地播（不用跳走），所以整条都是按钮。 */
+      const src = attUrl(a.url) || a.localUrl || "";
+      return `<span class="vb${up}${fail}" data-audio="${escapeHtml(src)}" role="button" tabindex="0" title="点一下播放">${voiceBarHtml(a.dur || a.duration, 5)}</span>`;
+    }
     return `<a class="att-file${up}${fail}" href="${escapeHtml(attUrl(a.url))}" target="_blank" rel="noopener" download="${escapeHtml(a.name || "file")}"><span class="att-file-ic">${fileIconSvg()}</span><span class="att-file-meta"><span class="att-file-name">${escapeHtml(a.name || "文件")}</span><span class="att-file-size">${fmtSize(a.size)}${a.uploading ? " · 上传中…" : (a.failed ? " · 失败" : "")}</span></span></a>`;
   }).join("");
 }
@@ -11817,7 +12783,13 @@ function makeDay(row){
 function makePoke(row){
   const d = document.createElement("div");
   d.className = "poke-note";
-  d.textContent = row.note.text || "你戳了戳 TA";
+  // 「❤ 105 bpm \n 心跳上来了，+10……「摸摸喉结」」——第一段是数字，单独加粗上色
+  const parts = String(row.note.text || "").split(String.fromCharCode(10)).filter((x) => x.trim());
+  if (parts.length > 1){
+    d.innerHTML = '<span class="poke-hb">' + escapeHtml(parts[0]) + '</span>' + escapeHtml(parts.slice(1).join(" "));
+  }else{
+    d.textContent = parts[0] || "你戳了戳 TA";
+  }
   return d;
 }
 function makeNewDivider(){
@@ -12062,7 +13034,7 @@ function makeSummary(rowData){
 function makeMessage(rowData){
   const m = rowData.message;
   const row = document.createElement("div");
-  row.className = `row ${m.from === "human" ? "human" : "ai"}${rowData.grouped ? " grouped" : ""}${rowData.tail ? " tail" : ""}`;
+  row.className = `row ${m.from === "human" ? "human" : "ai"}${rowData.grouped ? " grouped" : ""}${rowData.tail ? " tail" : ""}${m.from === "human" && meAvatarUrl() ? " has-me-av" : ""}`;
   row.dataset.id = m.id; row.dataset.from = m.from; row.dataset.ts = tsMs(m); row.dataset.messageKey = m._key;
   if (freshKeys.has(m._key)){                       // 只对刚发/刚收到的那条播一次入场动画
     const cls = m.from === "human" ? "enter-human" : "enter-ai";

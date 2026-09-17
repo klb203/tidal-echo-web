@@ -1010,6 +1010,85 @@
   }
   .sn-reason{ margin-top: 4px; color: var(--text-faint); font-size: 11.5px; line-height: 1.5; }
 
+  /* ── 网关监控台（Prompt Cache / 计费）── */
+  .gw-hero{
+    margin-top: 12px;
+    border: 1px solid var(--field-line);
+    border-radius: 13px;
+    padding: 12px;
+    background: rgba(127,142,157,0.05);
+  }
+  .gw-hero-row{ display: flex; gap: 10px; flex-wrap: wrap; }
+  .gw-kpi{ flex: 1 1 100px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .gw-kpi-k{ color: var(--text-faint); font-size: 11px; letter-spacing: .04em; }
+  .gw-kpi-v{
+    color: var(--text-soft);
+    font-size: clamp(17px, 2.4vw, 21px);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+  }
+  .gw-kpi-s{ color: var(--text-faint); font-size: 11px; }
+  .gw-bar{
+    margin-top: 10px; height: 5px; border-radius: 3px;
+    background: rgba(140,160,176,.20); overflow: hidden;
+  }
+  .gw-bar i{ display: block; height: 100%; border-radius: 3px;
+             background: linear-gradient(90deg, #7fb2d8, #4c6378); transition: width .5s var(--ease-soft); }
+  .gw-hero-note{ margin-top: 8px; color: var(--text-faint); font-size: 11.5px; line-height: 1.5; }
+  .gw-chart{
+    display: flex; align-items: flex-end; gap: 3px; height: 66px;
+    padding: 8px 8px 0; margin-top: 6px;
+    border: 1px solid var(--field-line); border-radius: 12px;
+    background: rgba(127,142,157,0.04);
+  }
+  .gw-bar-col{
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end; gap: 3px; height: 100%;
+  }
+  .gw-bar-col i{ width: 100%; max-width: 16px; border-radius: 3px 3px 0 0;
+                 background: linear-gradient(180deg, #8fb6d6, rgba(76,99,120,.55)); }
+  .gw-bar-col span{ color: var(--text-faint); font-size: 9px; white-space: nowrap; }
+  .gw-models{ margin-top: 6px; }
+  .gw-model{ display: flex; align-items: baseline; gap: 8px; padding: 7px 2px; min-width: 0; }
+  .gw-model + .gw-model{ border-top: 1px dashed var(--field-line); }
+  .gw-model-name{ flex: 1 1 auto; min-width: 0; color: var(--text-soft); font-size: 12.5px; overflow-wrap: anywhere; }
+  .gw-model-num{ flex: none; color: var(--text-faint); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .gw-model-hit{ flex: none; color: var(--text-faint); font-size: 11.5px; }
+  .gw-model-hit.good{ color: #3f8f68; font-weight: 600; }
+  .gw-logbox{
+    margin-top: 10px; max-height: min(46vh, 380px); overflow: auto;
+    border: 1px solid var(--field-line); border-radius: 12px; padding: 10px;
+    background: rgba(127,142,157,0.05);
+  }
+  .gw-logbox.hidden{ display: none !important; }
+  .gw-log{ padding: 7px 0; }
+  .gw-log + .gw-log{ border-top: 1px dashed var(--field-line); }
+  .gw-log.bad{ border-left: 2px solid #cf8d92; padding-left: 8px; }
+  .gw-log-head{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11.5px; }
+  .gw-log-time{ color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  .gw-log-model{ color: var(--text-soft); min-width: 0; overflow-wrap: anywhere; }
+  .gw-log-cost{ margin-left: auto; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+  .gw-chip{
+    font-style: normal; font-size: 10px; line-height: 1.75;
+    padding: 0 5px; border-radius: 5px;
+    background: rgba(140,160,176,.14); color: var(--text-faint);
+  }
+  .gw-chip.hit{ background: rgba(95,191,143,.16); color: #3f8f68; }
+  .gw-chip.bad{ background: rgba(207,141,146,.18); color: #a8565f; }
+  .gw-log-sub{ margin-top: 3px; color: var(--text-faint); font-size: 11px; }
+  .gw-log-err{ margin-top: 3px; color: #a8565f; font-size: 11px; overflow-wrap: anywhere; }
+  .gw-price-row{
+    display: grid; grid-template-columns: 1.4fr .8fr .8fr .8fr .8fr auto;
+    gap: 5px; align-items: center; margin-bottom: 6px;
+  }
+  .gw-price-row .nf-box{ min-height: auto; padding: 6px 8px; font-size: 12px; }
+  .gw-p-del{
+    appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+    color: var(--text-faint); cursor: pointer; font-size: 13px; padding: 2px 5px;
+  }
+  .gw-p-del:hover{ color: #a8565f; }
+
 
   /* ── Composer ── */
   .composer{
@@ -3528,6 +3607,70 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="gateway">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 19.5h17"/><path d="M4.5 16V9.5"/><path d="M9.5 16V5.5"/><path d="M14.5 16v-8"/><path d="M19.5 16v-4"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">网关监控台 · 省钱</span><span class="set-card-sub" id="cardSubGateway"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip"><b>Prompt Cache 是省钱的关键。</b>前缀完全一样的那部分，第二次不重新计费。
+            要高命中率只有两条路：<b>断点插对</b>（system 的稳定段打 <code>cache_control</code>，
+            消息里再从倒数第 3 条补一个）+ <b>前缀真的稳</b>（每轮变化的召回必须排在稳定段之后）。
+            这块就是「钱花在哪、省下来多少」。</div>
+
+          <div class="gw-hero">
+            <div class="gw-hero-row">
+              <div class="gw-kpi"><span class="gw-kpi-k">今日</span>
+                <span class="gw-kpi-v" id="gwTodayCost">—</span>
+                <span class="gw-kpi-s" id="gwTodaySub">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">本月</span>
+                <span class="gw-kpi-v" id="gwMonthCost">—</span>
+                <span class="gw-kpi-s" id="gwMonthSub">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">Cache 命中率</span>
+                <span class="gw-kpi-v" id="gwHit">—</span>
+                <span class="gw-kpi-s" id="gwHitSub">—</span></div>
+            </div>
+            <div class="gw-bar"><i id="gwHitBar" style="width:0%"></i></div>
+            <div class="gw-hero-note" id="gwSaved">—</div>
+          </div>
+
+          <div class="settings-section-label" style="margin-top:14px">花费趋势（近 14 天）</div>
+          <div class="gw-chart" id="gwChart"></div>
+
+          <div class="settings-section-label" style="margin-top:14px">按模型</div>
+          <div class="gw-models" id="gwModels"></div>
+
+          <div class="editor-actions om-acts">
+            <button id="gwReload" type="button" class="primary">刷新</button>
+            <button id="gwLogs" type="button">请求明细</button>
+            <button id="gwFails" type="button">只看失败</button>
+            <button id="gwKeys" type="button">Key 状态</button>
+            <button id="gwPrice" type="button">单价设置</button>
+            <button id="gwClear" type="button">清空账本</button>
+          </div>
+          <div class="om-status" id="gwStatus"></div>
+          <div class="gw-logbox hidden" id="gwLogBox"></div>
+
+          <div class="lib-edit hidden" id="gwPriceBox">
+            <div class="settings-tip" style="margin:0 0 8px">单价：<b>美元 / 百万 token</b>，照抄上游价目表即可
+              （缓存读通常只有输入价的十分之一）。匹配是<b>包含</b>关系 —— 写 <code>claude</code> 就管住所有 claude 型号。</div>
+            <div id="gwPriceRows"></div>
+            <div class="nf-actions" style="margin-top:8px">
+              <button type="button" id="gwPriceAdd">＋ 加一条</button>
+              <button type="button" class="primary" id="gwPriceSave">保存单价</button>
+              <button type="button" id="gwPriceCancel">取消</button>
+            </div>
+          </div>
+
+          <div class="settings-tip" style="margin-top:10px">
+            命中率怎么看：<b>非 Anthropic 的模型不要手动插断点</b>（DeepSeek 的上下文缓存、OpenAI 的 prompt caching
+            都是自动的，而有些中转站见到未知字段会直接 400）。所以这里分两条路：能插的插、不能插的照样<b>统计</b>。
+            命中率偏低时先怀疑一件事 —— <b>前缀是不是不稳</b>（每轮召回被插到了稳定段中间）。
+          </div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="ai">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
@@ -4417,6 +4560,7 @@ function openSettings(){
   if (!omLoadedOnce){ omLoadedOnce = true; omLoad(false); }              // OB 配置读一次就够
   if (!fgLoadedOnce){ fgLoadedOnce = true; fgLoad(false); }              // Forge 配置读一次就够
   if (!snLoadedOnce){ snLoadedOnce = true; snLoad(false); }               // 哨兵配置读一次就够
+  if (!gwLoadedOnce){ gwLoadedOnce = true; gwLoad(false); }              // 监控台读一次就够
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -5295,6 +5439,228 @@ if ($("#snReset")) $("#snReset").addEventListener("click", async () => {
 SN_FIELDS.forEach((id) => {
   const el = $("#" + id); if (!el) return;
   el.addEventListener("change", () => { el.dataset.touched = "1"; });
+});
+
+/* ── 网关监控台（Prompt Cache / 计费 / 多 Key）──────────────────────────────
+   数据全部来自 /app/gateway/*：今日/本月 token 与花费、趋势、Cache 命中率、每次请求明细。
+   命中率那栏是重点 —— 它直接告诉你「前缀稳不稳」这件事做对了没有。 */
+let gwData = {};
+let gwLoadedOnce = false;
+let gwFailOnly = false;
+function gwStatusEl(msg, kind){
+  const el = $("#gwStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function gwMoney(v, cur){
+  const n = Number(v || 0);
+  const sym = (cur === "CNY" || cur === "RMB") ? "¥" : "$";
+  if (n === 0) return sym + "0";
+  if (n < 0.0001) return sym + n.toExponential(2);
+  return sym + (n < 0.01 ? n.toFixed(5) : (n < 1 ? n.toFixed(4) : n.toFixed(2)));
+}
+function gwK(n){
+  const v = Number(n || 0);
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + "k";
+  return String(v);
+}
+function gwPct(v){ return (Number(v || 0) * 100).toFixed(1) + "%"; }
+function gwRender(){
+  const s = gwData.stats || {};
+  const cur = s.currency || "USD";
+  const t = s.today || {}, m = s.month || {}, a = s.all || {};
+  const el = $("#cardSubGateway");
+  if (el){
+    el.textContent = (a.calls ? (a.calls + " 次调用 · 命中 " + gwPct(a.hit_rate)) : "还没有调用记录")
+      + (s.cache_mode === "off" ? " · 断点：关" : (" · 断点：" + (s.cache_mode || "")));
+  }
+  if ($("#gwTodayCost")) $("#gwTodayCost").textContent = gwMoney(t.cost, cur);
+  if ($("#gwTodaySub")) $("#gwTodaySub").textContent =
+    t.calls + " 次 · " + gwK(t.tokens) + " tok" + (t.fail ? (" · " + t.fail + " 失败") : "");
+  if ($("#gwMonthCost")) $("#gwMonthCost").textContent = gwMoney(m.cost, cur);
+  if ($("#gwMonthSub")) $("#gwMonthSub").textContent = m.calls + " 次 · " + gwK(m.tokens) + " tok";
+  const hr = Number(a.hit_rate || 0);
+  if ($("#gwHit")) $("#gwHit").textContent = gwPct(hr);
+  if ($("#gwHitSub")) $("#gwHitSub").textContent =
+    gwK(a.cache_read) + " tok 走缓存" + (a.avg_ms ? (" · 均 " + a.avg_ms + "ms") : "");
+  if ($("#gwHitBar")) $("#gwHitBar").style.width = Math.min(100, Math.round(hr * 100)) + "%";
+  if ($("#gwSaved")) $("#gwSaved").textContent = a.calls
+    ? ("本月缓存读省下 " + gwMoney(m.saved, cur) + "（同量 token 按输入价算的话）"
+       + (s.pricing_source === "default" ? " · 单价用的是默认表，建议在「单价设置」里改成你的真实价" : ""))
+    : "还没有调用记录 —— 聊两句再看这张表。";
+
+  // 趋势：按最大值归一，只画柱子（不引图表库，够看）
+  const series = s.series || [];
+  const maxCost = Math.max.apply(null, series.map((x) => Number(x.cost || 0)).concat([1e-9]));
+  const chart = $("#gwChart");
+  if (chart){
+    chart.innerHTML = series.map((x) => {
+      const h = Math.max(1, Math.round(Number(x.cost || 0) / maxCost * 46));
+      const day = String(x.date || "").slice(5);
+      return '<div class="gw-bar-col" title="' + escapeHtml(x.date + ' · ' + x.calls + ' 次 · ' + gwMoney(x.cost, cur) + ' · 命中 ' + gwPct(x.hit_rate)) + '">' +
+        '<i style="height:' + h + 'px"></i><span>' + escapeHtml(day) + "</span></div>";
+    }).join("");
+  }
+  const models = s.models || [];
+  const mb = $("#gwModels");
+  if (mb){
+    mb.innerHTML = models.length ? models.map((x) => (
+      '<div class="gw-model">' +
+        '<span class="gw-model-name">' + escapeHtml(x.model) + "</span>" +
+        '<span class="gw-model-num">' + gwK(x.tokens) + " tok · " + gwMoney(x.cost, cur) + "</span>" +
+        '<span class="gw-model-hit' + (x.hit_rate > 0.5 ? " good" : "") + '">' + gwPct(x.hit_rate) + "</span>" +
+      "</div>"
+    )).join("") : '<div class="work-empty">还没有按模型的数据。</div>';
+  }
+}
+function gwLogsRender(logs){
+  const box = $("#gwLogBox");
+  if (!logs.length){ box.innerHTML = '<div class="work-empty">' + (gwFailOnly ? "没有失败的请求。" : "还没有请求记录。") + "</div>"; return; }
+  box.innerHTML = logs.map((x) => (
+    '<div class="gw-log' + (x.ok ? "" : " bad") + '">' +
+      '<div class="gw-log-head">' +
+        '<span class="gw-log-time">' + escapeHtml((x.clock || "") + " " + (x.date || "").slice(5)) + "</span>" +
+        '<span class="gw-log-model">' + escapeHtml(x.model || "") + "</span>" +
+        (x.cache_read ? '<i class="gw-chip hit">缓存 ' + gwK(x.cache_read) + "</i>" : "") +
+        (x.cache_write ? '<i class="gw-chip">写 ' + gwK(x.cache_write) + "</i>" : "") +
+        '<span class="gw-log-cost">' + gwMoney(x.cost, (gwData.stats || {}).currency || "USD") + "</span>" +
+        (x.ok ? "" : '<i class="gw-chip bad">失败</i>') +
+      "</div>" +
+      '<div class="gw-log-sub">在 ' + gwK(x.in) + " / 出 " + gwK(x.out) + " tok · " + (x.ms || 0) + "ms" +
+        (x.key ? (" · Key " + escapeHtml(x.key)) : "") +
+        (x.cache_mode ? (" · 缓存:" + escapeHtml(x.cache_mode)) : "") +
+        (x.source ? (" · " + escapeHtml(x.source)) : "") + "</div>" +
+      (x.error ? '<div class="gw-log-err">' + escapeHtml(x.error) + "</div>" : "") +
+    "</div>"
+  )).join("");
+}
+async function gwLoad(verbose){
+  try{
+    const d = await memApi("/app/gateway/stats?days=14");
+    gwData.stats = d || {};
+    gwRender();
+    if (verbose) gwStatusEl("读好了 · 共 " + ((d.all || {}).calls || 0) + " 次调用", "ok");
+  }catch(err){
+    gwStatusEl("读取失败：" + ((err && err.message) || err), "err");
+  }
+}
+async function gwShowLogs(failOnly){
+  const box = $("#gwLogBox");
+  gwFailOnly = !!failOnly;
+  if (!box.classList.contains("hidden") && !failOnly){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="work-empty">读取中…</div>';
+  try{
+    const d = await memApi("/app/gateway/logs?limit=60" + (failOnly ? "&fail=1" : ""));
+    gwLogsRender(d.logs || []);
+  }catch(err){ box.innerHTML = '<div class="work-empty">读取失败：' + escapeHtml((err && err.message) || "") + "</div>"; }
+}
+async function gwShowKeys(){
+  const box = $("#gwLogBox");
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="work-empty">读取中…</div>';
+  try{
+    const d = await memApi("/app/gateway/keys");
+    const keys = d.keys || {};
+    const names = Object.keys(keys);
+    if (!names.length){ box.innerHTML = '<div class="work-empty">还没有 Key 的调用记录（跑一次再来看）。</div>'; return; }
+    box.innerHTML = names.map((pid) => (
+      '<div class="sn-day"><div class="sn-day-head">' + escapeHtml(pid) + "<span>" + keys[pid].length + " 个 Key</span></div>" +
+      keys[pid].map((k) => (
+        '<div class="gw-log' + (k.cooling ? " bad" : "") + '">' +
+          '<div class="gw-log-head"><span class="gw-log-model">' + escapeHtml(k.key) + "</span>" +
+          (k.cooling ? '<i class="gw-chip bad">冷却 ' + k.cooling + "s</i>" : '<i class="gw-chip hit">可用</i>') +
+          '<span class="gw-log-cost">失败 ' + (k.fails || 0) + " 次</span></div>" +
+          (k.last_err ? '<div class="gw-log-err">' + escapeHtml(k.last_err) + "</div>" : "") +
+        "</div>"
+      )).join("") + "</div>"
+    )).join("");
+  }catch(err){ box.innerHTML = '<div class="work-empty">读取失败：' + escapeHtml((err && err.message) || "") + "</div>"; }
+}
+function gwPriceRows(pricing){
+  const host = $("#gwPriceRows");
+  const rows = (pricing.models || []).concat([pricing.default || {}]);
+  host.innerHTML = rows.map((r, i) => {
+    const isDef = i === rows.length - 1;
+    return '<div class="gw-price-row">' +
+      '<input class="nf-box gw-p-match" value="' + escapeHtml(r.match || "") + '" placeholder="模型名包含（如 claude）"' + (isDef ? " disabled" : "") + ">" +
+      '<input class="nf-box gw-p-in" type="number" step="0.001" min="0" value="' + (r.in != null ? r.in : 0) + '" placeholder="输入">' +
+      '<input class="nf-box gw-p-out" type="number" step="0.001" min="0" value="' + (r.out != null ? r.out : 0) + '" placeholder="输出">' +
+      '<input class="nf-box gw-p-cr" type="number" step="0.001" min="0" value="' + (r.cache_read != null ? r.cache_read : 0) + '" placeholder="缓存读">' +
+      '<input class="nf-box gw-p-cw" type="number" step="0.001" min="0" value="' + (r.cache_write != null ? r.cache_write : 0) + '" placeholder="缓存写">' +
+      (isDef ? "" : '<button class="gw-p-del" type="button" title="删掉这条">✕</button>') +
+    "</div>";
+  }).join("");
+}
+async function gwShowPrice(){
+  const box = $("#gwPriceBox");
+  if (!box.classList.contains("hidden")){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  try{
+    const d = await memApi("/app/gateway/pricing");
+    gwData.pricing = d.pricing || {};
+    gwPriceRows(gwData.pricing);
+    gwStatusEl("单价来源：" + (((d.pricing || {})._source === "custom") ? "你自定义的" : "默认表（建议改成你的真实价）"));
+  }catch(err){ gwStatusEl("读取单价失败：" + ((err && err.message) || err), "err"); }
+}
+async function gwSavePrice(){
+  const rows = [];
+  document.querySelectorAll("#gwPriceRows .gw-price-row").forEach((row) => {
+    const m = row.querySelector(".gw-p-match");
+    if (!m || m.disabled) return;
+    const v = (m.value || "").trim();
+    if (!v) return;
+    rows.push({ match: v, in: Number(row.querySelector(".gw-p-in").value || 0),
+                out: Number(row.querySelector(".gw-p-out").value || 0),
+                cache_read: Number(row.querySelector(".gw-p-cr").value || 0),
+                cache_write: Number(row.querySelector(".gw-p-cw").value || 0) });
+  });
+  const defRow = document.querySelector("#gwPriceRows .gw-price-row:last-child");
+  const def = defRow ? { label: "未匹配（默认价）", in: Number(defRow.querySelector(".gw-p-in").value || 0),
+                         out: Number(defRow.querySelector(".gw-p-out").value || 0),
+                         cache_read: Number(defRow.querySelector(".gw-p-cr").value || 0),
+                         cache_write: Number(defRow.querySelector(".gw-p-cw").value || 0) } : null;
+  if (!rows.length){ gwStatusEl("至少要留一条非默认的单价", "err"); return; }
+  try{
+    const d = await memApi("/app/gateway/pricing", { method: "POST",
+      body: JSON.stringify({ models: rows, default: def }) });
+    gwStatusEl(d.ok ? "单价已保存 ✅" : ("保存失败：" + (d.error || "未知错误")), d.ok ? "ok" : "err");
+    if (d.ok){ gwData.pricing = d.pricing; await gwLoad(false); }
+  }catch(err){ gwStatusEl("保存失败：" + ((err && err.message) || err), "err"); }
+}
+if ($("#gwReload")) $("#gwReload").addEventListener("click", () => gwLoad(true));
+if ($("#gwLogs")) $("#gwLogs").addEventListener("click", () => gwShowLogs(false));
+if ($("#gwFails")) $("#gwFails").addEventListener("click", () => gwShowLogs(true));
+if ($("#gwKeys")) $("#gwKeys").addEventListener("click", gwShowKeys);
+if ($("#gwPrice")) $("#gwPrice").addEventListener("click", gwShowPrice);
+if ($("#gwPriceSave")) $("#gwPriceSave").addEventListener("click", gwSavePrice);
+if ($("#gwPriceCancel")) $("#gwPriceCancel").addEventListener("click", () => $("#gwPriceBox").classList.add("hidden"));
+if ($("#gwPriceAdd")) $("#gwPriceAdd").addEventListener("click", () => {
+  const host = $("#gwPriceRows");
+  const row = document.createElement("div");
+  row.className = "gw-price-row";
+  row.innerHTML = '<input class="nf-box gw-p-match" placeholder="模型名包含（如 deepseek）">' +
+    '<input class="nf-box gw-p-in" type="number" step="0.001" min="0" placeholder="输入">' +
+    '<input class="nf-box gw-p-out" type="number" step="0.001" min="0" placeholder="输出">' +
+    '<input class="nf-box gw-p-cr" type="number" step="0.001" min="0" placeholder="缓存读">' +
+    '<input class="nf-box gw-p-cw" type="number" step="0.001" min="0" placeholder="缓存写">' +
+    '<button class="gw-p-del" type="button" title="删掉这条">✕</button>';
+  const last = host.querySelector(".gw-price-row:last-child");
+  if (last) host.insertBefore(row, last); else host.appendChild(row);
+});
+if ($("#gwPriceRows")) $("#gwPriceRows").addEventListener("click", (e) => {
+  const del = e.target.closest(".gw-p-del");
+  if (del) del.closest(".gw-price-row").remove();
+});
+if ($("#gwClear")) $("#gwClear").addEventListener("click", async () => {
+  if (!confirm("清空全部用量账本？（只删记账，不动聊天与记忆）")) return;
+  try{
+    const d = await memApi("/app/gateway/logs", { method: "DELETE" });
+    gwStatusEl("已清空 " + (d.deleted || 0) + " 条记账", "ok");
+    gwData.stats = d.stats || {}; gwRender();
+    $("#gwLogBox").innerHTML = "";
+  }catch(err){ gwStatusEl("清空失败：" + ((err && err.message) || err), "err"); }
 });
 
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */

@@ -1089,6 +1089,45 @@
   }
   .gw-p-del:hover{ color: #a8565f; }
 
+  /* ── 影子推送 ── */
+  .sd-trigger{
+    margin-top: 12px;
+    border: 1px solid var(--field-line);
+    border-radius: 13px;
+    padding: 11px 12px;
+    background: rgba(127,142,157,0.05);
+  }
+  .sd-trigger-k{ color: var(--text-faint); font-size: 11px; letter-spacing: .03em; }
+  .sd-trigger-url{
+    margin-top: 4px;
+    color: var(--text-soft);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; line-height: 1.6;
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+  .sd-secret-row{ display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+  .sd-secret-row .nf-box{
+    flex: 1 1 auto; min-width: 0; min-height: auto; padding: 7px 9px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px;
+  }
+  .sd-secret-row button{
+    flex: none;
+    appearance: none; -webkit-appearance: none;
+    font-size: 11.5px; line-height: 1.6; padding: 4px 9px; border-radius: 8px;
+    border: 1px solid var(--field-line); background: transparent;
+    color: var(--text-faint); cursor: pointer; white-space: nowrap;
+  }
+  .sd-secret-row button:hover{ color: var(--text-soft); border-color: var(--hairline); }
+  .sd-reply{
+    margin-top: 4px;
+    color: var(--think-body);
+    font-family: var(--font-cn);
+    font-size: clamp(12.5px, 1.4vw, 14px);
+    line-height: 1.62;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
 
   /* ── Composer ── */
   .composer{
@@ -3671,6 +3710,111 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="shadow">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-3.1-6.5"/><path d="M8.5 12h7"/><path d="M12.6 8.9 15.8 12l-3.2 3.1"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">影子推送 · 主动来找你</span><span class="set-card-sub" id="cardSubShadow"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip"><b>不再由你先开口。</b>
+            做法不是「单独让 AI 写一条问候」（那样出来的一定是万金油，客服味的来源），
+            而是<b>影子路由</b>：取真实会话最近几条 → 末尾临时塞进一条<b>永不落库</b>的
+            <code>&lt;system_trigger&gt;</code>（状态 + 素材 + 指令）→ 用<b>和聊天完全一样的 system prompt</b>
+            调用 → 回复按普通消息存进会话。
+            <br>所以在模型眼里这次调用和正常聊天没区别：它有你们的关系、有昨晚聊到哪儿、有自己的语气。
+            也正因为<b>复用同一份 system prompt</b>，它还会<b>命中正式聊天建好的那段前缀缓存</b>——
+            按教程的建议，影子调用<b>不标新缓存</b>（每次消息排布不同，标了只会白花钱建命中不了的缓存）。
+            <br><b>先决定该不该说，再决定说什么</b>：过不了决策层（深夜保护 / 随机冷静期 / 每日上限 / 互斥锁），
+            连一个 token 都不花。</div>
+
+          <div class="gw-hero">
+            <div class="gw-hero-row">
+              <div class="gw-kpi"><span class="gw-kpi-k">现在</span>
+                <span class="gw-kpi-v" id="sdNowClock">—</span>
+                <span class="gw-kpi-s" id="sdNowDesc">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">今天推了</span>
+                <span class="gw-kpi-v" id="sdToday">—</span>
+                <span class="gw-kpi-s" id="sdTodaySub">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">现在能推吗</span>
+                <span class="gw-kpi-v" id="sdCan">—</span>
+                <span class="gw-kpi-s" id="sdWhy">—</span></div>
+            </div>
+            <div class="gw-hero-note" id="sdSavedNote">—</div>
+          </div>
+
+          <label class="fld switch-row" style="margin-top:12px"><span>开启主动推送
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就地静音；决策层也不会再跑。</span></span>
+            <input type="checkbox" id="sdEnable">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>用后端自带的调度（每 10 分钟看一眼）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就只认外部 cron 打触发端点。Render 免费版 15 分钟没请求会休眠，所以外部 cron 更可靠（顺便保活）。</span></span>
+            <input type="checkbox" id="sdLoop">
+          </label>
+
+          <div class="fld-pair" style="margin-top:12px">
+            <label class="fld"><span>随机冷静期下限（分钟）</span><input id="sdCdMin" type="number" min="1" max="1440" step="5" placeholder="120"></label>
+            <label class="fld"><span>上限（分钟）</span><input id="sdCdMax" type="number" min="1" max="1440" step="5" placeholder="210"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>每日上限（条）</span><input id="sdDaily" type="number" min="1" max="50" step="1" placeholder="7"></label>
+            <label class="fld"><span>取最近多少条真实消息</span><input id="sdTake" type="number" min="4" max="60" step="2" placeholder="16"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>深夜保护 · 工作日（不推的时段）</span><input id="sdQw" type="text" placeholder="0-8" autocomplete="off"></label>
+            <label class="fld"><span>· 周末</span><input id="sdQe" type="text" placeholder="2-12" autocomplete="off"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>温度</span><input id="sdTemp" type="number" min="0" max="1.5" step="0.05" placeholder="0.9"></label>
+            <label class="fld"><span>max_tokens（保险，防断气）</span><input id="sdMaxTok" type="number" min="64" max="2000" step="32" placeholder="200"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>硬上限（字，超了软截断到句末）</span><input id="sdHard" type="number" min="40" max="600" step="10" placeholder="120"></label>
+            <label class="fld"><span>用哪个模型（留空 = 聊天模型）</span><input id="sdModel" type="text" placeholder="留空即可" autocomplete="off" spellcheck="false"></label>
+          </div>
+
+          <div class="sd-trigger">
+            <div class="sd-trigger-k">外部 Cron 触发端点（每 10 分钟打一次）</div>
+            <div class="sd-trigger-url" id="sdTriggerUrl">—</div>
+            <div class="sd-trigger-k" style="margin-top:8px">请求头 <code>X-Push-Secret</code>（也可以写成 <code>?secret=</code>）</div>
+            <div class="sd-secret-row">
+              <input class="nf-box" id="sdSecret" readonly>
+              <button type="button" id="sdCopy">复制</button>
+              <button type="button" id="sdRegen">重新生成</button>
+            </div>
+            <div class="settings-tip" style="margin-top:6px">这个端点在公网上，<b>密钥校验必须有</b> ——
+              没有校验的话任何人 POST 一下就能让你的 AI 给你发消息，还白花你的 token。响应带 <code>Cache-Control: no-store</code>，
+              免得前面的代理把 cron 响应缓存了（cron 以为成功、后端其实没被触发）。</div>
+          </div>
+
+          <div class="settings-section-label" style="margin-top:14px">投递到锁屏（可选，两个都填会响两次）</div>
+          <div class="fld-pair">
+            <label class="fld"><span>Bark device key（iOS）</span><input id="sdBark" type="text" placeholder="留空 = 不投递" autocomplete="off" spellcheck="false"></label>
+            <label class="fld"><span>通知标题</span><input id="sdBarkTitle" type="text" placeholder="Tidal Echo" autocomplete="off"></label>
+          </div>
+          <div class="fld-pair" style="margin-top:10px">
+            <label class="fld"><span>ntfy topic（安卓/通用）</span><input id="sdNtfy" type="text" placeholder="留空 = 不投递" autocomplete="off" spellcheck="false"></label>
+            <label class="fld"><span>ntfy 服务器</span><input id="sdNtfyServer" type="text" placeholder="https://ntfy.sh" autocomplete="off" spellcheck="false"></label>
+          </div>
+
+          <div class="editor-actions om-acts">
+            <button id="sdSave" type="button" class="primary">保存</button>
+            <button id="sdPush" type="button">立即推一条</button>
+            <button id="sdDecide" type="button">为什么没说</button>
+            <button id="sdLogs" type="button">推送记录</button>
+            <button id="sdClear" type="button">清空记录</button>
+          </div>
+          <div class="om-status" id="sdStatus"></div>
+          <div class="gw-logbox hidden" id="sdLogBox"></div>
+
+          <div class="settings-tip" style="margin-top:10px">
+            决策层的顺序不能反：<b>先决定该不该说，再决定说什么</b>。先让模型写了一句很棒的话、
+            再发现现在凌晨三点不该发 —— 你会舍不得扔掉它。过不了闸，连 token 都不花。
+            「不说话的时候，也是他在做决定。」
+          </div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="ai">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
@@ -4561,6 +4705,7 @@ function openSettings(){
   if (!fgLoadedOnce){ fgLoadedOnce = true; fgLoad(false); }              // Forge 配置读一次就够
   if (!snLoadedOnce){ snLoadedOnce = true; snLoad(false); }               // 哨兵配置读一次就够
   if (!gwLoadedOnce){ gwLoadedOnce = true; gwLoad(false); }              // 监控台读一次就够
+  if (!sdLoadedOnce){ sdLoadedOnce = true; sdLoad(false); }              // 影子推送读一次就够
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -5661,6 +5806,205 @@ if ($("#gwClear")) $("#gwClear").addEventListener("click", async () => {
     gwData.stats = d.stats || {}; gwRender();
     $("#gwLogBox").innerHTML = "";
   }catch(err){ gwStatusEl("清空失败：" + ((err && err.message) || err), "err"); }
+});
+
+/* ── 影子推送（借真实会话让人格主动开口）──────────────────────────────────
+   教程第五篇那套：不另起炉灶，直接借用真实会话 + 同一份 system prompt，
+   末尾临时塞一条不落库的 <system_trigger>。决策层先过四道闸，过不了不花 token。 */
+let sdData = {};
+let sdLoadedOnce = false;
+const SD_FIELDS = ["sdEnable","sdLoop","sdCdMin","sdCdMax","sdDaily","sdTake","sdQw","sdQe",
+                   "sdTemp","sdMaxTok","sdHard","sdModel","sdBark","sdBarkTitle","sdNtfy",
+                   "sdNtfyServer"];
+const SD_ZH = { disabled: "总开关关着", weekday_sleep: "工作日深夜保护中",
+                weekend_sleep: "周末深夜保护中", cooldown: "还没到下一次该说话的时候",
+                daily_limit: "今天已经说到上限了", no_session: "还没有会话",
+                locked: "上一次还在跑（互斥锁）", no_history: "会话里还没内容",
+                empty_reply: "模型这次没写出东西（已丢弃）", llm_error: "调用模型失败",
+                error: "出错了" };
+function sdSkippedZh(s){
+  if (!s) return "";
+  const k = String(s).split(":")[0];
+  return SD_ZH[k] || s;
+}
+function sdStatusEl(msg, kind){
+  const el = $("#sdStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function sdSet(id, v){
+  const el = $("#" + id); if (!el || el.dataset.touched) return;
+  if (el.type === "checkbox") el.checked = !!v; else el.value = (v == null ? "" : v);
+}
+function sdRender(){
+  const s = (sdData.status || {}).shadow || {};
+  const el = $("#cardSubShadow");
+  if (el){
+    el.textContent = s.enable === false
+      ? "已关闭"
+      : ("已开启 · 每 " + (s.cooldown_min || 120) + "–" + (s.cooldown_max || 210) + " 分钟一次 · 今日 "
+         + (s.today_count || 0) + "/" + (s.daily_max || 7)
+         + (s.in_quiet ? " · 静默中" : (s.can_push ? " · 现在可以推" : " · 在等")));
+  }
+  // 后端给的是「现在是 2026-09-17 20:12（周四）她下班了在家休息。」——
+  // 别用固定下标切片（"现在"两个字会让整体错位一位），按格式取。
+  const nf = String(s.now || "");
+  const tm = nf.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2})/);
+  const desc = nf.replace(/^现在是\s*/, "").replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/, "").trim();
+  if ($("#sdNowClock")) $("#sdNowClock").textContent = tm ? tm[1].slice(5) : (nf || "—");
+  if ($("#sdNowDesc")) $("#sdNowDesc").textContent = desc || "—";
+  if ($("#sdToday")) $("#sdToday").textContent = (s.today_count || 0) + " / " + (s.daily_max || 7);
+  if ($("#sdTodaySub")) $("#sdTodaySub").textContent = "累计 " + (s.total || 0) + " 条"
+    + (s.last ? (" · 上一条 " + String(s.last.clock || "")) : "");
+  if ($("#sdCan")){
+    const can = !!s.can_push;
+    $("#sdCan").textContent = can ? "可以" : "先不说";
+    $("#sdCan").style.color = can ? "#3f8f68" : "";
+  }
+  if ($("#sdWhy")){
+    $("#sdWhy").textContent = s.blocked_by
+      ? sdSkippedZh(s.blocked_by)
+      : (s.enable === false ? "总开关关着" : "各项都通过了");
+  }
+  if ($("#sdSavedNote")){
+    const c = s.config || {};
+    $("#sdSavedNote").textContent = "保护时段：工作日 " + (c.quiet_weekday || "0-8") + "、周末 "
+      + (c.quiet_weekend || "2-12") + " 不打扰 · 时长 " + (c.cooldown_min || 120) + "–"
+      + (c.cooldown_max || 210) + " 分钟随机（每次现掷，所以摸不到规律）"
+      + (s.loop ? " · 内置调度在跑" : " · 内置调度关着（等外部 cron）");
+  }
+  const c = s.config || {};
+  sdSet("sdEnable", c.enable !== false);
+  sdSet("sdLoop", !!c.loop);
+  sdSet("sdCdMin", c.cooldown_min != null ? c.cooldown_min : 120);
+  sdSet("sdCdMax", c.cooldown_max != null ? c.cooldown_max : 210);
+  sdSet("sdDaily", c.daily_max != null ? c.daily_max : 7);
+  sdSet("sdTake", c.history_take != null ? c.history_take : 16);
+  sdSet("sdQw", c.quiet_weekday || "0-8");
+  sdSet("sdQe", c.quiet_weekend || "2-12");
+  sdSet("sdTemp", c.temperature != null ? c.temperature : 0.9);
+  sdSet("sdMaxTok", c.max_tokens != null ? c.max_tokens : 200);
+  sdSet("sdHard", c.hard_limit != null ? c.hard_limit : 120);
+  sdSet("sdModel", c.model || "");
+  sdSet("sdBark", c.bark_key || "");
+  sdSet("sdBarkTitle", c.bark_title || "Tidal Echo");
+  sdSet("sdNtfy", c.ntfy_topic || "");
+  sdSet("sdNtfyServer", c.ntfy_server || "https://ntfy.sh");
+  const sec = $("#sdSecret");
+  if (sec && !sec.dataset.touched) sec.value = s.secret || "";
+  const url = $("#sdTriggerUrl");
+  if (url){
+    const base = (typeof appBase === "function" ? appBase() : "") || "";
+    url.textContent = (base ? (base.replace(/\/$/, "") + "/app/shadow/trigger") : "/app/shadow/trigger");
+  }
+}
+function sdBody(){
+  const v = (id) => ($("#" + id) || {}).value;
+  const ck = (id) => !!($("#" + id) || {}).checked;
+  return {
+    enable: ck("sdEnable"), loop: ck("sdLoop"),
+    cooldown_min: Number(v("sdCdMin") || 120), cooldown_max: Number(v("sdCdMax") || 210),
+    daily_max: Number(v("sdDaily") || 7), history_take: Number(v("sdTake") || 16),
+    quiet_weekday: String(v("sdQw") || "0-8").trim(), quiet_weekend: String(v("sdQe") || "2-12").trim(),
+    temperature: Number(v("sdTemp") || 0.9), max_tokens: Number(v("sdMaxTok") || 200),
+    hard_limit: Number(v("sdHard") || 120), model: String(v("sdModel") || "").trim(),
+    bark_key: String(v("sdBark") || "").trim(), bark_title: String(v("sdBarkTitle") || "").trim(),
+    ntfy_topic: String(v("sdNtfy") || "").trim(), ntfy_server: String(v("sdNtfyServer") || "").trim()
+  };
+}
+async function sdLoad(verbose){
+  try{
+    const d = await memApi("/app/shadow/status");
+    sdData.status = d || {};
+    sdRender();
+    if (verbose) sdStatusEl("读好了 · " + ((sdData.status.shadow || {}).today_count || 0) + " 条今天", "ok");
+  }catch(err){ sdStatusEl("读取失败：" + ((err && err.message) || err), "err"); }
+}
+async function sdSave(regen){
+  sdStatusEl("保存中…");
+  try{
+    const body = sdBody();
+    if (regen) body.regen_secret = true;
+    const d = await memApi("/app/shadow/config", { method: "POST", body: JSON.stringify(body) });
+    sdData.status = d || {};
+    SD_FIELDS.forEach((id) => { const el = $("#" + id); if (el) delete el.dataset.touched; });
+    const sec = $("#sdSecret"); if (sec) delete sec.dataset.touched;
+    sdRender();
+    sdStatusEl(d.ok ? ("已保存 ✅" + (d.note ? ("（" + d.note + "）") : "")) : ("保存失败：" + (d.error || "")), d.ok ? "ok" : "err");
+  }catch(err){ sdStatusEl("保存失败：" + ((err && err.message) || err), "err"); }
+}
+async function sdPushNow(){
+  sdStatusEl("让它自己浮上来一次…（会真的调模型）");
+  try{
+    const d = await memApi("/app/shadow/push", { method: "POST", body: "{}" });
+    const r = (d || {}).result || {};
+    sdData.status = d || {};
+    sdRender();
+    if (r.pushed) sdStatusEl("说了一句 ✅ " + (r.delivered && r.delivered.length ? ("（已投递：" + r.delivered.join("/") + "）") : "（没配投递，只进聊天记录）") + "\n" + r.reply, "ok");
+    else sdStatusEl("这次没说：" + sdSkippedZh(r.skipped) + (r.error ? ("（" + r.error + "）") : ""), "err");
+    if (!$("#sdLogBox").classList.contains("hidden")) await sdLogs();
+  }catch(err){ sdStatusEl("推送失败：" + ((err && err.message) || err), "err"); }
+}
+async function sdDecide(){
+  try{
+    const d = await memApi("/app/shadow/decide");
+    if (d.can_push) sdStatusEl("决策层：现在可以推（过了全部四道闸）", "ok");
+    else sdStatusEl("决策层：现在先不说 —— " + sdSkippedZh(d.reason)
+      + "\n" + JSON.stringify(d.detail || {}, null, 0), "");
+    sdLoad(false);
+  }catch(err){ sdStatusEl("查询失败：" + ((err && err.message) || err), "err"); }
+}
+async function sdLogs(){
+  const box = $("#sdLogBox");
+  if (!box.classList.contains("hidden")){ box.classList.add("hidden"); return; }
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="work-empty">读取中…</div>';
+  try{
+    const d = await memApi("/app/shadow/logs?limit=30");
+    const logs = d.logs || [];
+    if (!logs.length){ box.innerHTML = '<div class="work-empty">还没有主动说过话。</div>'; return; }
+    box.innerHTML = logs.map((x) => (
+      '<div class="gw-log">' +
+        '<div class="gw-log-head">' +
+          '<span class="gw-log-time">' + escapeHtml((x.date || "") + " " + (x.clock || "")) + "</span>" +
+          '<span class="gw-log-model">' + escapeHtml(x.reason || "") + "</span>" +
+          (x.delivered && x.delivered.length
+            ? '<i class="gw-chip hit">' + escapeHtml(x.delivered.join("/")) + "</i>" : "") +
+          '<span class="gw-log-cost">' + escapeHtml(x.model || "") + "</span>" +
+        "</div>" +
+        '<div class="sd-reply">' + escapeHtml(x.reply || "") + "</div>" +
+      "</div>"
+    )).join("");
+  }catch(err){ box.innerHTML = '<div class="work-empty">读取失败：' + escapeHtml((err && err.message) || "") + "</div>"; }
+}
+if ($("#sdSave")) $("#sdSave").addEventListener("click", () => sdSave(false));
+if ($("#sdRegen")) $("#sdRegen").addEventListener("click", async () => {
+  if (!confirm("重新生成触发密钥？旧的 cron 配置会立刻失效。")) return;
+  await sdSave(true);
+});
+if ($("#sdCopy")) $("#sdCopy").addEventListener("click", async () => {
+  const v = ($("#sdSecret") || {}).value || "";
+  if (!v){ sdStatusEl("还没有密钥，先保存一次", "err"); return; }
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
+    else { const e = $("#sdSecret"); e.select(); document.execCommand("copy"); }
+    sdStatusEl("密钥已复制", "ok");
+  }catch(_){ sdStatusEl("复制失败，手动选中复制吧", "err"); }
+});
+if ($("#sdPush")) $("#sdPush").addEventListener("click", sdPushNow);
+if ($("#sdDecide")) $("#sdDecide").addEventListener("click", sdDecide);
+if ($("#sdLogs")) $("#sdLogs").addEventListener("click", sdLogs);
+if ($("#sdClear")) $("#sdClear").addEventListener("click", async () => {
+  if (!confirm("清空推送记录？（已发出去的消息仍在聊天里，不会删）")) return;
+  try{
+    const d = await memApi("/app/shadow/logs", { method: "DELETE" });
+    sdStatusEl("已清空 " + (d.deleted || 0) + " 条记录", "ok");
+    sdData.status = d || {}; sdRender(); $("#sdLogBox").innerHTML = "";
+  }catch(err){ sdStatusEl("清空失败：" + ((err && err.message) || err), "err"); }
+});
+SD_FIELDS.forEach((id) => {
+  const el = $("#" + id); if (!el) return;
+  el.addEventListener("change", () => { el.dataset.touched = "1"; });
 });
 
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */

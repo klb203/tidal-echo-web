@@ -2560,6 +2560,14 @@
     background: rgba(var(--mg-heat), .10); border: 1px dashed var(--mg-edge);
     font-size: 12.5px; line-height: 1.7; color: var(--text-soft); }
 
+  .pe-sugs{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pe-sugs button{ font-size: 11.5px; padding: 5px 11px; }
+  .pe-sugs button.on{ background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600; }
+  .pe-sugs button small{ opacity: .7; margin-left: 5px; font-size: 10px; }
+  .pe-stat{ font-size: 11.5px; color: var(--text-soft); line-height: 1.8; margin-top: 9px; }
+  .pe-stat b{ font-family: var(--font-en); font-size: 14px; color: var(--text); font-weight: 600; }
+  .pe-stat i{ font-style: normal; color: var(--mg-dim); }
+  .pe-warn{ color: #c0392b; }
   .pal-plate{ margin-top: 12px; padding: 13px 14px; border-radius: 16px;
     background: var(--mg-surface-2); border: 1px solid var(--mg-edge); }
   .pal-plate .pp-head{ display: flex; align-items: center; gap: 9px; }
@@ -3312,6 +3320,54 @@
           <button id="palRefresh" type="button">刷新</button>
         </div>
         <div class="pal-status" id="palStatus"></div>
+      </section>
+
+      <!-- ①b 向量模型（可选：远端 embedding；默认本地哈希）-->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">向量模型</div>
+            <div class="mg-sub">给记忆配一套语义坐标 —— 不配也能跑（本地哈希），配了相似度更准</div>
+          </div>
+          <span class="mg-tag" id="palEmbedTag">—</span>
+        </div>
+
+        <label class="fld switch-row" style="margin-top:12px">
+          <span>启用远端向量（记忆入库时顺带存向量）</span>
+          <input type="checkbox" id="peEnable">
+        </label>
+
+        <label class="fld" style="margin-top:10px"><span>服务商地址（OpenAI 兼容，可带 /v1）</span>
+          <input id="peBase" type="text" placeholder="https://api.siliconflow.cn/v1">
+        </label>
+        <label class="fld" style="margin-top:10px"><span>API Key</span>
+          <input id="peKey" type="text" placeholder="sk-…（硅基流动控制台 → API 密钥）" autocomplete="off">
+        </label>
+        <label class="fld" style="margin-top:10px"><span>向量模型（维度由「测试」自动识别）</span>
+          <div class="model-row">
+            <select id="peModel" class="pill-select" style="flex:1 1 auto"></select>
+            <button id="peFetch" type="button">拉取模型</button>
+          </div>
+        </label>
+        <label class="fld" style="margin-top:10px"><span>自定义模型名（可选，填了就用它）</span>
+          <input id="peModelCustom" type="text" placeholder="BAAI/bge-m3">
+        </label>
+
+        <div class="pe-sugs" id="peSugs"></div>
+
+        <div class="pal-acts">
+          <button id="peTest" type="button" class="primary">测试连通</button>
+          <button id="peBuild" type="button">补全向量</button>
+          <button id="peRebuild" type="button">整库重建</button>
+          <button id="peSave" type="button">保存</button>
+        </div>
+        <div class="pal-status" id="peStatus"></div>
+        <div class="pe-stat" id="peStat"></div>
+        <div class="settings-tip" style="margin-top:10px">
+          <b>硅基流动的 <code>BAAI/bge-m3</code> 是免费的</b>（1024 维，中英混，够用）。<br>
+          换了模型或维度 → 库里旧向量会**自动作废**，点「整库重建」补回来；
+          在那之前这些记忆仍能被关键词（BM25）召回，只是不参与语义相似。
+        </div>
       </section>
 
       <!-- ② 召回 -->
@@ -7091,7 +7147,7 @@ const PAL_ROOM_META = {
 };
 const PAL_MOOD_LABEL = { happy: "开心", sad: "难过", angry: "生气", anxious: "焦虑", tender: "温柔",
   calm: "平静", excited: "兴奋", tired: "疲惫", lonely: "孤独", grateful: "感激", curious: "好奇", proud: "骄傲" };
-let palData = { status: null, room: "", nodes: [], editing: null };
+let palData = { status: null, room: "", nodes: [], editing: null, chunks: [], embed: {} };
 function palRoomOf(key){ return (palData.status && palData.status.rooms || []).filter((r) => r.key === key)[0] || null; }
 function palRoomName(key){ const r = palRoomOf(key); return r ? r.name : key; }
 
@@ -7099,6 +7155,156 @@ function palStatus(msg, kind){
   const el = $("#palStatus"); if (!el) return;
   el.textContent = msg || "";
   el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--mg-dim)");
+}
+/* ── 向量模型（记忆宫殿的语义坐标：本地哈希 / 远端 embedding）──────────
+   默认本地哈希（零依赖），可切到任意 OpenAI 兼容 /embeddings，例如
+   硅基流动的免费模型 BAAI/bge-m3。后端在 mem_palace.py 的 embed_* 那一组。 */
+function peStatus(msg, kind){
+  const el = $("#peStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--mg-dim)");
+}
+function peCustomModel(){
+  const c = ($("#peModelCustom") && $("#peModelCustom").value.trim()) || "";
+  return c || ($("#peModel") && $("#peModel").value) || "";
+}
+function peSyncCustom(){
+  /* 下拉里选了具体模型 → 自定义框留空；选了「自定义」→ 用输入框 */
+  const sel = $("#peModel");
+  if (!sel) return;
+  $("#peModelCustom").style.display = (sel.value === "__custom__") ? "" : "none";
+  if (sel.value !== "__custom__") $("#peModelCustom").value = "";
+}
+function peFillModels(list, keep){
+  const sel = $("#peModel"); if (!sel) return;
+  const cur = keep || peCustomModel() || ((palData.embed || {}).model || "");
+  let html = "";
+  (list || []).forEach((m) => {
+    const id = typeof m === "string" ? m : m.id;
+    const dim = (typeof m === "object" && m.dim) ? (" · " + m.dim + " 维") : "";
+    const note = (typeof m === "object" && m.note) ? (" · " + m.note) : "";
+    html += '<option value="' + escapeHtml(id) + '">' + escapeHtml(id + dim + note) + "</option>";
+  });
+  html += '<option value="__custom__">✎ 自定义模型名…</option>';
+  sel.innerHTML = html;
+  if (cur && !Array.prototype.some.call(sel.options, (o) => o.value === cur)){
+    const o = document.createElement("option");
+    o.value = cur; o.textContent = cur; sel.insertBefore(o, sel.options[0]);
+  }
+  sel.value = cur || "BAAI/bge-m3";
+  peSyncCustom();
+}
+function peRenderSugs(){
+  const box = $("#peSugs"); if (!box) return;
+  const list = ((palData.embed || {}).suggest) || [];
+  const cur = peCustomModel();
+  box.innerHTML = list.map((m) => (
+    '<button type="button" data-pe-sug="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' class="on"' : "") + ">" +
+    escapeHtml(m.id.split("/").pop()) + "<small>" + escapeHtml(m.note || "") + "</small></button>"
+  )).join("");
+}
+function peRender(){
+  const e = palData.embed || {};
+  const tag = $("#palEmbedTag");
+  if (tag) tag.textContent = e.active ? ("远端 · " + (e.model || "").split("/").pop()) : "本地哈希";
+  const en = $("#peEnable");
+  if (en) en.checked = !!e.enabled;
+  const b = $("#peBase");
+  if (b && !b.value) b.value = e.base || "";
+  const k = $("#peKey");
+  if (k && !k.value){
+    k.value = e.key_hint || "";
+    k.placeholder = e.key_from === "env" ? "已从后端环境变量读到 Key" : "sk-…（硅基流动控制台 → API 密钥）";
+  }
+  if ($("#peModel") && !$("#peModel").options.length) peFillModels(e.suggest || [], e.model);
+  if ($("#peModel") && e.model) peFillModels(e.suggest || [], e.model);
+  peRenderSugs();
+  const st = $("#peStat");
+  if (st){
+    const pend = e.pending || 0;
+    st.innerHTML =
+      "模式 <b>" + (e.mode === "remote" ? "远端" : "本地") + "</b> · 模型 <b>" +
+      escapeHtml((e.model || "-").split("/").pop()) + "</b> · 维度 <b>" + (e.dim || "-") + "</b><br>" +
+      "已向量化 <b>" + (e.vectorized || 0) + "</b> / " + (e.nodes || 0) + " 条" +
+      (pend ? (' <span class="pe-warn">（还有 ' + pend + " 条没向量，点「补全向量」）</span>") : " ✅") +
+      "<br><i>版本戳 " + escapeHtml(e.ver || "-") + " · Key " +
+      (e.key_set ? ("已配（" + escapeHtml(e.key_hint || "") + "，" + (e.key_from === "env" ? "来自环境变量" : "来自配置") + "）") : "未配") + "</i>" +
+      (e.last_build ? ("<br><i>上次重建：" + escapeHtml(String(e.last_build.at || "").slice(0, 16).replace("T", " ")) +
+        " · " + (e.last_build.filled || 0) + " 条" + (e.last_build.error ? (' <span class="pe-warn">' + escapeHtml(e.last_build.error) + "</span>") : "") + "</i>") : "");
+  }
+}
+async function peLoad(){
+  try{
+    const e = await memApi("/app/palace/embed");
+    palData.embed = e.embed || {};
+    peRender();
+  }catch(err){
+    peStatus("读取向量配置失败：" + ((err && err.message) || err), "err");
+  }
+}
+async function peFetchModels(){
+  peStatus("正在拉模型列表…");
+  try{
+    const d = await memApi("/app/palace/embed/models", { method: "POST", body: JSON.stringify({
+      base: ($("#peBase") || {}).value || "", key: ($("#peKey") || {}).value || "" }) });
+    if (!d.ok){
+      if ((d.embed_models || []).length){ peFillModels(d.embed_models); peRenderSugs(); }
+      peStatus("拉取失败：" + (d.error || "") + "（下面给的是常用候选，可直接选）", "err");
+      return;
+    }
+    peFillModels(d.embed_models || [], ($("#peModel") || {}).value);
+    palData.embed = Object.assign({}, palData.embed, { suggest: d.embed_models || [] });
+    peRenderSugs();
+    peStatus("拉到 " + d.total + " 个模型，其中向量模型 " + (d.embed_models || []).length + " 个（已排在前面）", "ok");
+  }catch(err){ peStatus("拉取失败：" + ((err && err.message) || err), "err"); }
+}
+async function peTest(){
+  const model = peCustomModel();
+  if (!model){ peStatus("先选或填一个模型名", "err"); return; }
+  peStatus("正在测试（会真调一次接口）…");
+  try{
+    const d = await memApi("/app/palace/embed/test", { method: "POST", body: JSON.stringify({
+      base: ($("#peBase") || {}).value || "", key: ($("#peKey") || {}).value || "", model: model,
+      enable: !!($("#peEnable") || {}).checked }) });
+    if (!d.ok){ peStatus("测试失败：" + (d.error || "未知错误"), "err"); return; }
+    peStatus("通了 ✅ " + d.model + " · " + d.dim + " 维 · " + d.ms + "ms · 前几维 [" +
+             (d.sample || []).slice(0, 3).join(", ") + "…" + "]" +
+             (d.note ? ("\n" + d.note) : "") + (d.next ? ("\n" + d.next) : ""), "ok");
+    await peLoad();
+  }catch(err){ peStatus("测试失败：" + ((err && err.message) || err), "err"); }
+}
+async function peSave(){
+  const model = peCustomModel();
+  if (!model){ peStatus("先选或填一个模型名", "err"); return; }
+  peStatus("保存中…");
+  try{
+    const d = await memApi("/app/palace/embed", { method: "POST", body: JSON.stringify({
+      enable: !!($("#peEnable") || {}).checked,
+      base: ($("#peBase") || {}).value || "",
+      key: ($("#peKey") || {}).value || "",
+      model: model }) });
+    palData.embed = d.embed || {};
+    peRender();
+    const pend = palData.embed.pending || 0;
+    peStatus("已保存 ✅" + (palData.embed.active ? (" · 远端向量生效（" + model + "）") : " · 未启用，仍用本地哈希") +
+             (pend ? ("\n还有 " + pend + " 条没向量 —— 点「补全向量」补上") : ""), "ok");
+    await palaceLoad();
+  }catch(err){ peStatus("保存失败：" + ((err && err.message) || err), "err"); }
+}
+async function peBuild(force){
+  peStatus((force ? "整库重建" : "补全") + "中…（会真调接口，条数多时慢一些）");
+  try{
+    const d = await memApi("/app/palace/embed/build", { method: "POST", body: JSON.stringify({ force: !!force }) });
+    if (!d.ok){
+      peStatus("失败：" + (d.error || d.reason || "未知错误") + "（已补 " + (d.filled || 0) + " 条）", "err");
+      return;
+    }
+    palData.embed = d.embed || palData.embed;
+    peRender();
+    peStatus("完成 ✅ 新写入 " + d.filled + " 条向量 · " + d.batches + " 批 · " + d.ms + "ms" +
+             (d.pending ? ("，还剩 " + d.pending + " 条") : ""), "ok");
+    await palaceLoad();
+  }catch(err){ peStatus("失败：" + ((err && err.message) || err), "err"); }
 }
 async function openPalace(){
   if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
@@ -7120,6 +7326,7 @@ async function palaceLoad(verbose){
       const c = await memApi("/app/palace/chunks");
       palData.chunks = c.chunks || [];
     }catch(_){ palData.chunks = palData.chunks || []; }
+    palData.embed = (palData.status || {}).embed_detail || palData.embed || {};
     palRender();
     if (verbose) palStatus("读好了 · " + (palData.status.total || 0) + " 条记忆在七个房间里", "ok");
   }catch(err){
@@ -7131,8 +7338,12 @@ function palRender(){
   const wl = st.waterline || {};
   const n = $("#palCount"); if (n) n.textContent = st.total || 0;
   const sub = $("#palSub");
+  const em = st.embed_detail || {};
   if (sub) sub.textContent = (st.rooms || []).length + " 个房间 · 门牌 " +
-    (st.plates || []).length + " 块 · " + (st.embeddings || "");
+    (st.plates || []).length + " 块 · 向量 " +
+    (em.mode === "remote" ? ("远端 " + String(em.model || "").split("/").pop() + " · " + em.dim + " 维")
+                          : "本地哈希") +
+    (em.pending ? ("（" + em.pending + " 条待补）") : "");
   const w = $("#palWlSub");
   if (w) w.textContent = "热区 " + wl.hot + " 条 · 缓冲阈值 " + wl.buffer +
     " · 待处理 " + wl.pending + "（可整理 " + wl.cold + "）· 已处理到 #" + wl.hwm;
@@ -7173,6 +7384,7 @@ function palRender(){
   palRenderPlates();
   palRenderChunks();
   palRenderRoomBody();
+  peRender();
 }
 function palRenderRoomBody(){
   const box = $("#palRoomBody"); if (!box) return;
@@ -7277,6 +7489,12 @@ async function palSearchPal(){
     if (d.rumination) html += '<div class="pal-rum">阁楼里一直有件事没消化：' +
       escapeHtml(d.rumination.text) + "</div>";
     if (!html) html = '<div class="arc-empty">没想起什么相关的。记忆库共 ' + (d.counts || 0) + " 条。</div>";
+    if (d.degraded) html = '<div class="pal-rum">⚠️ 向量模型这轮没连上（' + escapeHtml(d.embed_error || "") +
+      "），这次是**只用关键词**的降级召回，可能不太准。</div>" + html;
+    else if (d.pending) html = '<div class="pal-rum">有 ' + d.pending +
+      " 条记忆还没有向量（刚换过模型？），它们的语义相似度暂时不算 —— 去上面点「补全向量」。</div>" + html;
+    if (d.mode === "remote") html += '<div class="ph-why" style="margin-top:10px">向量模型：' +
+      escapeHtml(String(d.model || "")) + " · 查询向量已用它现算</div>";
     box.innerHTML = html;
   }catch(err){
     box.innerHTML = '<div class="arc-empty">搜索失败：' + escapeHtml((err && err.message) || String(err)) + "</div>";
@@ -7399,6 +7617,22 @@ if ($("#palExtractForce")) $("#palExtractForce").addEventListener("click", () =>
 if ($("#palMaintain")) $("#palMaintain").addEventListener("click", palMaintain);
 if ($("#palPlatesRefresh")) $("#palPlatesRefresh").addEventListener("click", palPlatesRefresh);
 if ($("#palSearch")) $("#palSearch").addEventListener("click", palSearchPal);
+if ($("#peFetch")) $("#peFetch").addEventListener("click", peFetchModels);
+if ($("#peTest")) $("#peTest").addEventListener("click", peTest);
+if ($("#peSave")) $("#peSave").addEventListener("click", peSave);
+if ($("#peBuild")) $("#peBuild").addEventListener("click", () => peBuild(false));
+if ($("#peRebuild")) $("#peRebuild").addEventListener("click", () => {
+  if (confirm("整库重算所有记忆的向量？（换模型后需要；条数多时会调很多次接口）")) peBuild(true);
+});
+if ($("#peModel")) $("#peModel").addEventListener("change", peSyncCustom);
+if ($("#peSugs")) $("#peSugs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pe-sug]"); if (!b) return;
+  const id = b.dataset.peSug;
+  const sel = $("#peModel");
+  if (sel && Array.prototype.some.call(sel.options, (o) => o.value === id)){ sel.value = id; peSyncCustom(); }
+  else { sel.value = "__custom__"; peSyncCustom(); $("#peModelCustom").value = id; }
+  peRenderSugs();
+});
 if ($("#palQ")) $("#palQ").addEventListener("keydown", (e) => { if (e.key === "Enter") palSearchPal(); });
 if ($("#palacePanel")) $("#palacePanel").addEventListener("click", async (e) => {
   const pre = e.target.closest("[data-pal-preset]");

@@ -1949,6 +1949,27 @@
   }
   .set-card-body > .conn-list{ gap: 8px; }
   .set-card-body .settings-tip{ margin-top: -2px; }
+  /* 两列并排的字段（尺寸 / 张数 这种短字段） */
+  .fld-pair{ display: flex; gap: 10px; }
+  .fld-pair > .fld{ flex: 1 1 0; min-width: 0; }
+  /* 生图结果预览 */
+  .ig-preview{ display: flex; flex-direction: column; gap: 10px; }
+  .ig-preview.hidden{ display: none; }
+  .ig-preview img{
+    width: 100%; max-height: 46vh; object-fit: contain; display: block;
+    border-radius: 14px; border: 1px solid var(--hairline);
+    background: var(--bg-soft, rgba(255,255,255,.5));
+  }
+  .ig-preview .ig-meta{
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--text-faint);
+  }
+  .ig-preview .ig-meta a{ color: var(--accent, #1f6feb); text-decoration: none; }
+  .ig-preview .ig-meta a:hover{ text-decoration: underline; }
+  .settings-tip code{
+    font-size: 11px; padding: 1px 5px; border-radius: 5px;
+    background: var(--glass-strong); color: var(--text-soft);
+  }
   .conn-list{ display: flex; flex-direction: column; gap: 10px; }
   .conn-card{
     position: relative;
@@ -2618,6 +2639,57 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="image">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.8" cy="9.8" r="1.5"/><path d="M3.6 17.4l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/><path d="M13.8 14.6l1.6-1.6a1.6 1.6 0 0 1 2.3 0l2.7 2.7"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">生图 · 中转站</span><span class="set-card-sub" id="cardSubImage"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+      <label class="fld switch-row"><span>启用生图</span>
+        <input type="checkbox" id="igEnable">
+      </label>
+      <label class="fld"><span>中转站地址（OpenAI 兼容，可带 /v1）</span>
+        <input id="igBase" type="text" placeholder="https://你的中转站/v1" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="fld"><span>API Key</span>
+        <input id="igKey" type="password" placeholder="sk-...（中转站给的 Key）" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="fld">
+        <span>生图模型</span>
+        <div class="model-row">
+          <select id="igModel" class="model-select"></select>
+          <input id="igModelCustom" type="text" placeholder="自定义模型名" autocomplete="off" spellcheck="false" style="display:none">
+          <button id="igFetch" type="button">拉取模型</button>
+        </div>
+        <div class="model-hint" id="igHint" style="display:none"></div>
+      </div>
+      <div class="fld-pair">
+        <label class="fld"><span>尺寸（可选）</span>
+          <input id="igSize" type="text" list="igSizeList" placeholder="1024x1024" autocomplete="off" spellcheck="false">
+          <datalist id="igSizeList">
+            <option value="1024x1024"></option><option value="1024x1536"></option>
+            <option value="1536x1024"></option><option value="512x512"></option>
+            <option value="768x768"></option><option value="1024x1792"></option>
+            <option value="1792x1024"></option><option value="2048x2048"></option>
+          </datalist>
+        </label>
+        <label class="fld"><span>张数</span>
+          <input id="igN" type="number" min="1" max="4" step="1" value="1">
+        </label>
+      </div>
+      <div class="conn-sub" id="igStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+      <div class="editor-actions" style="margin-bottom:2px">
+        <button id="igTest" type="button" class="primary">测试生图</button>
+        <button id="igSave" type="button">保存</button>
+      </div>
+      <div id="igPreview" class="ig-preview hidden"></div>
+      <div class="settings-tip">填<b>任意 OpenAI 兼容的中转站</b>（地址 + Key）就能生图：点「拉取模型」会让<b>你的后端</b>代打
+      <code>地址/models</code>，生图相关的模型会自动排最前。测试生图会把当前输入框里的文字当提示词（空着就用一句默认的）。
+      浏览器直连中转站基本都会被 CORS 拦，所以这一步同样经后端 <code>/app/image/*</code> 转发。</div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="ai">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
@@ -3232,6 +3304,7 @@ function openSettings(){
   closeEditor();
   syncCloudFields();
   syncMiniMaxFields();
+  syncImageFields();
   if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
@@ -3279,6 +3352,189 @@ function persistMiniMax(){
   saveMiniMax(c);
   syncMiniMaxFields();
   showToast(minimaxEnabled() ? "MiniMax 语音已启用" : "MiniMax 设置已保存（未启用）");
+}
+/* ── 生图 · 中转站（OpenAI 兼容）·存本机 ──────────────────────────────────
+   地址 + Key + 模型；拉模型与生图都经后端 /app/image/* 转发（浏览器直连会被 CORS 拦）。 */
+const IG_KEY = "companion_image_gen";
+const IG_IMG_RE = /image|dall|flux|stable|sdxl|sd3|kolor|seedream|seededit|wanx|gpt-image|imagen|midjourney|nano-banana|t2i|i2i|draw|paint/i;
+function loadImageGen(){
+  try{ return JSON.parse(localStorage.getItem(IG_KEY) || "null") || {}; }catch(e){ return {}; }
+}
+function saveImageGen(cfg){
+  try{ localStorage.setItem(IG_KEY, JSON.stringify(cfg)); }catch(e){}
+  refreshSetCardSubs();
+}
+function imageGenOn(){
+  const c = loadImageGen();
+  return !!(c.enable && c.base && c.model);
+}
+function igStatus(msg, kind){
+  const el = $("#igStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function currentIgModel(){
+  const sel = $("#igModel"), ci = $("#igModelCustom");
+  if (sel && sel.value === "__custom__") return (ci ? ci.value : "").trim();
+  return sel ? (sel.value || "").trim() : "";
+}
+function syncIgModelCustom(){
+  const sel = $("#igModel"), ci = $("#igModelCustom"); if (!sel || !ci) return;
+  if (sel.value === "__custom__"){ ci.style.display = ""; if (!ci.value) ci.focus(); }
+  else ci.style.display = "none";
+}
+function fillIgModels(list, selected){
+  const sel = $("#igModel"); if (!sel) return;
+  sel.innerHTML = "";
+  const img = [], other = [];
+  (list || []).forEach((m) => { if (!m) return; (IG_IMG_RE.test(m) ? img : other).push(m); });
+  const addGroup = (label, arr) => {
+    if (!arr.length) return;
+    const og = document.createElement("optgroup"); og.label = label;
+    arr.forEach((m) => { const o = document.createElement("option"); o.value = m; o.textContent = m; og.appendChild(o); });
+    sel.appendChild(og);
+  };
+  addGroup("🖼 生图模型", img);
+  addGroup("其他模型", other);
+  const cu = document.createElement("option");
+  cu.value = "__custom__"; cu.textContent = "✎ 自定义模型名…";
+  sel.appendChild(cu);
+  const want = selected || "";
+  const has = Array.from(sel.options).some((o) => o.value === want);
+  if (has) sel.value = want;
+  else if (img.length) sel.value = img[0];
+  else if (other.length) sel.value = other[0];
+  if (!has && want){ sel.value = "__custom__"; const ci = $("#igModelCustom"); if (ci) ci.value = want; }
+  syncIgModelCustom();
+}
+function syncImageFields(){
+  const c = loadImageGen();
+  const en = $("#igEnable"), b = $("#igBase"), k = $("#igKey"), s = $("#igSize"), n = $("#igN");
+  if (en) en.checked = !!c.enable;
+  if (b) b.value = c.base || "";
+  if (k) k.value = c.key || "";
+  if (s) s.value = c.size || "";
+  if (n) n.value = (c.n != null && !isNaN(c.n)) ? c.n : 1;
+  const sel = $("#igModel");
+  if (sel && !sel.options.length){
+    sel.innerHTML = '<option value="__custom__">✎ 自定义模型名…</option>';
+    sel.value = "__custom__";
+  }
+  if (sel && c.model && !Array.from(sel.options).some((o) => o.value === c.model)){
+    const cu = Array.from(sel.options).find((o) => o.value === "__custom__");
+    if (cu){ const ci = $("#igModelCustom"); if (ci) ci.value = c.model; sel.value = "__custom__"; }
+  }else if (sel && c.model){ sel.value = c.model; }
+  syncIgModelCustom();
+  const hint = $("#igHint");
+  if (hint && c.base){
+    hint.style.display = "";
+    hint.textContent = "实际请求：" + c.base.replace(/\/+$/, "") + "/images/generations";
+  }
+  igStatus(imageGenOn()
+    ? ("✅ 已启用：模型 " + c.model + "（提示词会从输入框取）")
+    : "填好地址、Key、模型并勾选「启用生图」后生效。");
+}
+function persistImageGen(quiet){
+  const c = {
+    enable: $("#igEnable") ? $("#igEnable").checked : false,
+    base: $("#igBase") ? $("#igBase").value.trim().replace(/\/+$/, "") : "",
+    key: $("#igKey") ? $("#igKey").value.trim() : "",
+    model: currentIgModel(),
+    size: $("#igSize") ? $("#igSize").value.trim() : "",
+    n: (function(){ const v = parseInt(($("#igN") ? $("#igN").value : "1"), 10); return (!v || v < 1) ? 1 : Math.min(v, 4); })()
+  };
+  saveImageGen(c);
+  syncImageFields();
+  if (!quiet) showToast(imageGenOn() ? "生图设置已保存（已启用）" : "生图设置已保存（未启用）");
+}
+async function fetchImageModels(){
+  const base = ($("#igBase") ? $("#igBase").value.trim() : "");
+  if (!base){ igStatus("先填「中转站地址」，例如 https://你的中转站/v1", "err"); return; }
+  const key = ($("#igKey") ? $("#igKey").value.trim() : "");
+  const btn = $("#igFetch"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "拉取中…";
+  igStatus("正在让后端代拉 " + base.replace(/\/+$/, "") + "/models …");
+  try{
+    const r = await fetch(appUrl("/app/image/models"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ base, key })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
+    const list = d.models || [];
+    if (!list.length) throw new Error("该中转站返回了空模型列表（可能不支持 /models，直接手填模型名也行）");
+    fillIgModels(list, currentIgModel());
+    const imgN = (d.image_models || []).length;
+    igStatus("拉到 " + list.length + " 个模型" + (imgN ? "，其中生图相关 " + imgN + " 个（已排最前）" : "（没识别出生图模型，可从「其他模型」里挑或手填）") + "。选好后点「测试生图」。", "ok");
+    $("#igHint").style.display = "";
+    $("#igHint").textContent = "实际请求：" + (d.base || base) + "/images/generations";
+  }catch(err){
+    igStatus("拉取失败：" + ((err && err.message) || err), "err");
+  }finally{
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+function renderIgPreview(images, meta){
+  const box = $("#igPreview"); if (!box) return;
+  box.innerHTML = "";
+  (images || []).forEach((im, i) => {
+    const src = im.url || im.data_url || "";
+    if (!src) return;
+    const wrap = document.createElement("div");
+    const img = document.createElement("img");
+    img.src = src; img.loading = "lazy"; img.alt = "生成图 " + (i + 1);
+    wrap.appendChild(img);
+    const bar = document.createElement("div");
+    bar.className = "ig-meta";
+    bar.innerHTML = '<span>#' + (i + 1) + (im.revised_prompt ? " · " + escapeHtml(String(im.revised_prompt).slice(0, 60)) : "") + "</span>";
+    const a1 = document.createElement("a");
+    a1.href = src; a1.target = "_blank"; a1.rel = "noopener"; a1.textContent = "在新窗口打开";
+    bar.appendChild(a1);
+    const a2 = document.createElement("a");
+    a2.href = src; a2.download = "tidal-echo-" + Date.now() + "-" + (i + 1) + ".png"; a2.textContent = "下载";
+    bar.appendChild(a2);
+    wrap.appendChild(bar);
+    box.appendChild(wrap);
+  });
+  if (meta) box.appendChild(meta);
+  box.classList.remove("hidden");
+}
+async function testImageGen(){
+  const base = ($("#igBase") ? $("#igBase").value.trim() : "");
+  const key = ($("#igKey") ? $("#igKey").value.trim() : "");
+  const model = currentIgModel();
+  if (!base){ igStatus("先填「中转站地址」。", "err"); return; }
+  if (!model){ igStatus("先「拉取模型」选一个，或在自定义框里填模型名。", "err"); return; }
+  const size = ($("#igSize") ? $("#igSize").value.trim() : "");
+  const n = (function(){ const v = parseInt(($("#igN") ? $("#igN").value : "1"), 10); return (!v || v < 1) ? 1 : Math.min(v, 4); })();
+  const prompt = ((inputEl && inputEl.value) || "").trim() || "一只戴着耳机听音乐的猫，水彩插画风格，柔和光线";
+  const btn = $("#igTest"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "生成中…（可能几十秒）";
+  igStatus("正在生成：" + prompt.slice(0, 40) + (prompt.length > 40 ? "…" : ""));
+  try{
+    const r = await fetch(appUrl("/app/image/generate"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ base, key, model, prompt, size: size || undefined, n })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
+    const note = document.createElement("div");
+    note.className = "ig-meta";
+    note.textContent = "模型 " + (d.model || model) + " · " + (d.count || (d.images || []).length) + " 张 · 用时 " +
+      ((d.ms || 0) / 1000).toFixed(1) + "s" + (size ? " · " + size : "");
+    renderIgPreview(d.images || [], note);
+    igStatus("✅ 生图成功（" + ((d.ms || 0) / 1000).toFixed(1) + "s）" +
+      ((d.usage) ? " · usage " + JSON.stringify(d.usage) : ""), "ok");
+    showToast("生图成功");
+  }catch(err){
+    const msg = (err && err.message) || String(err);
+    igStatus("生图失败：" + msg, "err");
+    showToast("生图失败，详情见卡片里的状态行");
+  }finally{
+    btn.disabled = false; btn.textContent = old;
+  }
 }
 async function minimaxTts(text){
   const c = loadMiniMax();
@@ -3523,6 +3779,20 @@ if ($("#mmTest")) $("#mmTest").addEventListener("click", async () => {
   }
   finally{ btn.disabled = false; btn.textContent = old; }
 });
+/* ── 生图卡片：监听 + 动作 ───────────────────────────────────────────── */
+["#igEnable", "#igKey"].forEach((sel) => {
+  if ($(sel)) $(sel).addEventListener("change", () => persistImageGen(true));
+});
+["#igBase", "#igSize"].forEach((sel) => {
+  if ($(sel)) $(sel).addEventListener("change", () => persistImageGen(true));
+});
+if ($("#igN")) $("#igN").addEventListener("change", () => persistImageGen(true));
+if ($("#igModel")) $("#igModel").addEventListener("change", () => { syncIgModelCustom(); persistImageGen(true); });
+if ($("#igModelCustom")) $("#igModelCustom").addEventListener("change", () => persistImageGen(true));
+if ($("#igFetch")) $("#igFetch").addEventListener("click", fetchImageModels);
+if ($("#igTest")) $("#igTest").addEventListener("click", testImageGen);
+if ($("#igSave")) $("#igSave").addEventListener("click", () => persistImageGen(false));
+
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
 function cloudSelfTest(){
   const s = $("#cloudStatus"); if (!s) return;
@@ -3909,6 +4179,11 @@ function refreshSetCardSubs(){
   put("cardSubVoice", mm.enable
     ? (mm.voice ? ("已启用 · 声音 " + String(mm.voice).slice(0, 12)) : "已启用，还差声音 ID")
     : "未启用（用默认嗓音）");
+
+  const ig = loadImageGen();
+  put("cardSubImage", imageGenOn()
+    ? ("已启用 · " + String(ig.model).slice(0, 22) + (ig.size ? (" · " + ig.size) : ""))
+    : (ig.base ? "已填地址，未启用" : "未配置（填中转站地址 + Key + 模型）"));
 
   const model = ($("#apModel") && $("#apModel").value.trim()) || (a && a.model) || "deepseek-chat";
   put("cardSubAI", (hasBackendChat() ? "记忆存后端 · 自动压缩" : "仅本机历史") + " · " + model);

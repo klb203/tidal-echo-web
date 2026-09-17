@@ -1128,6 +1128,258 @@
     white-space: pre-wrap; overflow-wrap: anywhere;
   }
 
+  /* ══════════ 备份与恢复 ══════════ */
+  .bk-head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+    padding: 2px 2px 6px;
+  }
+  .bk-head-k{ color: var(--text-soft); font-size: 13px; letter-spacing:.02em; }
+  .bk-head-v{ color: var(--text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bk-bar{
+    height: 4px; border-radius: 3px; background: var(--slider-track);
+    overflow: hidden; margin: 2px 0 6px;
+  }
+  .bk-bar i{ display:block; height:100%; width:0%; border-radius:3px; background: var(--slider-thumb); transition: width .4s var(--ease-soft); }
+  .bk-sub{ color: var(--text-faint); font-size: 11.5px; line-height: 1.55; }
+  .bk-fold{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text-soft); font-size: 13px; padding: 8px 2px 6px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; width:100%; text-align:left;
+  }
+  .bk-fold i{ font-style:normal; transition: transform .2s var(--ease-soft); display:inline-block; color: var(--text-faint); }
+  .bk-fold.open i{ transform: rotate(90deg); }
+  .bk-rows{ border:1px solid var(--field-line); border-radius: 12px; overflow:hidden; margin-bottom: 6px; }
+  .bk-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding: 8px 11px; font-size: 12.5px; color: var(--text-soft);
+    border-top: 1px solid var(--field-line);
+  }
+  .bk-row:first-child{ border-top:none; }
+  .bk-row b{ color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bk-row span:last-child{ color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  .bk-hero{
+    position: relative;
+    border: none; width: 100%;
+    border-radius: 16px; padding: 20px 16px 18px;
+    margin-top: 12px;
+    color: #fff; cursor: pointer;
+    background: linear-gradient(135deg, #7C5CE0 0%, #6B4BD8 52%, #5B3FD0 100%);
+    box-shadow: 0 12px 28px rgba(97,72,214,.28);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    transition: transform .16s var(--ease-soft), box-shadow .2s ease;
+  }
+  .bk-hero:hover{ transform: translateY(-2px); box-shadow: 0 16px 34px rgba(97,72,214,.34); }
+  .bk-hero:active{ transform: translateY(0) scale(.99); }
+  .bk-hero.dis{ opacity:.55; cursor:progress; }
+  .bk-hero-ico{
+    width: 44px; height: 44px; border-radius: 50%;
+    display:grid; place-items:center;
+    background: rgba(255,255,255,.20);
+    border: 1px solid rgba(255,255,255,.30);
+  }
+  .bk-hero-ico svg{ width: 24px; height: 24px; }
+  .bk-hero b{ font-size: 16px; font-weight: 600; letter-spacing:.02em; }
+  .bk-hero-tag{
+    position:absolute; top:0; right:0;
+    padding: 4px 12px 4px 14px;
+    font-size: 11px; letter-spacing:.06em;
+    color:#4A2FB0; background: rgba(255,255,255,.86);
+    border-radius: 0 16px 0 14px;
+  }
+  .bk-cap{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin: 12px 0 8px; }
+  .bk-pair{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .bk-tile{
+    appearance:none; -webkit-appearance:none;
+    border: 1px solid var(--field-line); background: var(--card-bg);
+    border-radius: 14px; padding: 16px 10px 14px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+    color: var(--text); font-size: 13.5px; font-weight: 500;
+    transition: transform .16s var(--ease-soft), border-color .2s ease;
+  }
+  .bk-tile:hover{ transform: translateY(-2px); border-color: var(--hairline); }
+  .bk-tile:active{ transform: translateY(0) scale(.99); }
+  .bk-tile-ico{
+    width: 40px; height: 40px; border-radius: 50%;
+    display:grid; place-items:center;
+  }
+  .bk-tile-ico svg{ width: 22px; height: 22px; }
+  .bk-tile.doc .bk-tile-ico{ background: rgba(74,124,214,.13); color:#3D6FBF; }
+  .bk-tile.media .bk-tile-ico{ background: rgba(214,86,132,.13); color:#C24E7C; }
+  .bk-import{
+    appearance:none; -webkit-appearance:none; width:100%;
+    margin-top: 10px;
+    border: 1px solid var(--field-line); background: var(--card-bg);
+    border-radius: 14px; padding: 16px 12px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+    color: var(--text); font-size: 14px; font-weight: 500;
+    transition: transform .16s var(--ease-soft), border-color .2s ease;
+  }
+  .bk-import:hover{ transform: translateY(-2px); border-color: var(--hairline); }
+  .bk-import .bk-tile-ico{ background: rgba(80,178,132,.14); color:#3E9A6C; width:44px; height:44px; }
+  .bk-import small{ color: var(--text-faint); font-weight: 400; font-size: 11.5px; }
+  .bk-status{
+    margin-top: 10px; font-size: 12px; line-height: 1.6;
+    color: var(--text-soft); min-height: 0;
+  }
+  .bk-status.err{ color: #A8565F; }
+  .bk-status.ok{ color: #3E9A6C; }
+  .bk-status:empty{ display:none; }
+  .bk-report{ margin-top: 8px; }
+  .bk-report table{ width:100%; border-collapse: collapse; font-size: 12px; }
+  .bk-report td{ padding: 4px 2px; color: var(--text-soft); border-top:1px dashed var(--field-line); }
+  .bk-report tr:first-child td{ border-top:none; }
+  .bk-report b{ color: var(--text); }
+
+  /* ── 云端同步（GitHub） ── */
+  .sy-box{
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed var(--field-line);
+  }
+  .sy-repo{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    font-size: 12.5px; color: var(--text-soft); margin-bottom: 4px;
+  }
+  .sy-repo b{ color: var(--text); font-weight:600; }
+  .sy-repo a{ color: var(--accent); text-decoration:none; }
+  .sy-hist{ margin-top:8px; font-size: 12px; color: var(--text-soft); }
+  .sy-hist div{ padding: 4px 0; border-top:1px dashed var(--field-line); display:flex; gap:8px; }
+  .sy-hist div:first-child{ border-top:none; }
+  .sy-hist code{ color: var(--text-faint); font-size:11px; }
+  .sy-warn{
+    margin-top:8px; padding: 8px 10px; border-radius: 10px;
+    background: rgba(206,146,86,.10); color: #96662F; font-size: 11.5px; line-height:1.6;
+  }
+
+  /* ══════════ 输入框上拉面板（微信式）══════════ */
+  .csheet{
+    position: fixed; inset: 0; z-index: 95;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    /* ★ 浮在**输入框上方**，不是盖住它（微信就是这么做的）：
+       --composer-zone 就是输入框占掉的那一条，让开它，输入框照样能点、能打字。 */
+    padding-bottom: var(--composer-zone);
+  }
+  .csheet.hidden{ display: none; }
+  .csheet-scrim{
+    position:absolute; left:0; right:0; top:0; bottom: var(--composer-zone);
+    background: rgba(30,42,55,.18);
+    -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+    opacity: 0; transition: opacity .22s ease;
+  }
+  .csheet.on .csheet-scrim{ opacity: 1; }
+  .csheet-body{
+    position: relative;
+    width: min(100vw, var(--ref-width)); margin-left: auto; margin-right: auto;
+    background: var(--bg);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 34px rgba(50,70,88,.16);
+    padding-bottom: 10px;
+    transform: translateY(103%);
+    transition: transform .26s var(--ease-soft);
+    max-height: 76vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .csheet.on .csheet-body{ transform: translateY(0); }
+  .csheet-grip{
+    width: 38px; height: 4px; border-radius: 3px;
+    background: var(--hairline); margin: 8px auto 2px;
+  }
+  .csheet-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 6px 16px 4px;
+  }
+  .csheet-head > span{ font-size: 13.5px; color: var(--text-soft); letter-spacing:.02em; }
+  .csheet-head button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text-faint); font-size: 15px; cursor:pointer; padding: 2px 6px;
+  }
+  .csheet-head #csBack{ font-size: 13px; }
+  .cs-view{ padding: 6px 14px 14px; }
+  .cs-view.hidden{ display:none; }
+  .cs-grid{
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px 4px; padding: 8px 2px 4px;
+  }
+  .cs-item{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding: 10px 2px; border-radius: 14px; cursor:pointer;
+    color: var(--text-soft); font-size: 11.5px; line-height:1.2;
+    transition: background .16s ease, transform .16s var(--ease-soft);
+  }
+  .cs-item:hover{ background: var(--row-press); }
+  .cs-item:active{ transform: scale(.94); }
+  .cs-item i{
+    font-style: normal;
+    width: 48px; height: 48px; border-radius: 14px;
+    display:grid; place-items:center;
+    background: var(--field-bg); border: 1px solid var(--field-line);
+    color: var(--accent);
+  }
+  .cs-item i svg{ width: 24px; height: 24px; }
+  .cs-item.on i{ background: rgba(76,99,120,.10); }
+  .cs-note{
+    margin: 4px 2px 0; padding: 9px 11px; border-radius: 11px;
+    background: var(--field-bg); border: 1px solid var(--field-line);
+    color: var(--text-soft); font-size: 12px; line-height: 1.6;
+  }
+  .cs-note b{ color: var(--text); }
+  .cs-acts{ display:flex; flex-wrap:wrap; gap:7px; margin-top: 10px; }
+  .cs-acts button{
+    appearance:none; -webkit-appearance:none;
+    border: 1px solid var(--field-line); background: transparent;
+    color: var(--text-soft); border-radius: 10px; padding: 7px 12px;
+    font-size: 12.5px; cursor:pointer;
+    transition: color .16s ease, border-color .16s ease;
+  }
+  .cs-acts button:hover{ color: var(--text); border-color: var(--hairline); }
+  .cs-acts button.primary{ background: var(--send-bg); color: var(--accent-fg); border-color: transparent; }
+  .cs-fld{ margin-top: 10px; }
+  .cs-fld > span{ display:block; color: var(--text-faint); font-size: 11.5px; margin-bottom: 5px; }
+  .cs-fav-list{ margin-top: 8px; }
+  .cs-fav-item{
+    display:flex; gap:8px; align-items:flex-start;
+    padding: 9px 2px; border-top: 1px dashed var(--field-line);
+  }
+  .cs-fav-item:first-child{ border-top:none; }
+  .cs-fav-txt{
+    flex:1 1 auto; min-width:0; color: var(--text);
+    font-family: var(--font-cn); font-size: 13px; line-height:1.6;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .cs-fav-meta{ color: var(--text-faint); font-size: 11px; margin-top: 3px; }
+  .cs-fav-del{
+    flex:none; appearance:none; border:none; background:transparent;
+    color: var(--text-faint); cursor:pointer; font-size: 13px; padding: 2px 4px;
+  }
+  .cs-fav-del:hover{ color: #A8565F; }
+  .cs-music-frame{
+    margin-top: 8px; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--field-line); background: var(--field-bg);
+  }
+  .cs-music-frame iframe{ display:block; width:100%; height:86px; border:0; }
+  .cs-music-frame audio{ display:block; width:100%; }
+  .cs-song{
+    display:flex; align-items:center; gap:8px;
+    padding: 9px 2px; border-top: 1px dashed var(--field-line);
+    font-size: 12.5px; color: var(--text-soft); cursor:pointer;
+  }
+  .cs-song:first-child{ border-top:none; }
+  .cs-song.cur{ color: var(--text); font-weight: 600; }
+  .cs-song em{ font-style:normal; color: var(--text-faint); font-size:11px; }
+  .cs-song .cs-fav-del{ margin-left: 4px; }
+  .cs-song span{ flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+  .cs-empty{ color: var(--text-faint); font-size: 12px; padding: 10px 2px; }
+
+  /* 戳一戳 / 拍一拍 标记（本地渲染，不进库） */
+  .poke-note{
+    align-self: center;
+    margin: 2px auto;
+    color: var(--text-faint); font-size: 11.5px; letter-spacing:.02em;
+    display:flex; align-items:center; gap:6px;
+  }
+  .poke-note::before, .poke-note::after{
+    content:""; width: 18px; height:1px; background: var(--hairline);
+  }
+
 
   /* ── Composer ── */
   .composer{
@@ -2763,6 +3015,8 @@
      4 个按钮在 320 宽下必须折行，而 .editor-actions 本身是 nowrap 的单行 flex。 */
   .editor-actions.om-acts{ flex-wrap: wrap; margin-top: 13px; }
   .om-status{ font-size: 11.5px; color: var(--text-faint); line-height: 1.75; margin-top: 10px; white-space: pre-wrap; }
+  .om-status.ok{ color: #3E9A6C; }
+  .om-status.err{ color: #A8565F; }
   .om-chips{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .om-chip{
     font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: default;
@@ -3010,8 +3264,8 @@
       <button class="emojibtn" id="emojiBtn" aria-label="表情" title="表情">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.3a4.2 4.2 0 0 0 7 0"/><line x1="9" y1="9.3" x2="9" y2="10"/><line x1="15" y1="9.3" x2="15" y2="10"/></svg>
       </button>
-      <button class="emojibtn" id="imgBtn" aria-label="生图" title="生图（也可以发 /img 开头的话）">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.8" cy="9.8" r="1.5"/><path d="M3.6 17.4l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/><path d="M13.8 14.6l1.6-1.6a1.6 1.6 0 0 1 2.3 0l2.7 2.7"/></svg>
+      <button class="emojibtn plus" id="csOpenBtn" aria-label="更多功能" title="更多（也可以把输入框往上拉）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="12" y1="5.5" x2="12" y2="18.5"/><line x1="5.5" y1="12" x2="18.5" y2="12"/></svg>
       </button>
     </div>
     <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音">
@@ -3021,6 +3275,140 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6.5 10.5L12 5l5.5 5.5"/></svg>
     </button>
   </footer>
+
+  <!-- ── 输入框上拉面板（微信式：点 ＋ 或把输入框往上拉）── -->
+  <div class="csheet hidden" id="cSheet" role="dialog" aria-modal="false" aria-label="更多功能">
+    <div class="csheet-scrim" id="csScrim"></div>
+    <div class="csheet-body" id="csBody">
+      <div class="csheet-grip" aria-hidden="true"></div>
+      <div class="csheet-head">
+        <button class="hidden" id="csBack" type="button">‹ 返回</button>
+        <span id="csTitle">更多</span>
+        <button id="csClose" type="button" aria-label="收起">✕</button>
+      </div>
+
+      <!-- 主视图 -->
+      <div class="cs-view" id="csMain">
+        <div class="cs-grid">
+          <button class="cs-item" data-cs="clip" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.6 17.2l4.3-4.3a1.7 1.7 0 0 1 2.4 0l4.7 4.7"/><path d="M13.9 14.4l1.5-1.5a1.7 1.7 0 0 1 2.4 0l2.6 2.6"/></svg></i>
+            <span>相册 / 文件</span>
+          </button>
+          <button class="cs-item" data-cs="image" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6l1.6 4.3 4.3 1.6-4.3 1.6L12 15.4l-1.6-4.3L6.1 9.5l4.3-1.6z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></i>
+            <span>生图</span>
+          </button>
+          <button class="cs-item" data-cs="at" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg></i>
+            <span>主动消息</span>
+          </button>
+          <button class="cs-item" data-cs="poke" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.6a1.6 1.6 0 0 1 3.2 0V11"/><path d="M12.2 10.6V4.9a1.6 1.6 0 0 1 3.2 0v5.7"/><path d="M15.4 10.6v-.9a1.6 1.6 0 0 1 3.2 0v4.5c0 3.6-2.4 6.1-5.9 6.1-3.4 0-5.7-1.9-6.4-4.7l-.9-3.6a1.6 1.6 0 0 1 2.9-1.3l1.3 2.2"/></svg></i>
+            <span>戳一戳</span>
+          </button>
+          <button class="cs-item" data-cs="archive" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="4" rx="1.4"/><path d="M5.2 8.5v10a1.5 1.5 0 0 0 1.5 1.5h10.6a1.5 1.5 0 0 0 1.5-1.5v-10"/><path d="M10 13h4"/></svg></i>
+            <span>记忆归档</span>
+          </button>
+          <button class="cs-item" data-cs="fav" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.6l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.5-4.6 2.5.9-5.2L4.5 10l5.2-.8z"/></svg></i>
+            <span>收藏馆</span>
+          </button>
+          <button class="cs-item" data-cs="music" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6.6l9-1.8V16"/><circle cx="6.6" cy="18" r="2.4"/><circle cx="15.6" cy="16" r="2.4"/></svg></i>
+            <span>一起听</span>
+          </button>
+          <button class="cs-item" data-cs="quick" type="button">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h9"/></svg></i>
+            <span>快捷设置</span>
+          </button>
+        </div>
+        <div class="cs-note" id="csHint">把你正在打的字往上拉，或者点右上角那个 ＋ —— 都打开这里。</div>
+      </div>
+
+      <!-- 生图 -->
+      <div class="cs-view hidden" id="csImageV">
+        <div class="cs-fld">
+          <span>想让它画什么</span>
+          <textarea class="nf-box" id="csImgPrompt" rows="3" placeholder="例：一只坐在窗台上的橘猫，傍晚的光，水彩"></textarea>
+        </div>
+        <div class="cs-acts">
+          <button type="button" class="primary" id="imgBtn">生成并发送</button>
+          <button type="button" id="csImgCfg">去配置中转站</button>
+        </div>
+        <div class="cs-note" id="csImgNote">生图走设置里的「生图 · 中转站」。也可以直接在输入框发「/img 一只猫」。</div>
+      </div>
+
+      <!-- 主动消息 -->
+      <div class="cs-view hidden" id="csAtV">
+        <div class="cs-note" id="csAtNow">正在读它的决策层…</div>
+        <label class="fld switch-row" style="margin-top:12px"><span>让它主动来找我
+          <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就彻底静音（也不花 token）。</span></span>
+          <input type="checkbox" id="csAtEnable">
+        </label>
+        <div class="cs-fld">
+          <span>每天固定这几个时间点找我说一句（留空 = 走随机间隔）</span>
+          <input class="nf-box" id="csAtTimes" type="text" placeholder="例：09:00, 13:30, 21:00"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div class="cs-fld">
+          <span>时间点前后的宽限（分钟）</span>
+          <input class="nf-box" id="csAtWindow" type="number" min="2" max="180" step="1" placeholder="12">
+        </div>
+        <div class="cs-acts">
+          <button type="button" class="primary" id="csAtSave">保存</button>
+          <button type="button" id="csAtPush">现在就推一条</button>
+          <button type="button" id="csAtWhy">为什么没说</button>
+        </div>
+        <div class="bk-status" id="csAtStatus"></div>
+        <div class="cs-note" style="margin-top:10px">
+          时间点到了就<b>跳过随机冷静期</b>（你指名的时间是承诺），但深夜保护和每日上限照样管着 ——
+          设再多时间点也不会变成轰炸。同一个时间点当天只推一次。
+        </div>
+      </div>
+
+      <!-- 收藏馆 -->
+      <div class="cs-view hidden" id="csFavV">
+        <div class="cs-fld">
+          <span>收一句进来（也可以从聊天里捞）</span>
+          <textarea class="nf-box" id="csFavText" rows="2" placeholder="想留住的那句话…"></textarea>
+        </div>
+        <div class="cs-fld">
+          <span>贴个标签（可留空）</span>
+          <input class="nf-box" id="csFavTag" type="text" placeholder="例：心动 / 约定 / 要记得" autocomplete="off">
+        </div>
+        <div class="cs-acts">
+          <button type="button" class="primary" id="csFavSave">收进收藏馆</button>
+          <button type="button" id="csFavLast">收下最后一条回复</button>
+        </div>
+        <div class="bk-status" id="csFavStatus"></div>
+        <div class="cs-fav-list" id="csFavList"></div>
+      </div>
+
+      <!-- 一起听 -->
+      <div class="cs-view hidden" id="csMusicV">
+        <div class="cs-note" id="csMusicNow">读播放列表…</div>
+        <div class="cs-music-frame hidden" id="csMusicFrame"></div>
+        <div class="cs-acts">
+          <button type="button" class="primary" id="csMuPlay">一起听这首</button>
+          <button type="button" id="csMuNext">下一首</button>
+          <button type="button" id="csMuSpeak">让它说一句</button>
+          <button type="button" id="csMuStop">停</button>
+        </div>
+        <div class="cs-fld">
+          <span>加一首（网易云链接 / 数字 ID / 音频 URL）</span>
+          <input class="nf-box" id="csMuRaw" type="text" placeholder="https://music.163.com/song?id=…" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="cs-acts">
+          <button type="button" id="csMuAdd">加进列表</button>
+          <label class="fld switch-row" style="margin:0;gap:8px"><span style="font-size:12px">开播时说一句</span>
+            <input type="checkbox" id="csMuComment"></label>
+        </div>
+        <div class="bk-status" id="csMuStatus"></div>
+        <div id="csMuList"></div>
+      </div>
+    </div>
+  </div>
   <button class="newmsg-pill" id="newMsgBtn" type="button" aria-label="回到最新消息">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
     <span>新消息</span>
@@ -3811,6 +4199,115 @@
             决策层的顺序不能反：<b>先决定该不该说，再决定说什么</b>。先让模型写了一句很棒的话、
             再发现现在凌晨三点不该发 —— 你会舍不得扔掉它。过不了闸，连 token 都不花。
             「不说话的时候，也是他在做决定。」
+          </div>
+        </div>
+      </section>
+
+      <section class="set-card" data-card="backup">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5c0-1.4 3.6-2.5 8-2.5s8 1.1 8 2.5"/><path d="M4 7.5v9c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-9"/><path d="M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">备份与恢复 · 云端同步</span><span class="set-card-sub" id="cardSubBackup"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip">
+            <b>先想清楚「备份的是谁」</b>：这里备份的是<b>服务端</b>的东西（会话 / 消息 / 记忆）<b>加上本机的</b>设置与消息缓存。
+            <br><b>媒体单独放</b>：正文里的图片原本是内联 base64，又长又占地方，还让「纯文字备份」没法变小。
+            导出时抽到 zip 的 <code>media/</code> 目录，正文留一个占位符 —— 占位符里的文件名是<b>内容哈希</b>，
+            所以同一张图在库里存了十份，这里也<b>只有一份</b>。导入时按占位符回填，页面照原样显示。
+            <br><b>导入是按 id 合并</b>，不会把现有数据洗掉 —— 备份是为了恢复，不是为了清空。真要清空是另一个动作。
+          </div>
+
+          <div class="bk-head">
+            <span class="bk-head-k">本机数据</span>
+            <span class="bk-head-v" id="bkLocal">—</span>
+          </div>
+          <div class="bk-bar"><i id="bkBar"></i></div>
+          <div class="bk-sub" id="bkQuota">上限 — · 已占 —（数字由浏览器估算）</div>
+
+          <button class="bk-fold" id="bkFold" type="button"><i>›</i> 看看都是什么占的</button>
+          <div class="bk-rows hidden" id="bkRows"></div>
+
+          <button class="bk-hero" id="bkAll" type="button">
+            <span class="bk-hero-tag">完整</span>
+            <span class="bk-hero-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 19h15"/></svg></span>
+            <b>整合导出（文字+媒体）</b>
+          </button>
+          <div class="bk-cap">以下是分步导出，适合低配设备分次备份</div>
+          <div class="bk-pair">
+            <button class="bk-tile doc" id="bkText" type="button">
+              <span class="bk-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M14 3.5V8.5h5"/><path d="M9 13h6"/><path d="M9 16.5h4"/></svg></span>
+              纯文字备份
+            </button>
+            <button class="bk-tile media" id="bkMedia" type="button">
+              <span class="bk-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.6" cy="9.8" r="1.5"/><path d="M3.6 17.2l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/><path d="M13.8 14.4l1.5-1.5a1.6 1.6 0 0 1 2.3 0l2.8 2.8"/></svg></span>
+              媒体与美化素材
+            </button>
+          </div>
+          <button class="bk-import" id="bkImport" type="button">
+            <span class="bk-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V5"/><path d="M8 8.5l4-4 4 4"/><path d="M4.5 19h15"/></svg></span>
+            导入备份（zip / .json）
+            <small>按 id 合并恢复，媒体会按占位符回填</small>
+          </button>
+          <input type="file" id="bkFile" accept=".zip,.json,application/zip,application/json" class="hidden" aria-hidden="true">
+          <div class="bk-status" id="bkStatus"></div>
+          <div class="bk-report" id="bkReport"></div>
+
+          <div class="sy-box">
+            <div class="settings-section-label">云端同步 · GitHub 仓库</div>
+            <div class="sy-repo">
+              <span id="syWho">还没连仓库</span>
+              <a id="syLink" href="#" target="_blank" rel="noopener" class="hidden">打开仓库</a>
+            </div>
+            <div class="fld-pair">
+              <label class="fld"><span>owner（用户名 / 组织）</span>
+                <input id="syOwner" type="text" placeholder="klb203" autocomplete="off" spellcheck="false"></label>
+              <label class="fld"><span>repo（仓库名）</span>
+                <input id="syRepo" type="text" placeholder="tidal-echo-backup" autocomplete="off" spellcheck="false"></label>
+            </div>
+            <div class="fld-pair" style="margin-top:10px">
+              <label class="fld"><span>分支</span><input id="syBranch" type="text" placeholder="main" autocomplete="off"></label>
+              <label class="fld"><span>文件路径</span><input id="syPath" type="text" placeholder="tidal-echo/backup.json" autocomplete="off"></label>
+            </div>
+            <label class="fld" style="margin-top:10px"><span>Personal access token（需 repo 读写权限）</span>
+              <input id="syToken" type="password" placeholder="ghp_…（只存在你后端库里，不会进备份文件）" autocomplete="off" spellcheck="false"></label>
+
+            <label class="fld switch-row" style="margin-top:10px"><span>开启自动同步
+              <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">后台按间隔把「纯文字备份」推上去。只推得动服务端数据 + 上一次你手动同步时捎上来的本机快照。</span></span>
+              <input type="checkbox" id="syEnable">
+            </label>
+            <div class="fld-pair" style="margin-top:10px">
+              <label class="fld"><span>间隔（分钟）</span><input id="syInterval" type="number" min="15" max="10080" step="15" placeholder="360"></label>
+              <label class="fld"><span>媒体包也推？（体积大，默认不推）</span>
+                <select id="syMedia"><option value="0">不推</option><option value="1">推（≤24MB 才推）</option></select></label>
+            </div>
+            <label class="fld switch-row" style="margin-top:10px"><span>同步时带上本机密钥
+              <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">本机 localStorage 里有 API Key 与 relay token。默认会把它们换成「已省略」再上传 —— 打开这个开关就等于把这些密钥写进一个可能公开的仓库。</span></span>
+              <input type="checkbox" id="sySecrets">
+            </label>
+
+            <div class="editor-actions om-acts">
+              <button id="sySave" type="button" class="primary">保存并测试</button>
+              <button id="syPushNow" type="button">立即同步</button>
+              <button id="syPullNow" type="button">从云端恢复</button>
+              <button id="syCreate" type="button">帮我建个仓</button>
+              <button id="syHist" type="button">同步历史</button>
+            </div>
+            <div class="om-status" id="syStatus"></div>
+            <div class="sy-hist hidden" id="syHistBox"></div>
+
+            <div class="sy-warn">
+              <b>为什么走 api.github.com 而不是 git</b>：这台机器 <code>github.com:443</code> 直连不通、<code>api.github.com</code> 通；
+              Contents API 一次 PUT 就是一个 commit —— 不用 clone、不用装 git，还能顺手读提交历史。
+              代价是<b>没有增量</b>，每次整份覆盖；所以推的是「纯文字备份」那一份（小、好 diff）。
+              <br><b>备份里不会带同步配置本身</b> —— 那行里装着 token，把钥匙和锁一起挂到门上是最蠢的泄露方式。
+            </div>
+          </div>
+
+          <div class="settings-tip" style="margin-top:10px">
+            · 整合导出：一次性导出文字与图片媒体（媒体在 media/ 目录，重复的只存一份）。<br>
+            · 纯文字备份：一份 JSON，把内联媒体换成省略标记 —— 体积小、好 diff，适合每次都同步。<br>
+            · 导入：zip 与 json 都认，按 id 合并；表结构里没有的列会<b>跳过并在报告里写清楚</b>，不静默丢数据。
           </div>
         </div>
       </section>
@@ -4706,6 +5203,7 @@ function openSettings(){
   if (!snLoadedOnce){ snLoadedOnce = true; snLoad(false); }               // 哨兵配置读一次就够
   if (!gwLoadedOnce){ gwLoadedOnce = true; gwLoad(false); }              // 监控台读一次就够
   if (!sdLoadedOnce){ sdLoadedOnce = true; sdLoad(false); }              // 影子推送读一次就够
+  if (!bkLoadedOnce){ bkLoadedOnce = true; bkLoad(false); syLoad(false); }  // 备份与云同步读一次
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -5813,6 +6311,7 @@ if ($("#gwClear")) $("#gwClear").addEventListener("click", async () => {
    末尾临时塞一条不落库的 <system_trigger>。决策层先过四道闸，过不了不花 token。 */
 let sdData = {};
 let sdLoadedOnce = false;
+let bkLoadedOnce = false;
 const SD_FIELDS = ["sdEnable","sdLoop","sdCdMin","sdCdMax","sdDaily","sdTake","sdQw","sdQe",
                    "sdTemp","sdMaxTok","sdHard","sdModel","sdBark","sdBarkTitle","sdNtfy",
                    "sdNtfyServer"];
@@ -6138,6 +6637,326 @@ if ($("#fSaveUse")) $("#fSaveUse").addEventListener("click", () => saveConn({ us
 if ($("#fSave")) $("#fSave").addEventListener("click", () => saveConn({ use: false }));
 if ($("#fCancel")) $("#fCancel").addEventListener("click", closeEditor);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDays(); });
+
+/* ════════════ 备份与恢复 · 云端同步 ════════════
+   后端 backup.py 负责「导出什么 / 怎么抽媒体 / 导入怎么合并」，
+   这里只做三件事：打包本机那份快照、把 blob 变成一次下载、把导入报告讲清楚。 */
+function bkStatusEl(msg, kind){
+  const el = $("#bkStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.className = "bk-status" + (kind ? " " + kind : "");
+}
+function bkBytes(n){
+  n = Number(n) || 0;
+  if (n >= 1073741824) return (n / 1073741824).toFixed(2) + " GB";
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + " MB";
+  if (n >= 1024) return (n / 1024).toFixed(1) + " KB";
+  return n + " B";
+}
+/* 本机那份：localStorage 全量 + 消息缓存。钥匙（API Key/token）在快照里**照原样带着** ——
+   这是你自己的本地备份；要不要把它们推到 GitHub 是「同步」那一层单独决定的事（默认剥掉）。 */
+const BK_KEY_RE = /^(companion_|tidal_|te_|chime)/;
+async function bkLocalSnapshot(){
+  const kv = {};
+  try{
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && BK_KEY_RE.test(k)){
+        const v = localStorage.getItem(k);
+        if (v && v.length < 400000) kv[k] = v;      // 超大值（比如塞了 base64）就不进快照
+      }
+    }
+  }catch(_){}
+  let cache = [];
+  try{ cache = await readCachedMessages(); }catch(_){ cache = []; }
+  return { kv: kv, cache: Array.isArray(cache) ? cache.slice(0, 500) : [],
+           at: new Date().toISOString(), ua: navigator.userAgent.slice(0, 120) };
+}
+function bkLocalBytes(){
+  let n = 0;
+  try{
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      const v = localStorage.getItem(k) || "";
+      n += (k.length + v.length) * 2;               // UTF-16
+    }
+  }catch(_){}
+  return n;
+}
+async function bkStorage(){
+  const local = bkLocalBytes();
+  let quota = 0, usage = 0;
+  try{
+    if (navigator.storage && navigator.storage.estimate){
+      const e = await navigator.storage.estimate();
+      quota = e.quota || 0; usage = e.usage || 0;
+    }
+  }catch(_){}
+  const el = $("#bkLocal");
+  if (el) el.textContent = bkBytes(Math.max(local, usage));
+  const bar = $("#bkBar");
+  if (bar) bar.style.width = (quota ? Math.min(100, Math.max(1.5, local / quota * 100)) : 1.5) + "%";
+  const q = $("#bkQuota");
+  if (q){
+    q.textContent = quota
+      ? ("上限 " + bkBytes(quota) + " · 已占 " + (local / quota * 100).toFixed(2) + "%（数字由浏览器估算）")
+      : "浏览器没给配额估算 —— 这一项在你这里不可用，但备份照样能用。";
+  }
+}
+async function bkLoad(verbose){
+  await bkStorage();
+  try{
+    const d = await memApi("/app/backup/status");
+    const t = d.tables || {};
+    const rows = $("#bkRows");
+    if (rows){
+      const line = (name, extra, detail) =>
+        "<div class=\"bk-row\"><span>" + name + "</span><span><b>" + extra + "</b> · " + detail + "</span></div>";
+      rows.innerHTML =
+        line("会话", ((t.sessions || {}).rows || 0) + " 个", bkBytes((t.sessions || {}).bytes)) +
+        line("消息", ((t.messages || {}).rows || 0) + " 条", bkBytes((t.messages || {}).bytes)) +
+        line("记忆", ((t.memories || {}).rows || 0) + " 行", bkBytes((t.memories || {}).bytes)) +
+        line("媒体", ((d.media || {}).files || 0) + " 个文件",
+             bkBytes((d.media || {}).bytes) + ((d.media || {}).dupes ? ("（重复 " + d.media.dupes + " 份已合并）") : "")) +
+        line("合计", bkBytes(d.total_bytes), "服务端 " + bkBytes(d.text_bytes) + " + 媒体 " + bkBytes((d.media || {}).bytes));
+    }
+    const sub = $("#cardSubBackup");
+    if (sub) sub.textContent = "服务端 " + bkBytes(d.total_bytes) + " · 媒体 " + ((d.media || {}).files || 0) + " 个";
+    if (verbose) bkStatusEl("统计已刷新（" + (d.now || "") + "）", "ok");
+  }catch(e){
+    bkStatusEl("读不到备份统计：" + ((e && e.message) || e), "err");
+  }
+}
+async function bkExport(parts){
+  const btn = parts === "all" ? $("#bkAll") : (parts === "text" ? $("#bkText") : $("#bkMedia"));
+  if (btn) btn.classList.add("dis");
+  bkStatusEl("正在打包" + (parts === "text" ? "（纯文字，会顺手剥掉内联媒体）" : "") + "…");
+  try{
+    const local = await bkLocalSnapshot();
+    const r = await fetch(appUrl("/app/backup/export"), {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ parts: parts, local: local })
+    });
+    if (!r.ok){
+      let m = "HTTP " + r.status;
+      try{ const j = await r.json(); m = (j.error && j.error.message) || j.detail || m; }catch(_){}
+      throw new Error(m);
+    }
+    const blob = await r.blob();
+    const cd = r.headers.get("Content-Disposition") || "";
+    const mm = cd.match(/filename="([^"]+)"/);
+    const name = mm ? mm[1] : ("tidal-echo-" + parts + ".zip");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    bkStatusEl("已导出 " + name + " · " + bkBytes(blob.size), "ok");
+    showToast("导出好了：" + bkBytes(blob.size));
+  }catch(e){
+    bkStatusEl("导出失败：" + ((e && e.message) || e), "err");
+    showToast("导出失败，详情在卡片里");
+  }finally{
+    if (btn) btn.classList.remove("dis");
+  }
+}
+function bkReportHtml(rep){
+  if (!rep) return "";
+  const t = rep.tables || {};
+  const rows = Object.keys(t).map((k) => {
+    const v = t[k] || {};
+    const extra = (v.dropped_columns && v.dropped_columns.length)
+      ? ("　跳过不存在的列：" + v.dropped_columns.join("、")) : "";
+    return "<tr><td>" + escapeHtml(k) + "</td><td><b>" + (v.ok || 0) + "</b> 条已合并"
+      + (v.failed ? ("　<b style=\"color:#A8565F\">" + v.failed + "</b> 条失败") : "") + extra + "</td></tr>";
+  }).join("");
+  let html = "<table>" + rows + "</table>";
+  if (rep.errors && rep.errors.length){
+    html += "<div class=\"bk-sub\" style=\"margin-top:6px\">失败明细（前几条）：" +
+      rep.errors.slice(0, 3).map((e) => escapeHtml(String(e.id) + " → " + e.error)).join("<br>") + "</div>";
+  }
+  return html;
+}
+let bkImporting = false;
+async function bkImportFile(file){
+  if (!file || bkImporting) return;
+  if (file.size > 60 * 1024 * 1024){
+    bkStatusEl("这个文件 " + bkBytes(file.size) + "，太大了。先在本地解压，把里面那份 json 单独传上来。", "err");
+    return;
+  }
+  bkImporting = true;
+  bkStatusEl("正在上传并恢复 " + file.name + "（" + bkBytes(file.size) + "）…");
+  try{
+    const b64 = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result).split(",")[1] || "");
+      fr.onerror = () => reject(new Error("读不了这个文件"));
+      fr.readAsDataURL(file);
+    });
+    const r = await fetch(appUrl("/app/backup/import"), {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ name: file.name, b64: b64 })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok){
+      const rep = d.report || {};
+      bkStatusEl("导入没成功：" + (rep.error || (d.error && d.error.message) || ("HTTP " + r.status)), "err");
+      $("#bkReport").innerHTML = bkReportHtml(rep);
+      return;
+    }
+    const rep = d.report || {};
+    const tot = Object.keys(rep.tables || {}).reduce((s, k) => s + ((rep.tables[k].ok) || 0), 0);
+    bkStatusEl("导入完成：一共合并了 " + tot + " 条（原备份导出时间 " + (rep.from || "?") + "）", "ok");
+    $("#bkReport").innerHTML = bkReportHtml(rep);
+    showToast("导入完成，刷新一下就能看到");
+    bkLoad(false);
+  }catch(e){
+    bkStatusEl("导入失败：" + ((e && e.message) || e), "err");
+  }finally{
+    bkImporting = false;
+  }
+}
+
+/* ── 云端同步 ── */
+function syStatusEl(msg, kind){
+  const el = $("#syStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.className = "om-status" + (kind ? " " + kind : "");
+}
+async function syLoad(verbose){
+  try{
+    const d = await memApi("/app/sync");
+    const s = d.sync || {}, c = s.config || {};
+    const set = (id, v) => { const el = $("#" + id); if (el && document.activeElement !== el) el.value = v; };
+    set("syOwner", c.owner || ""); set("syRepo", c.repo || "");
+    set("syBranch", c.branch || "main"); set("syPath", c.path || "tidal-echo/backup.json");
+    set("syInterval", s.interval_min || 360);
+    if (document.activeElement !== $("#syToken")) $("#syToken").value = "";
+    $("#syEnable").checked = !!c.enable;
+    $("#sySecrets").checked = !!c.secrets;
+    $("#syMedia").value = c.media ? "1" : "0";
+    const sub = $("#cardSubBackup");
+    $("#syWho").innerHTML = s.ready
+      ? ("<b>" + escapeHtml((c.owner || "") + "/" + (c.repo || "")) + "</b> · " + escapeHtml(s.branch || "main") +
+         (s.loop ? " · 自动在跑" : ""))
+      : "还没连仓库（填 owner / repo / token 就能用）";
+    const link = $("#syLink");
+    if (link && c.owner && c.repo){
+      link.href = "https://github.com/" + c.owner + "/" + c.repo;
+      link.classList.remove("hidden");
+    } else if (link) link.classList.add("hidden");
+    if (s.last_at){
+      syStatusEl((s.last_ok ? "上次同步 " : "上次失败 ") + (s.last_commit ? ("#" + s.last_commit + " ") : "") + s.last_msg + " · " + s.last_at,
+                 s.last_ok ? "ok" : "err");
+    } else if (s.ready){
+      syStatusEl("已配好，还没同步过。" + (s.has_local ? "本机快照已存过一份。" : ""));
+    }
+    if (d.history && d.history.length){
+      $("#syHistBox").innerHTML = d.history.map((h) =>
+        "<div><code>" + escapeHtml(h.sha) + "</code><span>" + escapeHtml(h.msg || "") + "</span>" +
+        "<span style=\"margin-left:auto;color:var(--text-faint)\">" + escapeHtml((h.at || "").slice(5, 16).replace("T", " ")) + "</span></div>"
+      ).join("");
+    }
+    if (verbose) syStatusEl("读好了。", "ok");
+  }catch(e){
+    syStatusEl("读不到同步状态：" + ((e && e.message) || e), "err");
+  }
+}
+async function sySaveCfg(extra){
+  const body = Object.assign({
+    owner: $("#syOwner").value.trim(), repo: $("#syRepo").value.trim(),
+    branch: $("#syBranch").value.trim() || "main", path: $("#syPath").value.trim(),
+    enable: $("#syEnable").checked, secrets: $("#sySecrets").checked,
+    media: $("#syMedia").value === "1", interval_min: Number($("#syInterval").value || 360)
+  }, extra || {});
+  const tok = $("#syToken").value.trim();
+  if (tok) body.token = tok;
+  return await memApi("/app/sync/config", { method: "POST", body: JSON.stringify(body) });
+}
+async function syAction(btn, label, fn){
+  if (btn) btn.disabled = true;
+  syStatusEl(label + "…");
+  try{
+    await fn();
+  }catch(e){
+    syStatusEl(label + "失败：" + ((e && e.message) || e), "err");
+  }finally{
+    if (btn) btn.disabled = false;
+  }
+}
+if ($("#bkFold")) $("#bkFold").addEventListener("click", async () => {
+  const box = $("#bkRows");
+  box.classList.toggle("hidden");
+  $("#bkFold").classList.toggle("open", !box.classList.contains("hidden"));
+  if (!box.classList.contains("hidden")) await bkLoad(false);
+});
+if ($("#bkAll")) $("#bkAll").addEventListener("click", () => bkExport("all"));
+if ($("#bkText")) $("#bkText").addEventListener("click", () => bkExport("text"));
+if ($("#bkMedia")) $("#bkMedia").addEventListener("click", () => bkExport("media"));
+if ($("#bkImport")) $("#bkImport").addEventListener("click", () => $("#bkFile").click());
+if ($("#bkFile")) $("#bkFile").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  if (!confirm("导入「" + f.name + "」？\n\n按 id 合并恢复（不会洗掉现有数据），媒体会按占位符回填。\n同名同 id 的条目会被备份里的那一份覆盖。")) return;
+  bkImportFile(f);
+});
+if ($("#sySave")) $("#sySave").addEventListener("click", () => syAction($("#sySave"), "保存并测试连接", async () => {
+  const d = await sySaveCfg();
+  syStatusEl(d.note ? String(d.note) : "配置存好了。", d.note && /连上|好了/.test(String(d.note)) ? "ok" : "");
+  await syLoad(false);
+}));
+if ($("#syPushNow")) $("#syPushNow").addEventListener("click", () => syAction($("#syPushNow"), "正在推送到云端", async () => {
+  // 手动同步时把本机那份快照一起捎上去（自动同步只能用上一次存的那份）
+  const local = await bkLocalSnapshot();
+  const d = await memApi("/app/sync/push", { method: "POST", body: JSON.stringify({ local: local, trigger: "manual" }) });
+  const r = d.result || {};
+  if (!d.ok) throw new Error(r.error || "推送失败");
+  let msg = "推上去了：" + bkBytes(r.bytes) + (r.commit ? ("（#" + r.commit + "）") : "");
+  if (r.secrets_stripped && r.secrets_stripped.length) msg += " · 已剥掉本机密钥：" + r.secrets_stripped.join("、");
+  if (r.media && r.media.skipped) msg += " · 媒体没推：" + r.media.note;
+  else if (r.media && r.media.ok) msg += " · 媒体包也推了（" + bkBytes(r.media.bytes) + "）";
+  if (r.media && r.media.error) msg += " · 媒体包失败：" + r.media.error;
+  syStatusEl(msg, "ok");
+  await syLoad(false);
+}));
+if ($("#syPullNow")) $("#syPullNow").addEventListener("click", () => syAction($("#syPullNow"), "正在从云端拉回", async () => {
+  if (!confirm("从云端恢复会按 id 合并覆盖同名条目（不会清空本地）。继续？")) return;
+  const d = await memApi("/app/sync/pull", { method: "POST", body: JSON.stringify({ trigger: "manual" }) });
+  const r = d.result || {};
+  if (!d.ok) throw new Error(r.error || "拉回失败");
+  const rep = r.report || {};
+  const tot = Object.keys(rep.tables || {}).reduce((s, k) => s + ((rep.tables[k].ok) || 0), 0);
+  syStatusEl("从云端拉回并合并了 " + tot + " 条" + (r.media_files ? ("，含 " + r.media_files + " 个媒体文件") : "") + "。刷新一下就看到了。", "ok");
+  $("#bkReport").innerHTML = bkReportHtml(rep);
+  showToast("已从云端恢复");
+}));
+if ($("#syCreate")) $("#syCreate").addEventListener("click", () => syAction($("#syCreate"), "正在建仓", async () => {
+  const name = prompt("新仓库叫什么？（英文/数字/短横线）", "tidal-echo-backup");
+  if (!name) return;
+  const priv = confirm("建成私有仓库？\n\n确定 = 私有（推荐，备份里有你们的聊天）\n取消 = 公开（任何人都能看）");
+  const tk = $("#syToken").value.trim();
+  const body = { name: name, private: priv };
+  if (tk) body.token = tk;
+  const d = await memApi("/app/sync/repo", { method: "POST", body: JSON.stringify(body) });
+  if (!d.ok) throw new Error(d.error || "建仓失败");
+  syStatusEl("建好了：" + (d.repo && d.repo.full_name) + "（已自动填进配置）", "ok");
+  await syLoad(false);
+}));
+if ($("#syHist")) $("#syHist").addEventListener("click", () => syAction($("#syHist"), "正在读提交历史", async () => {
+  const box = $("#syHistBox");
+  box.classList.toggle("hidden");
+  if (box.classList.contains("hidden")) return;
+  const d = await memApi("/app/sync/history?limit=12");
+  const h = d.history || [];
+  box.innerHTML = h.length ? h.map((x) =>
+    "<div><code>" + escapeHtml(x.sha) + "</code><span>" + escapeHtml(x.msg || "") + "</span>" +
+    "<span style=\"margin-left:auto;color:var(--text-faint)\">" + escapeHtml((x.at || "").slice(5, 16).replace("T", " ")) + "</span></div>"
+  ).join("") : "<div><span>还没有提交记录（还没成功同步过）。</span></div>";
+  syStatusEl("云端提交 " + h.length + " 条。", "ok");
+}));
 
 /* ── 聊天快捷设置（顶栏 ⋮ → 向下拉出）──────────────────────────────────
    中转站/连接切换 · 模型切换 · 思考模式 · 最大 token 控制+显示 · AI 记忆轮数 */
@@ -7946,21 +8765,414 @@ async function sendImageMessage(prompt){
   showToast("画好了（" + ((d.ms || 0) / 1000).toFixed(1) + "s）");
 }
 async function requestImageFromInput(){
-  const prompt = imgPromptFrom(inputEl.value);
+  /* 生图按钮现在住在输入框的上拉面板里：那边有自己的输入框。
+     在里面写了字就用它的；没写才回头读聊天输入框（兼容老的「/img 一只猫」用法）。 */
+  const box = $("#csImgPrompt");
+  const fromSheet = !!(box && box.value.trim());
+  const prompt = imgPromptFrom(fromSheet ? box.value : inputEl.value);
   if (!prompt){ showToast("先写下你想画什么，再点这个（或发「/img 一只猫」）"); inputEl.focus(); return; }
   if (!imageGenOn()){
     showError("还没配生图 —— 设置 → 生图 · 中转站：填「中转站地址」+「API Key」，点「拉取模型」选一个模型并勾选「启用生图」。");
     showToast("先去设置里配好生图中转站");
     return;
   }
-  inputEl.value = "";
-  inputEl.style.height = "auto";
+  if (fromSheet){ box.value = ""; }
+  else { inputEl.value = ""; inputEl.style.height = "auto"; }
+  csClose();
   /* 不 await（要让输入框立刻可用），但必须挂 catch —— 否则异常会被完全吞掉，排查时毫无线索 */
   sendImageMessage(prompt).catch((e) => {
     showError("生图出错 —— " + ((e && e.message) || e));
   });
 }
 if ($("#imgBtn")) $("#imgBtn").addEventListener("click", requestImageFromInput);
+
+/* ════════════ 输入框上拉面板（微信式）════════════
+   点 ＋ 或把输入框往上拉都打开。里面的东西分两种：
+   一是「借用现成的开关」（生图 / 快捷设置），二是「面板自己的小功能」（主动消息时间点 / 戳一戳 /
+   记忆归档 / 收藏馆 / 一起听）—— 后者的后端在 relay 的 extras.py。 */
+let pokeNotes = [];                  // 本地标记（见 buildVirtualRows 里的说明）
+function addPokeNote(text){
+  pokeNotes.push({ key: "poke:" + Date.now() + ":" + Math.random().toString(36).slice(2, 7),
+                   ts: new Date().toISOString(), text: text || "你戳了戳 TA" });
+  if (pokeNotes.length > 40) pokeNotes = pokeNotes.slice(-40);
+  invalidateRows();
+  scheduleRender({ stickToBottom: true });
+}
+const CS_VIEWS = { main: "csMain", image: "csImageV", at: "csAtV", fav: "csFavV", music: "csMusicV" };
+const CS_TITLES = { main: "更多", image: "生图", at: "主动消息 · 找我说话的时间", fav: "收藏馆", music: "一起听" };
+function csOpened(){ return $("#cSheet") && !$("#cSheet").classList.contains("hidden"); }
+function csOpen(view){
+  const sheet = $("#cSheet"); if (!sheet) return;
+  sheet.classList.remove("hidden");
+  csShow(view || "main");
+  requestAnimationFrame(() => sheet.classList.add("on"));
+}
+function csClose(){
+  const sheet = $("#cSheet"); if (!sheet || !csOpened()) return;
+  sheet.classList.remove("on");
+  setTimeout(() => { if (!sheet.classList.contains("on")) sheet.classList.add("hidden"); }, 260);
+}
+function csShow(name){
+  name = CS_VIEWS[name] ? name : "main";
+  Object.keys(CS_VIEWS).forEach((k) => {
+    const el = $("#" + CS_VIEWS[k]);
+    if (el) el.classList.toggle("hidden", k !== name);
+  });
+  const t = $("#csTitle"); if (t) t.textContent = CS_TITLES[name] || "更多";
+  const back = $("#csBack"); if (back) back.classList.toggle("hidden", name === "main");
+  const body = $("#csBody"); if (body) body.scrollTop = 0;
+  if (name === "at") csAtLoad(true);
+  if (name === "fav") csFavLoad(true);
+  if (name === "music") csMuLoad(true);
+  if (name === "image"){
+    const box = $("#csImgPrompt");
+    // 输入框里已经打了字？那多半就是想画它 —— 直接带过来，别让人再打一遍
+    if (box && !box.value && inputEl && inputEl.value.trim() && imgPromptFrom(inputEl.value)) box.value = imgPromptFrom(inputEl.value);
+    setTimeout(() => { if (box) box.focus(); }, 260);
+  }
+}
+function csStatus(id, msg, kind){
+  const el = $("#" + id); if (!el) return;
+  el.textContent = msg || "";
+  el.className = "bk-status" + (kind ? " " + kind : "");
+}
+if ($("#csOpenBtn")) $("#csOpenBtn").addEventListener("click", () => (csOpened() ? csClose() : csOpen("main")));
+/* 面板盖着输入框 —— 想打字时点一下输入框就把它收起来（不然得先找关闭按钮） */
+if (inputEl) inputEl.addEventListener("focus", () => { if (csOpened()) csClose(); });
+if ($("#csClose")) $("#csClose").addEventListener("click", csClose);
+if ($("#csBack")) $("#csBack").addEventListener("click", () => csShow("main"));
+if ($("#csScrim")) $("#csScrim").addEventListener("click", csClose);
+if ($("#cSheet")) $("#cSheet").addEventListener("click", async (e) => {
+  const item = e.target.closest("[data-cs]");
+  if (!item) return;
+  const what = item.dataset.cs;
+  if (what === "clip"){ csClose(); if ($("#clipBtn")) $("#clipBtn").click(); return; }
+  if (what === "quick"){ csClose(); if ($("#quickSheet")) $("#quickSheet").classList.remove("hidden"); return; }
+  if (what === "archive"){ await csArchive(item); return; }
+  if (what === "poke"){ await csPoke(item); return; }
+  csShow(what);
+});
+/* 上拉：在输入框那一带往上拖 36px 就开。用 passive 监听，别抢滚动手势。 */
+(function csPullUp(){
+  const zone = document.querySelector(".composer");
+  if (!zone || !window.addEventListener) return;
+  let sy = 0, sx = 0, armed = false;
+  zone.addEventListener("touchstart", (e) => {
+    const t = e.touches && e.touches[0]; if (!t) return;
+    sy = t.clientY; sx = t.clientX; armed = true;
+  }, { passive: true });
+  zone.addEventListener("touchmove", (e) => {
+    if (!armed) return;
+    const t = e.touches && e.touches[0]; if (!t) return;
+    const dy = sy - t.clientY, dx = Math.abs(t.clientX - sx);
+    if (dy > 36 && dx < 46 && !csOpened()){ armed = false; csOpen("main"); }
+  }, { passive: true });
+  zone.addEventListener("touchend", () => { armed = false; }, { passive: true });
+})();
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") csClose(); });
+
+/* ── 戳一戳：走影子路由（同一份 system prompt = 同一份前缀缓存，语气也是同一个人） ── */
+async function csPoke(btn){
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  addPokeNote("你戳了戳 TA");
+  const sub = $("#csHint");
+  const keep = sub ? sub.textContent : "";
+  if (sub) sub.textContent = "戳了，等它回头…";
+  try{
+    const d = await memApi("/app/poke", { method: "POST", body: JSON.stringify({}) });
+    const r = d.result || {};
+    if (r.reply){
+      if (sub) sub.textContent = "它回了一句：" + r.reply;
+    }else{
+      if (sub) sub.textContent = "它这次没吭声（" + (r.skipped || "unknown") + "）。"
+        + (r.error ? ("　" + r.error) : "");
+    }
+    // 把刚落库的那条拉进时间线（since=lastId，不会重复拉全量）
+    const msgs = await apiHistory({ since: lastId, limit: 20 });
+    if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    csClose();
+  }catch(e){
+    if (sub) sub.textContent = keep;
+    showToast("戳不动：" + ((e && e.message) || e));
+  }finally{
+    if (btn) btn.disabled = false;
+  }
+}
+/* ── 记忆归档：手动触发一次 Forge 重铸（把更早的消息折叠进记忆） ── */
+async function csArchive(btn){
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  const sub = $("#csHint");
+  const keep = sub ? sub.textContent : "";
+  if (sub) sub.textContent = "正在归档…（这一下要调小模型，几秒）";
+  try{
+    const sid = (activeApiSession && activeApiSession !== LEGACY_SESSION_ID) ? activeApiSession : "";
+    const d = await memApi("/app/forge/tick", { method: "POST",
+      body: JSON.stringify({ session_id: sid || undefined, force: true, threads: true }) });
+    const r = d.result || {};
+    const th = (r.threads || []).filter(Boolean);
+    if (r.pushed){
+      if (sub) sub.textContent = "归档好了：折叠了 " + (r.covered || 0) + " 条，时间线上多了一张折叠卡。"
+        + (th.length ? ("　还留了 " + th.length + " 条线头。") : "");
+      showToast("已归档 " + (r.covered || 0) + " 条");
+      const msgs = await apiHistory({ since: 0, latest: true, limit: 40 });
+      if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    }else{
+      if (sub) sub.textContent = "这次没归档：" + (r.why || r.skipped || "还没到该归档的时候")
+        + "（滞后 " + (r.lag == null ? "?" : r.lag) + " 条，门槛见设置页的「会话与重铸」卡）";
+    }
+  }catch(e){
+    if (sub) sub.textContent = keep;
+    showToast("归档失败：" + ((e && e.message) || e));
+  }finally{
+    if (btn) btn.disabled = false;
+  }
+}
+/* ── 主动消息：时间点 ── */
+async function csAtLoad(verbose){
+  try{
+    const d = await memApi("/app/shadow/status");
+    const s = d.shadow || {};
+    const set = (id, v) => { const el = $("#" + id); if (el && document.activeElement !== el) el.value = v; };
+    $("#csAtEnable").checked = !!s.enable;
+    const cfgd = s.at_times || [];
+    set("csAtTimes", cfgd.join(", "));
+    set("csAtWindow", s.at_window || 12);
+    const now = $("#csAtNow");
+    if (now){
+      const t = [];
+      t.push(s.now || "—");
+      t.push("今天推了 <b>" + (s.today_count || 0) + "/" + (s.daily_max || "?") + "</b> 条");
+      if (cfgd.length) t.push("时间点 <b>" + cfgd.join(" / ") + "</b>" + (s.at_now ? ("　· " + s.at_now) : ""));
+      else t.push("还没设时间点 —— 它按随机间隔自己找时机（设了就更准点）");
+      if (s.blocked_by) t.push("现在能不能推：<b>" + s.blocked_by + "</b>");
+      now.innerHTML = t.join("<br>");
+    }
+    if (verbose) csStatus("csAtStatus", "读好了。", "ok");
+  }catch(e){
+    csStatus("csAtStatus", "读不到：" + ((e && e.message) || e), "err");
+  }
+}
+if ($("#csAtSave")) $("#csAtSave").addEventListener("click", async () => {
+  csStatus("csAtStatus", "保存中…");
+  try{
+    const d = await memApi("/app/shadow/config", { method: "POST", body: JSON.stringify({
+      enable: $("#csAtEnable").checked,
+      at_times: $("#csAtTimes").value || "",
+      at_window: Number($("#csAtWindow").value || 12)
+    }) });
+    const s = d.shadow || {};
+    csStatus("csAtStatus", "已保存 ✅ 时间点 " + ((s.at_times || []).join(" / ") || "（无，走随机）")
+      + (s.at_now ? ("　· " + s.at_now) : ""), "ok");
+    csAtLoad(false);
+  }catch(e){
+    csStatus("csAtStatus", "保存失败：" + ((e && e.message) || e), "err");
+  }
+});
+if ($("#csAtPush")) $("#csAtPush").addEventListener("click", async () => {
+  csStatus("csAtStatus", "让它现在说一句…");
+  try{
+    const d = await memApi("/app/shadow/push", { method: "POST", body: JSON.stringify({}) });
+    const r = d.result || {};
+    csStatus("csAtStatus", r.reply ? ("它说：" + r.reply) : ("没推（" + (r.skipped || "?") + "）"), r.reply ? "ok" : "");
+    if (r.reply){
+      const msgs = await apiHistory({ since: lastId, limit: 20 });
+      if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    }
+  }catch(e){
+    csStatus("csAtStatus", "失败：" + ((e && e.message) || e), "err");
+  }
+});
+if ($("#csAtWhy")) $("#csAtWhy").addEventListener("click", async () => {
+  try{
+    const d = await memApi("/app/shadow/decide");
+    const x = d.decide || {};
+    csStatus("csAtStatus", d.can_push ? ("现在可以推。" + JSON.stringify(x)) : ("现在不说：" + (d.blocked_by || "?") + "　" + JSON.stringify(x)), "");
+  }catch(e){
+    csStatus("csAtStatus", "读不到：" + ((e && e.message) || e), "err");
+  }
+});
+/* ── 收藏馆 ── */
+function csFavRender(items){
+  const box = $("#csFavList"); if (!box) return;
+  if (!items || !items.length){ box.innerHTML = "<div class=\"cs-empty\">收藏馆还是空的。戳一句想留住的话收进来吧。</div>"; return; }
+  box.innerHTML = items.map((x) =>
+    "<div class=\"cs-fav-item\" data-fav-id=\"" + escapeHtml(String(x.id)) + "\">" +
+      "<div class=\"cs-fav-txt\">" + escapeHtml(x.text || "") +
+        "<div class=\"cs-fav-meta\">" + escapeHtml([x.tag ? ("# " + x.tag) : "", x.note || "",
+          (x.at || "").slice(5, 16).replace("T", " ")].filter(Boolean).join("　")) + "</div>" +
+      "</div>" +
+      "<button class=\"cs-fav-del\" type=\"button\" title=\"删掉\">✕</button>" +
+    "</div>").join("");
+}
+async function csFavLoad(verbose){
+  try{
+    const d = await memApi("/app/fav");
+    csFavRender(d.items || []);
+    if (verbose) csStatus("csFavStatus", "一共 " + (d.count || 0) + " 条。", "ok");
+  }catch(e){
+    csStatus("csFavStatus", "读不到收藏：" + ((e && e.message) || e), "err");
+  }
+}
+if ($("#csFavSave")) $("#csFavSave").addEventListener("click", async () => {
+  const text = $("#csFavText").value.trim();
+  if (!text){ csStatus("csFavStatus", "先写点什么再收。", "err"); return; }
+  try{
+    const d = await memApi("/app/fav/save", { method: "POST", body: JSON.stringify({ text: text, tag: $("#csFavTag").value.trim(), source: "manual" }) });
+    $("#csFavText").value = "";
+    csFavRender(d.items || []);
+    csStatus("csFavStatus", "收好了。", "ok");
+  }catch(e){
+    csStatus("csFavStatus", "收不进去：" + ((e && e.message) || e), "err");
+  }
+});
+if ($("#csFavLast")) $("#csFavLast").addEventListener("click", async () => {
+  try{
+    const d = await memApi("/app/fav/last", { method: "POST", body: JSON.stringify({ n: 1, tag: $("#csFavTag").value.trim() }) });
+    csFavRender(d.items || []);
+    csStatus("csFavStatus", d.n ? "把最后一条回复收进来了。" : ("没收成：" + (d.error || "?")), d.n ? "ok" : "err");
+  }catch(e){
+    csStatus("csFavStatus", "失败：" + ((e && e.message) || e), "err");
+  }
+});
+if ($("#csFavList")) $("#csFavList").addEventListener("click", async (e) => {
+  const del = e.target.closest(".cs-fav-del"); if (!del) return;
+  const id = del.closest("[data-fav-id]").dataset.favId;
+  if (!confirm("从收藏馆里删掉这一条？")) return;
+  try{
+    const d = await memApi("/app/fav/item?id=" + encodeURIComponent(id), { method: "DELETE" });
+    csFavRender(d.items || []);
+    csStatus("csFavStatus", "删掉了。", "ok");
+  }catch(err){
+    csStatus("csFavStatus", "删不掉：" + ((err && err.message) || err), "err");
+  }
+});
+/* ── 一起听 ── */
+function csMuRender(st){
+  const box = $("#csMuList"); if (!box) return;
+  const songs = (st && st.songs) || [];
+  if (!songs.length){
+    box.innerHTML = "<div class=\"cs-empty\">播放列表还是空的 —— 上面贴一个网易云链接（或纯数字 ID）加进来。<br>加了之后点「一起听这首」，它会接着你们聊过的话说一句。</div>";
+    return;
+  }
+  box.innerHTML = songs.map((x, i) =>
+    "<div class=\"cs-song" + (x.playing ? " cur" : "") + "\" data-mu-i=\"" + i + "\">" +
+      "<span>" + escapeHtml(x.name || "?") + (x.artist ? ("　<em>" + escapeHtml(x.artist) + "</em>") : "") +
+      (x.playing ? "　<em>正在听</em>" : "") + "</span>" +
+      "<button class=\"cs-fav-del\" type=\"button\" data-mu-del=\"" + i + "\" title=\"移除\">✕</button>" +
+    "</div>").join("");
+}
+function csMuFrame(cur){
+  const box = $("#csMusicFrame"); if (!box) return;
+  if (!cur || !cur.url){ box.classList.add("hidden"); box.innerHTML = ""; return; }
+  box.classList.remove("hidden");
+  if (cur.provider === "netease"){
+    box.innerHTML = "<iframe src=\"" + escapeHtml(cur.url) + "\" frameborder=\"0\" allow=\"autoplay\"></iframe>";
+  }else{
+    box.innerHTML = "<audio controls autoplay src=\"" + escapeHtml(cur.url) + "\"></audio>";
+  }
+}
+async function csMuLoad(verbose){
+  try{
+    const st = await memApi("/app/music");
+    csMuRender(st);
+    const cur = st.current;
+    const now = $("#csMusicNow");
+    if (now){
+      now.innerHTML = cur
+        ? ("正在听《<b>" + escapeHtml(cur.name || "?") + "</b>》" + (st.playing ? "" : "（已停）") +
+           "<br>已经 " + Math.floor((st.elapsed || 0) / 60) + " 分 " + ((st.elapsed || 0) % 60) + " 秒")
+        : "还没开始听。下面加一首。";
+    }
+    csMuFrame(cur);
+    const cb = $("#csMuComment");
+    if (cb && st.config) cb.checked = !!st.config.comment_on_play;
+    if (verbose) csStatus("csMuStatus", "读好了。", "ok");
+  }catch(e){
+    csStatus("csMuStatus", "读不到：「" + ((e && e.message) || e) + "」（播放列表存在 relay 的 memories 里，检查后端地址）", "err");
+  }
+}
+if ($("#csMuPlay")) $("#csMuPlay").addEventListener("click", async () => {
+  csStatus("csMuStatus", "开始一起听…（它可能会说一句）");
+  try{
+    const d = await memApi("/app/music/play", { method: "POST", body: JSON.stringify({}) });
+    if (!d.ok){ csStatus("csMuStatus", d.error || "播不了", "err"); return; }
+    csStatus("csMuStatus", d.spoke ? ("它说：" + d.spoke) : "在听了。" + (d.spoke_skipped ? ("（没说话：" + d.spoke_skipped + "）") : ""));
+    if (d.spoke){
+      const msgs = await apiHistory({ since: lastId, limit: 20 });
+      if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    }
+    csMuLoad(false);
+  }catch(e){
+    csStatus("csMuStatus", "失败：" + ((e && e.message) || e), "err");
+  }
+});
+if ($("#csMuNext")) $("#csMuNext").addEventListener("click", async () => {
+  try{
+    const d = await memApi("/app/music/next", { method: "POST", body: JSON.stringify({}) });
+    csStatus("csMuStatus", d.ok ? ("切到《" + ((d.song || {}).name || "?") + "》") : (d.error || "?"), d.ok ? "ok" : "err");
+    csMuLoad(false);
+  }catch(e){ csStatus("csMuStatus", "失败：" + ((e && e.message) || e), "err"); }
+});
+if ($("#csMuSpeak")) $("#csMuSpeak").addEventListener("click", async () => {
+  csStatus("csMuStatus", "让它看着这首说一句…");
+  try{
+    const d = await memApi("/app/music/speak", { method: "POST", body: JSON.stringify({}) });
+    csStatus("csMuStatus", d.reply ? ("它说：" + d.reply) : ("没说话（" + (d.skipped || d.error || "?") + "）"), d.reply ? "ok" : "");
+    if (d.reply){
+      const msgs = await apiHistory({ since: lastId, limit: 20 });
+      if (msgs && msgs.length) mergeHistoryMessages(msgs, { stickToBottom: true });
+    }
+  }catch(e){ csStatus("csMuStatus", "失败：" + ((e && e.message) || e), "err"); }
+});
+if ($("#csMuStop")) $("#csMuStop").addEventListener("click", async () => {
+  try{
+    await memApi("/app/music/stop", { method: "POST", body: JSON.stringify({}) });
+    $("#csMusicFrame").innerHTML = ""; $("#csMusicFrame").classList.add("hidden");
+    csStatus("csMuStatus", "停了。", "ok");
+    csMuLoad(false);
+  }catch(e){ csStatus("csMuStatus", "失败：" + ((e && e.message) || e), "err"); }
+});
+if ($("#csMuAdd")) $("#csMuAdd").addEventListener("click", async () => {
+  const raw = $("#csMuRaw").value.trim();
+  if (!raw){ csStatus("csMuStatus", "先贴个链接或 ID。", "err"); return; }
+  try{
+    const d = await memApi("/app/music/add", { method: "POST", body: JSON.stringify({ raw: raw }) });
+    if (!d.ok){ csStatus("csMuStatus", d.error || "加不进去", "err"); return; }
+    $("#csMuRaw").value = "";
+    csStatus("csMuStatus", "加好了（共 " + d.count + " 首）。记得把歌名补上就是它说的话里的名字 —— 可以在设置里改。", "ok");
+    csMuLoad(false);
+  }catch(e){ csStatus("csMuStatus", "失败：" + ((e && e.message) || e), "err"); }
+});
+if ($("#csMuComment")) $("#csMuComment").addEventListener("change", async () => {
+  try{
+    await memApi("/app/music/config", { method: "POST", body: JSON.stringify({ comment_on_play: $("#csMuComment").checked }) });
+    csStatus("csMuStatus", "记住了。", "ok");
+  }catch(e){ csStatus("csMuStatus", "存不上：" + ((e && e.message) || e), "err"); }
+});
+if ($("#csMuList")) $("#csMuList").addEventListener("click", async (e) => {
+  const del = e.target.closest("[data-mu-del]");
+  const row = e.target.closest("[data-mu-i]");
+  try{
+    if (del){
+      const d = await memApi("/app/music/remove", { method: "POST", body: JSON.stringify({ index: Number(del.dataset.muDel) }) });
+      csStatus("csMuStatus", d.ok ? "移除了。" : (d.error || "?"), d.ok ? "ok" : "err");
+      csMuLoad(false);
+      return;
+    }
+    if (row){
+      const d = await memApi("/app/music/play", { method: "POST", body: JSON.stringify({ index: Number(row.dataset.muI), comment: false }) });
+      csStatus("csMuStatus", d.ok ? ("切到《" + ((d.song || {}).name || "?") + "》") : (d.error || "?"), d.ok ? "ok" : "err");
+      csMuLoad(false);
+    }
+  }catch(err){ csStatus("csMuStatus", "失败：" + ((err && err.message) || err), "err"); }
+});
+if ($("#csImgCfg")) $("#csImgCfg").addEventListener("click", () => {
+  csClose();
+  openSettings();
+  setTimeout(() => { try{ expandSetCard("image"); }catch(_){} }, 320);
+});
 
 /* ════════════ 记忆页：银河 + 近景 + 记忆库分区 ════════════ */
 const LIB_DEFS = [
@@ -9931,6 +11143,7 @@ const DEFAULT_THINK_HEIGHT = 46;
 const DEFAULT_ACT_HEIGHT = 34;     // 折叠态的动作 chip≈一行;展开后由 measureVisibleRows 实测纠偏
 const DEFAULT_SUM_HEIGHT = 44;     // 折叠态的总结卡≈一行(窄屏标题换行时两行);展开后实测纠偏
 const DEFAULT_DAY_HEIGHT = 30;
+const DEFAULT_POKE_HEIGHT = 28;      // 「你戳了戳 TA」那种居中小字
 const DEFAULT_NEW_HEIGHT = 46;
 // ── DOM 回收(虚拟窗口)参数 ──
 // n ≤ DOM_WINDOW 时退化为全量渲染(= v78,常见几百~几千条手感零变化);超过才启用回收。
@@ -10440,6 +11653,18 @@ function buildVirtualRows(){
   const rows = [];
   let lastDayKey = null;
   let prevBubble = null;
+  /* 「你戳了戳 TA」这类**本地标记**：不塞进 chatMessages、不碰 lastId ——
+     塞进去的话 since=lastId 的增量拉取会以为已经同步到很远的未来，新消息永远不来了。
+     所以它们自己一条队列，按时间戳在渲染时插进正确的位置。 */
+  const pokeSorted = pokeNotes.slice().sort((a, b) => tsMs(a) - tsMs(b));
+  let pokeAt = 0;
+  const flushPoke = (upto) => {
+    while (pokeAt < pokeSorted.length && tsMs(pokeSorted[pokeAt]) <= upto){
+      const pn = pokeSorted[pokeAt++];
+      rows.push({ type:"poke", key:pn.key, note:pn });
+      prevBubble = null;
+    }
+  };
   sortedMessages().forEach((m) => {
     const k = dayKey(m.ts);
     if (k !== lastDayKey){
@@ -10451,6 +11676,7 @@ function buildVirtualRows(){
       rows.push({ type:"new", key:`new:${newDividerBeforeKey}` });
       prevBubble = null;
     }
+    flushPoke(tsMs(m));
     if (m.kind === "thinking"){
       rows.push({ type:"thinking", key:`m:${m._key}`, message:m });
       prevBubble = null;
@@ -10476,6 +11702,7 @@ function buildVirtualRows(){
     rows.push(row);
     prevBubble = { from:m.from, ts:t, row };
   });
+  flushPoke(Infinity);
   return rows;
 }
 // 内容感知估高:按气泡内宽估文本折行 + 附件高度,首屏估值贴近真实高度→measureVisibleRows
@@ -10519,6 +11746,7 @@ function estSummaryHeight(row){
 }
 function estimatedHeight(row){
   if (rowHeights.has(row.key)) return rowHeights.get(row.key);
+  if (row.type === "poke") return DEFAULT_POKE_HEIGHT;
   if (row.type === "day") return DEFAULT_DAY_HEIGHT;
   if (row.type === "new") return DEFAULT_NEW_HEIGHT;
   if (row.type === "thinking") return DEFAULT_THINK_HEIGHT;
@@ -10574,6 +11802,12 @@ function makeDay(row){
   const d = document.createElement("div");
   d.className = "day";
   d.textContent = row.text;
+  return d;
+}
+function makePoke(row){
+  const d = document.createElement("div");
+  d.className = "poke-note";
+  d.textContent = row.note.text || "你戳了戳 TA";
   return d;
 }
 function makeNewDivider(){
@@ -10873,6 +12107,7 @@ function createVirtualNode(row){
   else if (row.type === "thinking") el = makeThinking(row);
   else if (row.type === "act") el = makeAct(row);
   else if (row.type === "summary") el = makeSummary(row);
+  else if (row.type === "poke") el = makePoke(row);
   else el = makeMessage(row);
   el.dataset.vkey = row.key;
   return el;

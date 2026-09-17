@@ -1949,6 +1949,86 @@
   }
   .set-card-body > .conn-list{ gap: 8px; }
   .set-card-body .settings-tip{ margin-top: -2px; }
+
+  /* ══ 记忆页（Memory）══ 复用设置页外壳与折叠卡，只加银河方卡 / 日更条 / 条目列表 */
+  .galaxy-card{
+    position: relative; width: 100%; aspect-ratio: 1 / 1;   /* 方形卡 */
+    border-radius: 22px; overflow: hidden;
+    background: radial-gradient(circle at 50% 45%, #16122b 0%, #0b0817 55%, #060409 100%);
+    border: 1px solid rgba(150,130,220,.22);
+    box-shadow: 0 18px 46px rgba(20,14,45,.34), inset 0 0 60px rgba(120,100,220,.10);
+    cursor: pointer;
+  }
+  .galaxy-card canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .galaxy-card .gx-top{
+    position: absolute; left: 0; right: 0; top: 0; padding: 14px 16px 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+    color: #efe9ff;
+  }
+  .galaxy-card .gx-title{
+    font-family: var(--font-en, serif); font-size: 17px; letter-spacing: .16em; text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(0,0,0,.5);
+  }
+  .galaxy-card .gx-sub{ font-size: 11px; opacity: .62; margin-top: 3px; letter-spacing: .04em; }
+  .galaxy-card .gx-open{
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; padding: 6px 10px; border-radius: 999px;
+    background: rgba(255,255,255,.12); color: #f3eeff; border: 1px solid rgba(255,255,255,.18);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .galaxy-card .gx-foot{
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 14px;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+    color: #e7dfff; font-size: 11.5px; line-height: 1.5;
+    background: linear-gradient(to top, rgba(6,4,12,.72), rgba(6,4,12,0));
+  }
+  .galaxy-card .gx-num{ font-family: var(--font-en, serif); font-size: 22px; line-height: 1; }
+  .galaxy-card .gx-lab{ font-size: 10.5px; opacity: .55; letter-spacing: .1em; text-transform: uppercase; }
+
+  .nf-days{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .nf-chip{
+    border: 1px solid var(--hairline); background: var(--glass); color: var(--text);
+    font-size: 12px; padding: 6px 10px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; line-height: 1.1;
+  }
+  .nf-chip.on{ background: var(--accent, #6f8fd8); border-color: transparent; color: #fff; }
+  .nf-chip b{ font-weight: 600; }
+  .nf-chip i{ font-style: normal; opacity: .55; font-size: 11px; margin-left: 4px; }
+  .nf-box{
+    width: 100%; box-sizing: border-box; min-height: 120px;
+    padding: 11px 12px; border-radius: 12px; font-size: 13px; line-height: 1.65;
+    border: 1px solid var(--hairline); background: var(--bg-soft, rgba(255,255,255,.5));
+    color: var(--text); font-family: inherit; outline: none; resize: vertical;
+  }
+  .nf-md{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+    padding: 12px; border-radius: 12px; max-height: 42vh; overflow: auto;
+    border: 1px solid var(--hairline); background: var(--bg-soft, rgba(255,255,255,.45));
+    color: var(--text-soft);
+  }
+  .nf-actions{ display: flex; flex-wrap: wrap; gap: 8px; }
+  .nf-actions button{ flex: 0 0 auto; }
+  .lib-item{
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 12px;
+    border: 1px solid var(--hairline); background: var(--glass);
+  }
+  .lib-item + .lib-item{ margin-top: 7px; }
+  .lib-item .li-main{ flex: 1 1 auto; min-width: 0; cursor: pointer; }
+  .lib-item .li-title{ font-size: 13.5px; font-weight: 600; color: var(--text); }
+  .lib-item .li-body{
+    font-size: 12px; color: var(--text-soft); margin-top: 3px; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .lib-item .li-ts{ font-size: 10.5px; color: var(--text-faint); margin-top: 4px; }
+  .lib-item .li-del{
+    flex: 0 0 auto; border: none; background: transparent; color: var(--text-faint);
+    font-size: 12px; padding: 4px 6px; cursor: pointer; border-radius: 8px;
+  }
+  .lib-item .li-del:hover{ background: var(--row-press); color: #c0392b; }
+  .lib-edit{ display: flex; flex-direction: column; gap: 8px; }
+  .lib-empty{ font-size: 12px; color: var(--text-faint); padding: 2px 2px 4px; }
   /* 两列并排的字段（尺寸 / 张数 这种短字段） */
   .fld-pair{ display: flex; gap: 10px; }
   .fld-pair > .fld{ flex: 1 1 0; min-width: 0; }
@@ -2731,6 +2811,77 @@
   </div>
 </div>
 
+<!-- ── Memory（记忆）· 从 hub 菜单「Memory」进入 ── -->
+<div class="settings-panel hidden" id="memoryPanel" role="dialog" aria-modal="true" aria-label="记忆">
+  <div class="settings-page">
+    <div class="settings-scroll">
+      <div class="settings-head">
+        <button class="settings-back" id="memoryBack" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <div class="settings-title">记忆</div>
+        <button class="settings-close" id="memoryClose" type="button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <!-- ① 记忆银河（方形卡） -->
+      <div class="galaxy-card" id="galaxyCard" role="button" tabindex="0" aria-label="记忆银河">
+        <canvas id="gxCv"></canvas>
+        <div class="gx-top">
+          <div>
+            <div class="gx-title">Memory Galaxy</div>
+            <div class="gx-sub" id="gxSub">A constellation of memories</div>
+          </div>
+          <button class="gx-open" id="gxOpen" type="button">打开银河 ↗</button>
+        </div>
+        <div class="gx-foot">
+          <div><div class="gx-num" id="gxCount">—</div><div class="gx-lab">stars</div></div>
+          <div id="gxFoot" style="text-align:right">时间当半径 · 越早越靠近中心</div>
+        </div>
+      </div>
+
+      <!-- ② 近景 · 七天 -->
+      <section class="set-card open" data-card="nearfield">
+        <button class="set-card-head" type="button" aria-expanded="true">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">近景 · 七天</span><span class="set-card-sub" id="cardSubNear">还没生成</span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="nf-days" id="nfDays"></div>
+          <div class="nf-actions">
+            <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
+            <select id="nfTarget" class="model-select" style="max-width:132px">
+              <option value="">昨天（默认）</option>
+              <option value="today">今天（显式）</option>
+            </select>
+            <button id="nfAssemble" type="button">只重拼注入稿</button>
+            <button id="nfMonth" type="button">合并成月度</button>
+            <button id="nfRefresh" type="button">刷新</button>
+          </div>
+          <label class="fld"><span>日更正文（可手改，改完点「保存并重拼」）</span>
+            <textarea id="nfDay" class="nf-box" rows="6" placeholder="点上面某一天，或先「脱水 → 日更」生成昨天那篇"></textarea>
+          </label>
+          <div class="nf-actions">
+            <button id="nfSaveDay" type="button">保存并重拼</button>
+            <button id="nfDeleteDay" type="button">删除这天</button>
+          </div>
+          <div class="conn-sub" id="nfStatus" style="padding:0 2px;color:var(--text-faint);line-height:1.55"></div>
+          <div class="settings-section-label">注入稿 · Nearfield.md（新会话开头注入一次）</div>
+          <div class="nf-md" id="nfCurrent">—</div>
+          <div class="settings-tip">聊天账本 → 小模型脱水成<b>第一人称近景日记</b>（日更）→ 最近 7 天按配额衰减
+          <b>确定性拼接</b>（不再调模型）→ 在新会话的第一句注入一次。越近写得越完整，越远只留完整句；
+          零点后默认关「昨天」的账。日更与注入稿是两份东西：一天可以手改，注入稿随时便宜重拼。</div>
+        </div>
+      </section>
+
+      <!-- ③ 记忆库分区卡（JS 生成） -->
+      <div id="libCards" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Voice call (speaking overlay · 假按键,纯 UI) ── -->
 <div class="call-overlay hidden" id="callOverlay" aria-hidden="true">
   <div class="call-mini" id="callMini">
@@ -3258,6 +3409,7 @@ document.addEventListener("keydown", (e) => {
 const backBtn = $("#backBtn");
 const menuPanel = $("#menuPanel"), menuDaysEl = $("#menuDays");
 const settingsPanel = $("#settingsPanel");
+const memoryPanel = $("#memoryPanel");
 let editingConnId = null;
 const TOGETHER_START = (function(){
   const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(CONFIG.SINCE || "");
@@ -3296,13 +3448,15 @@ if (menuPanel){
     if (!item) return;
     if (item.dataset.menu === "chat") closeMenu();       // back to chat
     else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
+    else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
     else showToast("即将开放");                           // placeholder items
   });
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
-    if (settingsPanel && settingsPanel.classList.contains("open")) closeSettings();
+    if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
+    else if (settingsPanel && settingsPanel.classList.contains("open")) closeSettings();
     else if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
   }
 });
@@ -5753,6 +5907,344 @@ async function requestImageFromInput(){
   });
 }
 if ($("#imgBtn")) $("#imgBtn").addEventListener("click", requestImageFromInput);
+
+/* ════════════ 记忆页：银河 + 近景 + 记忆库分区 ════════════ */
+const LIB_DEFS = [
+  { kind: "event",   name: "事件",       ico: "✦", tip: "发生过的事，一句话一条。" },
+  { kind: "ref",     name: "参考资料",   ico: "❖", tip: "TA 喜欢的、要记住的资料。" },
+  { kind: "working", name: "工作记忆",   ico: "☰", tip: "正在进行、还没结束的事。" },
+  { kind: "summary", name: "摘要",       ico: "≡", tip: "对话压缩出来的长期摘要（自动生成）。" },
+  { kind: "story",   name: "故事",       ico: "❋", tip: "值得复述的片段。" },
+  { kind: "room",    name: "我的房间",   ico: "⌂", tip: "你自己的一方天地。" },
+  { kind: "letter",  name: "留给西西的话", ico: "✉", tip: "想对 TA 说、但还没说出口的。" },
+];
+let memData = { status: null, current: "", counts: {}, items: {}, labels: {} };
+let memSelectedDay = "";
+let memLibEditing = {};        // kind -> {id, title, content} 正在编辑的那条
+
+function memStatus(msg, kind){
+  const el = $("#nfStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+async function memApi(path, opt){
+  const r = await fetch(appUrl(path), Object.assign({
+    headers: Object.assign({}, authHeaders(), (opt && opt.body) ? { "Content-Type": "application/json" } : {})
+  }, opt || {}));
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
+  return d;
+}
+async function openMemory(){
+  if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
+  memoryPanel.classList.remove("hidden");
+  requestAnimationFrame(() => memoryPanel.classList.add("open"));
+  buildLibCards();
+  memLoad(true);
+}
+function closeMemory(){
+  memoryPanel.classList.remove("open");
+  setTimeout(() => memoryPanel.classList.add("hidden"), 360);
+}
+async function memLoad(verbose){
+  if (verbose) memStatus("读取中…");
+  try{
+    const nf = await memApi("/app/nearfield");
+    memData.status = nf.status || {};
+    memData.current = nf.current || "";
+    const lib = await memApi("/app/memory/list?limit=200");
+    memData.counts = lib.counts || {};
+    memData.labels = lib.labels || {};
+    memData.items = {};
+    (lib.items || []).forEach((it) => {
+      (memData.items[it.kind] = memData.items[it.kind] || []).push(it);
+    });
+    renderNearfield();
+    renderLibs();
+    if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
+  }catch(err){
+    memStatus("读取失败：" + ((err && err.message) || err), "err");
+  }
+  loadGalaxy();
+}
+/* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
+const GX_PAL = { "恋爱": "#ff8fc7", "家庭": "#ffd479", "日常": "#7fe3e0", "编程": "#9fa8ff",
+                 "思考": "#9fa8ff", "情绪": "#c39bff", "事件": "#ffb27a", "故事": "#ff9ec4",
+                 "参考资料": "#8fd6ff", "工作记忆": "#b9e08f", "摘要": "#c9c9d6",
+                 "我的房间": "#ffd479", "留给西西的话": "#ff9ec4", "月度记忆": "#b39ddb" };
+async function loadGalaxy(){
+  const cv = $("#gxCv"); if (!cv) return;
+  let stars = [];
+  try{
+    const g = await memApi("/app/galaxy.json");
+    stars = g.stars || [];
+  }catch(_){ stars = []; }
+  $("#gxCount").textContent = stars.length;
+  $("#gxSub").textContent = stars.length ? ("最近产出 " + (stars[stars.length - 1].created || "").slice(0, 10)) : "还没有星星";
+  drawGalaxy(cv, stars);
+}
+function drawGalaxy(cv, stars){
+  const host = cv.parentElement, W = host.clientWidth || 320, H = host.clientHeight || W;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H * 0.46, R = Math.min(W, H) * 0.44;
+  // 背景星尘（确定性伪随机，重绘不跳）
+  let seed = 20260917;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let i = 0; i < 260; i++){
+    const a = rnd() * Math.PI * 2, r = Math.pow(rnd(), 0.6) * R * 1.12;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.62;
+    ctx.globalAlpha = 0.10 + rnd() * 0.30;
+    ctx.fillStyle = "#cfc6ff";
+    ctx.fillRect(x, y, 1.1, 1.1);
+  }
+  ctx.globalAlpha = 1;
+  // 中心柔光
+  const g0 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
+  g0.addColorStop(0, "rgba(190,160,255,.30)"); g0.addColorStop(1, "rgba(190,160,255,0)");
+  ctx.fillStyle = g0; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, Math.PI * 2); ctx.fill();
+  if (!stars.length){
+    ctx.fillStyle = "rgba(230,224,255,.55)"; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("还没有记忆星 —— 在下面各分区里加几条", cx, cy + 4);
+    return;
+  }
+  const t0 = Date.parse(stars[0].created) || 0;
+  const t1 = Date.parse(stars[stars.length - 1].created) || (t0 + 1);
+  const span = Math.max(1, t1 - t0);
+  stars.forEach((s, i) => {
+    const p = Math.min(1, Math.max(0, ((Date.parse(s.created) || t0) - t0) / span));
+    const r = R * (0.10 + 0.90 * Math.pow(p, 0.85));
+    const a = i * 2.399963 + p * 1.7;                       // 黄金角 + 缓慢旋转
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.62;
+    const imp = Math.max(1, Math.min(10, Number(s.importance) || 5));
+    const sz = 1.2 + (imp >= 9 || s.pinned ? 3.0 : imp >= 7 ? 2.1 : 1.2);
+    const col = GX_PAL[s.domain] || "#cbb6ff";
+    ctx.globalAlpha = imp >= 7 ? 0.95 : 0.7;
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = imp >= 7 ? 10 : 5;
+    ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+  ctx.globalAlpha = 1;
+  const core = stars[0];
+  ctx.fillStyle = "#fff6ff"; ctx.shadowColor = "#ffd9f2"; ctx.shadowBlur = 16;
+  ctx.beginPath(); ctx.arc(cx, cy, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+  $("#gxFoot").textContent = "核心 · " + (core.name || "最早的那条").slice(0, 14);
+}
+function galaxyUrl(){
+  const q = (host) => host.replace(/\/+$/, "") + "/app/galaxy.json";
+  try{
+    const h = (typeof cloudHost === "function" ? cloudHost() : "") || "";
+    return "galaxy.html" + (h ? ("?src=" + encodeURIComponent(q(h))) : "");
+  }catch(_){ return "galaxy.html"; }
+}
+
+/* ── 近景卡 ── */
+function renderNearfield(){
+  const st = memData.status || {};
+  const days = st.days || [];
+  const box = $("#nfDays");
+  if (box){
+    box.innerHTML = days.length ? days.map((d) => {
+      const on = d.date === memSelectedDay ? " on" : "";
+      return '<button class="nf-chip' + on + '" type="button" data-day="' + escapeHtml(d.date) + '">' +
+             "<b>" + escapeHtml(nfLabel(d.date)) + "</b><i>" + d.chars + "字</i></button>";
+    }).join("") : '<span class="lib-empty">还没有日更 —— 点右边「脱水 → 日更」生成昨天那篇。</span>';
+  }
+  const cur = (memData.current || "").trim();
+  $("#nfCurrent").textContent = cur || "（空）—— 有日更后点「只重拼注入稿」就会生成。";
+  $("#cardSubNear").textContent = days.length
+    ? (days.length + " 天 · 注入稿 " + cur.length + " 字")
+    : "还没生成";
+  const q = (st.quota || []).join("/");
+  memStatus("模型 " + (st.model || "-") + " · 近 " + (st.max_days || 7) + " 天 · 配额 " + q +
+            " · 时区 +" + (st.tz_offset != null ? st.tz_offset : 8) +
+            ((st.months || []).length ? (" · 月度 " + st.months.map((m) => m.month).join(",")) : ""));
+}
+function nfLabel(date){
+  const st = memData.status || {};
+  const t = st.today, y = st.yesterday;
+  if (date === t) return "今天";
+  if (date === y) return "昨天";
+  const dd = Math.round((Date.parse(t + "T00:00:00Z") - Date.parse(date + "T00:00:00Z")) / 86400000);
+  return dd > 0 ? (dd + " 天前") : date.slice(5);
+}
+async function memOpenDay(date){
+  memSelectedDay = date;
+  renderNearfield();
+  try{
+    const d = await memApi("/app/nearfield/day?date=" + encodeURIComponent(date));
+    $("#nfDay").value = d.content || "";
+    memStatus(d.exists ? ("已读 " + date + "（" + (d.content || "").length + " 字）") : (date + " 还没有日更"), d.exists ? "ok" : "");
+  }catch(err){ memStatus("读这天的日更失败：" + ((err && err.message) || err), "err"); }
+}
+async function memRun(){
+  const tgt = ($("#nfTarget") && $("#nfTarget").value) || "";
+  const btn = $("#nfRun"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "脱水ing…";
+  memStatus("正在把 " + (tgt === "today" ? "今天" : "昨天") + " 的账本交给小模型脱水…");
+  try{
+    const body = tgt === "today" ? { mode: "today" } : {};
+    const d = await memApi("/app/nearfield/run", { method: "POST", body: JSON.stringify(body) });
+    memStatus(d.ok ? ("已生成 " + d.date + " 的日更（" + d.chars + " 字）· 注入稿 " + d.current_chars + " 字")
+                   : ("没生成：" + d.reason), d.ok ? "ok" : "err");
+    if (d.ok && d.diary){ memSelectedDay = d.date; $("#nfDay").value = d.diary; }
+    await memLoad();
+    if (d.ok) showToast("日更生成好了");
+  }catch(err){ memStatus("脱水失败：" + ((err && err.message) || err), "err"); }
+  finally{ btn.disabled = false; btn.textContent = old; }
+}
+async function memSaveDay(){
+  if (!memSelectedDay){ memStatus("先在上面选一天（或先脱水生成）", "err"); return; }
+  const content = $("#nfDay").value;
+  if (!content.trim()){ memStatus("空正文不写（免得把已有日更抹空）", "err"); return; }
+  try{
+    const d = await memApi("/app/nearfield/day", { method: "POST",
+      body: JSON.stringify({ date: memSelectedDay, content: content }) });
+    memStatus("已保存 " + memSelectedDay + " 并重拼（" + (d.assembled || 0) + " 天）", "ok");
+    await memLoad();
+  }catch(err){ memStatus("保存失败：" + ((err && err.message) || err), "err"); }
+}
+async function memDeleteDay(){
+  if (!memSelectedDay){ memStatus("先选一天", "err"); return; }
+  if (!confirm("删除 " + memSelectedDay + " 的日更？（不影响聊天记录）")) return;
+  try{
+    await memApi("/app/nearfield/day?date=" + encodeURIComponent(memSelectedDay), { method: "DELETE" });
+    $("#nfDay").value = "";
+    memStatus("已删除 " + memSelectedDay, "ok");
+    await memLoad();
+  }catch(err){ memStatus("删除失败：" + ((err && err.message) || err), "err"); }
+}
+async function memAssemble(){
+  try{
+    const d = await memApi("/app/nearfield/assemble", { method: "POST", body: JSON.stringify({ persist: true }) });
+    memStatus("重拼完成：" + (d.days || []).length + " 天 · " + d.chars + " 字", "ok");
+    await memLoad();
+  }catch(err){ memStatus("重拼失败：" + ((err && err.message) || err), "err"); }
+}
+async function memMonth(){
+  const btn = $("#nfMonth"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "合并ing…";
+  try{
+    const d = await memApi("/app/nearfield/month", { method: "POST", body: JSON.stringify({}) });
+    memStatus(d.ok ? ("月度记忆已生成（" + d.chars + " 字）") : ("没生成：" + d.reason), d.ok ? "ok" : "err");
+    await memLoad();
+  }catch(err){ memStatus("合并失败：" + ((err && err.message) || err), "err"); }
+  finally{ btn.disabled = false; btn.textContent = old; }
+}
+
+/* ── 记忆库分区卡（7 张）── */
+function buildLibCards(){
+  const host = $("#libCards"); if (!host || host.dataset.built) return;
+  host.dataset.built = "1";
+  host.innerHTML = LIB_DEFS.map((d) => (
+    '<section class="set-card" data-card="lib-' + d.kind + '">' +
+      '<button class="set-card-head" type="button" aria-expanded="false">' +
+        '<span class="set-card-ico" style="font-size:15px">' + d.ico + "</span>" +
+        '<span class="set-card-txt"><span class="set-card-name">' + escapeHtml(d.name) + "</span>" +
+        '<span class="set-card-sub" id="libSub-' + d.kind + '">—</span></span>' +
+        '<svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+      "</button>" +
+      '<div class="set-card-body">' +
+        '<div id="libList-' + d.kind + '"></div>' +
+        '<div class="nf-actions"><button type="button" data-lib-new="' + d.kind + '">＋ 新建一条</button></div>' +
+        '<div class="lib-edit hidden" id="libEdit-' + d.kind + '">' +
+          '<input class="nf-box" id="libTitle-' + d.kind + '" placeholder="标题（一句话）" style="min-height:auto;padding:9px 11px">' +
+          '<textarea class="nf-box" id="libBody-' + d.kind + '" rows="4" placeholder="正文"></textarea>' +
+          '<div class="nf-actions"><button type="button" class="primary" data-lib-save="' + d.kind + '">保存</button>' +
+          '<button type="button" data-lib-cancel="' + d.kind + '">取消</button></div>' +
+        "</div>" +
+        '<div class="settings-tip">' + escapeHtml(d.tip) + "（存在后端 memories 表，按 kind 分区）</div>" +
+      "</div>" +
+    "</section>"
+  )).join("");
+  host.querySelectorAll(".set-card-head").forEach((h) => h.addEventListener("click", () => toggleSetCard(h.closest(".set-card"))));
+  host.addEventListener("click", async (e) => {
+    const nw = e.target.closest("[data-lib-new]");
+    const sv = e.target.closest("[data-lib-save]");
+    const cx = e.target.closest("[data-lib-cancel]");
+    const del = e.target.closest("[data-lib-del]");
+    const item = e.target.closest("[data-lib-item]");
+    if (nw){ libEditOpen(nw.dataset.libNew, null); return; }
+    if (cx){ $("#libEdit-" + cx.dataset.libCancel).classList.add("hidden"); return; }
+    if (sv){ await libSave(sv.dataset.libSave); return; }
+    if (del){ await libDelete(del.dataset.libDel); return; }
+    if (item){
+      const kind = item.dataset.libKind, id = item.dataset.libItem;
+      const it = (memData.items[kind] || []).find((x) => String(x.id) === String(id));
+      if (it) libEditOpen(kind, it);
+    }
+  });
+}
+function libEditOpen(kind, item){
+  const box = $("#libEdit-" + kind); if (!box) return;
+  memLibEditing[kind] = item ? item.id : null;
+  $("#libTitle-" + kind).value = item ? (item.title || "") : "";
+  $("#libBody-" + kind).value = item ? (item.content || "") : "";
+  box.classList.remove("hidden");
+  $(".set-card[data-card='lib-" + kind + "']").classList.add("open");
+  $("#libTitle-" + kind).focus();
+}
+async function libSave(kind){
+  const title = $("#libTitle-" + kind).value.trim();
+  const content = $("#libBody-" + kind).value.trim();
+  if (!content){ showToast("正文不能为空"); return; }
+  try{
+    await memApi("/app/memory/save", { method: "POST",
+      body: JSON.stringify({ kind: kind, title: title, content: content, id: memLibEditing[kind] || undefined }) });
+    $("#libEdit-" + kind).classList.add("hidden");
+    memLibEditing[kind] = null;
+    showToast("已保存");
+    await memLoad();
+  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
+}
+async function libDelete(id){
+  if (!confirm("删除这条记忆？")) return;
+  try{
+    await memApi("/app/memory/item?id=" + encodeURIComponent(id), { method: "DELETE" });
+    showToast("已删除");
+    await memLoad();
+  }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
+}
+function renderLibs(){
+  LIB_DEFS.forEach((d) => {
+    const items = memData.items[d.kind] || [];
+    const sub = $("#libSub-" + d.kind);
+    if (sub) sub.textContent = items.length ? (items.length + " 条" + (items[0].title ? (" · " + items[0].title.slice(0, 18)) : "")) : "还没有内容";
+    const list = $("#libList-" + d.kind);
+    if (!list) return;
+    list.innerHTML = items.length ? items.map((it) => (
+      '<div class="lib-item">' +
+        '<div class="li-main" data-lib-item="' + escapeHtml(String(it.id)) + '" data-lib-kind="' + d.kind + '">' +
+          '<div class="li-title">' + escapeHtml(it.title || "(无标题)") + "</div>" +
+          '<div class="li-body">' + escapeHtml(String(it.content).slice(0, 160)) + "</div>" +
+          '<div class="li-ts">' + escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + "</div>" +
+        "</div>" +
+        '<button class="li-del" type="button" data-lib-del="' + escapeHtml(String(it.id)) + '" title="删除">✕</button>' +
+      "</div>"
+    )).join("") : '<div class="lib-empty">还没有内容。点下面「＋ 新建一条」。</div>';
+  });
+}
+if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
+if ($("#memoryClose")) $("#memoryClose").addEventListener("click", closeMemory);
+if ($("#nfRun")) $("#nfRun").addEventListener("click", memRun);
+if ($("#nfAssemble")) $("#nfAssemble").addEventListener("click", memAssemble);
+if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
+if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));
+if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
+if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay);
+if ($("#nfDays")) $("#nfDays").addEventListener("click", (e) => {
+  const c = e.target.closest(".nf-chip");
+  if (c) memOpenDay(c.dataset.day);
+});
+if ($("#gxOpen")) $("#gxOpen").addEventListener("click", (e) => {
+  e.stopPropagation();
+  window.open(galaxyUrl(), "_blank", "noopener");
+});
+if ($("#galaxyCard")) $("#galaxyCard").addEventListener("click", () => window.open(galaxyUrl(), "_blank", "noopener"));
+window.addEventListener("resize", () => { if (!$("#memoryPanel").classList.contains("hidden")) loadGalaxy(); });
 
 /* ════════════ API 层 ════════════ */
 function authHeaders(){ return { "Authorization": "Bearer " + secret }; }

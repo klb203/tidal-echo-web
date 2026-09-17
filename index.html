@@ -1966,6 +1966,9 @@
   }
   .ig-preview .ig-meta a{ color: var(--accent, #1f6feb); text-decoration: none; }
   .ig-preview .ig-meta a:hover{ text-decoration: underline; }
+  /* 正文里的 markdown 图片（生图消息落库后还原用）：按原始比例显示，不裁切 */
+  .att-img-link.att-img-free{ aspect-ratio: auto; }
+  .att-img-link.att-img-free img{ height: auto; max-height: 340px; object-fit: contain; }
   .settings-tip code{
     font-size: 11px; padding: 1px 5px; border-radius: 5px;
     background: var(--glass-strong); color: var(--text-soft);
@@ -2223,6 +2226,9 @@
       <textarea id="input" rows="1" placeholder="Write a letter..." enterkeyhint="send"></textarea>
       <button class="emojibtn" id="emojiBtn" aria-label="表情" title="表情">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.3a4.2 4.2 0 0 0 7 0"/><line x1="9" y1="9.3" x2="9" y2="10"/><line x1="15" y1="9.3" x2="15" y2="10"/></svg>
+      </button>
+      <button class="emojibtn" id="imgBtn" aria-label="生图" title="生图（也可以发 /img 开头的话）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.8" cy="9.8" r="1.5"/><path d="M3.6 17.4l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/><path d="M13.8 14.6l1.6-1.6a1.6 1.6 0 0 1 2.3 0l2.7 2.7"/></svg>
       </button>
     </div>
     <button class="floatbtn hidden" id="micBtn" aria-label="语音" title="语音">
@@ -3108,6 +3114,9 @@ const freshReactionKeys = new Set();   // messages whose AI reaction just arrive
 const streamDrafts = new Map();        // stream_id+kind -> temporary bubble key
 const streamDeltaBuffers = new Map();  // stream_id+kind -> batched delta
 let streamFlushTimer = null;
+/* 后端对话流式进行中：这期间「正在输入…」要一直亮着 —— 模型偶尔停几秒不说话（尤其推理模型），
+   指示器一灭用户就以为卡死了。收到 done 才熄灭，正好是那个「有温度的停顿」。 */
+let backendStreaming = false;
 // messages you deleted locally (view only; never touches the server); persisted so refresh/backfill won't bring them back
 const deletedKeys = new Set();
 try{ (JSON.parse(localStorage.getItem("companion_deleted_ids") || "[]") || []).forEach((k) => deletedKeys.add(String(k))); }catch(_){}
@@ -5458,6 +5467,22 @@ function backendQuick(){
 }
 const THINKING_SYS = "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。";
 
+/* SSE 事件归一：后端负责把各家上游（OpenAI 兼容 / Anthropic 原生）翻译成一套固定格式，
+   前端只认这一套。为了将来换后端不用改前端，这里同时接受两种命名：
+     text | delta            （正文）      reasoning | thinking  （思维链）
+     content | text          （载荷字段） */
+function streamEventType(ev){
+  const t = String((ev && ev.type) || "");
+  if (t === "text" || t === "delta" || t === "reply_delta") return "text";
+  if (t === "reasoning" || t === "thinking" || t === "thinking_delta") return "reasoning";
+  return t;
+}
+function streamEventText(ev){
+  if (!ev) return "";
+  const v = (ev.text != null) ? ev.text : ev.content;
+  return v == null ? "" : String(v);
+}
+
 async function appChatStream(text, streamId, conn, onMeta){
   const qk = backendQuick();
   let model = (conn && conn.model) || "";
@@ -5485,47 +5510,59 @@ async function appChatStream(text, streamId, conn, onMeta){
 
   const reader = r.body.getReader();
   const dec = new TextDecoder();
-  let buf = "", acc = "", think = "";
-  const out = { text: "", reasoning: "", model: model, sessionId: "", assistantId: null, usage: null, error: "" };
+  let buf = "", acc = "", think = "", sawDone = false;
+  const out = { text: "", reasoning: "", model: model, sessionId: "", assistantId: null, usage: null,
+                error: "", incomplete: false };
   while (true){
     const { done, value } = await reader.read();
     if (done) break;
     buf += dec.decode(value, { stream: true });
-    const lines = buf.split("\n"); buf = lines.pop() || "";
+    const lines = buf.split("\n");
+    buf = lines.pop() || "";          // ★ 半行留到下一轮，别直接解析（本地不炸、线上随机炸）
     for (const line of lines){
       const t = line.trim();
+      if (!t || t.startsWith(":")) continue;      // 心跳注释行，忽略
       if (!t.startsWith("data:")) continue;
       const raw = t.slice(5).trim();
       if (!raw || raw === "[DONE]") continue;
       let ev; try{ ev = JSON.parse(raw); }catch(_){ continue; }
-      if (ev.type === "meta"){
+      const type = streamEventType(ev);
+      if (type === "meta"){
         out.sessionId = ev.session_id || "";
         out.model = ev.model || out.model;
         if (ev.compressed) showToast("上下文超阈值，已自动压缩早期记忆");
         if (onMeta) onMeta(ev);
-      }else if (ev.type === "delta"){
-        acc += ev.text || "";
+      }else if (type === "text"){
+        acc += streamEventText(ev);
         queueStreamDelta({ type:"reply_delta", stream_id: streamId, text: acc });
-      }else if (ev.type === "thinking"){
-        think += ev.text || "";
+      }else if (type === "reasoning"){
+        think += streamEventText(ev);
         queueStreamDelta({ type:"thinking_delta", stream_id: streamId, text: think });
-      }else if (ev.type === "usage"){
+      }else if (type === "usage"){
         out.usage = ev.usage;
-      }else if (ev.type === "done"){
+      }else if (type === "done"){
+        sawDone = true;
         out.text = (ev.reply != null && ev.reply !== "") ? ev.reply : acc;
         out.reasoning = (ev.reasoning != null && ev.reasoning !== "") ? ev.reasoning : think;
         out.assistantId = ev.assistant_message_id;
+        out.stored = ev.stored;
         out.usage = ev.usage || out.usage;
         out.sessionId = ev.session_id || out.sessionId;
         if (ev.error) out.error = ev.error;
-      }else if (ev.type === "error"){
-        throw new Error(ev.message || "后端对话出错");
+      }else if (type === "error"){
+        throw new Error(ev.message || ev.content || "后端对话出错");
       }
     }
   }
   if (!out.text) out.text = acc;
   if (!out.reasoning) out.reasoning = think;
   if (out.error) throw new Error(out.error);
+  /* 没收到 done = 连接中途断了。有内容就先把已有的显示出来（同时提示可能不完整），
+     一个字都没收到才当硬失败。 */
+  if (!sawDone){
+    if (!out.text) throw new Error("连接中断，什么都没收到（可以再发一次）");
+    out.incomplete = true;
+  }
   return out;
 }
 
@@ -5556,6 +5593,7 @@ function expandBackendThinking(msgs){
 async function backendSend(text, tempKey){
   const conn = activeConn();
   showTyping();
+  backendStreaming = true;
   const streamId = "bk-" + Date.now();
   let userKey = tempKey, out = null, errMsg = "";
   try{
@@ -5569,6 +5607,7 @@ async function backendSend(text, tempKey){
   }catch(err){
     errMsg = (err && err.message) || String(err);
   }
+  backendStreaming = false;
   hideTyping();
 
   if (errMsg){
@@ -5599,8 +5638,118 @@ async function backendSend(text, tempKey){
     resetServerHistoryCache();
     loadSessions();
   }
+  /* 连接中途断了（没收到 done）：已有的内容照样显示出来，只是提醒一句可能不完整 */
+  if (out.incomplete){
+    showToast("连接中断，回复可能没说完");
+    if (!out.stored) showError("连接中断 —— 这条回复可能不完整，而且太短没入库（可以再发一次）。");
+  }
   return { id: userKey };
 }
+
+/* ════════════ 聊天里生图（🎨 / /img 开头）════════════
+   生成完作为一条「图片消息」留在聊天里：本机立刻可见，同时写进数据库，
+   刷新后靠 renderText 的 markdown 图片规则 / meta.attachments 还原。 */
+function imgPromptFrom(text){
+  return String(text || "").replace(/^\s*\/\s*(?:img|image|draw|pic|画图|生图|画画)\s*/i, "").trim();
+}
+function isImageRequest(text){
+  return /^\s*\/\s*(?:img|image|draw|pic|画图|生图|画画)\s*\S/i.test(String(text || ""));
+}
+function nextLocalImageId(){
+  let max = 0;
+  chatMessages.forEach((m) => { const n = msgNum(m.id); if (Number.isFinite(n) && n > max) max = n; });
+  return max > 0 ? (max + 0.5) : ("img-" + Date.now());
+}
+async function imageGenerate(prompt){
+  const c = loadImageGen();
+  if (!c.base) throw new Error("还没填「中转站地址」—— 设置 → 生图 · 中转站");
+  if (!c.model) throw new Error("还没选生图模型 —— 在该卡片点「拉取模型」选一个");
+  const r = await fetch(appUrl("/app/image/generate"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ base: c.base, key: c.key || "", model: c.model, prompt: prompt,
+                           size: c.size || undefined, n: 1 })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
+  const img = (d.images || [])[0];
+  if (!img) throw new Error("上游没返回图片");
+  return Object.assign({}, d, { src: img.url || img.data_url || "", isData: !img.url });
+}
+function imageMarkdownContent(prompt, src, isData){
+  const cap = "🎨 " + prompt;
+  if (!src || isData) return cap + "\n\n（图片是 base64 返回的，没入库；想要能长期显示的图，换一家返回 url 的中转站）";
+  return cap + "\n\n![" + prompt.replace(/[\[\]]/g, "").slice(0, 60) + "](" + src + ")";
+}
+async function postImageMessage(sid, role, content, meta){
+  const r = await fetch(appUrl("/app/sessions/" + encodeURIComponent(sid) + "/messages"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ role: role, content: content, meta: meta || undefined })
+  });
+  if (!r.ok) throw new Error("存图片消息 " + r.status);
+  return await r.json();
+}
+async function sendImageMessage(prompt){
+  const tempKey = "pending-" + (++optimisticSeq);
+  const human = { id: tempKey, ts: new Date().toISOString(), from: "human", kind: "user",
+                  text: "🎨 " + prompt, meta: {}, status: "sending" };
+  seen.add(tempKey);
+  setMessage(human, { render: false, cache: false });
+  freshKeys.add(tempKey);
+  scheduleRender({ stickToBottom: true });
+  showTyping();
+  let d = null, errMsg = "";
+  try{ d = await imageGenerate(prompt); }
+  catch(err){ errMsg = (err && err.message) || String(err); }
+  hideTyping();
+
+  if (errMsg){
+    setMessage(Object.assign({}, human, { status: "failed" }));
+    showError("生图失败 —— " + errMsg + "\n\n（在设置 → 生图 · 中转站 里检查地址/Key/模型，或点「测试生图」单独验证。）");
+    showToast("生图失败，详情见下方提示条");
+    return;
+  }
+
+  /* 写库（后端对话模式下）→ 拿到真实 id，排序与刷新后还原都正确 */
+  let userId = null, imgId = null;
+  if (hasBackendChat()){
+    const sid = effectiveApiSession();
+    if (sid){
+      try{
+        const r1 = await postImageMessage(sid, "user", "🎨 " + prompt);
+        userId = (r1 && r1.message && r1.message.id != null) ? r1.message.id : null;
+        const meta = d.src ? { attachments: [{ url: d.src, kind: "image", name: "tidal-image.png",
+                                               mime: "image/png", prompt: prompt }] } : null;
+        const r2 = await postImageMessage(sid, "assistant", imageMarkdownContent(prompt, d.src, d.isData), meta);
+        imgId = (r2 && r2.message && r2.message.id != null) ? r2.message.id : null;
+      }catch(_){}
+    }
+  }
+
+  if (userId != null){
+    confirmOptimistic(tempKey, msgKey(userId), Object.assign({}, human, { id: msgKey(userId), status: "sent" }));
+  }
+  const att = { url: d.src, kind: "image", name: "tidal-image.png", mime: "image/png", prompt: prompt };
+  setMessage({ id: (imgId != null ? imgId : nextLocalImageId()),
+               ts: new Date().toISOString(), from: "ai", kind: "reply", text: "",
+               meta: { attachments: [att], image: true, model: d.model, prompt: prompt },
+               status: "sent" }, { render: true });
+  showToast("画好了（" + ((d.ms || 0) / 1000).toFixed(1) + "s）");
+}
+async function requestImageFromInput(){
+  const prompt = imgPromptFrom(inputEl.value);
+  if (!prompt){ showToast("先写下你想画什么，再点这个（或发「/img 一只猫」）"); inputEl.focus(); return; }
+  if (!imageGenOn()){
+    showError("还没配生图 —— 设置 → 生图 · 中转站：填「中转站地址」+「API Key」，点「拉取模型」选一个模型并勾选「启用生图」。");
+    showToast("先去设置里配好生图中转站");
+    return;
+  }
+  inputEl.value = "";
+  inputEl.style.height = "auto";
+  sendImageMessage(prompt);
+}
+if ($("#imgBtn")) $("#imgBtn").addEventListener("click", requestImageFromInput);
 
 /* ════════════ API 层 ════════════ */
 function authHeaders(){ return { "Authorization": "Bearer " + secret }; }
@@ -6183,6 +6332,12 @@ function renderText(t){
   let s = escapeHtml(t);
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  /* 「![说明](https://…/a.png)」→ 内嵌图片。生图消息落库后靠这行还原成图片（见 sendImageMessage）。 */
+  s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|data:image\/[^\s)]+)\)/g, (m0, alt, raw) => {
+    const u = String(raw).replace(/&amp;/g, "&");
+    return '<a class="att-img-link att-img-free" href="' + escapeHtml(u) + '" target="_blank" rel="noopener">' +
+           '<img class="att-img" decoding="async" loading="lazy" src="' + escapeHtml(u) + '" alt="' + alt + '"></a>';
+  });
   s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   s = s.replace(/\n/g, "<br>");
   return s;
@@ -7248,7 +7403,9 @@ function applyStreamDelta(ev){
     if (kind === "thinking") openThinkKeys.add(key);
     if (stick && kind === "reply") freshKeys.add(key);
   }
-  hideTyping();
+  /* 后端对话期间不熄灭「正在输入」—— 模型中途停顿时它就是那个「他还在」的呼吸光标；
+     收到 done 时由 backendSend 统一熄灭。 */
+  if (!backendStreaming) hideTyping();
   setMessage({
     id:key,
     ts:ev.ts || (existing && existing.ts) || new Date().toISOString(),
@@ -7780,6 +7937,21 @@ function triggerSendPress(){
 async function doSend(){
   const text = inputEl.value.trim();
   if (!text) return;
+  /* 「/img 一只猫」→ 生图，不走聊天（也支持 /画图 /生图 /draw） */
+  if (isImageRequest(text)){
+    triggerSendPress();
+    ensureAudio();
+    const p = imgPromptFrom(text);
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    if (!imageGenOn()){
+      showError("还没配生图 —— 设置 → 生图 · 中转站：填「中转站地址」+「API Key」，点「拉取模型」选一个模型并勾选「启用生图」。");
+      showToast("先去设置里配好生图中转站");
+      return;
+    }
+    sendImageMessage(p);
+    return;
+  }
   triggerSendPress();            // 发送键:轻按回弹的小反馈
   ensureAudio();                 // 手势内解锁/预热音频
   inputEl.value = "";

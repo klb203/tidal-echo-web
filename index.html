@@ -9041,7 +9041,9 @@ function setMessage(raw, { render = true, cache = true } = {}){
    服务端那批早已 visible=false，所以刷新之后看到的是同一副样子。 */
 function foldCoveredMessages(card){
   const meta = card.meta || {};
-  const lo = msgNum(meta.from_id), hi = msgNum(meta.to_id);
+  const p = parseSumCard(card.text) || {};
+  const lo = msgNum(meta.from_id != null ? meta.from_id : p.fromId);
+  const hi = msgNum(meta.to_id != null ? meta.to_id : p.toId);
   if (!(lo > 0 && hi >= lo)) return 0;
   const gone = chatMessages.filter((x) => { const k = msgNum(x.id); return k >= lo && k <= hi; });
   gone.forEach((x) => removeMessage(x._key, { render:false, cache:false }));
@@ -9454,14 +9456,43 @@ function makeAct(rowData){
    它**默认收起**，收起时只有一行「更早的 62 条已折叠 · 重铸 #3」——聊天界面因此干净，
    又随时能展开看到那段被折叠的摘要，以及重铸时记下的「还没聊完」。
    和 thinking / act 用同一套展开状态管理（openSumKeys），虚拟列表换行重建也不会丢。 */
+/* 卡片的结构化字段优先从 meta 取（表里有 metadata 列时后端会给），
+   否则**从正文解析** —— 本应用的 messages 表没有 metadata 列，后端只能把字段编进正文。
+   这也让「别人手写一条同样格式的 system 消息」一样能被正确折叠。 */
+const SUM_HEAD_RE = /^〔自动重铸 #(\d+) · 折叠 (\d+) 条(?: · id (\d+)[–\-—~](\d+))?〕\s*$/;
+const SUM_THREADS_MARK = "—— 还没聊完 ——";
+function parseSumCard(text){
+  const raw = String(text || "").trim();
+  if (!raw) return null;
+  const lines = raw.split("\n");
+  const m = SUM_HEAD_RE.exec(lines[0].trim());
+  if (!m) return null;
+  const out = { forge:Number(m[1]) || 0, covered:Number(m[2]) || 0,
+                fromId:(m[3] ? Number(m[3]) : null), toId:(m[4] ? Number(m[4]) : null),
+                summary:"", threads:[] };
+  let rest = lines.slice(1);
+  const i = rest.indexOf(SUM_THREADS_MARK);
+  if (i >= 0){
+    out.threads = rest.slice(i + 1).map((l) => l.trim())
+      .filter((l) => l.indexOf("- ") === 0).map((l) => l.slice(2).trim()).filter(Boolean);
+    rest = rest.slice(0, i);
+  }
+  out.summary = rest.join("\n").trim();
+  return out;
+}
 function sumMeta(m){
   const meta = (m && m.meta) || {};
-  const covered = Number(meta.covered) || 0;
-  const n = Number(meta.forge) || 0;
-  const at = meta.at || m.ts || "";
-  const threads = Array.isArray(meta.threads) ? meta.threads.filter((x) => String(x || "").trim()) : [];
-  const text = String(meta.summary || m.text || "").replace(/^〔自动重铸 #[^〕]*〕[^\n]*\n?/, "").trim();
-  return { covered, n, at, threads, text };
+  const p = parseSumCard((m && m.text) || "") || {};
+  const threads = (Array.isArray(meta.threads) && meta.threads.length ? meta.threads
+                  : (p.threads || [])).filter((x) => String(x || "").trim());
+  return {
+    covered: Number(meta.covered) || p.covered || 0,
+    n: Number(meta.forge) || p.forge || 0,
+    at: meta.at || (m && m.ts) || "",
+    threads: threads,
+    text: (String(meta.summary || p.summary || "").trim()
+           || (p.forge ? "" : String((m && m.text) || "").trim()))
+  };
 }
 /* 折叠卡副标题上的时间：今天的只给时刻，其他给「月-日 时:分」。 */
 function fmtShortAt(ts){

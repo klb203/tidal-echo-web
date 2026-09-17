@@ -2027,6 +2027,128 @@
     font-size: 12px; padding: 4px 6px; cursor: pointer; border-radius: 8px;
   }
   .lib-item .li-del:hover{ background: var(--row-press); color: #c0392b; }
+
+  /* ── 记忆页 · 玻璃卡片体系（照设计稿）─────────────────────────────────
+     磨砂面 + 发丝描边 + 顶部一道内高光；大号衬线数字当视觉重音。
+     全部用 --mg-* 令牌并只挂在 #memoryPanel 上，设置页一点不受影响。 */
+  #memoryPanel{
+    --mg-surface: rgba(255,255,255,.62);
+    --mg-surface-2: rgba(255,255,255,.40);
+    --mg-line: rgba(122,146,168,.16);
+    --mg-edge: rgba(122,146,168,.13);
+    --mg-hi: rgba(255,255,255,.95);
+    --mg-shadow: 0 12px 30px rgba(70,92,108,.09);
+    --mg-dim: var(--text-faint);
+    --mg-heat: 122,148,176;
+    --mg-warm: #c9895f;
+  }
+  :root[data-theme="harbor"] #memoryPanel{
+    --mg-surface: rgba(255,255,255,.66);
+    --mg-surface-2: rgba(255,255,255,.44);
+    --mg-heat: 150,138,120;
+    --mg-warm: #b0754a;
+  }
+  #memoryPanel .settings-scroll{ gap: 15px; }
+  #memoryPanel .settings-head{ margin-bottom: 0; }
+  .mem-hero{ text-align: center; padding: 2px 0 8px; }
+  .mem-hero-num{
+    font-family: var(--font-en); font-weight: 500;
+    font-size: clamp(46px, 14vw, 60px); line-height: 1; color: var(--text);
+  }
+  .mem-hero-sub{ margin-top: 9px; font-size: 12.5px; letter-spacing: .1em; color: var(--mg-dim); }
+  /* 2×2 统计格 */
+  .mem-stats{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mem-stat{
+    padding: 17px 12px 16px; border-radius: 20px; text-align: center;
+    background: var(--mg-surface); border: 1px solid var(--mg-line);
+    box-shadow: var(--mg-shadow), inset 0 1px 0 var(--mg-hi);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12); backdrop-filter: blur(18px) saturate(1.12);
+  }
+  .mem-stat .ms-ico{ display: block; height: 20px; opacity: .8; }
+  .mem-stat .ms-ico svg{ width: 19px; height: 19px; }
+  .mem-stat .ms-num{
+    font-family: var(--font-en); font-weight: 500; font-size: 30px; line-height: 1.08;
+    margin-top: 7px; color: var(--text);
+  }
+  .mem-stat .ms-name{ font-size: 13px; font-weight: 600; color: var(--text); margin-top: 5px; letter-spacing: .04em; }
+  .mem-stat .ms-sub{ font-size: 11px; color: var(--mg-dim); margin-top: 3px; }
+  /* 通用玻璃卡 */
+  .mg-card{
+    padding: 16px 16px 15px; border-radius: 20px;
+    background: var(--mg-surface); border: 1px solid var(--mg-line);
+    box-shadow: var(--mg-shadow), inset 0 1px 0 var(--mg-hi);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12); backdrop-filter: blur(18px) saturate(1.12);
+  }
+  .mg-head{ display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .mg-title{ font-size: 15.5px; font-weight: 600; color: var(--text); letter-spacing: .04em; }
+  .mg-sub{ font-size: 11.5px; color: var(--mg-dim); margin-top: 4px; }
+  .mg-tag{
+    flex: 0 0 auto; font-size: 11px; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--mg-edge); color: var(--text-soft); background: var(--mg-surface-2);
+  }
+  /* 日历热力图 */
+  .cal-top{ display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .cal-month{ font-size: 15px; color: var(--text); letter-spacing: .06em; font-family: var(--font-en), var(--font-cn); }
+  .cal-nav{ display: flex; gap: 2px; }
+  .cal-nav button{
+    width: 30px; height: 30px; border: none; border-radius: 50%; background: transparent;
+    color: var(--text-soft); font-size: 17px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-nav button:hover{ background: var(--row-press); }
+  .cal-week{ display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 8px; }
+  .cal-week span{ text-align: center; font-size: 10.5px; color: var(--mg-dim); letter-spacing: .1em; }
+  .cal-grid{ display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 4px; }
+  .cal-cell{
+    position: relative; margin: 2px; aspect-ratio: 1 / 1; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; color: var(--text);
+    background: rgba(var(--mg-heat), calc(var(--lv, 0) * .13));
+    transition: background .2s ease;
+  }
+  .cal-cell.blank{ background: transparent; }
+  .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--mg-warm); font-weight: 600; }
+  .cal-cell.has-diary::after{
+    content: ""; position: absolute; left: 50%; bottom: 5px; width: 3px; height: 3px;
+    margin-left: -1.5px; border-radius: 50%; background: var(--accent);
+  }
+  .cal-foot{ margin-top: 11px; font-size: 11px; color: var(--mg-dim); display: flex; align-items: center; gap: 6px; }
+  .cal-legend{ display: inline-flex; gap: 3px; align-items: center; }
+  .cal-legend i{ width: 10px; height: 10px; border-radius: 3px; display: block; }
+  /* 记忆页里的折叠卡 / 条目：统一成同一套玻璃面 */
+  #memoryPanel .set-card{
+    border-radius: 20px; background: var(--mg-surface); border: 1px solid var(--mg-line);
+    box-shadow: var(--mg-shadow), inset 0 1px 0 var(--mg-hi);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12); backdrop-filter: blur(18px) saturate(1.12);
+  }
+  #memoryPanel .set-card.open{ background: var(--mg-surface); }
+  #memoryPanel .set-card-head{ padding: 15px 16px; gap: 11px; }
+  #memoryPanel .set-card-ico{
+    width: 32px; height: 32px; border-radius: 11px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+    color: var(--accent);
+  }
+  #memoryPanel .set-card-name{ font-size: 14px; }
+  #memoryPanel .lib-item{
+    border-radius: 16px; padding: 12px 13px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+    box-shadow: inset 0 1px 0 var(--mg-hi);
+  }
+  #memoryPanel .lib-item + .lib-item{ margin-top: 9px; }
+  #memoryPanel .li-title{ font-size: 14px; font-weight: 500; }
+  #memoryPanel .li-body{ font-size: 12.5px; line-height: 1.6; }
+  #memoryPanel .li-kind{
+    display: inline-block; margin-top: 6px; font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+    border: 1px solid var(--mg-edge); color: var(--text-soft); background: var(--mg-surface);
+    vertical-align: middle;
+  }
+  #memoryPanel .li-ts{ display: inline-block; margin: 6px 0 0 8px; vertical-align: middle; }
+  #memoryPanel .nf-chip{ border-radius: 999px; background: var(--mg-surface-2); border-color: var(--mg-edge); }
+  #memoryPanel .nf-chip.on{ background: var(--accent); border-color: transparent; }
+  #memoryPanel .nf-box, #memoryPanel .nf-md{
+    border-color: var(--mg-edge); background: var(--mg-surface-2); border-radius: 14px;
+  }
+  #memoryPanel .galaxy-card{ border-radius: 20px; }
   .lib-edit{ display: flex; flex-direction: column; gap: 8px; }
   .lib-empty{ font-size: 12px; color: var(--text-faint); padding: 2px 2px 4px; }
   /* 两列并排的字段（尺寸 / 张数 这种短字段） */
@@ -2819,13 +2941,19 @@
         <button class="settings-back" id="memoryBack" type="button" aria-label="返回">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         </button>
-        <div class="settings-title">记忆</div>
         <button class="settings-close" id="memoryClose" type="button" aria-label="关闭">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
 
-      <!-- ① 记忆银河（方形卡） -->
+      <!-- ① 抬头：一共多少条记忆 + 2×2 统计格 -->
+      <div class="mem-hero">
+        <div class="mem-hero-num" id="memTotal">—</div>
+        <div class="mem-hero-sub" id="memHeroSub">我记得的一切</div>
+      </div>
+      <div class="mem-stats" id="memStats"></div>
+
+      <!-- ② 记忆银河（方形卡） -->
       <div class="galaxy-card" id="galaxyCard" role="button" tabindex="0" aria-label="记忆银河">
         <canvas id="gxCv"></canvas>
         <div class="gx-top">
@@ -2841,7 +2969,33 @@
         </div>
       </div>
 
-      <!-- ② 近景 · 七天 -->
+      <!-- ③ 记忆日历（每天的记得程度，颜色越深记得越多） -->
+      <section class="mg-card" id="calCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">记忆日历</div>
+            <div class="mg-sub">颜色越深，那天记得越多</div>
+          </div>
+          <span class="mg-tag" id="calRange">近三个月</span>
+        </div>
+        <div class="cal-top">
+          <span class="cal-month" id="calMonth">—</span>
+          <span class="cal-nav">
+            <button type="button" id="calPrev" aria-label="上个月">‹</button>
+            <button type="button" id="calNext" aria-label="下个月">›</button>
+          </span>
+        </div>
+        <div class="cal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-foot">
+          <span class="cal-legend">
+            <i style="background:rgba(var(--mg-heat),.13)"></i><i style="background:rgba(var(--mg-heat),.26)"></i><i style="background:rgba(var(--mg-heat),.39)"></i><i style="background:rgba(var(--mg-heat),.52)"></i>
+          </span>
+          <span>少 → 多 · 有日更的那天带一个小点</span>
+        </div>
+      </section>
+
+      <!-- ④ 近景 · 七天 -->
       <section class="set-card open" data-card="nearfield">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
@@ -5921,6 +6075,104 @@ const LIB_DEFS = [
 let memData = { status: null, current: "", counts: {}, items: {}, labels: {} };
 let memSelectedDay = "";
 let memLibEditing = {};        // kind -> {id, title, content} 正在编辑的那条
+let memCal = { month: "", days: {}, today: "", truncated: false };
+
+const MEM_ICO = {
+  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/></svg>',
+  bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.3 2"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 3.8 8 12 12.4 20.2 8z"/><path d="M3.8 12.6 12 17l8.2-4.4"/></svg>',
+};
+
+/* ── 抬头 + 2×2 统计格：数字全来自后端真实计数 ── */
+function memLibTotal(){
+  const c = memData.counts || {};
+  return LIB_DEFS.reduce((n, d) => n + (c[d.kind] || 0), 0);
+}
+function memRenderStats(){
+  const st = memData.status || {};
+  const days = (st.days || []).length;
+  const months = (st.months || []).length;
+  const lib = memLibTotal();
+  const stars = memData.stars || 0;
+  const tn = $("#memTotal");
+  if (tn) tn.textContent = (lib + days + months) || stars;
+  const hs = $("#memHeroSub");
+  if (hs){
+    let extra = "";
+    const f = memData.firstDay;
+    if (f){
+      const n = Math.round((Date.parse(memCal.today || new Date().toISOString().slice(0, 10) + "T00:00:00Z") -
+                            Date.parse(f + "T00:00:00Z")) / 86400000) + 1;
+      if (n >= 2) extra = " · 第 " + n + " 天";
+    }
+    hs.textContent = "我记得的一切" + extra;
+  }
+  const host = $("#memStats"); if (!host) return;
+  const defs = [
+    { n: lib,    name: "长期", sub: "重要的事",   c: "#d18ea6", ico: MEM_ICO.bookmark },
+    { n: st.max_days ? (days + "/" + st.max_days) : days,
+                 name: "近景", sub: "最近的事",   c: "#63b596", ico: MEM_ICO.clock },
+    { n: months, name: "月度", sub: "更早的骨架", c: "#7ba4d4", ico: MEM_ICO.layers },
+    { n: stars,  name: "银河", sub: "记忆星图",   c: "#9787d6", ico: MEM_ICO.sparkle },
+  ];
+  host.innerHTML = defs.map((d) => (
+    '<div class="mem-stat">' +
+      '<span class="ms-ico" style="color:' + d.c + '">' + d.ico + "</span>" +
+      '<div class="ms-num">' + escapeHtml(String(d.n)) + "</div>" +
+      '<div class="ms-name">' + d.name + "</div>" +
+      '<div class="ms-sub">' + d.sub + "</div>" +
+    "</div>"
+  )).join("");
+}
+
+/* ── 记忆日历：每天的热度由后端算好（对话条数 + 记忆条目），这里只画格子 ── */
+async function loadCalendar(){
+  if (!$("#calGrid")) return;
+  try{
+    const d = await memApi("/app/memory/calendar?months=3");
+    memCal.days = d.days || {};
+    memCal.today = d.today || "";
+    memCal.truncated = !!d.truncated;
+    if (!memCal.month) memCal.month = (d.today || "").slice(0, 7);
+    memRenderStats();                      // 拿到本地「今天」后重算「第 N 天」
+    const r = $("#calRange");
+    if (r) r.textContent = memCal.truncated ? "近三个月 · 统计有上限" : "近三个月";
+    renderCalendar();
+  }catch(err){
+    const g = $("#calGrid");
+    if (g) g.innerHTML = '<div class="lib-empty">日历读取失败</div>';
+  }
+}
+function memCalMove(delta){
+  const m = memCal.month || (memCal.today || "").slice(0, 7);
+  if (!m) return;
+  const t = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 + delta, 1));
+  memCal.month = t.getUTCFullYear() + "-" + String(t.getUTCMonth() + 1).padStart(2, "0");
+  renderCalendar();
+}
+function renderCalendar(){
+  const grid = $("#calGrid"); if (!grid) return;
+  const m = memCal.month || (memCal.today || "").slice(0, 7);
+  if (!m) return;
+  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7));
+  const lab = $("#calMonth"); if (lab) lab.textContent = y + " 年 " + mo + " 月";
+  const lead = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;   // 周一当一周之首
+  const dim = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  let html = "";
+  for (let i = 0; i < lead; i++) html += '<span class="cal-cell blank"></span>';
+  for (let d = 1; d <= dim; d++){
+    const ds = m + "-" + String(d).padStart(2, "0");
+    const row = memCal.days[ds] || { m: 0, k: 0, l: 0 };
+    const cls = ["cal-cell"];
+    if (ds === memCal.today) cls.push("today");
+    if (row.diary) cls.push("has-diary");
+    html += '<span class="' + cls.join(" ") + '" style="--lv:' + (row.l || 0) + '" title="' +
+            ds + " · 对话 " + (row.m || 0) + " 条" + (row.k ? (" · 记忆 " + row.k + " 条") : "") +
+            '">' + d + "</span>";
+  }
+  grid.innerHTML = html;
+}
 
 function memStatus(msg, kind){
   const el = $("#nfStatus"); if (!el) return;
@@ -5961,11 +6213,13 @@ async function memLoad(verbose){
     });
     renderNearfield();
     renderLibs();
+    memRenderStats();
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
     memStatus("读取失败：" + ((err && err.message) || err), "err");
   }
   loadGalaxy();
+  loadCalendar();
 }
 /* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
 const GX_PAL = { "恋爱": "#ff8fc7", "家庭": "#ffd479", "日常": "#7fe3e0", "编程": "#9fa8ff",
@@ -5981,6 +6235,9 @@ async function loadGalaxy(){
   }catch(_){ stars = []; }
   $("#gxCount").textContent = stars.length;
   $("#gxSub").textContent = stars.length ? ("最近产出 " + (stars[stars.length - 1].created || "").slice(0, 10)) : "还没有星星";
+  memData.stars = stars.length;
+  if (stars.length) memData.firstDay = String(stars[0].created || "").slice(0, 10);
+  memRenderStats();
   drawGalaxy(cv, stars);
 }
 function drawGalaxy(cv, stars){
@@ -6220,6 +6477,7 @@ function renderLibs(){
         '<div class="li-main" data-lib-item="' + escapeHtml(String(it.id)) + '" data-lib-kind="' + d.kind + '">' +
           '<div class="li-title">' + escapeHtml(it.title || "(无标题)") + "</div>" +
           '<div class="li-body">' + escapeHtml(String(it.content).slice(0, 160)) + "</div>" +
+          '<span class="li-kind">' + escapeHtml(d.name) + "</span>" +
           '<div class="li-ts">' + escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + "</div>" +
         "</div>" +
         '<button class="li-del" type="button" data-lib-del="' + escapeHtml(String(it.id)) + '" title="删除">✕</button>' +
@@ -6233,6 +6491,8 @@ if ($("#nfRun")) $("#nfRun").addEventListener("click", memRun);
 if ($("#nfAssemble")) $("#nfAssemble").addEventListener("click", memAssemble);
 if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
 if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));
+if ($("#calPrev")) $("#calPrev").addEventListener("click", () => memCalMove(-1));
+if ($("#calNext")) $("#calNext").addEventListener("click", () => memCalMove(1));
 if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
 if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay);
 if ($("#nfDays")) $("#nfDays").addEventListener("click", (e) => {

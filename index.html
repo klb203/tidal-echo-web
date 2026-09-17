@@ -791,6 +791,116 @@
   .act-k{ color: var(--text-faint); user-select: none; }
   .act-v{ color: var(--think-body); }
 
+  /* ── 消息总结折叠卡 ──
+     时间线上的一条「缝合线」：更早的一批消息被归档进记忆后，原地留这一块。
+     默认**收起**（只有一行），点开才是那段摘要 + 重铸时记下的「还没聊完」。
+     跟 thinking / act 同一族配色，避免在聊天里抢视线。 */
+  .row.summary{
+    justify-content: center;
+    padding-left: clamp(12px, 3vw, 28px);
+    padding-right: clamp(12px, 3vw, 28px);
+    margin-top: clamp(10px, 1.8vw, 18px);
+    margin-bottom: clamp(10px, 1.8vw, 18px);
+  }
+  .sum-block{
+    width: 100%;
+    max-width: min(92vw, 520px);
+    margin: 0 auto;
+    min-width: 0;
+    border-radius: 13px;
+    border: 1px solid var(--hairline);
+    background: rgba(127,142,157,0.055);
+    overflow: hidden;
+    animation: pop .26s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .sum-toggle{
+    appearance: none; -webkit-appearance: none;
+    display: flex; align-items: baseline; gap: 7px;
+    width: 100%; margin: 0; border: 0; background: transparent;
+    padding: clamp(9px, 1.6vw, 12px) clamp(11px, 2vw, 14px);
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
+    min-width: 0;
+  }
+  .sum-toggle:focus-visible{ outline: none; }
+  .sum-toggle:active{ transform: translateY(1px); }
+  .sum-ico{
+    flex: none;
+    color: var(--think-flourish);
+    font-size: 1.06em; line-height: 1;
+    transform: translateY(.06em);
+  }
+  .sum-title{
+    flex: 1 1 auto; min-width: 0;
+    color: var(--think-label);
+    font-family: var(--font-cn);
+    font-size: clamp(12px, 1.32vw, 13.5px);
+    line-height: 1.46; letter-spacing: .02em;
+    white-space: normal; overflow-wrap: anywhere;   /* 窄屏也换行，不撑破卡片 */
+  }
+  .sum-title b{ font-weight: 600; color: var(--text-soft); }
+  .sum-sub{
+    flex: none;
+    color: var(--text-faint);
+    font-size: clamp(10.5px, 1.1vw, 11.5px);
+    line-height: 1.46;
+    white-space: nowrap;
+  }
+  .sum-state{
+    flex: none;
+    color: var(--think-flourish);
+    font-size: 1.08em; line-height: 1;
+    transition: color var(--motion-fast) var(--ease-soft);
+  }
+  .sum-state::before{ content: "✧"; }
+  .sum-block.open .sum-state::before{ content: "✦"; }
+  .sum-toggle:hover .sum-state{ color: var(--accent); }
+  .sum-toggle:hover .sum-title{ color: var(--think-body); }
+  .sum-detail[hidden]{ display: none !important; }
+  .sum-detail{
+    padding: 0 clamp(11px, 2vw, 14px) clamp(11px, 2vw, 14px);
+    border-top: 1px dashed var(--field-line);
+    padding-top: clamp(9px, 1.6vw, 12px);
+    animation: pop .2s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .sum-text{
+    color: var(--think-body);
+    font-family: var(--font-cn);
+    font-size: clamp(12.5px, 1.4vw, 14px);
+    line-height: 1.62; letter-spacing: .01em;
+    white-space: normal; overflow-wrap: anywhere;
+    max-height: min(38vh, 300px);          /* 摘要长时分页滚动，别把时间线撑爆 */
+    overflow: auto;
+  }
+  .sum-text.sum-empty{ color: var(--text-faint); font-style: italic; }
+  .sum-text code{
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .9em; background: rgba(120,130,145,0.12);
+    padding: 1px 5px; border-radius: 5px;
+  }
+  .sum-threads{ margin-top: 10px; }
+  .sum-threads-k{
+    display: block;
+    color: var(--text-faint);
+    font-size: clamp(10.5px, 1.1vw, 11.5px);
+    letter-spacing: .06em;
+    margin-bottom: 4px;
+  }
+  .sum-threads ul{ margin: 0; padding-left: 16px; }
+  .sum-threads li{
+    color: var(--think-body);
+    font-family: var(--font-cn);
+    font-size: clamp(12px, 1.32vw, 13.5px);
+    line-height: 1.56;
+    overflow-wrap: anywhere;
+  }
+  .sum-note{
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px dashed var(--field-line);
+    color: var(--text-faint);
+    font-size: clamp(10.5px, 1.1vw, 11.5px);
+    line-height: 1.5;
+  }
+
 
   /* ── Composer ── */
   .composer{
@@ -3205,6 +3315,52 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="forge">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><polyline points="20.6 3.6 20.6 7.6 16.6 7.6"/><path d="M12 8.2v4.2l3 1.8"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">会话与重铸 · Forge</span><span class="set-card-sub" id="cardSubForge"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip">上下文迟早要清，但不该由你操心。开启后这套东西在后台自动跑：
+            <b>① 推送</b>——老内容先摘要落进记忆（游标落后够条数才动手，不是定时器）；
+            <b>② 重铸</b>——摘要安全落库之后，才把老消息从活上下文里剪掉，并在聊天里留一张<b>可折叠</b>的总结卡；
+            <b>③ 线头</b>——顺手记下「还差一句话没说完」，下次接得上；
+            <b>④ 空闲检查点</b>——以上都在你<b>停止打字之后</b>才做，绝不在你等回复时动手。
+            <br><b>会话本身不动</b>：不用开新会话，也不用你手动清理。</div>
+
+          <label class="fld switch-row" style="margin-top:12px"><span>自动重铸
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就回到「上下文满了要自己开新会话」的老样子。</span></span>
+            <input type="checkbox" id="fgEnable">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>记「没聊完的线头」
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">空闲下来时让模型写几条「还差一句话没说完」，重铸后随记忆一起注入。没有真线头时它会给 PASS，不会硬造。</span></span>
+            <input type="checkbox" id="fgThreads">
+          </label>
+
+          <div class="fld-pair" style="margin-top:12px">
+            <label class="fld"><span>滞后多少条才推送</span>
+              <input id="fgLag" type="number" min="4" max="400" step="1" placeholder="60"></label>
+            <label class="fld"><span>空闲多少秒算「停下来了」</span>
+              <input id="fgIdle" type="number" min="0" max="3600" step="10" placeholder="180"></label>
+          </div>
+
+          <div class="editor-actions om-acts">
+            <button id="fgSave" type="button" class="primary">保存</button>
+            <button id="fgTick" type="button">立即重铸一次</button>
+            <button id="fgThreadsNow" type="button">写一次线头</button>
+            <button id="fgState" type="button">看状态</button>
+          </div>
+          <div class="om-status" id="fgStatus"></div>
+          <pre class="om-res hidden" id="fgResult"></pre>
+          <div class="settings-tip" style="margin-top:10px">
+            参考「小克 Cat」的会话层：<b>内容驱动</b>的推送时机、<b>先落库再剪</b>的顺序、
+            <b>宁可 PASS 也不硬造</b>的线头、以及只在空闲空档做重活的检查点。
+            记忆层那边对应的是三路融合检索（BM25 / 语义 / 关系图谱 → RRF）与「用进废退」的权重。
+          </div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="ai">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
@@ -4092,6 +4248,7 @@ function openSettings(){
   syncImageFields();
   if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
   if (!omLoadedOnce){ omLoadedOnce = true; omLoad(false); }              // OB 配置读一次就够
+  if (!fgLoadedOnce){ fgLoadedOnce = true; fgLoad(false); }              // Forge 配置读一次就够
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -4706,6 +4863,116 @@ if ($("#omBreath")) $("#omBreath").addEventListener("click", () => omCall("breat
   el.addEventListener("change", () => { el.dataset.touched = "1"; });
 });
 if ($("#omPulse")) $("#omPulse").addEventListener("click", () => omCall("pulse", {}, "读系统状态"));
+
+/* ── 会话与重铸 · Forge（会话层设置）────────────────────────────────────────
+   对应后端 /app/forge/*。配置存后端（memories.metadata.kind = "forge_config"），
+   所以换设备打开页面也是同一套旋钮。 */
+let fgData = {};
+let fgLoadedOnce = false;
+function fgStatus(msg, kind){
+  const el = $("#fgStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function fgShow(text){
+  const el = $("#fgResult"); if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("hidden", !text);
+}
+function fgRender(){
+  const f = (fgData.status || {}).forge || {};
+  const c = f.config || {};
+  const el = $("#cardSubForge");
+  if (el){
+    const st = f.state || {};
+    el.textContent = f.enable === false
+      ? "已关闭 · 上下文满了要自己开新会话"
+      : ("已开启 · 已重铸 " + (st.forge_count || 0) + " 次 · 当前滞后 " + (f.lag || 0) + " 条");
+  }
+  const on = (id, v) => { const e = $("#" + id); if (e && !e.dataset.touched) e.checked = !!v; };
+  on("fgEnable", c.enable !== false);
+  on("fgThreads", c.threads !== false);
+  const l = $("#fgLag");
+  if (l && !l.dataset.touched) l.value = (c.lag != null ? c.lag : 60);
+  const i = $("#fgIdle");
+  if (i && !i.dataset.touched) i.value = (c.idle != null ? c.idle : 180);
+}
+async function fgLoad(verbose){
+  try{
+    const d = await memApi("/app/forge/status");
+    fgData.status = d || {};
+    fgRender();
+    if (verbose) fgStateText();
+  }catch(err){
+    fgStatus("读取失败：" + ((err && err.message) || err), "err");
+  }
+}
+function fgStateText(){
+  const f = (fgData.status || {}).forge || {};
+  const st = f.state || {};
+  const lines = [
+    "自动重铸：" + (f.enable === false ? "关闭" : "开启") + "   ·   线头：" + (f.threads_on === false ? "关" : "开"),
+    "推送门槛：" + f.lag_trigger + " 条正文滞后   ·   空闲判定：" + Math.round(f.idle_seconds) + "s   ·   检查点周期：" + Math.round(f.check_every) + "s",
+    "本轮滞后：" + (f.lag || 0) + " 条   ·   有人在等回复：" + (f.busy ? "是（不动手）" : "否") + "   ·   空闲了：" + Math.round(f.idle_for == null ? -1 : f.idle_for) + "s",
+    "空闲守护线程：" + (f.watcher ? "在跑" : "未启动（下一条消息后自启）"),
+    "",
+    "已重铸次数：" + (st.forge_count || 0) + "   ·   游标：" + (st.cursor || 0) + "   ·   上次重铸：" + (st.last_forge_at || "—"),
+    "线头（" + ((st.threads || []).length) + " 条，待注入：" + (st.threads_pending ? "是" : "否") + "）：",
+  ].concat((st.threads || []).map((t) => "  · " + t));
+  lines.push("");
+  lines.push(f.hint || "");
+  fgShow(lines.join("\n"));
+}
+async function fgSave(){
+  fgStatus("保存中…");
+  try{
+    const body = {
+      enable: !!($("#fgEnable") || {}).checked,
+      threads: !!($("#fgThreads") || {}).checked,
+      lag: Number(($("#fgLag") || {}).value || 60),
+      idle: Number(($("#fgIdle") || {}).value || 180)
+    };
+    const d = await memApi("/app/forge/config", { method: "POST", body: JSON.stringify(body) });
+    fgData.status = d || {};
+    ["fgEnable","fgThreads","fgLag","fgIdle"].forEach((id) => { const e = $("#" + id); if (e) delete e.dataset.touched; });
+    fgRender();
+    fgStatus(d.ok ? "已保存 ✅ 下一轮对话就按新旋钮跑" : ("保存失败：" + (d.error || "未知错误")), d.ok ? "ok" : "err");
+  }catch(err){ fgStatus("保存失败：" + ((err && err.message) || err), "err"); }
+}
+async function fgTickNow(){
+  fgStatus("正在重铸（会调一次小模型做摘要，几秒到几十秒）…");
+  try{
+    const d = await memApi("/app/forge/tick", { method: "POST", body: JSON.stringify({ force: true, threads: true }) });
+    const r = (d || {}).result || {};
+    fgData.status = d || {};
+    fgRender();
+    fgStatus(r.pushed
+      ? ("重铸完成 ✅ 折叠了 " + (r.covered || 0) + " 条 · 卡片 #" + (r.message_id || "?") +
+         ((r.threads || []).length ? (" · 线头 " + r.threads.length + " 条") : " · 没有新线头"))
+      : ("这次没动手：" + (r.skipped || r.why || "条件不满足")), r.pushed ? "ok" : "");
+    fgStateText();
+  }catch(err){ fgStatus("重铸失败：" + ((err && err.message) || err), "err"); }
+}
+async function fgThreadsNow(){
+  fgStatus("正在写线头…");
+  try{
+    const d = await memApi("/app/forge/threads", { method: "POST", body: JSON.stringify({}) });
+    fgData.status = d || {};
+    const th = (d || {}).threads || [];
+    fgStatus(th.length ? ("线头 " + th.length + " 条 ✅\n" + th.map((t) => "· " + t).join("\n"))
+                       : ("这次没有线头（" + ((d || {}).why || "PASS") + "）—— 没有就不硬造"), "ok");
+    (function(){ const e = $("#fgResult"); if (e) e.classList.add("hidden"); })();
+    fgRender();
+  }catch(err){ fgStatus("写线头失败：" + ((err && err.message) || err), "err"); }
+}
+if ($("#fgSave")) $("#fgSave").addEventListener("click", fgSave);
+if ($("#fgTick")) $("#fgTick").addEventListener("click", fgTickNow);
+if ($("#fgThreadsNow")) $("#fgThreadsNow").addEventListener("click", fgThreadsNow);
+if ($("#fgState")) $("#fgState").addEventListener("click", () => { fgStateText(); fgLoad(false); });
+["fgEnable","fgThreads","fgLag","fgIdle"].forEach((id) => {
+  const el = $("#" + id); if (!el) return;
+  el.addEventListener("change", () => { el.dataset.touched = "1"; });
+});
 
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
 function cloudSelfTest(){
@@ -6438,7 +6705,7 @@ async function appChatStream(text, streamId, conn, onMeta){
       if (type === "meta"){
         out.sessionId = ev.session_id || "";
         out.model = ev.model || out.model;
-        if (ev.compressed) showToast("上下文超阈值，已自动压缩早期记忆");
+        if (ev.compressed) showToast("上下文超阈值，早期消息会在后台折叠进记忆");
         if (onMeta) onMeta(ev);
       }else if (type === "text"){
         acc += streamEventText(ev);
@@ -8398,6 +8665,7 @@ const VIRTUAL_OVERSCAN_UP = 2800;    // 上翻先把更远的历史行挂进 DOM
 const DEFAULT_ROW_HEIGHT = 76;
 const DEFAULT_THINK_HEIGHT = 46;
 const DEFAULT_ACT_HEIGHT = 34;     // 折叠态的动作 chip≈一行;展开后由 measureVisibleRows 实测纠偏
+const DEFAULT_SUM_HEIGHT = 44;     // 折叠态的总结卡≈一行(窄屏标题换行时两行);展开后实测纠偏
 const DEFAULT_DAY_HEIGHT = 30;
 const DEFAULT_NEW_HEIGHT = 46;
 // ── DOM 回收(虚拟窗口)参数 ──
@@ -8439,6 +8707,7 @@ let winAtTop = true, winAtBottom = true; // 上次渲染窗口是否贴顶/贴�
 let rowIndexByKey = new Map();           // row.key → index,rebuild 时重建,O(1) 反查
 const openThinkKeys = new Set();
 const openActKeys = new Set();     // 哪些动作 chip 当前展开(与 openThinkKeys 同套机制)
+const openSumKeys = new Set();     // 哪些「消息总结折叠卡」当前展开(同上;默认收起)
 const topSpacer = document.createElement("div");
 const bottomSpacer = document.createElement("div");
 topSpacer.className = "v-spacer";
@@ -8739,6 +9008,7 @@ function resetChatState(){
   hasMoreOlder = true;
   openThinkKeys.clear();
   openActKeys.clear();
+  openSumKeys.clear();
   streamDrafts.clear();
   streamDeltaBuffers.clear();
   if (streamFlushTimer){ clearTimeout(streamFlushTimer); streamFlushTimer = null; }
@@ -8756,6 +9026,7 @@ function setMessage(raw, { render = true, cache = true } = {}){
     const m = normalizeMessage(raw);
     chatMessages.push(m);
     messageByKey.set(key, m);
+    if (m.kind === "summary") foldCoveredMessages(m);   // 重铸卡一到，把它盖住的那批本地消息也收走
   }
   invalidateRows();
   const idNum = msgNum(raw.id);
@@ -8764,6 +9035,17 @@ function setMessage(raw, { render = true, cache = true } = {}){
   if (cache) scheduleCacheSave();
   scheduleTerminalRender();
   return messageByKey.get(key);
+}
+/* 收到总结卡时，把它覆盖的那批消息从**本地时间线**也收走 —— 不然会出现
+   「卡上说折叠了 62 条，但那 62 条还明晃晃挂在上面」的自相矛盾。
+   服务端那批早已 visible=false，所以刷新之后看到的是同一副样子。 */
+function foldCoveredMessages(card){
+  const meta = card.meta || {};
+  const lo = msgNum(meta.from_id), hi = msgNum(meta.to_id);
+  if (!(lo > 0 && hi >= lo)) return 0;
+  const gone = chatMessages.filter((x) => { const k = msgNum(x.id); return k >= lo && k <= hi; });
+  gone.forEach((x) => removeMessage(x._key, { render:false, cache:false }));
+  return gone.length;
 }
 function removeMessage(key, { render = true, cache = true } = {}){
   const k = msgKey(key);
@@ -8913,6 +9195,14 @@ function buildVirtualRows(){
       prevBubble = null;                            // 像 thinking 一样打断气泡成组
       return;
     }
+    /* 总结折叠卡（Forge 重铸留下的路标）：像 thinking/act 一样独立成行、打断气泡成组。
+       折叠态只有一行「更早的 N 条已折叠」，展开才看得到摘要与线头 —— 这就是
+       「消息总结之后可以进行折叠」那一块。 */
+    if (m.kind === "summary"){
+      rows.push({ type:"summary", key:`m:${m._key}`, message:m });
+      prevBubble = null;
+      return;
+    }
     const t = tsMs(m);
     const grouped = !!(prevBubble && prevBubble.from === m.from && Number.isFinite(t) && Number.isFinite(prevBubble.ts) && (t - prevBubble.ts < GROUP_GAP));
     const row = { type:"message", key:`m:${m._key}`, message:m, grouped, tail:true };
@@ -8953,12 +9243,21 @@ function estImageHeight(a){
   const w = Math.min(window.innerWidth * 0.64, 260);
   return Math.min(340, w / ratio);
 }
+function estSummaryHeight(row){
+  const m = row.message || {};
+  const meta = m.meta || {};
+  if (!openSumKeys.has(m._key)) return DEFAULT_SUM_HEIGHT;      // 折叠态：只有一行标题
+  const body = meta.summary || m.text || "";
+  const th = Array.isArray(meta.threads) ? meta.threads.length : 0;
+  return Math.min(DEFAULT_SUM_HEIGHT + estTextHeight(body) + th * 22 + 46, 520);
+}
 function estimatedHeight(row){
   if (rowHeights.has(row.key)) return rowHeights.get(row.key);
   if (row.type === "day") return DEFAULT_DAY_HEIGHT;
   if (row.type === "new") return DEFAULT_NEW_HEIGHT;
   if (row.type === "thinking") return DEFAULT_THINK_HEIGHT;
   if (row.type === "act") return DEFAULT_ACT_HEIGHT;
+  if (row.type === "summary") return estSummaryHeight(row);
   const m = row.message;
   const atts = (m && m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
   let h = (row.grouped ? 8 : 22) + 30;                        // 行间距 + 气泡纵向 padding + meta 行
@@ -9149,6 +9448,78 @@ function makeAct(rowData){
   row.appendChild(block);
   return row;
 }
+
+/* ── 消息总结折叠卡 ──
+   后端 Forge 把「更早的一批消息」归档进记忆后，会在时间线上留下这一条（kind:"summary"）。
+   它**默认收起**，收起时只有一行「更早的 62 条已折叠 · 重铸 #3」——聊天界面因此干净，
+   又随时能展开看到那段被折叠的摘要，以及重铸时记下的「还没聊完」。
+   和 thinking / act 用同一套展开状态管理（openSumKeys），虚拟列表换行重建也不会丢。 */
+function sumMeta(m){
+  const meta = (m && m.meta) || {};
+  const covered = Number(meta.covered) || 0;
+  const n = Number(meta.forge) || 0;
+  const at = meta.at || m.ts || "";
+  const threads = Array.isArray(meta.threads) ? meta.threads.filter((x) => String(x || "").trim()) : [];
+  const text = String(meta.summary || m.text || "").replace(/^〔自动重铸 #[^〕]*〕[^\n]*\n?/, "").trim();
+  return { covered, n, at, threads, text };
+}
+/* 折叠卡副标题上的时间：今天的只给时刻，其他给「月-日 时:分」。 */
+function fmtShortAt(ts){
+  const t = new Date(ts).getTime();
+  if (!Number.isFinite(t)) return "";
+  const today = new Date().toLocaleDateString("en-CA", { timeZone:TZ });
+  const d = new Date(t).toLocaleDateString("en-CA", { timeZone:TZ });
+  if (d === today) return fmtTime(t);
+  return new Date(t).toLocaleDateString("en-CA", { timeZone:TZ, month:"2-digit", day:"2-digit" })
+    + " " + fmtTime(t);
+}
+function makeSummary(rowData){
+  const m = rowData.message;
+  const { covered, n, at, threads, text } = sumMeta(m);
+
+  const row = document.createElement("div");
+  row.className = "row summary";
+  row.dataset.id = m.id; row.dataset.from = "ai"; row.dataset.messageKey = m._key;
+
+  const block = document.createElement("div");
+  block.className = "sum-block";
+
+  const head =
+      `<button class="sum-toggle" type="button" aria-expanded="false">`
+    +   `<span class="sum-ico" aria-hidden="true">⟲</span>`
+    +   `<span class="sum-title">更早的 <b>${covered || "若干"}</b> 条消息已折叠</span>`
+    +   `<span class="sum-sub">${n ? ("重铸 #" + n) : "已归档"}${at ? " · " + fmtShortAt(at) : ""}</span>`
+    +   `<span class="sum-state" aria-hidden="true"></span>`
+    + `</button>`;
+  const th = threads.length
+    ? `<div class="sum-threads"><span class="sum-threads-k">还没聊完</span><ul>`
+      + threads.map((t) => `<li>${escapeHtml(String(t))}</li>`).join("") + `</ul></div>`
+    : "";
+  const body = `<div class="sum-detail" hidden>`
+    + (text ? `<div class="sum-text">${renderText(text)}</div>` : `<div class="sum-text sum-empty">（这段没有留下可读的摘要）</div>`)
+    + th
+    + `<div class="sum-note">这段内容已经收进记忆了，之后聊到相关的事我仍然想得起来。</div>`
+    + `</div>`;
+  block.innerHTML = head + body;
+
+  const toggle = block.querySelector(".sum-toggle");
+  const detail = block.querySelector(".sum-detail");
+  const setOpen = (open, { persist = true } = {}) => {
+    block.classList.toggle("open", open);
+    detail.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "收起这段总结" : "展开这段总结");
+    if (persist){
+      if (open) openSumKeys.add(m._key); else openSumKeys.delete(m._key);
+      scheduleRender({ preserveAnchor: true });
+    }
+  };
+  toggle.addEventListener("click", () => setOpen(detail.hidden));
+  if (openSumKeys.has(m._key)) setOpen(true, { persist:false });
+
+  row.appendChild(block);
+  return row;
+}
 function makeMessage(rowData){
   const m = rowData.message;
   const row = document.createElement("div");
@@ -9206,6 +9577,7 @@ function createVirtualNode(row){
   else if (row.type === "new") el = makeNewDivider(row);
   else if (row.type === "thinking") el = makeThinking(row);
   else if (row.type === "act") el = makeAct(row);
+  else if (row.type === "summary") el = makeSummary(row);
   else el = makeMessage(row);
   el.dataset.vkey = row.key;
   return el;
@@ -9240,7 +9612,7 @@ function virtualRowSignature(row){
     const _atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments : [];
     const _attSig = _atts.map((a) => `${a.kind || ""}:${a.url || a.localUrl || ""}:${a.uploading ? 1 : 0}:${a.failed ? 1 : 0}`).join(",");
     const _rxSig = (m.meta && m.meta.reactions) ? JSON.stringify(m.meta.reactions) : "";
-    return [row.key, row.type, m.status || "", m.id, m.ts, m.text || "", _attSig, row.grouped ? 1 : 0, row.tail ? 1 : 0, openThinkKeys.has(m._key) ? 1 : 0, openActKeys.has(m._key) ? 1 : 0, _rxSig].join("~");
+    return [row.key, row.type, m.status || "", m.id, m.ts, m.text || "", _attSig, row.grouped ? 1 : 0, row.tail ? 1 : 0, openThinkKeys.has(m._key) ? 1 : 0, openActKeys.has(m._key) ? 1 : 0, openSumKeys.has(m._key) ? 1 : 0, _rxSig].join("~");
   }
   return row.key;
 }

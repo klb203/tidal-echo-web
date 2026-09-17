@@ -2422,7 +2422,9 @@
   .conn-status.err{ color: #e5484d; }
   .settings-tip{ font-size: 11.5px; color: var(--text-faint); line-height: 1.6; margin-top: 2px; }
   /* ── Haven Ombre 卡 ── */
-  .om-acts{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+  /* 复用 .editor-actions 的按钮外观（圆角/主按钮反白），这里只加「能换行」——
+     4 个按钮在 320 宽下必须折行，而 .editor-actions 本身是 nowrap 的单行 flex。 */
+  .editor-actions.om-acts{ flex-wrap: wrap; margin-top: 13px; }
   .om-status{ font-size: 11.5px; color: var(--text-faint); line-height: 1.75; margin-top: 10px; white-space: pre-wrap; }
   .om-chips{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .om-chip{
@@ -3165,7 +3167,7 @@
             <input id="omToken" type="text" placeholder="留空 = 用服务端注入的那个" autocomplete="off" spellcheck="false">
           </label>
 
-          <div class="om-acts">
+          <div class="editor-actions om-acts">
             <button id="omTest" type="button" class="primary">测试连接</button>
             <button id="omBreath" type="button">看记忆目录</button>
             <button id="omPulse" type="button">系统状态</button>

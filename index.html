@@ -2149,6 +2149,155 @@
     border-color: var(--mg-edge); background: var(--mg-surface-2); border-radius: 14px;
   }
   #memoryPanel .galaxy-card{ border-radius: 20px; }
+
+  /* ══ 记忆页 · 胶囊按钮（参考稿那一排「批量总结 / 导入·清洗 / 备份」）════════
+     先把面板内所有按钮默认成胶囊，再把「不该长成胶囊的」逐个豁免（顺序要紧）。 */
+  #memoryPanel button,
+  #memoryPanel select.pill-select{
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 15px; border-radius: 999px;
+    border: 1px solid var(--mg-edge);
+    background: var(--mg-surface);
+    color: var(--text); font-family: inherit; font-size: 13px; line-height: 1.15;
+    box-shadow: 0 2px 8px rgba(70,92,108,.05);
+    cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    transition: background .18s ease, box-shadow .18s ease, transform .12s ease, color .18s ease;
+  }
+  #memoryPanel select.pill-select{ justify-content: flex-start; padding-right: 10px; }
+  #memoryPanel button:hover{ background: #fff; box-shadow: 0 4px 14px rgba(70,92,108,.11); }
+  #memoryPanel button:active{ transform: scale(.97); }
+  #memoryPanel button.primary{
+    background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  #memoryPanel button.primary:hover{ filter: brightness(1.06); background: var(--accent); }
+  #memoryPanel button[disabled]{ opacity: .55; pointer-events: none; }
+  #memoryPanel button svg{ width: 15px; height: 15px; flex: 0 0 auto; }
+  /* 豁免：圆形图标按钮 / 卡头 / 日期 chip / 银河角标 / 条目小图标 */
+  #memoryPanel .settings-back, #memoryPanel .settings-close{
+    width: 38px; height: 38px; padding: 0; border-radius: 50%;
+    border: none; background: var(--mg-surface); box-shadow: none;
+  }
+  #memoryPanel .cal-nav button{
+    width: 30px; height: 30px; padding: 0; border-radius: 50%;
+    border: none; background: transparent; box-shadow: none; font-size: 17px;
+  }
+  #memoryPanel .set-card-head{
+    padding: 15px 16px; border-radius: 20px 20px 0 0;
+    border: none; background: transparent; box-shadow: none; transform: none !important;
+  }
+  #memoryPanel .gx-open{
+    padding: 6px 11px; font-size: 11.5px;
+    background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2);
+    color: #f3eeff; box-shadow: none; backdrop-filter: blur(6px);
+  }
+  #memoryPanel .gx-open:hover{ background: rgba(255,255,255,.2); }
+  #memoryPanel .nf-chip{
+    padding: 6px 11px; font-size: 12px; border-radius: 999px; box-shadow: none;
+    background: var(--mg-surface); border-color: var(--mg-edge);
+  }
+  #memoryPanel .nf-chip.on{ background: var(--accent); border-color: transparent; color: var(--accent-fg); }
+
+  /* ══ 记忆页 · 档案室（年份文件夹 → 月份 → TIME LOGS 条目）════════════════
+     结构照参考稿：顶部总字数/总条目 + 面包屑，下面是三级下钻，条目卡
+     左上角分类 chip、右上角小图标（编辑/删除）。 */
+  .mem-actions{ display: flex; flex-wrap: wrap; gap: 8px; }
+  .mem-actions .pill-select{ flex: 0 0 auto; max-width: 138px; }
+  .arc-stats{ display: flex; gap: 22px; margin-top: 14px; }
+  .arc-stats > div{ min-width: 0; }
+  .arc-stats span{ display: block; font-size: 11px; color: var(--mg-dim); letter-spacing: .06em; }
+  .arc-stats b{
+    display: block; font-family: var(--font-en); font-weight: 500;
+    font-size: 26px; line-height: 1.16; color: var(--text);
+  }
+  .arc-crumb{
+    flex: 0 0 auto; font-size: 11.5px; padding: 6px 11px; border-radius: 999px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text-soft);
+    max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .arc-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  /* ⚠️ 下面这些必须带 #memoryPanel：上面的胶囊规则是 `#memoryPanel button`（0,1,1 里 id 占优），
+     只写 `.arc-card` 会被它盖掉 —— 卡片会被排成一行、圆角被改成 999px（实测踩过）。 */
+  #memoryPanel .arc-card{
+    position: relative; display: block; text-align: left;
+    padding: 15px 14px 14px; border-radius: 18px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+    box-shadow: inset 0 1px 0 var(--mg-hi);
+    cursor: pointer; transform: none !important;
+    /* ⚠️ 还要显式复位 nowrap：grid 子项在 nowrap 下会撑破列宽 → 整页横向滚动 */
+    white-space: normal; min-width: 0; overflow: hidden;
+  }
+  #memoryPanel .arc-card:hover{ background: var(--mg-surface); }
+  #memoryPanel .arc-card .arc-ico{ margin-bottom: 2px; }
+  .arc-ico{
+    width: 40px; height: 40px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(206,160,84,.16); color: #b98a3f;
+  }
+  .arc-ico svg{ width: 21px; height: 21px; }
+  .arc-badge{
+    position: absolute; right: 12px; top: 12px;
+    font-size: 11px; padding: 4px 9px; border-radius: 999px;
+    background: var(--mg-surface); border: 1px solid var(--mg-edge); color: var(--text-soft);
+  }
+  .arc-big{
+    font-family: var(--font-en); font-weight: 500; font-size: 30px; line-height: 1.05;
+    color: var(--text); margin-top: 16px;
+  }
+  .arc-big small{ font-family: var(--font-cn); font-size: 14px; margin-left: 4px; }
+  .arc-rule{ width: 22px; height: 1px; background: var(--mg-edge); margin: 11px 0 0; }
+  .arc-sub{ font-size: 11.5px; color: var(--mg-dim); margin-top: 5px; }
+  .arc-eye{
+    position: absolute; right: 12px; top: 12px; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    background: var(--mg-surface); border: 1px solid var(--mg-edge); color: var(--text-soft);
+  }
+  .arc-eye svg{ width: 16px; height: 16px; }
+  .arc-eye-in{ position: static; margin-left: 8px; }
+  .arc-back{ display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .arc-back .arc-crumb{ margin-left: auto; }
+  .arc-back .arc-title2{ font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .arc-tl{ margin-top: 4px; }
+  .arc-day{ position: relative; padding-left: 17px; margin-top: 15px; }
+  .arc-day::before{
+    content: ""; position: absolute; left: 3px; top: 7px; bottom: -15px;
+    width: 1px; background: var(--mg-edge);
+  }
+  .arc-day:last-child::before{ display: none; }
+  .arc-day::after{
+    content: ""; position: absolute; left: 0; top: 7px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--mg-dim);
+  }
+  .arc-day-head{ display: flex; align-items: center; gap: 9px; min-height: 20px; }
+  .arc-day-date{ font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: .02em; }
+  .arc-day-n{ font-size: 11.5px; color: var(--mg-dim); }
+  .arc-entry{
+    position: relative; margin-top: 10px; padding: 13px 14px;
+    border-radius: 16px; background: var(--mg-surface);
+    border: 1px solid var(--mg-edge);
+    box-shadow: 0 2px 10px rgba(70,92,108,.05), inset 0 1px 0 var(--mg-hi);
+  }
+  .arc-chip{
+    display: inline-block; font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text-soft);
+  }
+  .arc-acts{ position: absolute; right: 10px; top: 10px; display: flex; gap: 1px; }
+  #memoryPanel .arc-act{
+    width: 28px; height: 28px; padding: 0; border: none; border-radius: 9px;
+    background: transparent; box-shadow: none; color: var(--mg-dim);
+  }
+  #memoryPanel .arc-act:hover{ background: var(--row-press); color: var(--text); box-shadow: none; }
+  #memoryPanel .arc-eye{ padding: 0; }
+  .arc-act svg{ width: 15px; height: 15px; }
+  .arc-title{ font-size: 13.5px; font-weight: 600; color: var(--text); margin-top: 9px; cursor: pointer; }
+  .arc-text{
+    font-size: 13px; line-height: 1.7; color: var(--text); margin-top: 8px;
+    white-space: pre-wrap; word-break: break-word; cursor: pointer;
+  }
+  .arc-text.clamp{ display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .arc-empty{ font-size: 12.5px; color: var(--mg-dim); padding: 18px 4px; text-align: center; line-height: 1.7; }
+  .arc-editbox{ margin-top: 10px; min-height: 96px; }
+  .arc-editacts{ display: flex; gap: 8px; margin-top: 9px; }
   .lib-edit{ display: flex; flex-direction: column; gap: 8px; }
   .lib-empty{ font-size: 12px; color: var(--text-faint); padding: 2px 2px 4px; }
   /* 两列并排的字段（尺寸 / 张数 这种短字段） */
@@ -2946,6 +3095,18 @@
         </button>
       </div>
 
+      <!-- 动作胶囊（脱水 / 重拼 / 月度 / 刷新） -->
+      <div class="mem-actions">
+        <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
+        <select id="nfTarget" class="pill-select" aria-label="脱水目标日">
+          <option value="">昨天（默认）</option>
+          <option value="today">今天（显式）</option>
+        </select>
+        <button id="nfAssemble" type="button">只重拼注入稿</button>
+        <button id="nfMonth" type="button">合并成月度</button>
+        <button id="nfRefresh" type="button">刷新</button>
+      </div>
+
       <!-- ① 抬头：一共多少条记忆 + 2×2 统计格 -->
       <div class="mem-hero">
         <div class="mem-hero-num" id="memTotal">—</div>
@@ -2995,7 +3156,23 @@
         </div>
       </section>
 
-      <!-- ④ 近景 · 七天 -->
+      <!-- ④ 档案室：年份文件夹 → 月份 → 本月记忆（TIME LOGS） -->
+      <section class="mg-card" id="arcCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">档案室</div>
+            <div class="mg-sub" id="arcLead">全部记忆按年 / 月归档</div>
+          </div>
+          <span class="arc-crumb" id="arcCrumb">档案</span>
+        </div>
+        <div class="arc-stats">
+          <div><span>总字数</span><b id="arcChars">0</b></div>
+          <div><span>总条目</span><b id="arcCount">0</b></div>
+        </div>
+        <div id="arcBody"></div>
+      </section>
+
+      <!-- ⑤ 近景 · 七天 -->
       <section class="set-card open" data-card="nearfield">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
@@ -3004,21 +3181,11 @@
         </button>
         <div class="set-card-body">
           <div class="nf-days" id="nfDays"></div>
-          <div class="nf-actions">
-            <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
-            <select id="nfTarget" class="model-select" style="max-width:132px">
-              <option value="">昨天（默认）</option>
-              <option value="today">今天（显式）</option>
-            </select>
-            <button id="nfAssemble" type="button">只重拼注入稿</button>
-            <button id="nfMonth" type="button">合并成月度</button>
-            <button id="nfRefresh" type="button">刷新</button>
-          </div>
           <label class="fld"><span>日更正文（可手改，改完点「保存并重拼」）</span>
             <textarea id="nfDay" class="nf-box" rows="6" placeholder="点上面某一天，或先「脱水 → 日更」生成昨天那篇"></textarea>
           </label>
           <div class="nf-actions">
-            <button id="nfSaveDay" type="button">保存并重拼</button>
+            <button id="nfSaveDay" type="button" class="primary">保存并重拼</button>
             <button id="nfDeleteDay" type="button">删除这天</button>
           </div>
           <div class="conn-sub" id="nfStatus" style="padding:0 2px;color:var(--text-faint);line-height:1.55"></div>
@@ -6072,7 +6239,7 @@ const LIB_DEFS = [
   { kind: "room",    name: "我的房间",   ico: "⌂", tip: "你自己的一方天地。" },
   { kind: "letter",  name: "留给西西的话", ico: "✉", tip: "想对 TA 说、但还没说出口的。" },
 ];
-let memData = { status: null, current: "", counts: {}, items: {}, labels: {} };
+let memData = { status: null, current: "", counts: {}, items: {}, labels: {}, stars: 0, starList: [], itemIndex: {} };
 let memSelectedDay = "";
 let memLibEditing = {};        // kind -> {id, title, content} 正在编辑的那条
 let memCal = { month: "", days: {}, today: "", truncated: false };
@@ -6082,6 +6249,11 @@ const MEM_ICO = {
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.3 2"/></svg>',
   layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 3.8 8 12 12.4 20.2 8z"/><path d="M3.8 12.6 12 17l8.2-4.4"/></svg>',
+  folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 7.4h5l1.5 2.1h9.9v8a1.5 1.5 0 0 1-1.5 1.5H5.3a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.8 7.4V6a1.5 1.5 0 0 1 1.5-1.5h3l1.5 2.1"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12S6.3 5.9 12 5.9 21.4 12 21.4 12 17.7 18.1 12 18.1 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1l.9-4 9.3-9.3a1.7 1.7 0 0 1 2.4 0l1.7 1.7a1.7 1.7 0 0 1 0 2.4l-9.3 9.3z"/><path d="M14.2 6.7l3 3"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5.6"/><path d="M11.4 5.8 5.2 12l6.2 6.2"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 7.2h14.4"/><path d="M9.4 7.2V5.4h5.2v1.8"/><path d="M6.6 7.2l.9 11.2h9l.9-11.2"/></svg>',
 };
 
 /* ── 抬头 + 2×2 统计格：数字全来自后端真实计数 ── */
@@ -6174,6 +6346,177 @@ function renderCalendar(){
   grid.innerHTML = html;
 }
 
+/* ── 档案室：年份文件夹 → 月份 → 本月记忆（TIME LOGS）────────────────────
+   数据直接来自银河星图（/app/galaxy.json 里每条记忆一颗星，带正文与分类），
+   所以归档不需要新接口；日更与月度也在这份数据里，天然一起归档。 */
+let arc = { level: 0, year: "", month: "", full: false, edit: null };
+
+function arcItems(){
+  return (memData.starList || []).map((s) => {
+    const key = String(s.id || "");
+    const date = String(s.created || "").slice(0, 10);
+    let kind = "lib", rawId = "";
+    if (key.indexOf("nf-") === 0) kind = "day";
+    else if (key.indexOf("mon-") === 0) kind = "month";
+    else rawId = key.replace(/^m/, "");
+    const src = rawId ? (memData.itemIndex || {})[rawId] : null;
+    return {
+      key: key, kind: kind, rawId: rawId, date: date,
+      name: (src && src.title) || (kind === "lib" ? s.name : ""),
+      libKind: src ? src.kind : "",
+      cat: kind === "day" ? "近景日更" : kind === "month" ? "月度记忆" : (s.domain || "记忆"),
+      content: String(s.content || ""),
+      canEdit: kind === "day" || !!(src && src.kind && rawId),
+    };
+  }).filter((x) => !!x.date);
+}
+function arcIndex(){
+  const by = {};
+  arcItems().forEach((it) => {
+    const y = it.date.slice(0, 4), m = it.date.slice(0, 7);
+    if (!by[y]) by[y] = { y: y, n: 0, months: {}, order: [] };
+    by[y].n++;
+    if (!by[y].months[m]){ by[y].months[m] = { m: m, n: 0, items: [] }; by[y].order.push(m); }
+    by[y].months[m].n++;
+    by[y].months[m].items.push(it);
+  });
+  return Object.keys(by).sort().reverse().map((y) => {
+    const o = by[y];
+    o.months = o.order.sort().reverse().map((k) => {
+      o.months[k].items.sort((a, b) => (a.date < b.date ? 1 : -1));
+      return o.months[k];
+    });
+    return o;
+  });
+}
+function arcSync(){
+  const items = arcItems();
+  const chars = items.reduce((n, x) => n + x.content.length, 0);
+  const c1 = $("#arcChars"), c2 = $("#arcCount");
+  if (c1) c1.textContent = chars.toLocaleString("en-US");
+  if (c2) c2.textContent = items.length;
+}
+function arcCrumb(path){
+  const el = $("#arcCrumb"); if (!el) return;
+  el.textContent = path || "档案";
+  el.title = path ? ("档案 / " + path) : "档案";
+  const lead = $("#arcLead");
+  if (lead) lead.textContent = path ? ("档案 / " + path) : "全部记忆按年 / 月归档";
+}
+function arcEntryHtml(it){
+  const chip = '<span class="arc-chip">#' + escapeHtml(it.cat) + "</span>";
+  if (arc.edit === it.key){
+    return '<div class="arc-entry">' + chip +
+      '<textarea class="nf-box arc-editbox" data-arc-box="' + escapeHtml(it.key) + '" rows="4">' +
+        escapeHtml(it.content) + "</textarea>" +
+      '<div class="arc-editacts">' +
+        '<button type="button" class="primary" data-arc-save="' + escapeHtml(it.key) + '">保存</button>' +
+        '<button type="button" data-arc-cancel="1">取消</button>' +
+      "</div></div>";
+  }
+  const acts = it.canEdit
+    ? '<span class="arc-acts"><button class="arc-act" type="button" data-arc-edit="' + escapeHtml(it.key) +
+      '" title="编辑">' + MEM_ICO.pen + "</button></span>"
+    : "";
+  const title = (it.kind === "lib" && it.name)
+    ? '<div class="arc-title" data-arc-open="' + escapeHtml(it.key) + '">' + escapeHtml(it.name) + "</div>" : "";
+  const cls = "arc-text" + (arc.full ? "" : " clamp");
+  return '<div class="arc-entry">' + chip + acts + title +
+    '<div class="' + cls + '" data-arc-open="' + escapeHtml(it.key) + '">' + escapeHtml(it.content) + "</div></div>";
+}
+function arcRender(){
+  const host = $("#arcBody"); if (!host) return;
+  arcSync();
+  const years = arcIndex();
+  if (!years.length){
+    host.innerHTML = '<div class="arc-empty">还没有归档的记忆。<br>在下面任意分区里加一条，或者跑一次「脱水 → 日更」，这里就会长出年份。</div>';
+    arcCrumb("");
+    return;
+  }
+  // ① 年份
+  if (arc.level === 0){
+    host.innerHTML = '<div class="arc-grid">' + years.map((y) => (
+      '<button class="arc-card" type="button" data-arc-year="' + y.y + '">' +
+        '<span class="arc-badge">' + y.n + " 条</span>" +
+        '<span class="arc-ico">' + MEM_ICO.folder + "</span>" +
+        '<div class="arc-big">' + y.y + "</div>" +
+        '<div class="arc-sub">年度档案 · ' + y.months.length + " 个月</div>" +
+      "</button>"
+    )).join("") + "</div>";
+    arcCrumb("");
+    return;
+  }
+  const y = years.filter((x) => x.y === arc.year)[0];
+  if (!y){ arc.level = 0; return arcRender(); }
+  // ② 月份
+  if (arc.level === 1){
+    host.innerHTML =
+      '<div class="arc-back"><button type="button" data-arc-up="1">' + MEM_ICO.back + "返回</button>" +
+      '<span class="arc-title2">选择月份</span></div>' +
+      '<div class="arc-grid">' + y.months.map((m) => (
+        '<button class="arc-card" type="button" data-arc-month="' + m.m + '">' +
+          '<span class="arc-eye" data-arc-eye="1" title="' + (arc.full ? "收起正文" : "展开整月正文") + '">' + MEM_ICO.eye + "</span>" +
+          '<div class="arc-big">' + Number(m.m.slice(5, 7)) + "<small>月</small></div>" +
+          '<div class="arc-rule"></div>' +
+          '<div class="arc-sub">' + m.n + " 条</div>" +
+        "</button>"
+      )).join("") + "</div>";
+    arcCrumb(y.y);
+    return;
+  }
+  // ③ 本月条目
+  const mo = y.months.filter((x) => x.m === arc.month)[0];
+  if (!mo){ arc.level = 1; return arcRender(); }
+  const days = {}, order = [];
+  mo.items.forEach((it) => {
+    if (!days[it.date]){ days[it.date] = []; order.push(it.date); }
+    days[it.date].push(it);
+  });
+  host.innerHTML =
+    '<div class="arc-back"><button type="button" data-arc-up="2">' + MEM_ICO.back + "返回</button>" +
+    '<span class="arc-title2">本月记忆</span>' +
+    '<span class="arc-crumb">' + escapeHtml(mo.n + " 条") + "</span>" +
+    '<button class="arc-eye arc-eye-in" type="button" data-arc-eye="1" title="' +
+      (arc.full ? "收起正文" : "展开整月正文") + '">' + MEM_ICO.eye + "</button></div>" +
+    '<div class="arc-tl">' + order.sort().reverse().map((d) => (
+      '<div class="arc-day"><div class="arc-day-head"><span class="arc-day-date">' + escapeHtml(d) + "</span>" +
+      '<span class="arc-day-n">' + days[d].length + " 条</span></div>" +
+      days[d].map(arcEntryHtml).join("") + "</div>"
+    )).join("") + "</div>";
+  arcCrumb(y.y + " / " + Number(arc.month.slice(5, 7)) + "月");
+}
+async function arcSave(key){
+  const box = document.querySelector('[data-arc-box="' + key + '"]');
+  const it = arcItems().filter((x) => x.key === key)[0];
+  if (!box || !it) return;
+  const content = box.value.trim();
+  if (!content){ showToast("正文不能为空"); return; }
+  try{
+    if (it.kind === "day"){
+      await memApi("/app/nearfield/day", { method: "POST", body: JSON.stringify({ date: it.date, content: content }) });
+      arc.edit = null;
+      showToast("已保存并重拼注入稿");
+      await memLoad();                      // 日更要重拼，整体刷一遍
+    } else {
+      await memApi("/app/memory/save", { method: "POST",
+        body: JSON.stringify({ kind: it.libKind, title: it.name, content: content, id: it.rawId }) });
+      arc.edit = null;
+      showToast("已保存");
+      const lib = await memApi("/app/memory/list?limit=200");
+      memData.counts = lib.counts || {};
+      memData.items = {};
+      memData.itemIndex = {};
+      (lib.items || []).forEach((x) => {
+        (memData.items[x.kind] = memData.items[x.kind] || []).push(x);
+        memData.itemIndex[String(x.id)] = x;
+      });
+      renderLibs();
+      await loadGalaxy();
+      arcRender();
+    }
+  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
+}
+
 function memStatus(msg, kind){
   const el = $("#nfStatus"); if (!el) return;
   el.textContent = msg || "";
@@ -6208,12 +6551,15 @@ async function memLoad(verbose){
     memData.counts = lib.counts || {};
     memData.labels = lib.labels || {};
     memData.items = {};
+    memData.itemIndex = {};
     (lib.items || []).forEach((it) => {
       (memData.items[it.kind] = memData.items[it.kind] || []).push(it);
+      memData.itemIndex[String(it.id)] = it;
     });
     renderNearfield();
     renderLibs();
     memRenderStats();
+    arcRender();
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
     memStatus("读取失败：" + ((err && err.message) || err), "err");
@@ -6236,8 +6582,10 @@ async function loadGalaxy(){
   $("#gxCount").textContent = stars.length;
   $("#gxSub").textContent = stars.length ? ("最近产出 " + (stars[stars.length - 1].created || "").slice(0, 10)) : "还没有星星";
   memData.stars = stars.length;
+  memData.starList = stars;
   if (stars.length) memData.firstDay = String(stars[0].created || "").slice(0, 10);
   memRenderStats();
+  arcRender();
   drawGalaxy(cv, stars);
 }
 function drawGalaxy(cv, stars){
@@ -6472,17 +6820,33 @@ function renderLibs(){
     if (sub) sub.textContent = items.length ? (items.length + " 条" + (items[0].title ? (" · " + items[0].title.slice(0, 18)) : "")) : "还没有内容";
     const list = $("#libList-" + d.kind);
     if (!list) return;
-    list.innerHTML = items.length ? items.map((it) => (
-      '<div class="lib-item">' +
-        '<div class="li-main" data-lib-item="' + escapeHtml(String(it.id)) + '" data-lib-kind="' + d.kind + '">' +
-          '<div class="li-title">' + escapeHtml(it.title || "(无标题)") + "</div>" +
-          '<div class="li-body">' + escapeHtml(String(it.content).slice(0, 160)) + "</div>" +
-          '<span class="li-kind">' + escapeHtml(d.name) + "</span>" +
-          '<div class="li-ts">' + escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + "</div>" +
-        "</div>" +
-        '<button class="li-del" type="button" data-lib-del="' + escapeHtml(String(it.id)) + '" title="删除">✕</button>' +
-      "</div>"
-    )).join("") : '<div class="lib-empty">还没有内容。点下面「＋ 新建一条」。</div>';
+    if (!items.length){ list.innerHTML = '<div class="arc-empty">还没有内容。点下面「＋ 新建一条」。</div>'; return; }
+    /* 分区内的条目也照参考稿：按月分组 + 时间线圆点 + 左上角分类 chip、右上角编辑/删除 */
+    const byMonth = {}, order = [];
+    items.forEach((it) => {
+      const k = String(it.ts || "").slice(0, 7) || "未记日期";
+      if (!byMonth[k]){ byMonth[k] = []; order.push(k); }
+      byMonth[k].push(it);
+    });
+    list.innerHTML = order.sort().reverse().map((mon) => (
+      '<div class="arc-day"><div class="arc-day-head"><span class="arc-day-date">' + escapeHtml(mon) + "</span>" +
+      '<span class="arc-day-n">' + byMonth[mon].length + " 条</span></div>" +
+      byMonth[mon].map((it) => (
+        '<div class="arc-entry">' +
+          '<span class="arc-chip">#' + escapeHtml(d.name) + "</span>" +
+          '<span class="arc-acts">' +
+            '<button class="arc-act" type="button" data-lib-item="' + escapeHtml(String(it.id)) +
+              '" data-lib-kind="' + d.kind + '" title="编辑">' + MEM_ICO.pen + "</button>" +
+            '<button class="arc-act" type="button" data-lib-del="' + escapeHtml(String(it.id)) +
+              '" title="删除">' + MEM_ICO.trash + "</button>" +
+          "</span>" +
+          '<div class="arc-title">' + escapeHtml(it.title || "(无标题)") + "</div>" +
+          '<div class="arc-text clamp">' + escapeHtml(String(it.content)) + "</div>" +
+          '<div class="arc-sub" style="margin-top:7px">' +
+            escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + "</div>" +
+        "</div>"
+      )).join("") + "</div>"
+    )).join("");
   });
 }
 if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
@@ -6493,6 +6857,46 @@ if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
 if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));
 if ($("#calPrev")) $("#calPrev").addEventListener("click", () => memCalMove(-1));
 if ($("#calNext")) $("#calNext").addEventListener("click", () => memCalMove(1));
+/* 档案室：年份 → 月份 → 条目，以及条目内联编辑 */
+function arcScrollTop(){
+  const s = $("#memoryPanel .settings-scroll");
+  const c = $("#arcCard");
+  if (s && c) s.scrollTop = Math.max(0, c.getBoundingClientRect().top - s.getBoundingClientRect().top + s.scrollTop - 8);
+}
+function arcOpen(k){
+  const it = arcItems().filter((x) => x.key === k)[0];
+  if (!it) return;
+  if (it.kind === "lib" && it.libKind){
+    libEditOpen(it.libKind, memData.itemIndex[it.rawId]);          // 跳回该分区编辑
+    const card = document.querySelector(".set-card[data-card='lib-" + it.libKind + "']");
+    if (card){
+      const cardEl = card.querySelector(".set-card-body");
+      if (cardEl) card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return;
+  }
+  arc.edit = k; arcRender();
+  const b = document.querySelector('[data-arc-box="' + k + '"]');
+  if (b) b.focus();
+}
+if ($("#arcBody")) $("#arcBody").addEventListener("click", async (e) => {
+  const eye = e.target.closest("[data-arc-eye]");
+  if (eye){ e.stopPropagation(); arc.full = !arc.full; arcRender(); return; }
+  const up = e.target.closest("[data-arc-up]");
+  if (up){ e.stopPropagation(); arc.level = up.dataset.arcUp === "1" ? 0 : 1; arc.edit = null; arcRender(); return; }
+  const sv = e.target.closest("[data-arc-save]");
+  if (sv){ await arcSave(sv.dataset.arcSave); return; }
+  const cx = e.target.closest("[data-arc-cancel]");
+  if (cx){ arc.edit = null; arcRender(); return; }
+  const pen = e.target.closest("[data-arc-edit]");
+  if (pen){ arc.edit = pen.dataset.arcEdit; arcRender(); const b = document.querySelector('[data-arc-box="' + arc.edit + '"]'); if (b) b.focus(); return; }
+  const yr = e.target.closest("[data-arc-year]");
+  if (yr){ arc.year = yr.dataset.arcYear; arc.level = 1; arc.edit = null; arcRender(); arcScrollTop(); return; }
+  const mo = e.target.closest("[data-arc-month]");
+  if (mo){ arc.month = mo.dataset.arcMonth; arc.level = 2; arc.edit = null; arcRender(); arcScrollTop(); return; }
+  const op = e.target.closest("[data-arc-open]");
+  if (op) arcOpen(op.dataset.arcOpen);
+});
 if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
 if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay);
 if ($("#nfDays")) $("#nfDays").addEventListener("click", (e) => {

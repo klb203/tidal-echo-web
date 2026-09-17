@@ -5747,7 +5747,10 @@ async function requestImageFromInput(){
   }
   inputEl.value = "";
   inputEl.style.height = "auto";
-  sendImageMessage(prompt);
+  /* 不 await（要让输入框立刻可用），但必须挂 catch —— 否则异常会被完全吞掉，排查时毫无线索 */
+  sendImageMessage(prompt).catch((e) => {
+    showError("生图出错 —— " + ((e && e.message) || e));
+  });
 }
 if ($("#imgBtn")) $("#imgBtn").addEventListener("click", requestImageFromInput);
 
@@ -7949,7 +7952,9 @@ async function doSend(){
       showToast("先去设置里配好生图中转站");
       return;
     }
-    sendImageMessage(p);
+    sendImageMessage(p).catch((e) => {
+      showError("生图出错 —— " + ((e && e.message) || e));
+    });
     return;
   }
   triggerSendPress();            // 发送键:轻按回弹的小反馈

@@ -6768,10 +6768,12 @@ function bkReportHtml(rep){
     const v = t[k] || {};
     const extra = (v.dropped_columns && v.dropped_columns.length)
       ? ("　跳过不存在的列：" + v.dropped_columns.join("、")) : "";
-    return "<tr><td>" + escapeHtml(k) + "</td><td><b>" + (v.ok || 0) + "</b> 条已合并"
+    const split = "覆盖 " + (v.updated || 0) + " · 新增 " + (v.inserted || 0);
+    return "<tr><td>" + escapeHtml(k) + "</td><td><b>" + (v.ok || 0) + "</b> 条（" + split + "）"
       + (v.failed ? ("　<b style=\"color:#A8565F\">" + v.failed + "</b> 条失败") : "") + extra + "</td></tr>";
   }).join("");
   let html = "<table>" + rows + "</table>";
+  if (rep.note) html += "<div class=\"bk-sub\" style=\"margin-top:6px\">" + escapeHtml(rep.note) + "</div>";
   if (rep.errors && rep.errors.length){
     html += "<div class=\"bk-sub\" style=\"margin-top:6px\">失败明细（前几条）：" +
       rep.errors.slice(0, 3).map((e) => escapeHtml(String(e.id) + " → " + e.error)).join("<br>") + "</div>";
@@ -6810,7 +6812,15 @@ async function bkImportFile(file){
     const tot = Object.keys(rep.tables || {}).reduce((s, k) => s + ((rep.tables[k].ok) || 0), 0);
     bkStatusEl("导入完成：一共合并了 " + tot + " 条（原备份导出时间 " + (rep.from || "?") + "）", "ok");
     $("#bkReport").innerHTML = bkReportHtml(rep);
-    showToast("导入完成，刷新一下就能看到");
+    const remapped = rep.id_remapped && Object.keys(rep.id_remapped).length;
+    if (remapped){
+      // 这个库的主键是自增列，重插的行会拿到新 id —— 本机 IndexedDB 缓存里还是旧 id，
+      // 留着只会让时间线上出现「同一句话两份」。清掉缓存，让它从服务端重拉。
+      try{ await wipeLocalChat(); }catch(_){}
+      showToast("导入完成（" + remapped + " 个 id 变了，本机缓存已清）");
+    }else{
+      showToast("导入完成，刷新一下就能看到");
+    }
     bkLoad(false);
   }catch(e){
     bkStatusEl("导入失败：" + ((e && e.message) || e), "err");

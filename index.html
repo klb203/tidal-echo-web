@@ -2421,6 +2421,24 @@
   .conn-status.ok{ color: #2e9e5b; }
   .conn-status.err{ color: #e5484d; }
   .settings-tip{ font-size: 11.5px; color: var(--text-faint); line-height: 1.6; margin-top: 2px; }
+  /* ── Haven Ombre 卡 ── */
+  .om-acts{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+  .om-status{ font-size: 11.5px; color: var(--text-faint); line-height: 1.75; margin-top: 10px; white-space: pre-wrap; }
+  .om-chips{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .om-chip{
+    font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: default;
+    border: 1px solid var(--hairline, rgba(120,140,165,.22)); color: var(--text-soft);
+    background: var(--row-press, rgba(120,140,165,.08));
+  }
+  .om-chip.danger{ color: #c0392b; border-color: rgba(192,57,43,.35); }
+  .om-chip b{ font-weight: 600; }
+  .om-res{
+    margin: 11px 0 0; padding: 11px 13px; max-height: 260px; overflow: auto;
+    font-size: 12px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+    border-radius: 12px; border: 1px solid var(--hairline, rgba(120,140,165,.22));
+    background: var(--row-press, rgba(120,140,165,.06)); color: var(--text);
+    font-family: var(--font-cn), var(--font-en);
+  }
 
   /* ── 状态/提示文字（cloudStatus / pvHint）允许换行 ──────────────────────
      它们继承了 .conn-sub 的 nowrap，里面又塞了一整条后端地址 + 四家入口，
@@ -3125,6 +3143,41 @@
       <div class="settings-tip">填<b>任意 OpenAI 兼容的中转站</b>（地址 + Key）就能生图：点「拉取模型」会让<b>你的后端</b>代打
       <code>地址/models</code>，生图相关的模型会自动排最前。测试生图会把当前输入框里的文字当提示词（空着就用一句默认的）。
       浏览器直连中转站基本都会被 CORS 拦，所以这一步同样经后端 <code>/app/image/*</code> 转发。</div>
+        </div>
+      </section>
+
+      <section class="set-card open" data-card="ombre">
+        <button class="set-card-head" type="button" aria-expanded="true">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-3.6 0-5.6-1.6-5.6-3.9 0-1.1.4-2 .4-2.9 0-.6-1.6-1.4-1.6-3 0-1.3.9-2.4 2-2.8 0-.4-.1-.8-.1-1.2 0-2 2-3.6 4.9-3.6s4.9 1.6 4.9 3.6c0 .4 0 .8-.1 1.2 1.1.4 2 1.5 2 2.8 0 1.6-1.6 2.4-1.6 3 0 .9.4 1.8.4 2.9 0 2.3-2 3.9-5.6 3.9Z"/><path d="M9.4 10.4c.5-.8 1.4-1.2 2.6-1.2s2.1.4 2.6 1.2"/><path d="M10.2 14.6c.6.5 1.2.8 1.8.8s1.2-.3 1.8-.8"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">Haven Ombre · 长期记忆</span><span class="set-card-sub" id="cardSubOmbre"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip">外部长期记忆（<b>Ombre Brain</b>，带情绪坐标与遗忘曲线）。后端按 <b>MCP 协议</b>直接跟它说话：
+            先 <code>initialize</code> 握手拿 session，再 <code>tools/call</code> 调 breath / hold / dream 等工具。
+            浏览器直连会被「https 页面请求 http 地址」的混合内容规则拦掉，所以统一经你部署的 relay 转发。</div>
+
+          <label class="fld" style="margin-top:12px"><span>MCP 地址（到 /mcp 为止）</span>
+            <input id="omUrl" type="text" placeholder="http://43.133.254.100/ob/mcp" autocomplete="off" spellcheck="false">
+          </label>
+          <label class="fld" style="margin-top:10px"><span>Token（可留空）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">云端 <code>/ob/mcp</code> 那层 nginx 已经帮你注入了，留空即可；只有换成直连 Ombre 的地址（<code>/mcp</code>）时才需要填 <code>OMBRE_MCP_TOKEN</code>。</span></span>
+            <input id="omToken" type="text" placeholder="留空 = 用服务端注入的那个" autocomplete="off" spellcheck="false">
+          </label>
+
+          <div class="om-acts">
+            <button id="omTest" type="button" class="primary">测试连接</button>
+            <button id="omBreath" type="button">看记忆目录</button>
+            <button id="omPulse" type="button">系统状态</button>
+            <button id="omSave" type="button">保存</button>
+          </div>
+          <div class="om-status" id="omStatus"></div>
+          <div class="om-chips" id="omTools"></div>
+          <pre class="om-res hidden" id="omResult"></pre>
+          <div class="settings-tip" style="margin-top:10px">
+            工具分配建议（指南第五章）：<b>检索</b>适合后端每轮自动调、<b>归档与自省</b>适合在压缩后 / 新会话时触发；
+            而「这条值不值得记」只有对话中的模型自己能判断 —— 所以 <code>hold</code> 建议留给模型自主决定。
+          </div>
         </div>
       </section>
 
@@ -4014,6 +4067,7 @@ function openSettings(){
   syncMiniMaxFields();
   syncImageFields();
   if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
+  if (!omLoadedOnce){ omLoadedOnce = true; omLoad(false); }              // OB 配置读一次就够
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -4501,6 +4555,110 @@ if ($("#igFetch")) $("#igFetch").addEventListener("click", fetchImageModels);
 if ($("#igTest")) $("#igTest").addEventListener("click", testImageGen);
 if ($("#igSave")) $("#igSave").addEventListener("click", () => persistImageGen(false));
 
+/* ── Haven Ombre（Ombre Brain）· 设置页那张卡 ──────────────────────────
+   后端当 MCP 客户端（ombre.py）：initialize 拿 session → notifications/initialized
+   → tools/call。这里只负责配置与几个只读按钮。 */
+let omData = { url: "", status: null, tools: [], last: null };
+function omStatus(msg, kind){
+  const el = $("#omStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+function omShow(text){
+  const el = $("#omResult"); if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("hidden", !text);
+}
+function omRenderTools(list){
+  const box = $("#omTools"); if (!box) return;
+  const D = ["purge", "forget"];
+  box.innerHTML = (list || []).map((t) => {
+    const n = typeof t === "string" ? t : t.name;
+    const role = (typeof t === "object" && t.role) ? t.role : "";
+    const dg = D.indexOf(n) >= 0;
+    return '<span class="om-chip' + (dg ? " danger" : "") + '" title="' + escapeHtml(role || n) + '">' +
+      escapeHtml(n) + (role ? (" · " + escapeHtml(role.replace(/（.*?）/, ""))) : "") + "</span>";
+  }).join("");
+}
+function omRender(){
+  const st = omData.status || {};
+  const last = omData.last || st.last || null;
+  const el = $("#cardSubOmbre");
+  if (el){
+    el.textContent = last && last.at
+      ? ("已连通 · " + (last.server || "Ombre Brain") + " " + (last.version || "") + " · " + (last.count || 0) + " 个工具")
+      : "未测试 · " + (omData.url || "").replace(/^https?:\/\//, "");
+  }
+  const u = $("#omUrl");
+  if (u && !u.value) u.value = omData.url || "";
+  const t = $("#omToken");
+  if (t && !t.value){
+    t.value = st.token_hint || "";
+    if (st.token_set && st.source === "env") t.placeholder = "已从后端环境变量读到 Token";
+  }
+  if ((st.tools || []).length) omRenderTools(st.tools);
+}
+async function omLoad(verbose){
+  try{
+    const d = await memApi("/app/ombre");
+    const o = d.ombre || {};
+    omData.url = o.url || "";
+    omData.status = o;
+    omData.last = o.last || null;
+    omRender();
+    if (verbose){
+      omStatus(o.last && o.last.at
+        ? ("上次连通：" + String(o.last.at).slice(0, 16).replace("T", " ") + " · " +
+           (o.last.server || "") + " " + (o.last.version || "") + " · " + (o.last.count || 0) + " 个工具")
+        : "还没测过。「测试连接」会真的握手一次看看通不通。", "ok");
+    }
+  }catch(err){
+    omStatus("读取失败：" + ((err && err.message) || err), "err");
+  }
+}
+async function omTest(){
+  const url = ($("#omUrl") || {}).value || "";
+  const token = ($("#omToken") || {}).value || "";
+  omStatus("正在握手…（initialize → tools/list）");
+  omShow("");
+  try{
+    const d = await memApi("/app/ombre/test", { method: "POST", body: JSON.stringify({ url: url, token: token }) });
+    if (!d.ok){ omStatus("连不上：" + (d.error || "未知错误") + "\n地址：" + (d.url || url), "err"); return; }
+    omData.tools = d.tools || [];
+    omData.status = Object.assign({}, omData.status, { tools: d.tools, token_hint: d.token_hint });
+    omRenderTools(d.tools);
+    omStatus("通了 ✅ " + d.server + " " + d.version + " · 协议 " + (d.protocol || "-") +
+             " · " + d.count + " 个工具 · 握手 " + d.ms + "ms" +
+             (d.session ? "" : "\n（这层代理没给 session，走无状态模式）"), "ok");
+    await omLoad();
+  }catch(err){ omStatus("测试失败：" + ((err && err.message) || err), "err"); }
+}
+async function omCall(tool, args, label){
+  omStatus(label + "中…");
+  try{
+    const d = await memApi("/app/ombre/call", { method: "POST",
+      body: JSON.stringify({ tool: tool, args: args || {} }) });
+    omStatus(label + "完成 · " + d.chars + " 字 · " + d.ms + "ms", "ok");
+    omShow(d.text || "(空)");
+  }catch(err){ omStatus(label + "失败：" + ((err && err.message) || err), "err"); }
+}
+async function omSave(){
+  omStatus("保存中…");
+  try{
+    const d = await memApi("/app/ombre", { method: "POST", body: JSON.stringify({
+      url: ($("#omUrl") || {}).value || "", token: ($("#omToken") || {}).value || "" }) });
+    const o = d.ombre || {};
+    omData.url = o.url || omData.url;
+    omData.status = Object.assign({}, omData.status, o);
+    omRender();
+    omStatus("已保存 ✅ 地址：" + omData.url + "\n（Relay 会用它去连 Ombre；改完建议点一次「测试连接」）", "ok");
+  }catch(err){ omStatus("保存失败：" + ((err && err.message) || err), "err"); }
+}
+if ($("#omTest")) $("#omTest").addEventListener("click", omTest);
+if ($("#omSave")) $("#omSave").addEventListener("click", omSave);
+if ($("#omBreath")) $("#omBreath").addEventListener("click", () => omCall("breath", { catalog: true }, "读记忆目录"));
+if ($("#omPulse")) $("#omPulse").addEventListener("click", () => omCall("pulse", {}, "读系统状态"));
+
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
 function cloudSelfTest(){
   const s = $("#cloudStatus"); if (!s) return;
@@ -4791,6 +4949,7 @@ const AP_FIELDS = {
   compress_trigger_tokens: "apTrig", compress_keep_turns: "apKeep"
 };
 let apLoadedOnce = false;
+let omLoadedOnce = false;
 /* /app/* 挂在 relay 根上（不是 /relay/<pid>）——从「云端后端地址」取根 */
 function appBase(){
   const h = (typeof cloudHost === "function") ? cloudHost() : "";
@@ -4892,6 +5051,8 @@ function refreshSetCardSubs(){
   put("cardSubImage", imageGenOn()
     ? ("已启用 · " + String(ig.model).slice(0, 22) + (ig.size ? (" · " + ig.size) : ""))
     : (ig.base ? "已填地址，未启用" : "未配置（填中转站地址 + Key + 模型）"));
+
+  omRender();
 
   const model = ($("#apModel") && $("#apModel").value.trim()) || (a && a.model) || "deepseek-chat";
   put("cardSubAI", (hasBackendChat() ? "记忆存后端 · 自动压缩" : "仅本机历史") + " · " + model);

@@ -3167,6 +3167,28 @@
             <input id="omToken" type="text" placeholder="留空 = 用服务端注入的那个" autocomplete="off" spellcheck="false">
           </label>
 
+          <div class="settings-section-label" style="margin-top:16px">工具分配 · 指南第五章</div>
+          <label class="fld switch-row" style="margin-top:8px"><span>每轮自动检索记忆（breath）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">回复前先用这一轮的消息去 OB 检索相关记忆并注入 —— 不依赖模型「想起来要翻记忆」。会给首字节加一点延迟（超时 15s 就跳过这轮）。</span></span>
+            <input type="checkbox" id="omBreathOn">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>新会话先回顾一次（dream）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">每开一个新对话，把最近 48 小时里被动过的记忆注入一次，让它一开口心里就有底。</span></span>
+            <input type="checkbox" id="omDreamOn">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>压缩后归档（grow）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">聊天记录压缩完，把那段摘要后台归档进 OB。这属于「后台来源」，可能先落到候选区等复现，不会立刻变成正式记忆。</span></span>
+            <input type="checkbox" id="omGrowOn">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>让它自己决定记什么（hold）
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">在提示词里约定：真觉得有重量的事，就在回复最后另起一行写 <code>[[remember: …]]</code>；后端会把这一行剥掉再存进 OB，你正常聊天看不到它。「值不值得记」只有对话中的它自己判断得了。</span></span>
+            <input type="checkbox" id="omHoldOn">
+          </label>
+          <div class="fld-pair" style="margin-top:12px">
+            <label class="fld"><span>召回 token 预算</span><input id="omTokens" type="number" min="200" max="6000" step="100" placeholder="1500"></label>
+            <label class="fld"><span>最多几条</span><input id="omResults" type="number" min="1" max="20" placeholder="8"></label>
+          </div>
+
           <div class="editor-actions om-acts">
             <button id="omTest" type="button" class="primary">测试连接</button>
             <button id="omBreath" type="button">看记忆目录</button>
@@ -4599,6 +4621,25 @@ function omRender(){
     if (st.token_set && st.source === "env") t.placeholder = "已从后端环境变量读到 Token";
   }
   if ((st.tools || []).length) omRenderTools(st.tools);
+  const f = st.feats || {};
+  const on = (id, v) => { const el = $("#" + id); if (el && !el.dataset.touched) el.checked = !!v; };
+  on("omBreathOn", (f.breath || {}).enable !== false);
+  on("omDreamOn", (f.dream || {}).enable !== false);
+  on("omGrowOn", (f.grow || {}).enable !== false);
+  on("omHoldOn", (f.hold || {}).enable !== false);
+  const tk = $("#omTokens"), rs = $("#omResults");
+  if (tk && !tk.dataset.touched) tk.value = (f.breath || {}).tokens || 1500;
+  if (rs && !rs.dataset.touched) rs.value = (f.breath || {}).results || 8;
+}
+function omFeats(){
+  return {
+    breath: { enable: !!($("#omBreathOn") || {}).checked,
+              tokens: Number(($("#omTokens") || {}).value || 1500),
+              results: Number(($("#omResults") || {}).value || 8) },
+    dream: { enable: !!($("#omDreamOn") || {}).checked },
+    grow: { enable: !!($("#omGrowOn") || {}).checked },
+    hold: { enable: !!($("#omHoldOn") || {}).checked }
+  };
 }
 async function omLoad(verbose){
   try{
@@ -4648,7 +4689,8 @@ async function omSave(){
   omStatus("保存中…");
   try{
     const d = await memApi("/app/ombre", { method: "POST", body: JSON.stringify({
-      url: ($("#omUrl") || {}).value || "", token: ($("#omToken") || {}).value || "" }) });
+      url: ($("#omUrl") || {}).value || "", token: ($("#omToken") || {}).value || "",
+      feats: omFeats() }) });
     const o = d.ombre || {};
     omData.url = o.url || omData.url;
     omData.status = Object.assign({}, omData.status, o);
@@ -4659,6 +4701,10 @@ async function omSave(){
 if ($("#omTest")) $("#omTest").addEventListener("click", omTest);
 if ($("#omSave")) $("#omSave").addEventListener("click", omSave);
 if ($("#omBreath")) $("#omBreath").addEventListener("click", () => omCall("breath", { catalog: true }, "读记忆目录"));
+["omBreathOn","omDreamOn","omGrowOn","omHoldOn","omTokens","omResults"].forEach((id) => {
+  const el = $("#" + id); if (!el) return;
+  el.addEventListener("change", () => { el.dataset.touched = "1"; });
+});
 if ($("#omPulse")) $("#omPulse").addEventListener("click", () => omCall("pulse", {}, "读系统状态"));
 
 /* 一键自检：直接打后端 /health，把「通不通、Key 配没配」摊开给你看 */
@@ -8413,7 +8459,31 @@ function fmtDay(ts){
 function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
+/* 模型可以把「值得长期记住」的事写成一行 [[remember: …]]（后端会剥离并存进 Ombre）。
+   流式时它是逐字出现的，所以渲染前统一过滤 —— 连**没闭合的尾巴**一起去掉，
+   否则会看到「[[remem」这种半截标记。每帧渲染的都是累积全文，因此这个过滤幂等、不会吃掉正文。 */
+function stripRemember(t){
+  const s0 = String(t == null ? "" : t);
+  if (s0.indexOf("[[") < 0) return s0;                       // 快路径：绝大多数消息直接返回
+  let s = s0.replace(/\[\[\s*(?:remember|记住|hold|memorize)\s*[:：][\s\S]*?\]\]/gi, "");
+  /* 末尾还没写完的半截标记也要去掉：流式是逐字蹦的，会先出现 [[rem / [[remember，
+     这时**连冒号都还没有**，只匹配完整格式的正则抓不到。只认「关键词的前缀」，
+     避免误删正文里正常的方括号。 */
+  const m = /\[\[([^\[\]]{0,400})\]?$/.exec(s);
+  if (m){
+    const body = String(m[1] || "").trim().toLowerCase();
+    const keys = ["remember", "hold", "memorize", "记住"];
+    const partial =
+      !body ||                                             // 光一个 [[
+      keys.some((k) => k.indexOf(body) === 0) ||           // 关键词还没写完：[[rem
+      keys.some((k) => body.indexOf(k + ":") === 0 || body.indexOf(k + "：") === 0);
+      // ↑ 关键词写完、冒号也出来了，正文正在一个字一个字长（[[remember: 她…）
+    if (partial) s = s.slice(0, m.index);
+  }
+  return s.replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "");
+}
 function renderText(t){
+  t = stripRemember(t);
   let s = escapeHtml(t);
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");

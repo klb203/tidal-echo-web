@@ -2934,6 +2934,60 @@
   }
   .glass-scope .settings-scroll{ gap: 15px; }
   .glass-scope .settings-head{ margin-bottom: 0; }
+  /* ── Haven 长期记忆（服务器上的 Ombre Brain）── */
+  .br-stats{ display:flex; flex-wrap:wrap; gap:6px; margin: 2px 0 10px; }
+  .br-pill{
+    display:inline-flex; align-items:baseline; gap:5px;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--card-2, rgba(127,127,127,.10));
+    border: 1px solid var(--line, rgba(127,127,127,.20));
+    font-size: 11.5px; color: var(--text-faint);
+  }
+  .br-pill b{ font-size: 13px; color: var(--text, currentColor); font-weight: 600; }
+  .br-search{ display:flex; gap:8px; align-items:center; margin: 2px 0 10px; }
+  .br-search input{
+    flex:1; min-width:0; padding: 9px 11px; border-radius: 11px;
+    border: 1px solid var(--line, rgba(127,127,127,.22));
+    background: var(--field-bg, rgba(127,127,127,.06));
+    color: inherit; font-size: 13px; font-family: inherit;
+  }
+  .br-box{
+    margin: 0 0 10px; padding: 11px 12px; border-radius: 12px;
+    background: var(--card-2, rgba(127,127,127,.09));
+    border: 1px solid var(--line, rgba(127,127,127,.18));
+    font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere;
+    max-height: 320px; overflow-y: auto;
+  }
+  .br-list{ display:flex; flex-direction:column; gap:8px; }
+  .br-row{
+    padding: 10px 11px; border-radius: 12px; cursor: pointer;
+    background: var(--card-2, rgba(127,127,127,.07));
+    border: 1px solid var(--line, rgba(127,127,127,.16));
+  }
+  .br-row:active{ transform: scale(.995); }
+  .br-row-top{ display:flex; align-items:baseline; gap:7px; }
+  .br-ico{ font-size: 13px; line-height:1; }
+  .br-name{ font-size: 13px; font-weight: 600; flex:1; min-width:0;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .br-meta{ font-size: 11px; color: var(--text-faint); white-space:nowrap; }
+  .br-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+  .br-tag{
+    font-size: 10.5px; padding: 2px 7px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent, #7aa2f7) 14%, transparent);
+    color: var(--text-faint);
+  }
+  .br-body{
+    margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--line, rgba(127,127,127,.22));
+    font-size: 12.5px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere;
+    color: var(--think-body, inherit);
+  }
+  .br-badge{
+    font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 600;
+    background: color-mix(in srgb, var(--accent, #7aa2f7) 20%, transparent);
+  }
+  .br-empty{ font-size: 12.5px; color: var(--text-faint); line-height:1.7; padding: 6px 2px; }
+  .br-foot{ margin-top: 10px; font-size: 11.5px; color: var(--text-faint); line-height: 1.7; }
+
   .mem-hero{ text-align: center; padding: 2px 0 8px; }
   .mem-hero-num{
     font-family: var(--font-en); font-weight: 500;
@@ -4973,6 +5027,25 @@
       </section>
 
       <!-- ③ 记忆库分区卡（JS 生成） -->
+      <!-- ── Haven · 长期记忆（服务器上的 Ombre Brain，只读浏览）── -->
+      <section class="mg-card" id="brainCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">Haven · 长期记忆</div>
+            <div class="mg-sub" id="brLead">服务器上的记忆库 · 只读</div>
+          </div>
+          <span class="mg-tag" id="brTag">—</span>
+        </div>
+        <div class="br-stats" id="brStats"></div>
+        <div class="br-search">
+          <input id="brQ" type="search" placeholder="搜记忆库（语义检索，不是关键词匹配）" autocomplete="off">
+          <button class="btn ghost" id="brSearchGo" type="button">搜</button>
+        </div>
+        <div class="br-box hidden" id="brSearchOut"></div>
+        <div class="br-list" id="brList"></div>
+        <div class="br-foot" id="brFoot">—</div>
+      </section>
+
       <div id="libCards" style="display:flex;flex-direction:column;gap:14px"></div>
     </div>
   </div>
@@ -10797,6 +10870,149 @@ async function memApi(path, opt){
   if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
   return d;
 }
+/* ════════════ Haven · 长期记忆（服务器上的 Ombre Brain）════════════
+   这一层是**只读**的 —— 写、改、删都在模型自己手里（hold / grow）或 OB 的 Dashboard 里。
+   放这儿的意义只有一个：它翻到什么、记得什么，你能看见。
+
+   ★ 为什么不直接挂 OB 的 Dashboard：那套管理 REST 在服务器上只监听 127.0.0.1，
+     要在公网用就得把「写 / 删 / 导入 / 改配置」一整套一起搬出去。
+     为了一页只读视图把管理面暴露到公网，是拿大门换窗户。走 MCP 这条已经在用的链更干净。 */
+let brData = null;
+let brOpenIds = {};
+function brStatus(msg, kind){
+  const el = $("#brFoot");
+  if (el) el.textContent = msg || "";
+  if (el) el.className = "br-foot" + (kind === "err" ? " om-status err" : (kind === "ok" ? " om-status ok" : ""));
+}
+function brPill(k, v){
+  if (v == null || v === "") return "";
+  return '<span class="br-pill">' + escapeHtml(k) + " <b>" + escapeHtml(String(v)) + "</b></span>";
+}
+function brStatsHtml(c){
+  const live = (brData && brData.buckets || []).length;
+  return [
+    brPill("长期", (brData && brData.buckets) ? live : null),
+    brPill("动态", c["动态"]),
+    brPill("固化", c["固化"]),
+    brPill("计划", c["plan"]),
+    brPill("信件", c["letter"]),
+    brPill("归档", c["归档"]),
+    brPill("占用", c["总占用"]),
+  ].join("");
+}
+function brRowHtml(b){
+  const tags = (b.tags || []).slice(0, 8).map((t) => '<span class="br-tag">' + escapeHtml(t) + "</span>").join("");
+  const meta = [];
+  if (b.importance != null) meta.push("重要 " + b.importance);
+  if (b.weight != null) meta.push("权重 " + b.weight);
+  const isPlan = b.type === "plan";
+  const open = !!brOpenIds[b.id];
+  return '<div class="br-row" data-br="' + escapeHtml(b.id) + '" data-br-name="' + escapeHtml(b.name || "") + '">'
+    + '<div class="br-row-top"><span class="br-ico">' + escapeHtml(b.icon || "💭") + "</span>"
+    + '<span class="br-name">' + escapeHtml(b.name || "(无名)") + "</span>"
+    + (isPlan && b.status ? '<span class="br-badge">' + escapeHtml(b.status) + "</span>" : "")
+    + (meta.length ? '<span class="br-meta">' + escapeHtml(meta.join(" · ")) + "</span>" : "")
+    + "</div>"
+    + (tags ? '<div class="br-tags">' + tags + "</div>" : "")
+    + (open ? '<div class="br-body" data-br-body="' + escapeHtml(b.id) + '">读取中…</div>' : "")
+    + "</div>";
+}
+function brRender(){
+  const host = $("#brList");
+  if (!host) return;
+  if (!brData) { host.innerHTML = ""; return; }
+  const bs = (brData.buckets || []).slice();
+  const ps = (brData.plans || []).slice();
+  let html = "";
+  if (ps.length) html += '<div class="br-empty" style="padding:2px 2px 0">计划 · 它记着还没闭环的事</div>' + ps.map(brRowHtml).join("");
+  if (bs.length) html += '<div class="br-empty" style="padding:8px 2px 0">记忆桶 · 按权重排</div>' + bs.map(brRowHtml).join("");
+  if (!bs.length && !ps.length) {
+    html = '<div class="br-empty">记忆库里还没有活着的条目。<br>'
+      + '（它会在聊天里自己决定记什么 —— 你多聊几句、或者直接跟它说「这个记一下」。）</div>';
+  }
+  host.innerHTML = html;
+  const r = $("#brSearchOut");
+  if (r) r.classList.add("hidden");
+}
+async function brLoad(verbose){
+  if (verbose) brStatus("读记忆库…");
+  let d = null;
+  try{
+    const x = await fetch(appUrl("/app/brain"), { headers: authHeaders() });
+    d = await x.json().catch(() => ({}));
+    if (!x.ok) throw new Error((d && d.error) || ("HTTP " + x.status));
+  }catch(err){
+    brStatus("读不到记忆库 —— " + ((err && err.message) || err), "err");
+    const lead = $("#brLead");
+    if (lead) lead.textContent = "连不上";
+    const tag = $("#brTag");
+    if (tag) tag.textContent = "离线";
+    return;
+  }
+  const b = (d && d.brain) || {};
+  if (!b.ok){
+    brStatus("Haven 说：" + (b.error || "没通") + "（去设置 → Haven Ombre 看看地址与连接）", "err");
+    const lead = $("#brLead");
+    if (lead) lead.textContent = "没通";
+    return;
+  }
+  brData = b;
+  const c = b.counts || {};
+  const tag = $("#brTag");
+  if (tag) tag.textContent = (c["总占用"] ? ("占用 " + c["总占用"]) : "已连接");
+  const lead = $("#brLead");
+  if (lead) lead.textContent = "服务器上的记忆库 · " + ((b.buckets || []).length + (b.plans || []).length) + " 条活着 · 只读";
+  const st = $("#brStats");
+  if (st) st.innerHTML = brStatsHtml(c);
+  brRender();
+  const extra = [];
+  if (b.recent && b.recent.text && !b.recent.empty) extra.push("最近动过：" + b.recent.text.split("\n")[0]);
+  if (b.letters && b.letters.text && !b.letters.empty) extra.push("有信件");
+  if (b.self && b.self.text && !b.self.empty) extra.push("有自我认知");
+  if (verbose) brStatus("读好了 · " + ((b.buckets || []).length + (b.plans || []).length) + " 条" + (extra.length ? "（" + extra.join(" · ") + "）" : ""), "ok");
+}
+async function brOpen(id, name, row){
+  brOpenIds[id] = !brOpenIds[id];
+  if (!brOpenIds[id]){ row.querySelector(".br-body")?.remove(); return; }
+  if (!row.querySelector(".br-body")) row.insertAdjacentHTML("beforeend", '<div class="br-body">读取中…</div>');
+  const body = row.querySelector(".br-body");
+  try{
+    const x = await fetch(appUrl("/app/brain/read?id=" + encodeURIComponent(id) + "&name=" + encodeURIComponent(name || "")),
+                          { headers: authHeaders() });
+    const d = await x.json().catch(() => ({}));
+    const t = (d && d.brain && d.brain.text) || "";
+    body.textContent = t || "（这条没读回来）";
+  }catch(err){
+    body.textContent = "读失败：" + ((err && err.message) || err);
+  }
+}
+async function brSearch(){
+  const q = (($("#brQ") || {}).value || "").trim();
+  const out = $("#brSearchOut");
+  if (!q){ out.classList.add("hidden"); return; }
+  brStatus("检索中…");
+  try{
+    const x = await fetch(appUrl("/app/brain/search?q=" + encodeURIComponent(q)), { headers: authHeaders() });
+    const d = await x.json().catch(() => ({}));
+    const b = (d && d.brain) || {};
+    if (!b.ok) throw new Error(b.error || "检索失败");
+    out.textContent = b.empty ? ("记忆库里没有和「" + q + "」相关的东西。") : (b.text || "（空）");
+    out.classList.remove("hidden");
+    brStatus(b.empty ? "没搜到" : "搜到了", b.empty ? "" : "ok");
+  }catch(err){
+    brStatus("检索失败 —— " + ((err && err.message) || err), "err");
+  }
+}
+if ($("#brList")){
+  $("#brList").addEventListener("click", (e) => {
+    const row = e.target.closest(".br-row");
+    if (!row) return;
+    brOpen(row.dataset.br, row.dataset.brName, row);
+  });
+}
+if ($("#brSearchGo")) $("#brSearchGo").addEventListener("click", brSearch);
+if ($("#brQ")) $("#brQ").addEventListener("keydown", (e) => { if (e.key === "Enter") brSearch(); });
+
 async function openMemory(){
   if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
   memoryPanel.classList.remove("hidden");
@@ -10834,6 +11050,7 @@ async function memLoad(verbose){
   }
   loadGalaxy();
   loadCalendar();
+  brLoad(false);          // Haven 长期记忆：顺手读一次（它不在首屏，但翻下来就该有了）
 }
 /* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
 const GX_PAL = { "恋爱": "#ff8fc7", "家庭": "#ffd479", "日常": "#7fe3e0", "编程": "#9fa8ff",

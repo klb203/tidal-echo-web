@@ -4697,8 +4697,11 @@
             想不确切的时候它会去翻记忆 —— 而且是<b>四路一起翻</b>：记忆宫殿（你们之间的事）、
             Haven 长期记忆库、近景（最近几天）、以及<b>你们说过的原话</b>。
             翻到的东西会<b>再回到它手里</b>，它接着说，所以你看到的是一句完整的话，而不是「我去查查」。
-            <br>它还能自己调 Haven 的工具（breath / read_bucket / hold / grow / pulse…）、
+            <br>它还能自己调 Haven 的工具（breath / pulse / dream / trace / hold / grow / plan…）、
             自己决定记下什么、自己画一张图。
+            <br><b>清单以设置页下方那份「它能调的工具」为准</b> —— 那是点过「刷新工具清单」之后
+            <b>从服务器问回来的真实清单</b>。别照源码里那张表抄：本地源码与线上部署并不一致
+            （线上有 restore，源码那张表里没有），漏掉一个就会出现「注入了、它用了、却被执行端拒掉」。
             <br><b>为什么不是 function calling：</b>工具定义常驻 prompt 每轮都要付费，多回合链路越长越容易走岔；
             这里用一行标记（<code>[[recall: …]]</code>）代替，后端执行完把结果回灌 —— 便宜、稳，而且语气不断。
             <br><b>不用提醒的前提是「它得先知道自己有手」</b>：所以下面那段会常驻 system prompt
@@ -4739,6 +4742,11 @@
             <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉它就不会主动用（有些人只想要它安静聊天）。这是「不用提醒」的关键开关。</span></span>
             <input type="checkbox" id="acHints">
           </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>把「thinking 怎么写」写进 system prompt
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">决定它脑内独白的写法（人称、长度、语气、温度谱）。<b>只在推理模型 / 思考模式下有意义</b> ——
+            换成不产出 reasoning 的普通模型时，它可能把本该隐藏的独白直接写进正文，那时把它关掉。</span></span>
+            <input type="checkbox" id="acThink">
+          </label>
 
           <div class="fld-pair" style="margin-top:12px">
             <label class="fld"><span>最多补全几轮
@@ -4768,7 +4776,7 @@
           <details class="set-fold" style="margin-top:8px">
             <summary>试一段（看它会被怎么理解、回灌了什么）</summary>
             <div class="fld" style="margin-top:8px">
-              <textarea class="nf-box" id="acTestText" rows="3" placeholder="例：让我翻翻我们之前说好的事 &#10;[[recall: 说好的旅行]]"></textarea>
+              <textarea class="nf-box" id="acTestText" rows="4" placeholder="例：让我翻翻我们之前说好的事 &#10;[[recall: 说好的旅行]] &#10;按时间翻（竖线选项）：&#10;[[recall: 生日 | date=昨天]] ／ [[recall: 旅行 | range=9月1日..9月10日]] ／ [[recall: 那次吵架 | latest]] ／ [[recall: 她最近在忙什么 | deep]]"></textarea>
             </div>
             <div class="fld-row" style="margin-top:8px">
               <button class="btn ghost" id="acTestGo">跑一下</button>
@@ -7295,6 +7303,8 @@ async function acLoad(verbose){
   if (el("#acOb"))     el("#acOb").checked = !!c.ob;
   if (el("#acImgOn"))  el("#acImgOn").checked = !!c.img;
   if (el("#acHints"))  el("#acHints").checked = !!c.hints;
+  /* thinking 风格：默认**开**（老配置里没这个键），只有后端明确说 false 时才关 */
+  if (el("#acThink"))  el("#acThink").checked = (c.think_style !== false);
   if (el("#acRounds"))  el("#acRounds").value  = (c.rounds == null ? 2 : c.rounds);
   if (el("#acTimeout")) el("#acTimeout").value = (c.ob_timeout == null ? 20 : c.ob_timeout);
 
@@ -7347,6 +7357,7 @@ async function acSave(){
     ob:     !!($("#acOb") || {}).checked,
     img:    !!($("#acImgOn") || {}).checked,
     hints:  !!($("#acHints") || {}).checked,
+    think_style: !!($("#acThink") || {}).checked,
     rounds: (() => { const v = parseInt(($("#acRounds") || {}).value, 10); return isNaN(v) ? 2 : v; })(),
     ob_timeout: (() => { const v = parseInt(($("#acTimeout") || {}).value, 10); return isNaN(v) ? 20 : v; })(),
   };

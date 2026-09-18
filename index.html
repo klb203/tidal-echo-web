@@ -9279,6 +9279,16 @@ class MockEventSource{
 }
 
 /* ════════════ 直连层(DeepSeek 等 OpenAI 兼容 · 浏览器直连,无需后端)════════════ */
+/* 相邻重复用户消息的「只报一次」——为了定位是哪一层重复写的。
+   从来没见过这条提示 = 上下文里本来就没有重复，是模型自己在说「你发了两遍」。 */
+let __dupNoticed = false;
+function noteDupOnce(txt){
+  try{ console.warn("[Tidal Echo] 历史里有相邻重复的用户消息（已去重）：", txt); }catch(e){}
+  if (__dupNoticed) return;
+  __dupNoticed = true;
+  try{ showToast("⚠️ 检测到重复的用户消息，已自动去重 —— 请把这条截图发给开发者"); }catch(e){}
+}
+
 function directStoreKey(conn){ return "companion_direct_" + (conn && conn.id ? conn.id : "default"); }
 function directHistory(conn){
   const c = conn || useDirect(); if (!c) return [];
@@ -9375,6 +9385,17 @@ async function deepseekStream(userText, streamId, conn){
   const histRows = directHistory(conn).filter((m) => m.kind === "reply" || m.kind === "user");
   const tailRow = histRows[histRows.length - 1];
   if (tailRow && tailRow.kind === "user" && String(tailRow.text || "") === userText) histRows.pop();
+  /* ★ 兜底：历史里**连着两条一模一样的用户消息**（中间没有 AI 回复）——
+     正常聊天里不可能出现，一定是哪一层重复写了。压掉，并且**报一次**（只报第一次），
+     好一次定位到底是哪一层写的；如果从来不报，那「AI 说看到两条」就是它自己在说，
+     不是上下文里真有两条。 */
+  for (let k = histRows.length - 1; k > 0; k--) {
+    const a = histRows[k], b = histRows[k - 1];
+    if (a.kind === "user" && b.kind === "user" && String(a.text || "") === String(b.text || "")) {
+      histRows.splice(k, 1);
+      noteDupOnce(a.text);
+    }
+  }
   const prior = histRows.slice(-keepMsgs)
     .map((m) => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text }));
   const messages = sys.concat(prior, [{ role: "user", content: userText }]);

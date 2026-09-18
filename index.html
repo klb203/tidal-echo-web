@@ -691,6 +691,16 @@
   .meta .tick{ color: var(--tick); margin-left: 7px; letter-spacing:0; }
   .meta .state{ color: var(--accent); }
   .meta .fail{ color:#c0533f; cursor:pointer; }
+  /* 未送达：两个明确的动作（重发幂等 / 删除）。以前只有一个「未送达 · 重试」的
+     隐式文字链，点了会先删气泡再重发 —— 那正是消息越重试越多的来源。 */
+  .meta .fail-acts{ display:inline-flex; gap:6px; align-items:center; }
+  .meta .fail-btn{
+    font: inherit; font-size:11.5px; line-height:1; padding:3px 9px;
+    border-radius:999px; cursor:pointer; white-space:nowrap;
+    border:1px solid currentColor; background:transparent; color:#c0533f; opacity:.9;
+  }
+  .meta .fail-btn:hover{ opacity:1; }
+  .meta .fail-del{ color: var(--text-faint); }
   .row.human .meta,
   .row.ai .meta{ color: var(--text-faint); }
   .row.human .meta .tick,
@@ -7258,29 +7268,29 @@ const KIT_TOOLS = [
     body(){
       const c = (KIT_BOT.wxCfg) || {};
       return '<div class="kit-sec"><div class="kit-sec-t">侧车（chatgpt-on-wechat）</div>' +
-        '<input class="kit-in" id="kitWxHook" placeholder="侧车地址，例如 http://1.2.3.4:8080" value="' + escapeHtml(c.webhook_url || "") + '">' +
-        '<input class="kit-in" id="kitWxQr" placeholder="二维码地址（侧车暴露的，可选）" value="' + escapeHtml(c.qrcode_url || "") + '">' +
-        '<input class="kit-in" id="kitWxName" placeholder="机器人昵称" value="' + escapeHtml(c.bot_name || "") + '">' +
-        '<input class="kit-in" id="kitWxAllow" placeholder="只回这些人（逗号分隔，留空=全部）" value="' + escapeHtml((c.allowed_users || []).join(",")) + '">' +
-        '<label class="kit-note"><input type="checkbox" id="kitWxAuto"' + (c.auto_reply !== false ? " checked" : "") + '> 自动回复</label>' +
-        '<button class="kit-btn" id="kitWxSave">保存到后端</button>' +
-        '<button class="kit-btn" id="kitWxStart">启动</button>' +
-        '<button class="kit-btn ghost" id="kitWxStop">停止</button>' +
-        '<div id="kitWxOut"></div></div>' +
+        '<input class="kit-in" id="kitWeHook" placeholder="侧车地址，例如 http://1.2.3.4:8080" value="' + escapeHtml(c.webhook_url || "") + '">' +
+        '<input class="kit-in" id="kitWeQr" placeholder="二维码地址（侧车暴露的，可选）" value="' + escapeHtml(c.qrcode_url || "") + '">' +
+        '<input class="kit-in" id="kitWeName" placeholder="机器人昵称" value="' + escapeHtml(c.bot_name || "") + '">' +
+        '<input class="kit-in" id="kitWeAllow" placeholder="只回这些人（逗号分隔，留空=全部）" value="' + escapeHtml((c.allowed_users || []).join(",")) + '">' +
+        '<label class="kit-note"><input type="checkbox" id="kitWeAuto"' + (c.auto_reply !== false ? " checked" : "") + '> 自动回复</label>' +
+        '<button class="kit-btn" id="kitWeSave">保存到后端</button>' +
+        '<button class="kit-btn" id="kitWeStart">启动</button>' +
+        '<button class="kit-btn ghost" id="kitWeStop">停止</button>' +
+        '<div id="kitWeOut"></div></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">扫码登录位</div>' +
-        '<div id="kitWxQrBox" style="width:150px;height:150px;border:1px dashed var(--card-line);' +
+        '<div id="kitWeQrBox" style="width:150px;height:150px;border:1px dashed var(--card-line);' +
         'border-radius:12px;display:grid;place-items:center;color:var(--text-faint);font-size:11.5px">' +
         '未取到</div>' +
-        '<button class="kit-btn ghost" id="kitWxGetQr">取二维码</button>' +
+        '<button class="kit-btn ghost" id="kitWeGetQr">取二维码</button>' +
         '<div class="kit-note">二维码由后端去侧车拿回来（前端直接取会被 CORS 拦住）。</div></div>' +
-        '<div class="kit-sec"><div class="kit-sec-t">状态</div><div id="kitWxSt" class="kit-lv">读取中…</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">状态</div><div id="kitWeSt" class="kit-lv">读取中…</div></div>' +
         '<div class="kit-note">回调：把 sidecar 的消息推到 <code>/app/bot/wechat/webhook</code>，' +
         '这里的状态就会跟着变。</div>';
     },
     onOpen(root){
-      const out = $("#kitWxOut");
+      const out = $("#kitWeOut");
       const paintSt = (st) => {
-        const el = $("#kitWxSt"); if (!el) return;
+        const el = $("#kitWeSt"); if (!el) return;
         st = st || {};
         el.textContent = [
           ["启用", st.enable === false ? "否" : "是"],
@@ -7297,10 +7307,10 @@ const KIT_TOOLS = [
           const d = await memApi("/app/bot/wechat/config");
           KIT_BOT.wxCfg = d.config || {};
           const set = (id, v) => { const el = $(id); if (el && !el.value) el.value = v || ""; };
-          set("#kitWxHook", KIT_BOT.wxCfg.webhook_url);
-          set("#kitWxQr", KIT_BOT.wxCfg.qrcode_url);
-          set("#kitWxName", KIT_BOT.wxCfg.bot_name);
-          set("#kitWxAllow", (KIT_BOT.wxCfg.allowed_users || []).join(","));
+          set("#kitWeHook", KIT_BOT.wxCfg.webhook_url);
+          set("#kitWeQr", KIT_BOT.wxCfg.qrcode_url);
+          set("#kitWeName", KIT_BOT.wxCfg.bot_name);
+          set("#kitWeAllow", (KIT_BOT.wxCfg.allowed_users || []).join(","));
         }catch(e){
           if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
             escapeHtml((e && e.message) || String(e)) + "</div>";
@@ -7313,16 +7323,16 @@ const KIT_TOOLS = [
           paintSt(KIT_BOT.wx); kitRender();
         }catch(_){}
       };
-      const sv = $("#kitWxSave");
+      const sv = $("#kitWeSave");
       if (sv) sv.addEventListener("click", async () => {
         if (out) out.innerHTML = '<div class="kit-lv">保存中…</div>';
         try{
           await memApi("/app/bot/wechat/config", { method:"POST", body: JSON.stringify({
-            webhook_url: (($("#kitWxHook") || {}).value || "").trim(),
-            qrcode_url: (($("#kitWxQr") || {}).value || "").trim(),
-            bot_name: (($("#kitWxName") || {}).value || "").trim(),
-            allowed_users: (($("#kitWxAllow") || {}).value || "").trim(),
-            auto_reply: !!($("#kitWxAuto") && $("#kitWxAuto").checked),
+            webhook_url: (($("#kitWeHook") || {}).value || "").trim(),
+            qrcode_url: (($("#kitWeQr") || {}).value || "").trim(),
+            bot_name: (($("#kitWeName") || {}).value || "").trim(),
+            allowed_users: (($("#kitWeAllow") || {}).value || "").trim(),
+            auto_reply: !!($("#kitWeAuto") && $("#kitWeAuto").checked),
           }) });
           if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
           loadSt();
@@ -7350,12 +7360,12 @@ const KIT_TOOLS = [
           }finally{ b.disabled = false; }
         });
       };
-      act("#kitWxStart", "/app/bot/wechat/start", "启动");
-      act("#kitWxStop", "/app/bot/wechat/stop", "停止");
-      const gq = $("#kitWxGetQr");
+      act("#kitWeStart", "/app/bot/wechat/start", "启动");
+      act("#kitWeStop", "/app/bot/wechat/stop", "停止");
+      const gq = $("#kitWeGetQr");
       if (gq) gq.addEventListener("click", async () => {
         gq.disabled = true;
-        const box = $("#kitWxQrBox");
+        const box = $("#kitWeQrBox");
         if (box) box.textContent = "取中…";
         try{
           const d = await memApi("/app/bot/wechat/qrcode");
@@ -9906,9 +9916,19 @@ async function saveAppSettings(){
     if (!r.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
     fillAppSettings(d.settings || {});
     const skipped = Array.isArray(d.skipped) ? d.skipped : [];
+    const warns = Array.isArray(d.warnings) ? d.warnings : [];
+    /* 后端新增了两件事，这里都如实说出来：
+       · warnings —— 值被夹到了上游能接受的范围（线上真出现过 max_tokens=3000000，
+         那会让**所有**直接用它的调用被上游 400 掉，所以后端读取侧做了护栏）
+       · skipped  —— 这些字段库里确实没有列，而且**也没能进兜底行**（正常不该出现；
+         没有列的项现在会存进 memories 的补丁行，所以 main_model / helper_model 不再丢） */
+    if (warns.length){
+      apStatus("已保存 ✅，但有值被后端收紧了：" + warns.join("；"), "err");
+      showToast("有设置项超出合理范围，已被后端收紧");
+      return;
+    }
     if (skipped.length){
-      apStatus("已保存 ✅，但库里没有对应列、跳过了：" + skipped.join("、") +
-               "（其余已生效；要持久化这俩就给 settings 表加列）", "ok");
+      apStatus("已保存 ✅，但这些字段这次没存下：" + skipped.join("、") + "（其余已生效）", "ok");
     } else {
       apStatus("已保存到后端 ✅（" + Object.keys(body).length + " 项）", "ok");
     }
@@ -11252,7 +11272,7 @@ function streamEventText(ev){
   return v == null ? "" : String(v);
 }
 
-async function appChatStream(text, streamId, conn, onMeta){
+async function appChatStream(text, streamId, conn, onMeta, resend){
   const qk = backendQuick();
   let model = (conn && conn.model) || "";
   if (qk.thinking && typeof pickThinkingModel === "function") model = pickThinkingModel(conn, model);
@@ -11270,12 +11290,35 @@ async function appChatStream(text, streamId, conn, onMeta){
      这里只在用户**明确设了连接级人格**时才覆盖。 */
   if (persona) payload.system_prompt = persona;
   if (conn && conn.temp != null) payload.temperature = conn.temp;
+  /* ★ resend：复用会话里那条已经存在的用户消息，让后端**不要**再存一行。
+     以前的「重试」是「删掉本地气泡 → 再发一次」，后端于是又存一条一模一样的 ——
+     越重试越多，全堆在会话末尾（用户报的「发不出去的消息一直堆在下面」）。 */
+  if (resend) payload.resend = true;
 
-  const r = await fetch(appUrl("/app/chat/stream"), {
+  const url = appUrl("/app/chat/stream");
+  const init = {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(payload)
-  });
+  };
+  /* ★ 网络层失败（TypeError: Failed to fetch / 连接被掐）自动重试一次。
+     这不是"多此一举"：免费档实例会被平台回收、重启、冷启动，
+     那段窗口里请求直接是连不上的 —— 前端看到的就只有一句 Failed to fetch。
+     隔 2 秒再试一次，能把绝大多数「刚重启/正在冷启动」扛过去。 */
+  let r = null, netErr = null;
+  for (let attempt = 0; attempt < 2; attempt++){
+    try{
+      r = await fetch(url, init);
+      break;
+    }catch(e){
+      netErr = e;
+      if (attempt === 0){
+        showToast("连不上后端，2 秒后自动重试一次…");
+        await new Promise((res) => setTimeout(res, 2000));
+      }
+    }
+  }
+  if (!r) throw netErr || new Error("Failed to fetch");
   if (!r.ok || !r.body){
     let msg = "后端对话 HTTP " + r.status;
     try{ const j = await r.json(); msg = (j.error && j.error.message) || j.detail || msg; }catch(_){}
@@ -11372,7 +11415,56 @@ function expandBackendThinking(msgs){
   return out;
 }
 
-async function backendSend(text, tempKey){
+/* 「未送达」的两个动作。放在这里而不是就地处：附件那条重发要用到 File 对象 */
+const attRetry = new Map();          // 未送达的附件消息 key → 原来的 File（刷新前有效）
+
+/* 重发一条「未送达」的消息 —— **幂等**：后端复用原来那条用户消息，不会多存一行。
+   以前是「删掉本地气泡 → doSend() 再发一遍」，后端于是又存一条一模一样的，
+   越重试越多。 */
+async function retryFailed(key){
+  const m = messageByKey.get(msgKey(key));
+  if (!m) return;
+  const text = String(m.text || "").trim();
+  const atts = (m.meta && m.meta.attachments) || [];
+  if (atts.length){
+    const f = attRetry.get(msgKey(key));
+    if (!f){ showToast("附件没法自动重发（刷新后原文件已经不在内存里了），重新选一次吧"); return; }
+    attRetry.delete(msgKey(key));
+    removeMessage(key);
+    sendOneFile(f).catch(() => {});
+    return;
+  }
+  if (!text){ showToast("这条没有内容可重发"); return; }
+  if (hasBackendChat() && !isMock()){
+    setMessage(Object.assign({}, m, { status: "sending" }));
+    await backendSend(text, m._key, { resend: true });
+    return;
+  }
+  removeMessage(key);
+  inputEl.value = text;
+  inputEl.dispatchEvent(new Event("input"));
+  doSend();
+}
+
+/* 删掉一条「未送达」的消息：本地和服务端一起删 ——
+   只删本地的话刷新它又回来了（后端是**先存消息再调模型**的，那条确实在库里）。 */
+async function deleteFailed(key){
+  const m = messageByKey.get(msgKey(key));
+  const id = m ? msgNum(m.id) : 0;
+  removeMessage(key);
+  if (!id || !hasBackendChat() || isMock()) return;
+  try{
+    await fetch(appUrl("/app/message/delete"), {
+      method: "POST",
+      headers: Object.assign({}, authHeaders(), { "Content-Type": "application/json" }),
+      body: JSON.stringify({ id: id })
+    });
+    showToast("已删除");
+  }catch(e){ showToast("本地已删除，服务端没删掉：" + ((e && e.message) || e)); }
+}
+
+async function backendSend(text, tempKey, opts){
+  const resend = !!(opts && opts.resend);
   const conn = activeConn();
   showTyping();
   backendStreaming = true;
@@ -11385,7 +11477,7 @@ async function backendSend(text, tempKey){
       const cur = messageByKey.get(msgKey(tempKey));
       confirmOptimistic(tempKey, userKey, Object.assign({}, cur || { text: text, ts: new Date().toISOString(),
         from: "human", kind: "user", meta: {} }, { id: userKey, status: "sent" }));
-    });
+    }, resend);
   }catch(err){
     errMsg = (err && err.message) || String(err);
   }
@@ -11396,10 +11488,24 @@ async function backendSend(text, tempKey){
   if (errMsg){
     setMessage({ id: userKey, ts: new Date().toISOString(), from: "human", kind: "user",
                  text: text, meta: {}, status: "failed" });
-    showError("后端对话出错 —— " + errMsg + "\n\n（消息已存进数据库，回复失败。可在设置里关掉「后端对话」临时改走浏览器直连。）");
-    showToast("后端对话出错，详情见下方红色提示条");
+    const netDown = /Failed to fetch|NetworkError|Load failed|连接中断/.test(String(errMsg));
+    showError("后端对话出错 —— " + errMsg + "\n\n" +
+      (netDown
+        ? "（这条消息已经存在会话里了，点它下面的「重发」就能接着往下走 —— 重发不会再存一遍。\n" +
+          "连不上多半是后端实例正在重启/冷启动：免费档会被平台回收，等十几秒再点重发通常就好了。）"
+        : "（这条消息已经存在会话里了；点「重发」可以再试一次，不会重复存消息。\n" +
+          "也可以在设置里关掉「后端对话」临时改走浏览器直连。）"));
+    showToast(netDown ? "连不上后端，点消息下面的「重发」再试" : "后端对话出错，详情见红色提示条");
     return { id: userKey };
   }
+  /* 成功了一次 → 顺手把「同一条文字」的残留未送达气泡清掉。
+     它们是之前失败留下的，现在这条已经送达，留着只会让人以为还没发出去。 */
+  try{
+    sortedMessages().forEach((m) => {
+      if (m.status === "failed" && String(m.text || "") === String(text || "")
+          && msgKey(m._key) !== msgKey(userKey)) removeMessage(m._key, { render: false });
+    });
+  }catch(_){}
 
   /* 收尾：先把流式草稿气泡换成真实消息（草稿 key 是 stream:*，必须显式 done 才清） */
   queueStreamDelta({ type: "reply_delta", stream_id: streamId, text: out.text, done: true });
@@ -12700,7 +12806,71 @@ function renderCalendar(){
 /* ── 档案室：年份文件夹 → 月份 → 本月记忆（TIME LOGS）────────────────────
    数据直接来自银河星图（/app/galaxy.json 里每条记忆一颗星，带正文与分类），
    所以归档不需要新接口；日更与月度也在这份数据里，天然一起归档。 */
-let arc = { level: 0, year: "", month: "", full: false, edit: null };
+let arc = { level: 0, year: "", month: "", full: false, edit: null, ob: false };
+
+/* ── 档案室 · Haven(Ombre) 那一栏 ─────────────────────────────────────────
+   用户要「档案室合并 Haven/Ombre 摘要」。按约定的**限量设计**做：
+   · 后端 /app/ombre/archive 只取 OB 的**目录**（本来就只有名字与权重，不是正文），
+     并已经在服务端截断到 400 字 / 上限 60 条；
+   · 这里只**懒加载**（打开档案室时拉一次），自己再缓存 10 分钟，
+     点「刷新」才强制重拉 —— 这段是 CPU 密集的，免费档 0.1 核上不能每次打开都去够外网；
+   · 单独一栏，**不混进年份/月份树**：OB 条目没有本地日期，
+     硬塞进去会把它们全堆到"今天"那个月，反而把真正的时间线搅乱。 */
+let arcOb = { t: 0, items: [], note: "", loading: false };
+const ARC_OB_TTL = 10 * 60 * 1000;
+
+async function arcLoadOb(force){
+  if (!force && arcOb.items.length && (Date.now() - arcOb.t) < ARC_OB_TTL) return arcOb;
+  if (arcOb.loading) return arcOb;
+  arcOb.loading = true;
+  try{
+    const d = await memApi("/app/ombre/archive" + (force ? "?refresh=1" : ""));
+    arcOb.items = (d.items || []).map((x, i) => ({
+      key: "ob-" + i, kind: "ob", rawId: "", date: "",
+      name: x.name || "", cat: "Haven · " + (x.domain || "记忆"),
+      content: String(x.content || ""), canEdit: false, importance: x.importance,
+    }));
+    arcOb.note = d.note || "";
+    arcOb.t = Date.now();
+  }catch(e){
+    arcOb.note = "够不到 Haven：" + ((e && e.message) || e) +
+      "（Haven 的端口除了云安全组，机器上的 ufw 也要放行）";
+  }
+  arcOb.loading = false;
+  return arcOb;
+}
+
+function arcObCardHtml(){
+  const n = arcOb.items.length;
+  const badge = n ? (n + " 条") : (arcOb.loading ? "读取中…" : (arcOb.note ? "够不到" : "空"));
+  return '<button class="arc-card" type="button" data-arc-ob="1">' +
+    '<span class="arc-badge">' + escapeHtml(badge) + "</span>" +
+    '<span class="arc-ico">' + MEM_ICO.folder + "</span>" +
+    '<div class="arc-big">Haven</div>' +
+    '<div class="arc-sub">长期记忆 · Ombre</div>' +
+    "</button>";
+}
+
+function arcRenderOb(host){
+  const items = arcOb.items;
+  host.innerHTML =
+    '<div class="arc-back"><button type="button" data-arc-up="ob">' + MEM_ICO.back + "返回</button>" +
+    '<span class="arc-title2">Haven · 长期记忆</span>' +
+    '<span class="arc-crumb">' + escapeHtml(items.length + " 条") + "</span>" +
+    '<button class="arc-eye arc-eye-in" type="button" data-arc-ob-refresh="1" title="重新拉一次">' +
+      MEM_ICO.eye + "</button></div>" +
+    (arcOb.note ? '<div class="arc-empty">' + escapeHtml(arcOb.note) + "</div>" : "") +
+    (items.length
+      ? '<div class="arc-tl">' + items.map((it) =>
+          '<div class="arc-entry"><span class="arc-chip">#' + escapeHtml(it.cat) + "</span>" +
+          (it.name ? '<div class="arc-title">' + escapeHtml(it.name) + "</div>" : "") +
+          '<div class="arc-text' + (arc.full ? "" : " clamp") + '">' +
+            escapeHtml(it.content) + "</div></div>").join("") + "</div>"
+      : (arcOb.note ? "" :
+         '<div class="arc-empty">Haven 那边还没有可列出的记忆。<br>' +
+         "它每轮聊完都会 hold / grow 一些进去，压缩出来的摘要也会归档过去。</div>"));
+  arcCrumb("Haven · 长期记忆");
+}
 
 function arcItems(){
   return (memData.starList || []).map((s) => {
@@ -12778,15 +12948,17 @@ function arcEntryHtml(it){
 function arcRender(){
   const host = $("#arcBody"); if (!host) return;
   arcSync();
+  if (arc.ob){ return arcRenderOb(host); }
   const years = arcIndex();
-  if (!years.length){
+  // 全空的定义要放宽松：Haven 那栏可能已经有东西了，不能因为**本地**没年份就整页空掉
+  if (!years.length && !arcOb.items.length && !arcOb.loading){
     host.innerHTML = '<div class="arc-empty">还没有归档的记忆。<br>在下面任意分区里加一条，或者跑一次「脱水 → 日更」，这里就会长出年份。</div>';
     arcCrumb("");
     return;
   }
-  // ① 年份
+  // ① 年份（前面挂一张 Haven 卡）
   if (arc.level === 0){
-    host.innerHTML = '<div class="arc-grid">' + years.map((y) => (
+    host.innerHTML = '<div class="arc-grid">' + arcObCardHtml() + years.map((y) => (
       '<button class="arc-card" type="button" data-arc-year="' + y.y + '">' +
         '<span class="arc-badge">' + y.n + " 条</span>" +
         '<span class="arc-ico">' + MEM_ICO.folder + "</span>" +
@@ -13091,6 +13263,9 @@ async function loadGalaxy(){
   memRenderStats();
   arcRender();
   drawGalaxy(cv, stars);
+  /* 顺手把 Haven 那一栏读出来（懒加载 + 自身 10 分钟缓存；读到了再补一次渲染）。
+     放在这里而不是开面板时同步等：它是外网 + 本地 JSON 解析，不该挡在首屏上。 */
+  arcLoadOb(false).then(() => { if (arcOb.items.length || arcOb.note) arcRender(); }).catch(() => {});
 }
 function drawGalaxy(cv, stars){
   const host = cv.parentElement, W = host.clientWidth || 320, H = host.clientHeight || W;
@@ -13614,10 +13789,25 @@ function arcOpen(k){
   if (b) b.focus();
 }
 if ($("#arcBody")) $("#arcBody").addEventListener("click", async (e) => {
+  // ⚠️ 刷新按钮也带 arc-eye 类，必须**先**判它，否则会被当成「展开正文」
+  const obr = e.target.closest("[data-arc-ob-refresh]");
+  if (obr){ e.stopPropagation(); await arcLoadOb(true); arcRender(); return; }
   const eye = e.target.closest("[data-arc-eye]");
   if (eye){ e.stopPropagation(); arc.full = !arc.full; arcRender(); return; }
   const up = e.target.closest("[data-arc-up]");
-  if (up){ e.stopPropagation(); arc.level = up.dataset.arcUp === "1" ? 0 : 1; arc.edit = null; arcRender(); return; }
+  if (up){
+    e.stopPropagation();
+    if (up.dataset.arcUp === "ob"){ arc.ob = false; arc.edit = null; arcRender(); arcScrollTop(); return; }
+    arc.level = up.dataset.arcUp === "1" ? 0 : 1; arc.edit = null; arcRender(); return;
+  }
+  const obc = e.target.closest("[data-arc-ob]");
+  if (obc){
+    e.stopPropagation();
+    arc.ob = true; arc.level = 0; arc.edit = null;
+    arcRender(); arcScrollTop();
+    await arcLoadOb(false); arcRender();
+    return;
+  }
   const sv = e.target.closest("[data-arc-save]");
   if (sv){ await arcSave(sv.dataset.arcSave); return; }
   const cx = e.target.closest("[data-arc-cancel]");
@@ -14364,6 +14554,11 @@ async function apiHistory({ since = 0, beforeId = null, latest = false, limit = 
   if (!r.ok) throw new Error("history " + r.status);
   const raw = (await r.json()).messages || [];
   const msgs = bc ? expandBackendThinking(raw) : raw;   // 后端的 reasoning 列 → 拆出「✦ thinking」气泡
+  /* ★ 后端打的「未送达」标记（meta.failed）→ 本地 status。
+     后端是**先存消息再调模型**的，所以回复失败时那条用户消息真的在库里；
+     不打标记的话重载之后它就是一条普通消息，看起来像「发不出去的消息一直堆在下面」。
+     标记存在 memories 的兜底行里（messages 表没有 meta 列），由 /app/history 合并回来。 */
+  if (bc) msgs.forEach((m) => { if (m && m.meta && m.meta.failed) m.status = "failed"; });
   mergeServerHistoryCache(msgs);
   return msgs;
 }
@@ -14451,7 +14646,10 @@ async function apiVoiceText(text, meta = {}){
   const clean = String(text || "").trim();
   if (!clean) return null;
   if (isMock()) return Mock.send(clean);
-  const r = await fetch(`${apiBase()}/app/voice`, {
+  // ★ 基址必须是**后端根**（appUrl），不是 /relay。以前这里写的是 apiBase()，
+  //   而 apiBase() 在直连/云端连接下返回 "/relay" —— 于是每次语音都打成
+  //   /relay/app/voice，在 GitHub Pages 上是同源路径、必 404（后端也没有这个路由）。
+  const r = await fetch(appUrl("/app/voice"), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ text: clean, ...meta })
@@ -14466,7 +14664,7 @@ async function apiVoiceBlob(blob, mime, meta = {}){
   if (isMock()) return Mock.send("[语音通话] " + fmtSize(blob.size));
   const qs = new URLSearchParams({ name: "voice.webm" });
   if (meta.call_id) qs.set("call_id", meta.call_id);
-  const r = await fetch(`${apiBase()}/app/voice?${qs.toString()}`, {
+  const r = await fetch(appUrl("/app/voice") + "?" + qs.toString(), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": mime || blob.type || "audio/webm" },
     body: blob
@@ -14479,7 +14677,7 @@ async function apiVoiceBlob(blob, mime, meta = {}){
 
 async function apiCallEvent(action, meta = {}){
   if (isMock()) return { ok:true };
-  const r = await fetch(`${apiBase()}/app/call`, {
+  const r = await fetch(appUrl("/app/call"), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ action, ...meta })
@@ -15653,14 +15851,17 @@ function makeMessage(rowData){
   const metaEl = bubble.querySelector(".meta");
   if (m.status === "sending") metaEl.innerHTML = `<span>${fmtTime(m.ts)}</span>` + sendingTickHtml();
   else if (m.status === "failed"){
-    metaEl.innerHTML = `<span class="fail">未送达 · 重试</span>`;
-    const fail = metaEl.querySelector(".fail");
-    fail.addEventListener("click", () => {
-      removeMessage(m._key);
-      inputEl.value = m.text;
-      inputEl.dispatchEvent(new Event("input"));
-      doSend();
-    });
+    /* 未送达 → 给两个明确的动作。
+       ★ 不再用「点一下就把气泡删掉再发一遍」那种隐式做法：后端是先存消息再调模型的，
+         那条消息真的在库里，隐式重发只会**再存一条** —— 这就是
+         「发不出去的消息一直堆在下面」的来源。现在的「重发」是幂等的。 */
+    metaEl.innerHTML = '<span class="fail-acts">' +
+      '<button type="button" class="fail-btn fail-retry">重发</button>' +
+      '<button type="button" class="fail-btn fail-del">删除</button></span>';
+    const rt = metaEl.querySelector(".fail-retry");
+    const dl = metaEl.querySelector(".fail-del");
+    if (rt) rt.addEventListener("click", (ev) => { ev.stopPropagation(); retryFailed(m._key); });
+    if (dl) dl.addEventListener("click", (ev) => { ev.stopPropagation(); deleteFailed(m._key); });
   }else fillMeta(metaEl, m.ts, m.from === "human");
   row.appendChild(bubble);
   // reaction chips — AI poke (one-way: AI → you), rendered only under your own bubbles; not under the AI's
@@ -16700,6 +16901,8 @@ async function sendOneFile(file){
     dropPendingOutgoing(tempKey);
     if (String(err.message) === "401") return;
     if (String(err.message) === "413") showToast("文件太大（上限 4MB）");
+    // 把原文件留在内存里，「重发」才有东西可发（刷新后自然失效，到时提示重选）
+    attRetry.set(msgKey(tempKey), file);
     setMessage({ ...optimistic, meta: { attachments: [{ ...att0, uploading: false, failed: true }] }, status: "failed" });
   }
 }

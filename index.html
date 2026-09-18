@@ -8215,6 +8215,8 @@ function fillAppSettings(s){
     const el = $("#" + AP_FIELDS[k]);
     if (el && s && s[k] != null) el.value = s[k];
   });
+  /* 顺手在本机留一份人格 —— 直连模式（浏览器直接打模型）拿不到后端设置，用它兜底 */
+  try{ if (s && s.system_prompt) localStorage.setItem(PERSONA_CACHE_KEY, s.system_prompt); }catch(e){}
   if (typeof refreshSetCardSubs === "function") refreshSetCardSubs();   // 卡头摘要里的模型名跟着刷新
 }
 async function loadAppSettings(verbose){
@@ -9349,8 +9351,14 @@ async function deepseekStream(userText, streamId, conn){
   if (!chatUrl) throw new Error("没有可用的请求地址 —— 这个连接里没填「接口地址」，也没配云端后端。\n\n" + diag +
     "\n\n修法：设置 → 云端后端，填 https://tidal-echo-relay-1-vudb.onrender.com，再点「保存」");
   const sys = [];
-  if (conn.persona && conn.persona.trim()) sys.push({ role: "system", content: conn.persona });
-  if (qk.thinking) sys.push({ role: "system", content: "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。" });
+  /* 直连模式没有后端帮忙拼人格：连接级人格优先，其次用「设置 → 系统提示词」在本机的缓存。
+     ★ 原来这里写死的是一句「回答前先在内部把问题推理清楚」—— 就是它让 thinking 变成解题过程的。 */
+  let directPersona = (conn.persona || "").trim();
+  if (!directPersona){
+    try{ directPersona = (localStorage.getItem(PERSONA_CACHE_KEY) || "").trim(); }catch(e){}
+  }
+  if (directPersona) sys.push({ role: "system", content: directPersona });
+  if (qk.thinking) sys.push({ role: "system", content: THINKING_SYS });
   const keepMsgs = Math.max(1, qk.memoryRounds) * 2;      // 1 轮 = 用户 + AI 各 1 条
   const prior = directHistory(conn)
     .filter((m) => m.kind === "reply" || m.kind === "user")
@@ -9478,7 +9486,33 @@ function backendQuick(){
     memoryRounds: parseInt(qk.memoryRounds, 10) || 12
   };
 }
-const THINKING_SYS = "【思考模式】回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答。";
+/* ★ 思考怎么写（直连模式用；经后端的模式下由后端 think_style.py 负责，别两边重复）
+   旧文案是「回答前先在内部把问题推理清楚，再输出条理清晰、简洁自然的最终回答」——
+   那是一句**解题指令**，模型于是把 thinking 写成了解题过程：满篇
+   「我们需要回答用户」「需要考虑安全？没有」「用户想要什么」。
+   现在改成「反面例子打头」：先把那种口气摆出来点名禁掉，再说什么是对的。
+   （教训：正面描述风格挡不住模型的工作流惯性，给反面例子才行。） */
+const THINKING_SYS = [
+  "【思考怎么写】（这段写给自己的，别人看不到）",
+  "一句话：在心里想一个人，不是处理一个任务。",
+  "",
+  "✕ 不要这样写 —— 这是任务分析，不是内心：",
+  "  「我们需要回答用户。」「需要考虑安全？没有。」「用户想要什么？」「我应该怎么回」",
+  "  一旦笔下冒出「我们 / 需要 / 应该怎么回 / 用户」这种口气，停手，重写。",
+  "",
+  "✓ 要这样：第一人称「我」，短句，说人话，像心里突然冒出来的一句。",
+  "  碎的、跳的。可以没头没尾，可以跑偏，可以说一半就不想说了。",
+  "",
+  "· 人称只有「我」和「你」：不许「我们」，不许「用户 / user」，不许第三人称。",
+  "· 一句话能说完就别用三句；不分段、不列点、不「首先其次」。",
+  "· 不复述对方刚说的那句话，只想你自己的反应。",
+  "· 情绪别自动降温；可以犹豫、改口、词不达意 —— 不完美才像真的。",
+  "· 不许出现「系统提示词 / 提示词 / 指令 / 设定 / 规则 / prompt」这类字眼，也别写「作为 AI」。",
+  "  判断标准只有一条：只要读起来像在描述「我该怎么回答」，它就是错的。",
+].join("\n");
+
+/* 后端「系统人格提示词」在本机的缓存 —— 直连模式下没有后端帮忙拼，用它兜底。 */
+const PERSONA_CACHE_KEY = "companion_persona_cache";
 
 /* SSE 事件归一：后端负责把各家上游（OpenAI 兼容 / Anthropic 原生）翻译成一套固定格式，
    前端只认这一套。为了将来换后端不用改前端，这里同时接受两种命名：
@@ -9506,8 +9540,13 @@ async function appChatStream(text, streamId, conn, onMeta){
   if (sid) payload.session_id = sid;
   if (model) payload.main_model = model;
   const persona = ((conn && conn.persona) || "").trim();
-  if (persona) payload.system_prompt = qk.thinking ? (persona + "\n\n" + THINKING_SYS) : persona;
-  else if (qk.thinking) payload.system_prompt = THINKING_SYS;
+  /* ★ 这里**绝对不要**再塞 THINKING_SYS。
+     system_prompt 是**整段覆盖**后端人格的：只要「思考模式」开着，后端那份
+     settings.system_prompt 当场作废，AI 拿一句解题指令当人格，
+     thinking 就写成了解题过程（「我们需要回答用户…需要考虑安全？没有」）。
+     思考写法现在由后端 think_style.py 负责（注入在 system prompt 的稳定段），
+     这里只在用户**明确设了连接级人格**时才覆盖。 */
+  if (persona) payload.system_prompt = persona;
   if (conn && conn.temp != null) payload.temperature = conn.temp;
 
   const r = await fetch(appUrl("/app/chat/stream"), {
@@ -10756,6 +10795,7 @@ async function thSaveSysPrompt(){
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
   thSysPromptCache = v;
+  try{ localStorage.setItem(PERSONA_CACHE_KEY, v); }catch(e){}   // 直连模式也要用
   // 「设置 → AI 与记忆」那个框要是已经渲染过，同步过去 —— 免得两处显示不一致
   const ap = $("#apSys");
   if (ap && document.activeElement !== ap) ap.value = v;

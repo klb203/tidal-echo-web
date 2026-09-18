@@ -4228,8 +4228,10 @@
               <label>系统人格提示词</label>
               <textarea class="nf-box" id="thSysPrompt" rows="5"
                         placeholder="例如：你是一个温柔、细腻、懂我的伴侣。记得我们聊过的事，回答自然、简洁、有温度。"></textarea>
-              <div class="th-follow">这就是<b>「设置 → AI 与记忆」里那份系统提示词</b>，全局同一份 ——
-                在这里改等于在那儿改。占位符里的例子也是当前的默认值。</div>
+              <div class="th-follow">这就是<b>「设置 → AI 与记忆」里那份系统提示词</b>，全局同一份；
+                保存时<b>会同时写进当前连接</b>（连接编辑器里那个「人格 / 系统提示」是连接级覆盖，
+                填过就会盖住全局 —— 以前在这里改了「不生效」，就是被它挡的）。
+                占位符里的例子是默认值。</div>
               <div class="fld-row" style="margin-top:8px">
                 <button class="btn ghost" id="thSysBtn" type="button">保存人格提示词</button>
                 <button class="btn ghost" id="thSysReload" type="button">重新读取</button>
@@ -9359,6 +9361,8 @@ async function deepseekStream(userText, streamId, conn){
   }
   if (directPersona) sys.push({ role: "system", content: directPersona });
   if (qk.thinking) sys.push({ role: "system", content: THINKING_SYS });
+  /* 回复风格：经后端的模式下由后端 reply_style.py 注入，直连模式没有后端，在这补上 */
+  sys.push({ role: "system", content: REPLY_SYS });
   const keepMsgs = Math.max(1, qk.memoryRounds) * 2;      // 1 轮 = 用户 + AI 各 1 条
   const prior = directHistory(conn)
     .filter((m) => m.kind === "reply" || m.kind === "user")
@@ -9513,6 +9517,50 @@ const THINKING_SYS = [
 
 /* 后端「系统人格提示词」在本机的缓存 —— 直连模式下没有后端帮忙拼，用它兜底。 */
 const PERSONA_CACHE_KEY = "companion_persona_cache";
+
+/* ★ 像微信一样说话（直连模式用；经后端的模式下由后端 reply_style.py 负责）
+   写法上照抄吃过亏的经验：**反面例子打头**。只正面写「要短、要口语、要自然」拦不住，
+   模型照旧输出「我理解你的感受。首先…其次…」的作文体。 */
+const REPLY_SYS = [
+  "【像微信一样说话】",
+  "你不是在写文章，是在发消息。像真人用微信聊天：短、碎、随口。",
+  "",
+  "✕ 不要这样 —— 这是作文 / 客服，不是聊天：",
+  "  「我理解你的感受。首先…其次…总之…」",
+  "  「你是不是因为刚才那件事难过？我完全能理解，其实我也…」",
+  "  → 任何「观察 → 分析 → 结论 → 提问」的完整闭环，一律打碎，只留最核心的那一句。",
+  "",
+  "✓ 要这样：「嗯。」「真的假的。」「……你别这样。」",
+  "  一两句就发；话没组织好也照发，后半截想到了再补一条。",
+  "",
+  "· 只回应你在意的那一点，其余的可以不接、可以岔开 —— 不用面面俱到。",
+  "· 不要复述对方刚说的话（原句不行，换说法也不行）。说你的反应，不是说他刚说了什么。",
+  "· 不要总结、不要确认已聊完的话题（「好的我知道了」别回），也别每句都反问回去。",
+  "· 别解释自己的心理（不写「其实我心里很难过」）—— 让人从你怎么说里看出来。",
+  "· 情绪有惯性：上一轮在生气，这一轮不会因为一句话就立刻笑；别在一轮里大转弯。",
+  "· 信息密度要高：说过的话不要换说法再说一遍（说了「快去睡」就别补「别熬夜了」）。",
+  "· 长度跟情绪走：不开心时可以只回两个字；别每次回复都差不多长。",
+  "· 不要每句都挂口头禅 —— 那是点缀，用密了就是噪音。",
+  "· 不许出现「作为一个 AI」「我的设定」「我理解你」这类话。",
+].join("\n");
+
+/* 把人格同时写进「当前连接」。
+   为什么必须做：连接编辑器里有个「人格 / 系统提示（可选）」，只要填过就**整段覆盖**全局 ——
+   用户在「主题美化 → 系统人格提示词」里改了却「不生效」，就是被它挡的。
+   两个都写，用户的直觉（写在这儿就是全局生效）才成立。 */
+function thSyncConnPersona(v){
+  try{
+    const c = activeConn();
+    if (!c || !c.id) return false;
+    const list = loadConnections();
+    const i = list.findIndex((x) => x.id === c.id);
+    if (i < 0) return false;
+    if (v) list[i].persona = v; else delete list[i].persona;
+    saveConnections(list);
+    setActiveConn(list[i]);
+    return true;
+  }catch(e){ return false; }
+}
 
 /* SSE 事件归一：后端负责把各家上游（OpenAI 兼容 / Anthropic 原生）翻译成一套固定格式，
    前端只认这一套。为了将来换后端不用改前端，这里同时接受两种命名：
@@ -10799,8 +10847,12 @@ async function thSaveSysPrompt(){
   // 「设置 → AI 与记忆」那个框要是已经渲染过，同步过去 —— 免得两处显示不一致
   const ap = $("#apSys");
   if (ap && document.activeElement !== ap) ap.value = v;
+  /* ★ 同时写进「当前连接」的 persona —— 连接编辑器里那个字段是**连接级覆盖**，
+     只要它被填过就会整段盖住全局人格。只写后端的话，用户会看到「改了不生效」。 */
+  const synced = thSyncConnPersona(v);
   const skipped = Array.isArray(d.skipped) ? d.skipped : [];
-  showToast(skipped.length ? ("已保存，但后端跳过了：" + skipped.join("、")) : "人格提示词已保存");
+  showToast(skipped.length ? ("已保存，但后端跳过了：" + skipped.join("、"))
+                           : ("人格提示词已保存" + (synced ? "（已同步到当前连接）" : "")));
 }
 if ($("#thSysBtn")) $("#thSysBtn").addEventListener("click", () => {
   thSaveSysPrompt().catch((e) => showToast("保存失败：" + ((e && e.message) || e)));

@@ -8038,7 +8038,10 @@ function renderQuick(){
     hint.textContent = "当前：" + (a ? (connDisplayName(a) + " · " + (a.model || "-")) : "未选择连接") +
       " · 思考模式" + (q.thinking ? "开" : "关") + extra +
       " · 发送上限 " + q.maxTokens + " tokens · 最多带 " + q.memoryRounds + " 轮记忆。" +
-      (hasBackendChat() ? " 记忆存后端、超阈值自动压缩。" : " 历史只在本机（未开后端对话）。");
+      (hasBackendChat()
+        ? " 记忆存后端、超阈值自动压缩。"
+        : " ⚠️ 直连模式：后端的长期记忆 / 系统人格 / thinking 写法 / 动作层全都不参与，历史只在本机。"
+          + "想用这些就去「设置 → AI 与记忆 → 聊天走后端」打开它。");
   }
 }
 function openQuick(){
@@ -9364,9 +9367,15 @@ async function deepseekStream(userText, streamId, conn){
   /* 回复风格：经后端的模式下由后端 reply_style.py 注入，直连模式没有后端，在这补上 */
   sys.push({ role: "system", content: REPLY_SYS });
   const keepMsgs = Math.max(1, qk.memoryRounds) * 2;      // 1 轮 = 用户 + AI 各 1 条
-  const prior = directHistory(conn)
-    .filter((m) => m.kind === "reply" || m.kind === "user")
-    .slice(-keepMsgs)
+  /* ★ 本轮这句**已经在 directSend 里存进历史了**（saveDirectMessage 在发送之前调用），
+     所以直接 slice 会把它带进 prior，末尾再 append 一条 userText ——
+     模型每轮都把同一句话看两遍（AI 会「看到重复的消息」，但用户只发了一次）。
+     这里把末尾那条重复的当前消息去掉，和后端 _chat_prepare 里
+     「hist 末行若是刚存的那条就去掉」是同一个处理。 */
+  const histRows = directHistory(conn).filter((m) => m.kind === "reply" || m.kind === "user");
+  const tailRow = histRows[histRows.length - 1];
+  if (tailRow && tailRow.kind === "user" && String(tailRow.text || "") === userText) histRows.pop();
+  const prior = histRows.slice(-keepMsgs)
     .map((m) => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text }));
   const messages = sys.concat(prior, [{ role: "user", content: userText }]);
   const bodyObj = { model, messages, stream: true, temperature: (conn.temp != null ? conn.temp : 0.7) };

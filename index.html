@@ -1540,6 +1540,126 @@
   .pk-res b{ color: var(--pk-on-fg, #8E4A5E); }
 
   /* ══════════ 收藏馆（整页 · 三 Tab）══════════ */
+  /* ── 工具与能力：菜单里的一项，整页层（与设置/记忆/网关同级）───────────── */
+  .kit-panel{
+    position: fixed; inset: 0; z-index: 196;
+    display:flex; flex-direction: column; justify-content: center;
+    background: var(--bg);
+  }
+  .kit-panel.hidden{ display:none; }
+  .kit-panel.open .kit-page{ transform: translateY(0); opacity: 1; }
+  .kit-page{
+    position: relative;
+    width: min(100vw, var(--ref-width)); height: 100%;
+    margin: 0 auto; background: var(--bg);
+    display:flex; flex-direction: column;
+    transform: translateY(2.5%); opacity: 0;
+    transition: transform .34s var(--ease-soft), opacity .28s ease;
+  }
+  .kit-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 2px;
+  }
+  .kit-top button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px; opacity:.72;
+  }
+  .kit-top button:hover{ opacity:1; }
+  .kit-top button svg{ width:19px; height:19px; }
+  .kit-title-wrap{ text-align:center; flex:1 1 auto; min-width:0; }
+  .kit-title{ font-size: 19px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
+  .kit-sub{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  .kit-body{
+    flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding: 10px 14px calc(env(safe-area-inset-bottom) + 26px);
+  }
+  .kit-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+  @media (max-width: 340px){ .kit-grid{ grid-template-columns: minmax(0,1fr); } }
+  .kit-card{
+    appearance:none; -webkit-appearance:none; text-align:left; cursor:pointer;
+    border: 1px solid var(--card-line); background: var(--card-bg);
+    border-radius: 14px; padding: 11px 12px 12px;
+    display:flex; flex-direction:column; gap: 5px; min-height: 84px;
+    font-family: var(--font-cn);
+    transition: transform .16s var(--ease-soft), border-color .2s ease;
+  }
+  .kit-card:active{ transform: scale(.975); }
+  .kit-card:hover{ border-color: var(--accent); }
+  .kit-card-t{ font-size: 14px; font-weight: 600; color: var(--text); display:flex; align-items:center; gap:6px; }
+  .kit-card-t i{ font-style:normal; width:16px; height:16px; display:grid; place-items:center; color: var(--accent); flex:0 0 auto; }
+  .kit-card-t i svg{ width:16px; height:16px; }
+  .kit-card-s{ font-size: 11.5px; color: var(--text-faint); line-height:1.5; flex:1 1 auto; }
+  .kit-tag{
+    align-self:flex-start; font-size:10.5px; padding:1.5px 7px; border-radius:999px;
+    background: var(--seg-thumb); color: var(--text-soft); border:1px solid var(--hairline); white-space:nowrap;
+  }
+  .kit-tag.ok{ color:#2E7D5B; border-color: rgba(46,125,91,.35); }
+  .kit-tag.warn{ color:#A8565F; border-color: rgba(168,86,95,.35); }
+  .kit-detail-head{
+    display:flex; align-items:center; gap:10px; margin: 2px 0 12px;
+  }
+  .kit-back{
+    appearance:none; border:1px solid var(--card-line); background: var(--card-bg);
+    color: var(--text); border-radius:10px; padding:6px 11px; font-size:13px; cursor:pointer;
+    font-family: var(--font-cn);
+  }
+  .kit-dh-t{ font-size:15px; font-weight:600; color: var(--text); }
+  .kit-dh-s{ font-size:11.5px; color: var(--text-faint); margin-top:2px; }
+  .kit-sec{
+    border:1px solid var(--card-line); background: var(--card-bg);
+    border-radius: 14px; padding: 12px 13px; margin-bottom: 10px;
+  }
+  .kit-sec-t{ font-size:13px; font-weight:600; color: var(--text); margin-bottom:8px; }
+  .kit-row{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:4px 0; }
+  .kit-row-k{ font-size:12px; color: var(--text-faint); flex:0 0 auto; }
+  .kit-row-v{
+    font-size:12px; color: var(--text); text-align:right; min-width:0;
+    word-break:break-all; font-family: var(--font-en), ui-monospace, monospace;
+  }
+  .kit-in, .kit-sel{
+    width:100%; box-sizing:border-box; margin:5px 0;
+    border:1px solid var(--field-line); background: var(--field-bg); color: var(--text);
+    border-radius:10px; padding:9px 11px; font-size:12.5px; font-family: var(--font-cn);
+  }
+  .kit-btn{
+    appearance:none; border:none; border-radius:10px; padding:9px 15px; cursor:pointer;
+    background: var(--accent); color: var(--accent-fg); font-size:12.5px; font-weight:600;
+    font-family: var(--font-cn); margin:4px 6px 4px 0;
+  }
+  .kit-btn.ghost{
+    background: transparent; color: var(--text);
+    border:1px solid var(--card-line);
+  }
+  .kit-btn[disabled]{ opacity:.5; cursor:default; }
+  .kit-note{ font-size:11px; color: var(--text-faint); line-height:1.7; margin-top:7px; }
+  .kit-warn{
+    font-size:11.5px; line-height:1.7; color:#A8565F;
+    border:1px solid rgba(168,86,95,.3); background: rgba(168,86,95,.06);
+    border-radius:12px; padding:10px 12px; margin:8px 0 0;
+  }
+  .kit-ok{
+    font-size:11.5px; line-height:1.7; color:#2E7D5B;
+    border:1px solid rgba(46,125,91,.3); background: rgba(46,125,91,.06);
+    border-radius:12px; padding:10px 12px; margin:8px 0 0;
+  }
+  .kit-lv{
+    font-size:11px; color: var(--text-faint); line-height:1.7; margin-top:5px;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .kit-list-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    border-top:1px solid var(--hairline); padding:8px 0;
+  }
+  .kit-list-item:first-of-type{ border-top:none; }
+  .kit-li-k{ font-size:12.5px; color: var(--text); }
+  .kit-li-s{ font-size:11px; color: var(--text-faint); margin-top:2px; }
+  .kit-x{
+    appearance:none; border:none; background:transparent; color: var(--text-faint);
+    font-size:16px; cursor:pointer; padding:2px 7px;
+  }
+  .kit-x:hover{ color:#A8565F; }
+  .kit-flash{ animation: kitFlash 1.4s ease; }
+  @keyframes kitFlash{ 0%,100%{ box-shadow:none; } 18%{ box-shadow: 0 0 0 3px var(--info-ring); } }
   /* ── 网关：把「它会的」和「你能开的」全摊成按钮 ───────────────────────
      沿用设置页/收藏页那套「整页层」约定（z-index 195 > 菜单的 190）。
      视觉全部走现有 CSS 变量，所以四套主题（蓝白/粉黛/墨夜/港湾）自动跟随。 */
@@ -4257,6 +4377,12 @@
           <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet place.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="toolkit">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.4a3.6 3.6 0 0 1 4.9 4.9l-1.5-1.5-1.2 1.2-1.7-1.7-1.2 1.2-1.7-1.7 1.2-1.2-1.7-1.7 1.2-1.2-1.5-1.5Z"/><path d="M12.6 9.8 4.4 18a1.7 1.7 0 0 0 2.4 2.4l8.2-8.2"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">Tools</span><span class="menu-sub">Weather, alarms, bots.</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="gateway">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l7.6 4.4v8.8L12 20.8l-7.6-4.4V7.6L12 3.2Z"/><path d="M12 8.4l3.4 2v4l-3.4 2-3.4-2v-4l3.4-2Z"/></svg></span>
           <span class="menu-dot"></span>
@@ -4307,6 +4433,24 @@
       <button id="favPrev" type="button" aria-label="上一页">‹</button>
       <span id="favPageInfo">第 1/1 页 · 每页 10 条</span>
       <button id="favNext" type="button" aria-label="下一页">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 工具与能力（左侧菜单「Tools」打开）── -->
+<div class="kit-panel hidden" id="kitPanel" role="dialog" aria-modal="true" aria-label="工具与能力">
+  <div class="kit-page">
+    <div class="kit-top">
+      <button id="kitBack" type="button" aria-label="返回" class="hidden">‹</button>
+      <div class="kit-title-wrap">
+        <div class="kit-title" id="kitTitle">工具与能力</div>
+        <div class="kit-sub" id="kitSub">它和这台手机能做的事</div>
+      </div>
+      <button id="kitClose" type="button" aria-label="关闭">✕</button>
+    </div>
+    <div class="kit-body">
+      <div id="kitGrid" class="kit-grid"></div>
+      <div id="kitDetail" class="hidden"></div>
     </div>
   </div>
 </div>
@@ -6074,6 +6218,7 @@ if (menuPanel){
     else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
     else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
+    else if (item.dataset.menu === "toolkit") kitOpen();          // 工具与能力（天气/闹钟/Bot/权限…）
     else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
@@ -6082,7 +6227,10 @@ if (menuPanel){
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
-    if ($("#capPanel") && $("#capPanel").classList.contains("open")) capClose();
+    if ($("#kitPanel") && $("#kitPanel").classList.contains("open")){
+      if ($("#kitDetail") && !$("#kitDetail").classList.contains("hidden")) kitBack(); else kitClose();
+    }
+    else if ($("#capPanel") && $("#capPanel").classList.contains("open")) capClose();
     else if (palacePanel && palacePanel.classList.contains("open")) closePalace();
     else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
     else if ($("#themePanel") && $("#themePanel").classList.contains("open")) themeClose();
@@ -6568,6 +6716,661 @@ async function capToolGo(btn){
     if (e.key === "Enter" && e.target && e.target.id === "capToolArg"){
       const btn = $("#capToolRun"); if (btn){ e.preventDefault(); capToolGo(btn); }
     }
+  });
+})();
+
+/* ════════════════════════════════════════════════════════════════════════════
+   工具与能力（菜单 → Tools）
+   ────────────────────────────────────────────────────────────────────────────
+   原则：**能真做的就真做，做不了的直接说清缺什么**，不摆假按钮。
+     · 真能跑  : 天气(Open-Meteo，免 key) / 查手机(设备与网络实况) /
+                 通知栏(真申请权限、真发测试通知) / 闹钟(前台定时) / 权限(真查 navigator.permissions)
+     · 缺外部条件: QQ Bot、连接微信 —— 要 sidecar + 后端桥，这里先给配置与状态，并写明还差什么
+     · 没有公开接口: 小红书(只能跳转 + 自己记) / AI 付(必须走官方流程)
+   前缀一律 kit/KIT_（grep 确认 0 占用 —— 上一版 gw* 撞名的教训）。
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const KIT_LS = {
+  get(k, d){
+    try{ const v = localStorage.getItem("kit_" + k); return v == null ? d : JSON.parse(v); }
+    catch(_){ return d; }
+  },
+  set(k, v){ try{ localStorage.setItem("kit_" + k, JSON.stringify(v)); }catch(_){} },
+};
+
+function kitIcon(name){
+  const I = {
+    qq:'<circle cx="12" cy="12" r="8.4"/><path d="M9.4 10.4h.01M14.6 10.4h.01"/><path d="M9.6 14.6c1.4 1.2 3.4 1.2 4.8 0"/>',
+    wechat:'<path d="M9.6 4.6c-3.6 0-6.5 2.2-6.5 4.9 0 1.5.9 2.9 2.3 3.8l-.6 2 2.3-1.1c.8.2 1.6.3 2.5.3"/><path d="M20.9 15c0-2.3-2.2-4.1-4.9-4.1s-4.9 1.8-4.9 4.1 2.2 4.1 4.9 4.1c.7 0 1.4-.1 2-.3l1.9.9-.5-1.6c.9-.7 1.5-1.9 1.5-3.1Z"/>',
+    xhs:'<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3"/><path d="M7.6 9.4h4.2l-4.6 5.2h4.8"/><path d="M15.4 9.4v5.2"/>',
+    weather:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>',
+    phone:'<rect x="6.4" y="2.8" width="11.2" height="18.4" rx="2.6"/><path d="M10.4 5.4h3.2"/><circle cx="12" cy="18" r=".9" fill="currentColor" stroke="none"/>',
+    bell:'<path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 4 1.6 5.6 1.6 5.6H5s1.6-1.6 1.6-5.6Z"/><path d="M10.2 19a2 2 0 0 0 3.6 0"/>',
+    alarm:'<circle cx="12" cy="13" r="7.4"/><path d="M12 9.4V13l2.6 1.8"/><path d="M4.6 5 6.8 3M19.4 5 17.2 3"/>',
+    pay:'<rect x="3" y="6" width="18" height="12" rx="2.6"/><path d="M3 10.4h18"/><path d="M7 14.6h3"/>',
+    shield:'<path d="M12 3.4l7 2.6v5.6c0 4.2-2.9 7.3-7 8.6-4.1-1.3-7-4.4-7-8.6V6l7-2.6Z"/><path d="M9.4 12l1.9 1.9 3.4-3.6"/>',
+  };
+  return '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+         'stroke-linecap="round" stroke-linejoin="round">' + (I[name] || I.shield) + "</svg></i>";
+}
+
+/* ── 公共小工具 ─────────────────────────────────────────────────────────── */
+function kitRow(k, v){
+  return '<div class="kit-row"><span class="kit-row-k">' + escapeHtml(k) + '</span>' +
+         '<span class="kit-row-v">' + escapeHtml(String(v == null ? "—" : v)) + "</span></div>";
+}
+function kitSupport(){
+  const w = window;
+  return {
+    notify: "Notification" in w,
+    geo: "geolocation" in navigator,
+    bat: typeof navigator.getBattery === "function",
+    conn: !!(navigator.connection || navigator.mozConnection),
+    storage: !!(navigator.storage && navigator.storage.estimate),
+    setapp: !!(navigator.setAppBadge),
+    vib: "vibrate" in navigator,
+    share: !!navigator.share,
+    sw: "serviceWorker" in navigator,
+  };
+}
+function kitIsStandalone(){
+  try{
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+           window.navigator.standalone === true;
+  }catch(_){ return false; }
+}
+function kitIsAndroidWebView(){
+  const ua = navigator.userAgent || "";
+  return /Android/i.test(ua) && (/\bwv\b/.test(ua) || !/Chrome\/\d+/.test(ua));
+}
+function kitBeep(){
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.1);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 1.15);
+    setTimeout(() => { try{ ctx.close(); }catch(_){} }, 1600);
+  }catch(_){}
+}
+function kitNotify(title, body){
+  try{
+    if (!("Notification" in window)) return false;
+    if (Notification.permission === "granted"){ new Notification(title, { body: body || "" }); return true; }
+  }catch(_){}
+  return false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   九张卡
+   ══════════════════════════════════════════════════════════════════════════ */
+const KIT_TOOLS = [
+  /* ── 1. 天气 ─────────────────────────────────────────────────────────── */
+  { id:"weather", name:"天气", sub:"现在与未来五天", icon:"weather",
+    tag:() => { const c = KIT_LS.get("city", ""); return c ? [c, "ok"] : ["未设置城市", null]; },
+    body(){
+      const c = KIT_LS.get("city", "");
+      return '<div class="kit-sec"><div class="kit-sec-t">城市</div>' +
+        '<input class="kit-in" id="kitCity" placeholder="城市名，例如 深圳 / Tokyo" value="' + escapeHtml(c) + '">' +
+        '<button class="kit-btn" id="kitWxGo">查天气</button>' +
+        '<button class="kit-btn ghost" id="kitWxGeo">用定位</button>' +
+        '<div class="kit-note">数据来自 Open-Meteo（免 key、免注册）。国内直连可用。</div>' +
+        '<div id="kitWxOut"></div></div>';
+    },
+    onOpen(root){
+      const out = $("#kitWxOut");
+      const set = (h) => { if (out) out.innerHTML = h; };
+      const code = (n) => {
+        const M = {0:"晴",1:"基本晴",2:"少云",3:"阴",45:"雾",48:"雾凇",51:"毛毛雨",53:"小雨",55:"中雨",
+                   61:"小雨",63:"中雨",65:"大雨",71:"小雪",73:"中雪",75:"大雪",80:"阵雨",81:"强阵雨",
+                   82:"暴阵雨",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
+        return M[n] || ("代码 " + n);
+      };
+      const go = async (lat, lon, label) => {
+        set('<div class="kit-lv">查询中…</div>');
+        try{
+          const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+            "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m" +
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5";
+          const d = await (await fetch(u)).json();
+          const cur = (d && d.current) || {};
+          let h = '<div class="kit-sec" style="margin-top:10px"><div class="kit-sec-t">' +
+                  escapeHtml(label || "当前") + "</div>" +
+            kitRow("天气", code(cur.weather_code)) +
+            kitRow("气温", cur.temperature_2m + "°C") +
+            kitRow("体感", cur.apparent_temperature + "°C") +
+            kitRow("湿度", cur.relative_humidity_2m + "%") +
+            kitRow("风速", cur.wind_speed_10m + " km/h") + "</div>";
+          const dy = (d && d.daily) || {};
+          const days = dy.time || [];
+          if (days.length){
+            h += '<div class="kit-sec"><div class="kit-sec-t">未来</div>';
+            days.forEach((t, i) => {
+              h += kitRow(t.slice(5), code((dy.weather_code || [])[i]) + "  " +
+                (dy.temperature_2m_min || [])[i] + "~" + (dy.temperature_2m_max || [])[i] + "°C");
+            });
+            h += "</div>";
+          }
+          set(h);
+          if (label){ KIT_LS.set("city", label); kitRender(); }
+        }catch(e){ set('<div class="kit-warn">查不到：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+      };
+      const byName = async () => {
+        const q = (($("#kitCity") || {}).value || "").trim();
+        if (!q){ showToast("先填个城市名"); return; }
+        set('<div class="kit-lv">找城市…</div>');
+        try{
+          const g = await (await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&format=json&name=" +
+            encodeURIComponent(q))).json();
+          const hit = g && g.results && g.results[0];
+          if (!hit){ set('<div class="kit-warn">没找到这个地名，换个写法试试。</div>'); return; }
+          await go(hit.latitude, hit.longitude, hit.name + (hit.admin1 ? "·" + hit.admin1 : ""));
+        }catch(e){ set('<div class="kit-warn">找城市失败：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+      };
+      const btnGo = $("#kitWxGo"), btnGeo = $("#kitWxGeo");
+      if (btnGo) btnGo.addEventListener("click", byName);
+      if (btnGeo) btnGeo.addEventListener("click", () => {
+        if (!navigator.geolocation){ showToast("这个浏览器不给定位"); return; }
+        set('<div class="kit-lv">定位中…（手机上会弹权限）</div>');
+        navigator.geolocation.getCurrentPosition(
+          (p) => go(p.coords.latitude, p.coords.longitude, "我的位置"),
+          (e) => set('<div class="kit-warn">定位失败：' + escapeHtml(e.message || "被拒绝") +
+                     '<br>提示：GitHub Pages 是 https，定位本身可用；但手机浏览器常要求先授权。</div>'),
+          { timeout: 12000 });
+      });
+      if (c) byName();          // 以前查过就直接刷一次
+    } },
+
+  /* ── 2. 查手机 ───────────────────────────────────────────────────────── */
+  { id:"device", name:"查手机", sub:"设备 / 网络 / 存储实况", icon:"phone",
+    tag:() => [kitIsStandalone() ? "已装到主屏" : "浏览器里", kitIsStandalone() ? "ok" : null],
+    body(){
+      const n = navigator, sc = window.screen || {};
+      return '<div class="kit-sec"><div class="kit-sec-t">设备</div>' +
+        kitRow("平台", n.platform || "—") +
+        kitRow("逻辑核数", n.hardwareConcurrency || "—") +
+        kitRow("内存(约)", n.deviceMemory ? n.deviceMemory + " GB" : "浏览器不给") +
+        kitRow("屏幕", (sc.width || 0) + "×" + (sc.height || 0)) +
+        kitRow("可视区", window.innerWidth + "×" + window.innerHeight) +
+        kitRow("像素比", window.devicePixelRatio || 1) +
+        kitRow("触控点", n.maxTouchPoints || 0) +
+        kitRow("语言", n.language || "—") +
+        kitRow("运行形态", kitIsStandalone() ? "已装到主屏（无地址栏）" : "浏览器标签页") +
+        kitRow("Android WebView", kitIsAndroidWebView() ? "是（可能装在 App 壳里）" : "否") +
+        "</div>" +
+        '<div class="kit-sec"><div class="kit-sec-t">网络</div><div id="kitNet">' +
+        kitRow("在线", n.onLine ? "是" : "否") + "</div>" +
+        '<div class="kit-note">Battery / 网络类型 / 存储配额点下面按钮现查（有些浏览器不给）。</div>' +
+        '<button class="kit-btn" id="kitDevMore">刷新这几项</button><div id="kitDevOut"></div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">UA</div><div class="kit-lv">' +
+        escapeHtml(n.userAgent || "") + "</div></div>";
+    },
+    onOpen(root){
+      const out = $("#kitDevOut");
+      const more = async () => {
+        if (!out) return;
+        out.innerHTML = '<div class="kit-lv">查询中…</div>';
+        let h = '<div class="kit-sec" style="margin-top:10px"><div class="kit-sec-t">补充</div>';
+        try{
+          if (typeof navigator.getBattery === "function"){
+            const b = await navigator.getBattery();
+            h += kitRow("电量", Math.round(b.level * 100) + "%" + (b.charging ? "（充电中）" : ""));
+          } else h += kitRow("电量", "这个浏览器不给");
+        }catch(_){ h += kitRow("电量", "读不到"); }
+        const c = navigator.connection || navigator.mozConnection;
+        if (c){
+          h += kitRow("网络类型", c.effectiveType || "—");
+          if (c.downlink != null) h += kitRow("下行约", c.downlink + " Mb/s");
+          if (c.rtt != null) h += kitRow("延迟约", c.rtt + " ms");
+        }
+        try{
+          if (navigator.storage && navigator.storage.estimate){
+            const est = await navigator.storage.estimate();
+            h += kitRow("已用存储", fmtSize(est.usage || 0));
+            h += kitRow("配额", fmtSize(est.quota || 0));
+          }
+        }catch(_){}
+        h += kitRow("Service Worker", kitSupport().sw ? "支持" : "不支持");
+        h += "</div>";
+        out.innerHTML = h;
+      };
+      const b = $("#kitDevMore");
+      if (b) b.addEventListener("click", more);
+      more();
+    } },
+
+  /* ── 3. 通知栏 ───────────────────────────────────────────────────────── */
+  { id:"notify", name:"通知栏", sub:"权限 · 测试通知 · 主屏安装", icon:"bell",
+    tag:() => {
+      if (!("Notification" in window)) return ["不支持", "warn"];
+      const p = Notification.permission;
+      return [p === "granted" ? "已允许" : (p === "denied" ? "被拒绝" : "未申请"),
+              p === "granted" ? "ok" : (p === "denied" ? "warn" : null)];
+    },
+    body(){
+      const p = ("Notification" in window) ? Notification.permission : "unsupported";
+      return '<div class="kit-sec"><div class="kit-sec-t">状态</div>' +
+        kitRow("Notification API", ("Notification" in window) ? "支持" : "不支持") +
+        kitRow("当前权限", p) +
+        kitRow("是否已装到主屏", kitIsStandalone() ? "是" : "否") +
+        "</div>" +
+        '<button class="kit-btn" id="kitNtReq">申请通知权限</button>' +
+        '<button class="kit-btn" id="kitNtTest">发一条测试通知</button>' +
+        '<button class="kit-btn ghost" id="kitNtBadge">角标 +1</button>' +
+        '<div id="kitNtOut"></div>' +
+        '<div class="kit-warn">要提醒可靠，得先把页面「添加到主屏幕」装成 PWA —— ' +
+        '浏览器标签页关掉之后就不再收通知了（iOS 更是必须装到主屏才给通知）。</div>';
+    },
+    onOpen(root){
+      const out = $("#kitNtOut");
+      const set = (h) => { if (out) out.innerHTML = h; };
+      const req = $("#kitNtReq"), tst = $("#kitNtTest"), bg = $("#kitNtBadge");
+      if (req) req.addEventListener("click", async () => {
+        try{
+          const r = await Notification.requestPermission();
+          set(r === "granted" ? '<div class="kit-ok">已允许。现在可以发测试通知了。</div>'
+                              : '<div class="kit-warn">没允许：' + escapeHtml(r) +
+                                '。被拒绝之后只能去浏览器/系统的站点设置里改回来。</div>');
+          kitRender();
+        }catch(e){ set('<div class="kit-warn">申请失败：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+      });
+      if (tst) tst.addEventListener("click", () => {
+        const ok = kitNotify("Tidal Echo · 测试", "如果你看到这条，通知就是通的。");
+        set(ok ? '<div class="kit-ok">发出去了（去通知栏看看）。</div>'
+               : '<div class="kit-warn">发不出去 —— 先点「申请通知权限」，或者这个浏览器不同意外来通知。</div>');
+        if (ok) kitBeep();
+      });
+      if (bg) bg.addEventListener("click", async () => {
+        try{
+          if (navigator.setAppBadge){ await navigator.setAppBadge(1); set('<div class="kit-ok">角标已设为 1。</div>'); }
+          else set('<div class="kit-warn">这个浏览器不支持角标（navigator.setAppBadge）。</div>');
+        }catch(e){ set('<div class="kit-warn">角标失败：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+      });
+    } },
+
+  /* ── 4. 闹钟 ─────────────────────────────────────────────────────────── */
+  { id:"alarm", name:"闹钟", sub:"前台到点响 + 通知", icon:"alarm",
+    tag:() => { const a = KIT_LS.get("alarms", []); return [a.length ? a.length + " 个" : "还没有", a.length ? "ok" : null]; },
+    body(){
+      return '<div class="kit-sec"><div class="kit-sec-t">新建</div>' +
+        '<input class="kit-in" id="kitAlTime" type="time">' +
+        '<input class="kit-in" id="kitAlLabel" placeholder="标签（例如：吃药 / 开会）">' +
+        '<button class="kit-btn" id="kitAlAdd">加一个</button>' +
+        '<div class="kit-note">到点会：响一声 + 弹通知 + 页面内提示。</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">已设</div><div id="kitAlList"></div></div>' +
+        '<div class="kit-warn">实话：网页**只有在打开着**（或已装成 PWA 且进程还活着）的时候才能到点提醒。' +
+        '真要在后台也能准时响，得走系统闹钟或服务端 Web Push —— 那是另一套（需要一台常驻后端）。</div>';
+    },
+    onOpen(root){
+      const paint = () => {
+        const list = $("#kitAlList");
+        if (!list) return;
+        const arr = KIT_LS.get("alarms", []);
+        if (!arr.length){ list.innerHTML = '<div class="kit-lv">还没有。</div>'; return; }
+        list.innerHTML = arr.slice().sort((a, b) => String(a.at).localeCompare(String(b.at)))
+          .map((a) => '<div class="kit-list-item"><div><div class="kit-li-k">' +
+            escapeHtml(a.at) + "　" + escapeHtml(a.label || "闹钟") + "</div>" +
+            '<div class="kit-li-s">' + (a.on ? "开着" : "暂停") + "</div></div>" +
+            '<div><button class="kit-btn ghost" data-kal-toggle="' + escapeHtml(a.id) + '" style="padding:5px 9px">' +
+            (a.on ? "暂停" : "开") + '</button>' +
+            '<button class="kit-x" data-kal-del="' + escapeHtml(a.id) + '">✕</button></div></div>').join("");
+      };
+      const add = $("#kitAlAdd");
+      if (add) add.addEventListener("click", () => {
+        const t = (($("#kitAlTime") || {}).value || "").trim();
+        const lb = (($("#kitAlLabel") || {}).value || "").trim();
+        if (!/^\d{1,2}:\d{2}$/.test(t)){ showToast("先选个时间"); return; }
+        const hhmm = t.length === 4 ? "0" + t : t;
+        const arr = KIT_LS.get("alarms", []);
+        arr.push({ id: "al_" + Date.now().toString(36), at: hhmm, label: lb, on: true, last: "" });
+        KIT_LS.set("alarms", arr);
+        paint(); kitRender();
+        showToast("加好了：" + hhmm);
+      });
+      root.addEventListener("click", (e) => {
+        const del = e.target.closest("[data-kal-del]"), tog = e.target.closest("[data-kal-toggle]");
+        const arr = KIT_LS.get("alarms", []);
+        if (del){
+          const id = del.dataset.kalDel;
+          KIT_LS.set("alarms", arr.filter((x) => x.id !== id));
+          paint(); kitRender();
+        } else if (tog){
+          const id = tog.dataset.kalToggle;
+          arr.forEach((x) => { if (x.id === id) x.on = !x.on; });
+          KIT_LS.set("alarms", arr); paint(); kitRender();
+        }
+      });
+      paint();
+    } },
+
+  /* ── 5. 权限设置（无障碍）────────────────────────────────────────────── */
+  { id:"perm", name:"权限设置", sub:"含无障碍 · 通知使用权", icon:"shield",
+    tag:() => [kitIsAndroidWebView() ? "在 App 壳里" : "浏览器里", null],
+    body(){
+      const rows = [
+        ["notifications", "通知"], ["geolocation", "定位"],
+        ["microphone", "麦克风"], ["camera", "摄像头"],
+        ["clipboard-read", "读剪贴板"], ["clipboard-write", "写剪贴板"],
+      ];
+      return '<div class="kit-sec"><div class="kit-sec-t">网页能查到的权限</div>' +
+        '<div id="kitPermList" class="kit-lv">查询中…</div>' +
+        '<button class="kit-btn" id="kitPermGo">重新查</button>' +
+        '<div class="kit-note">用 navigator.permissions 实查；浏览器不支持的项会显示「查不到」' +
+        '（那就是查不到，不是「没授权」）。</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">无障碍 / 通知使用权（要手动开）</div>' +
+        '<div class="kit-note">网页**没有权限**读或改这些系统设置 —— 这是 Android 的安全边界，' +
+        '任何网页都做不到。下面是该去哪儿开：</div>' +
+        '<div class="kit-lv">' +
+        '无障碍：设置 → 无障碍 → 已安装的服务 → 打开本 App 的服务\n' +
+        '通知使用权：设置 → 通知与状态栏 → 通知使用权 → 允许本 App\n' +
+        '后台不被杀：设置 → 应用 → 本 App → 电池 → 不限制 / 允许后台活动\n' +
+        '悬浮窗（要盖在别的应用上）：设置 → 应用 → 本 App → 显示在其他应用上层\n' +
+        '精确闹钟（Android 12+）：设置 → 应用 → 本 App → 闹钟和提醒' +
+        "</div>" +
+        '<button class="kit-btn ghost" id="kitPermCopy">复制这段路径</button></div>' +
+        '<div class="kit-warn">要让「查手机 / 通知栏 / 闹钟」直接操控系统，光有网页是不够的：' +
+        (kitIsAndroidWebView()
+          ? "你现在就在 App 壳里跑 —— 需要壳那边实现原生桥（或接 Shizuku），网页这侧才有得调。"
+          : "你现在是在浏览器里跑 —— 得先装成 App（或 PWA + 原生壳），再让壳提供原生桥。") +
+        "</div>";
+    },
+    onOpen(root){
+      const list = $("#kitPermList");
+      const go = async () => {
+        if (!list) return;
+        const items = [["notifications", "通知"], ["geolocation", "定位"],
+                       ["microphone", "麦克风"], ["camera", "摄像头"],
+                       ["clipboard-read", "读剪贴板"], ["clipboard-write", "写剪贴板"]];
+        const out = [];
+        for (const [name, label] of items){
+          let st = "查不到";
+          try{
+            if (navigator.permissions && navigator.permissions.query){
+              const r = await navigator.permissions.query({ name: name });
+              st = r.state;
+            }
+          }catch(_){ st = "这个浏览器不支持查"; }
+          out.push(label + "：" + st);
+        }
+        list.textContent = out.join("\n");
+      };
+      const b = $("#kitPermGo"); if (b) b.addEventListener("click", go);
+      const c = $("#kitPermCopy");
+      if (c) c.addEventListener("click", async () => {
+        const txt = "无障碍：设置 → 无障碍 → 已安装的服务\n" +
+                    "通知使用权：设置 → 通知与状态栏 → 通知使用权\n" +
+                    "后台不被杀：设置 → 应用 → 电池 → 不限制\n" +
+                    "悬浮窗：设置 → 应用 → 显示在其他应用上层\n" +
+                    "精确闹钟：设置 → 应用 → 闹钟和提醒";
+        try{
+          if (navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(txt); showToast("已复制");
+          } else showToast("这个浏览器不给复制，手动抄一下吧");
+        }catch(_){ showToast("复制失败，手动抄一下吧"); }
+      });
+      go();
+    } },
+
+  /* ── 6. QQ Bot ───────────────────────────────────────────────────────── */
+  { id:"qq", name:"QQ Bot", sub:"OneBot v11 配置与状态", icon:"qq",
+    tag:() => { const c = KIT_LS.get("qq", {}); return [c.host ? (c.host + ":" + (c.port || 3000)) : "未配置", c.host ? "ok" : null]; },
+    body(){
+      const c = KIT_LS.get("qq", {});
+      return '<div class="kit-sec"><div class="kit-sec-t">OneBot 连接</div>' +
+        '<input class="kit-in" id="kitQqHost" placeholder="主机，例如 127.0.0.1 或 你的服务器 IP" value="' + escapeHtml(c.host || "") + '">' +
+        '<input class="kit-in" id="kitQqPort" placeholder="端口，默认 3000（napcat/OneBot 常见 3000 或 5700）" value="' + escapeHtml(c.port || "") + '">' +
+        '<input class="kit-in" id="kitQqToken" placeholder="access_token（可留空）" value="' + escapeHtml(c.token || "") + '">' +
+        '<button class="kit-btn" id="kitQqSave">保存</button>' +
+        '<button class="kit-btn ghost" id="kitQqProbe">探一下</button>' +
+        '<div id="kitQqOut"></div></div>' +
+        '<div class="kit-warn">这一项现在**还通不了**，缺两样东西：<br>' +
+        '① 一个 QQ 协议端（napcat / Lagrange.OneBot）在跑，并开了 HTTP 接口；<br>' +
+        '② 后端要有 /relay/bot/qq/* 那几个转发接口（现在这个 relay 没有）。<br>' +
+        '网页也不能直接打 http:// 的本地端口（混合内容会被浏览器拦），所以必须中转。' +
+        '先把配置存这儿，等桥搭好就能直接用。</div>';
+    },
+    onOpen(root){
+      const out = $("#kitQqOut");
+      const save = $("#kitQqSave");
+      if (save) save.addEventListener("click", () => {
+        KIT_LS.set("qq", {
+          host: (($("#kitQqHost") || {}).value || "").trim(),
+          port: (($("#kitQqPort") || {}).value || "").trim(),
+          token: (($("#kitQqToken") || {}).value || "").trim(),
+        });
+        showToast("已保存"); kitRender();
+      });
+      const pr = $("#kitQqProbe");
+      if (pr) pr.addEventListener("click", async () => {
+        const c = KIT_LS.get("qq", {});
+        if (!c.host){ showToast("先填主机"); return; }
+        if (out) out.innerHTML = '<div class="kit-lv">试连 ' + escapeHtml(c.host) + ":" +
+          escapeHtml(c.port || "3000") + " …</div>";
+        try{
+          const r = await fetch("http://" + c.host + ":" + (c.port || "3000") + "/get_login_info",
+            { headers: c.token ? { Authorization: "Bearer " + c.token } : {} });
+          const d = await r.json().catch(() => ({}));
+          if (out) out.innerHTML = '<div class="kit-ok">通了：' + escapeHtml(JSON.stringify(d).slice(0, 300)) + "</div>";
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">连不上：' +
+            escapeHtml((e && e.message) || String(e)) +
+            '<br>预期之内 —— 浏览器会拦 http 明文请求（混合内容），而且对方多半也没开 CORS。' +
+            '这条链路必须由后端代理。</div>';
+        }
+      });
+    } },
+
+  /* ── 7. 连接微信 ─────────────────────────────────────────────────────── */
+  { id:"wechat", name:"连接微信", sub:"Bot 配置 · 状态 · 扫码位", icon:"wechat",
+    tag:() => { const c = KIT_LS.get("wx", {}); return [c.name ? "已配置" : "未配置", c.name ? "ok" : null]; },
+    body(){
+      const c = KIT_LS.get("wx", {});
+      return '<div class="kit-sec"><div class="kit-sec-t">Bot 配置</div>' +
+        '<input class="kit-in" id="kitWxName" placeholder="机器人昵称" value="' + escapeHtml(c.name || "") + '">' +
+        '<input class="kit-in" id="kitWxHook" placeholder="回调地址（你的网关 /webhook）" value="' + escapeHtml(c.hook || "") + '">' +
+        '<input class="kit-in" id="kitWxAllow" placeholder="只回这些人（逗号分隔，留空=全部）" value="' + escapeHtml(c.allow || "") + '">' +
+        '<button class="kit-btn" id="kitWxSave">保存</button>' +
+        '<div class="kit-note">自动回复：' +
+        '<input type="checkbox" id="kitWxAuto"' + (c.auto !== false ? " checked" : "") + '> 开</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">扫码登录位</div>' +
+        '<div style="width:150px;height:150px;border:1px dashed var(--card-line);border-radius:12px;' +
+        'display:grid;place-items:center;color:var(--text-faint);font-size:11.5px">占位</div>' +
+        '<div class="kit-note">真实二维码要由 chatgpt-on-wechat 那侧给出，再由后端转发过来。' +
+        '现在这里只是位置。</div></div>' +
+        '<div class="kit-warn">还差两样：① 一台常驻的 chatgpt-on-wechat（微信这端必须有真机/容器在跑，' +
+        '而且有封号风险）；② 后端 /relay/bot/wechat/* 那几个接口。' +
+        '网页本身**不可能**直接连微信。</div>';
+    },
+    onOpen(root){
+      const b = $("#kitWxSave");
+      if (b) b.addEventListener("click", () => {
+        KIT_LS.set("wx", {
+          name: (($("#kitWxName") || {}).value || "").trim(),
+          hook: (($("#kitWxHook") || {}).value || "").trim(),
+          allow: (($("#kitWxAllow") || {}).value || "").trim(),
+          auto: !!($("#kitWxAuto") && $("#kitWxAuto").checked),
+        });
+        showToast("已保存"); kitRender();
+      });
+    } },
+
+  /* ── 8. 小红书 ───────────────────────────────────────────────────────── */
+  { id:"xhs", name:"小红书", sub:"跳转搜索 + 自己记笔记", icon:"xhs",
+    tag:() => { const n = KIT_LS.get("xhs", []); return [n.length ? n.length + " 条笔记" : "还没有", n.length ? "ok" : null]; },
+    body(){
+      return '<div class="kit-sec"><div class="kit-sec-t">去小红书搜</div>' +
+        '<input class="kit-in" id="kitXhsQ" placeholder="想找什么？例如 露营 咖啡">' +
+        '<button class="kit-btn" id="kitXhsGo">搜索</button>' +
+        '<button class="kit-btn ghost" id="kitXhsApp">试着打开 App</button>' +
+        '<div class="kit-note">网页**没有**小红书的公开接口，所以只能给你跳过去，' +
+        '没法在页面里直接搜/发。这条不是没接好，是它不给。</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">我的笔记（存在本机）</div>' +
+        '<input class="kit-in" id="kitXhsNote" placeholder="贴一条链接，或写一句要记住的">' +
+        '<button class="kit-btn" id="kitXhsAdd">记下来</button>' +
+        '<div id="kitXhsList"></div></div>';
+    },
+    onOpen(root){
+      const paint = () => {
+        const el = $("#kitXhsList");
+        if (!el) return;
+        const arr = KIT_LS.get("xhs", []);
+        el.innerHTML = arr.length
+          ? arr.slice().reverse().map((n) => '<div class="kit-list-item"><div style="min-width:0"><div class="kit-li-k" style="word-break:break-all">' +
+              escapeHtml(n.t) + '</div><div class="kit-li-s">' + escapeHtml(n.d) + "</div></div>" +
+              '<button class="kit-x" data-kxhs-del="' + escapeHtml(n.id) + '">✕</button></div>').join("")
+          : '<div class="kit-lv">还没有。</div>';
+      };
+      const go = $("#kitXhsGo");
+      if (go) go.addEventListener("click", () => {
+        const q = (($("#kitXhsQ") || {}).value || "").trim();
+        if (!q){ showToast("先写点要搜的"); return; }
+        window.open("https://www.xiaohongshu.com/search_result?keyword=" + encodeURIComponent(q), "_blank", "noopener");
+      });
+      const ap = $("#kitXhsApp");
+      if (ap) ap.addEventListener("click", () => {
+        const q = (($("#kitXhsQ") || {}).value || "").trim();
+        try{ location.href = "xhsdiscover://search/result?keyword=" + encodeURIComponent(q); }
+        catch(_){ showToast("这台设备没装小红书，或者浏览器不让跳"); }
+      });
+      const add = $("#kitXhsAdd");
+      if (add) add.addEventListener("click", () => {
+        const v = (($("#kitXhsNote") || {}).value || "").trim();
+        if (!v){ showToast("写点什么再记"); return; }
+        const arr = KIT_LS.get("xhs", []);
+        arr.push({ id: "x_" + Date.now().toString(36), t: v.slice(0, 300), d: new Date().toLocaleString("zh-CN") });
+        KIT_LS.set("xhs", arr);
+        if ($("#kitXhsNote")) $("#kitXhsNote").value = "";
+        paint(); kitRender();
+      });
+      root.addEventListener("click", (e) => {
+        const d = e.target.closest("[data-kxhs-del]");
+        if (!d) return;
+        KIT_LS.set("xhs", KIT_LS.get("xhs", []).filter((x) => x.id !== d.dataset.kxhsDel));
+        paint(); kitRender();
+      });
+      paint();
+    } },
+
+  /* ── 9. AI 付 ────────────────────────────────────────────────────────── */
+  { id:"pay", name:"AI 付", sub:"微信 AI 支付 / 专属卡", icon:"pay",
+    tag:() => [kitSupport().notify ? "看说明" : "看说明", null],
+    body(){
+      return '<div class="kit-sec"><div class="kit-sec-t">它是什么</div>' +
+        '<div class="kit-lv">微信的「AI 支付 / AI 专属卡」是**在微信里**开通、在**支持它的 AI 客户端**里用的能力：' +
+        '由客户端（不是网页）发起下单，微信侧弹出支付卡片，你在微信里确认。\n\n' +
+        '所以这个网页**做不了**支付本身 —— 不是没接好，是支付必须由持牌通道 + 官方客户端完成，' +
+        '任何网页都不该、也不能自己扣钱。</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">要怎么用</div>' +
+        '<div class="kit-lv">1. 在微信里开通 AI 支付 / 绑定 AI 专属卡\n' +
+        '2. 打开支持它的 AI 客户端（有这个能力的那个）\n' +
+        '3. 让 AI 调支付工具，微信弹出支付卡片\n' +
+        '4. 你在微信里点确认</div>' +
+        '<button class="kit-btn ghost" id="kitPayCopy">复制这段步骤</button></div>' +
+        '<div class="kit-note">如果你想的是「在我自己的 App 里卖东西」，那需要的是商户号 + 微信支付 ' +
+        'JSAPI/小程序 那套 —— 和 AI 支付不是同一条路。</div>';
+    },
+    onOpen(root){
+      const b = $("#kitPayCopy");
+      if (b) b.addEventListener("click", async () => {
+        const t = "1. 在微信里开通 AI 支付 / 绑定 AI 专属卡\n2. 打开支持它的 AI 客户端\n3. 让 AI 调支付工具，微信弹出支付卡片\n4. 在微信里点确认";
+        try{ await navigator.clipboard.writeText(t); showToast("已复制"); }
+        catch(_){ showToast("复制失败"); }
+      });
+    } },
+];
+
+const KIT_BY_ID = {};
+KIT_TOOLS.forEach((t) => { KIT_BY_ID[t.id] = t; });
+
+function kitOpen(){
+  const p = $("#kitPanel"); if (!p) return;
+  p.classList.remove("hidden");
+  requestAnimationFrame(() => p.classList.add("open"));
+  kitBack();
+}
+function kitClose(){
+  const p = $("#kitPanel"); if (!p) return;
+  p.classList.remove("open");
+  setTimeout(() => { if (!p.classList.contains("open")) p.classList.add("hidden"); }, 340);
+}
+function kitBack(){
+  const g = $("#kitGrid"), d = $("#kitDetail");
+  if (g) g.classList.remove("hidden");
+  if (d){ d.classList.add("hidden"); d.innerHTML = ""; }
+  const b = $("#kitBack"); if (b) b.classList.add("hidden");
+  if ($("#kitTitle")) $("#kitTitle").textContent = "工具与能力";
+  if ($("#kitSub")) $("#kitSub").textContent = "它和这台手机能做的事";
+  kitRender();
+}
+function kitRender(){
+  const g = $("#kitGrid"); if (!g) return;
+  g.innerHTML = KIT_TOOLS.map((t) => {
+    let tag = null;
+    try{ tag = typeof t.tag === "function" ? t.tag() : null; }catch(_){ tag = null; }
+    const tagHtml = (tag && tag[0])
+      ? '<span class="kit-tag' + (tag[1] ? " " + tag[1] : "") + '">' + escapeHtml(String(tag[0])) + "</span>" : "";
+    return '<button class="kit-card" type="button" data-kit="' + escapeHtml(t.id) + '">' +
+      '<span class="kit-card-t">' + kitIcon(t.icon) + escapeHtml(t.name) + "</span>" +
+      '<span class="kit-card-s">' + escapeHtml(t.sub) + "</span>" + tagHtml + "</button>";
+  }).join("");
+}
+function kitTool(id){
+  const t = KIT_BY_ID[id]; if (!t) return;
+  const g = $("#kitGrid"), d = $("#kitDetail");
+  if (!g || !d) return;
+  g.classList.add("hidden");
+  d.classList.remove("hidden");
+  d.innerHTML = '<div class="kit-detail-head"><button class="kit-back" id="kitBack2" type="button">‹ 返回</button>' +
+    '<div><div class="kit-dh-t">' + kitIcon(t.icon) + escapeHtml(t.name) + '</div>' +
+    '<div class="kit-dh-s">' + escapeHtml(t.sub) + "</div></div></div>" +
+    '<div id="kitBody"></div>';
+  const b2 = $("#kitBack2"); if (b2) b2.addEventListener("click", kitBack);
+  const b1 = $("#kitBack"); if (b1) b1.classList.remove("hidden");
+  if ($("#kitTitle")) $("#kitTitle").textContent = t.name;
+  if ($("#kitSub")) $("#kitSub").textContent = t.sub;
+  const host = $("#kitBody");
+  try{
+    host.innerHTML = typeof t.body === "function" ? t.body() : (t.body || "");
+    if (typeof t.onOpen === "function") t.onOpen(host);
+  }catch(e){
+    host.innerHTML = '<div class="kit-warn">这块打不开：' + escapeHtml((e && e.message) || String(e)) + "</div>";
+  }
+}
+
+/* ── 闹钟的到点检查：每 20 秒看一眼（只在前台活着时跑）──────────────────── */
+let kitAlarmLast = "";
+setInterval(() => {
+  const now = new Date();
+  const hhmm = ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2);
+  if (hhmm === kitAlarmLast) return;               // 同一分钟只触发一次
+  const arr = KIT_LS.get("alarms", []);
+  if (!arr.length) return;
+  let dirty = false;
+  arr.forEach((a) => {
+    if (!a.on || a.at !== hhmm) return;
+    kitAlarmLast = hhmm;
+    kitNotify("闹钟 · " + (a.label || a.at), a.at + " 到了");
+    kitBeep();
+    try{ if (navigator.vibrate) navigator.vibrate([220, 120, 220]); }catch(_){}
+    showToast("⏰ " + (a.label || a.at));
+    a.last = new Date().toISOString();
+  });
+  if (dirty) KIT_LS.set("alarms", arr);
+}, 20000);
+
+/* ── 事件（委托：卡片与详情都是动态生成的）───────────────────────────── */
+(function kitBind(){
+  const p = $("#kitPanel"); if (!p) return;
+  if ($("#kitClose")) $("#kitClose").addEventListener("click", kitClose);
+  if ($("#kitBack")) $("#kitBack").addEventListener("click", kitBack);
+  p.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-kit]");
+    if (card && card.closest("#kitGrid")) kitTool(card.dataset.kit);
   });
 })();
 
@@ -13381,7 +14184,7 @@ async function apiSend(text, attachments, tempKey){
   const sid = effectiveApiSession();
   if (sid) payload.api_session = sid;
   if (attachments && attachments.length) payload.attachments = attachments;
-  const r = await fetch(`${apiBase()}/app/send`, {
+  const r = await fetch(appUrl("/app/send"), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -13395,7 +14198,7 @@ async function apiUpload(blob, name, mime){
   if (isMock()){
     return { url: URL.createObjectURL(blob), name: name, size: blob.size, mime: mime, kind: /^image\//.test(mime || "") ? "image" : "file" };
   }
-  const r = await fetch(`${apiBase()}/app/upload?name=${encodeURIComponent(name || "file")}`, {
+  const r = await fetch(appUrl("/app/upload?name=" + encodeURIComponent(name || "file")), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": mime || "application/octet-stream" },
     body: blob
@@ -13777,7 +14580,12 @@ function attImgError(img){
 function attUrl(u){
   if (!u) return "";
   if (/^blob:|^data:/.test(u)) return u;
-  return u + (u.indexOf("?") >= 0 ? "&" : "?") + "token=" + encodeURIComponent(secret || "");
+  /* 后端存的是**相对路径**（/app/file/123）—— 它是后端上的地址，不是页面上的。
+     不补上后端根的话，<img src="/app/file/123"> 会去 GitHub Pages 取 → 404。
+     （之前之所以看不出来：文件压根没上传成功过。） */
+  let abs = u;
+  if (u.charAt(0) === "/" && u.indexOf("/app/") === 0) abs = appBase() + u;
+  return abs + (abs.indexOf("?") >= 0 ? "&" : "?") + "token=" + encodeURIComponent(secret || "");
 }
 function fmtSize(n){
   n = Number(n) || 0;
@@ -15577,7 +16385,7 @@ async function doSend(){
 }
 
 /* ════════════ 附件发送 ════════════ */
-const ATT_MAX = 10 * 1024 * 1024;
+const ATT_MAX = 4 * 1024 * 1024;   // 与后端 FILE_MAX_BYTES 对齐（文件存进 Supabase 文本列）
 function isImageFile(file){
   return /^image\//.test(file.type || "") || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(file.name || "");
 }
@@ -15609,7 +16417,10 @@ function imageToJpeg(file){
   });
 }
 async function sendOneFile(file){
-  if (!secret) return;
+  /* ★ 这里原来有一行 `if (!secret) return;` —— 那是从带开屏密钥的旧前端抄过来的。
+     本应用没有那道门（文本消息一直用空的 secret 在发），
+     于是选完图片/文件**一个请求都不发**，点了跟没点一样。
+     鉴权交给 authHeaders()（和其它所有请求一致），这里不再自己拦一道。 */
   ensureAudio();
   const image = isImageFile(file);
   let blob = file, name = file.name || (image ? "image" : "file"), mime = file.type || "";
@@ -15620,7 +16431,7 @@ async function sendOneFile(file){
       if (conv){ blob = conv.blob; name = conv.name; mime = "image/jpeg"; imgW = conv.width || 0; imgH = conv.height || 0; }
     }catch(_){}
   }
-  if (blob.size > ATT_MAX){ showToast("文件超过 10MB，发不了"); return; }
+  if (blob.size > ATT_MAX){ showToast("文件超过 4MB，发不了（图片会先自动压成 JPEG）"); return; }
   const kind = image ? "image" : "file";
   const localUrl = image ? URL.createObjectURL(blob) : "";
   const optimisticTs = Date.now();
@@ -15640,7 +16451,9 @@ async function sendOneFile(file){
     if (localUrl && up && up.url) localPreview.set(up.url, localUrl);
     const finalAtt = { url: up.url, name: up.name, size: up.size, mime: up.mime, kind: up.kind, width: imgW, height: imgH };
     rememberPendingOutgoing(tempKey, "", optimisticTs);
-    const { id } = await apiSend("", [finalAtt]);
+    const sent = await apiSend("", [finalAtt]);
+    const id = sent && sent.id;
+    if (sent && sent.warning) showToast(sent.warning);
     const finalMeta = { attachments: [finalAtt] };
     if (currentSid) finalMeta.api_session = currentSid;
     confirmOptimistic(tempKey, msgKey(id), { id: id, ts: optimistic.ts, from: "human", kind: "user", text: "", meta: finalMeta, status: "sent" });
@@ -15648,7 +16461,7 @@ async function sendOneFile(file){
   }catch(err){
     dropPendingOutgoing(tempKey);
     if (String(err.message) === "401") return;
-    if (String(err.message) === "413") showToast("文件太大（上限 10MB）");
+    if (String(err.message) === "413") showToast("文件太大（上限 4MB）");
     setMessage({ ...optimistic, meta: { attachments: [{ ...att0, uploading: false, failed: true }] }, status: "failed" });
   }
 }

@@ -4619,6 +4619,100 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="actions">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.6 5.6L4 17l3 3 5.1-5.1a4 4 0 0 1 5.6-5.6L21 6l-3-3-3.3 3.3Z"/><path d="M6.5 15.5 8 17"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">工具 · 动作</span><span class="set-card-sub" id="cardSubActions"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="settings-tip"><b>让它自己动手，不用你提醒。</b>
+            想不确切的时候它会去翻记忆 —— 而且是<b>四路一起翻</b>：记忆宫殿（你们之间的事）、
+            Haven 长期记忆库、近景（最近几天）、以及<b>你们说过的原话</b>。
+            翻到的东西会<b>再回到它手里</b>，它接着说，所以你看到的是一句完整的话，而不是「我去查查」。
+            <br>它还能自己调 Haven 的工具（breath / read_bucket / hold / grow / pulse…）、
+            自己决定记下什么、自己画一张图。
+            <br><b>为什么不是 function calling：</b>工具定义常驻 prompt 每轮都要付费，多回合链路越长越容易走岔；
+            这里用一行标记（<code>[[recall: …]]</code>）代替，后端执行完把结果回灌 —— 便宜、稳，而且语气不断。
+            <br><b>不用提醒的前提是「它得先知道自己有手」</b>：所以下面那段会常驻 system prompt
+            （放在<b>稳定段</b>，工具清单逐字节不变 → 前缀缓存照样命中，不额外花钱）。</div>
+
+          <div class="gw-hero">
+            <div class="gw-hero-row">
+              <div class="gw-kpi"><span class="gw-kpi-k">动作层</span>
+                <span class="gw-kpi-v" id="acState">—</span>
+                <span class="gw-kpi-s" id="acStateSub">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">能用的工具</span>
+                <span class="gw-kpi-v" id="acToolsN">—</span>
+                <span class="gw-kpi-s" id="acToolsSub">—</span></div>
+              <div class="gw-kpi"><span class="gw-kpi-k">自己画图</span>
+                <span class="gw-kpi-v" id="acImg">—</span>
+                <span class="gw-kpi-s" id="acImgSub">—</span></div>
+            </div>
+            <div class="gw-hero-note" id="acNote">—</div>
+          </div>
+
+          <label class="fld switch-row" style="margin-top:12px"><span>开启动作层
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉就退回「只会聊天」：所有标记都不执行，那段提示词也不再注入。</span></span>
+            <input type="checkbox" id="acEnable">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>允许它自己翻记忆
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">宫殿 + Haven + 近景 + 历史原话，四路一起搜。这是「想起所有记忆」的主通道。</span></span>
+            <input type="checkbox" id="acRecall">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>允许它调 Haven 的工具
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">只开「读」和安全的「写」。删除类、暗房正文类的一律不给（见下面清单）。</span></span>
+            <input type="checkbox" id="acOb">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>允许它自己画图
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">要先在下面把生图配置同步到服务端 —— 浏览器里的那份它看不到。</span></span>
+            <input type="checkbox" id="acImgOn">
+          </label>
+          <label class="fld switch-row" style="margin-top:8px"><span>把「你有这些工具」写进 system prompt
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">关掉它就不会主动用（有些人只想要它安静聊天）。这是「不用提醒」的关键开关。</span></span>
+            <input type="checkbox" id="acHints">
+          </label>
+
+          <div class="fld-pair" style="margin-top:12px">
+            <label class="fld"><span>最多补全几轮
+              <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">翻到结果后让它接着说，最多几次。0=只执行不追加调用；2 够用也不会自问自答。</span></span>
+              <input id="acRounds" type="number" min="0" max="3" step="1" placeholder="2"></label>
+            <label class="fld"><span>Haven 调用超时（秒）</span><input id="acTimeout" type="number" min="5" max="60" step="1" placeholder="20"></label>
+          </div>
+
+          <div class="fld-row" style="margin-top:12px">
+            <button class="btn ghost" id="acSave">保存</button>
+            <button class="btn ghost" id="acImgSync">把生图配置同步到服务端</button>
+            <button class="btn ghost" id="acToolsLive">刷新工具清单（问一次服务器）</button>
+          </div>
+
+          <div class="bk-sub" id="acImgNote" style="margin-top:10px"></div>
+
+          <details class="set-fold" style="margin-top:10px">
+            <summary>它能调的工具（<span id="acToolsCount">—</span> 个）</summary>
+            <div class="bk-sub" id="acToolsList">—</div>
+          </details>
+
+          <details class="set-fold" style="margin-top:8px">
+            <summary>没收给它的工具（为什么）</summary>
+            <div class="bk-sub" id="acDenyList">—</div>
+          </details>
+
+          <details class="set-fold" style="margin-top:8px">
+            <summary>试一段（看它会被怎么理解、回灌了什么）</summary>
+            <div class="fld" style="margin-top:8px">
+              <textarea class="nf-box" id="acTestText" rows="3" placeholder="例：让我翻翻我们之前说好的事 &#10;[[recall: 说好的旅行]]"></textarea>
+            </div>
+            <div class="fld-row" style="margin-top:8px">
+              <button class="btn ghost" id="acTestGo">跑一下</button>
+            </div>
+            <div class="bk-sub om-status" id="acTestOut" style="margin-top:8px">—</div>
+          </details>
+
+          <div class="om-status" id="acStatus">—</div>
+        </div>
+      </section>
+
       <section class="set-card" data-card="backup">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5c0-1.4 3.6-2.5 8-2.5s8 1.1 8 2.5"/><path d="M4 7.5v9c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-9"/><path d="M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5"/></svg></span>
@@ -5402,6 +5496,15 @@ const BACKFILL_MS = 20000;
 const STREAM_FLUSH_MS = 80;
 let typingTimer = null;
 let typingActive = false;
+/* 打字状态旁边那一行小字。它现在会被「它正在翻记忆 / 正在查长期记忆库」占用 ——
+   补全轮要跑几秒到几十秒，这段时间一个增量都没有，不吭一声看着像卡死。 */
+let statusNote = "";
+function setStatusNote(t){
+  const v = String(t || "");
+  if (v === statusNote) return;
+  statusNote = v;
+  renderStatus();
+}
 const freshKeys = new Set();   // 刚发/刚收到、待播一次入场动画的消息 key
 const freshReactionKeys = new Set();   // messages whose AI reaction just arrived, pending a one-shot pop
 const streamDrafts = new Map();        // stream_id+kind -> temporary bubble key
@@ -5629,6 +5732,7 @@ function openSettings(){
   if (!gwLoadedOnce){ gwLoadedOnce = true; gwLoad(false); }              // 监控台读一次就够
   if (!sdLoadedOnce){ sdLoadedOnce = true; sdLoad(false); }              // 影子推送读一次就够
   if (!bkLoadedOnce){ bkLoadedOnce = true; bkLoad(false); syLoad(false); }  // 备份与云同步读一次
+  if (!acLoadedOnce){ acLoadedOnce = true; acLoad(false); }                 // 工具 · 动作读一次
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
   settingsPanel.classList.remove("hidden");
@@ -6737,6 +6841,7 @@ if ($("#gwClear")) $("#gwClear").addEventListener("click", async () => {
 let sdData = {};
 let sdLoadedOnce = false;
 let bkLoadedOnce = false;
+let acLoadedOnce = false;
 const SD_FIELDS = ["sdEnable","sdLoop","sdCdMin","sdCdMax","sdDaily","sdTake","sdQw","sdQe",
                    "sdTemp","sdMaxTok","sdHard","sdModel","sdBark","sdBarkTitle","sdNtfy",
                    "sdNtfyServer"];
@@ -7066,6 +7171,194 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) refr
 /* ════════════ 备份与恢复 · 云端同步 ════════════
    后端 backup.py 负责「导出什么 / 怎么抽媒体 / 导入怎么合并」，
    这里只做三件事：打包本机那份快照、把 blob 变成一次下载、把导入报告讲清楚。 */
+/* ════════════ 工具 · 动作（它会自己翻记忆 / 调 Haven / 画图）════════════
+   这一卡管三件事：
+     ① 开关：让它别到处乱调工具（安静聊天也是合理需求）；
+     ② 生图配置同步：浏览器里那份它看不到，后端要有一份才能自己画；
+     ③ 试一段：把「它写了标记之后到底发生了什么」摊开给人看 ——
+        不然动作层是个黑盒，出了事只能猜。 */
+function acStatus(msg, kind){
+  const el = $("#acStatus");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.className = "om-status" + (kind ? " " + kind : "");
+}
+function acPct(v){
+  return (v == null || v === "") ? "—" : String(v);
+}
+async function acLoad(verbose){
+  const el = (t) => $(t);
+  if (verbose) acStatus("读取中…");
+  let d = null;
+  try{
+    const r = await fetch(appUrl("/app/actions/status"), { headers: authHeaders() });
+    d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+  }catch(err){
+    acStatus("读不到动作层状态 —— " + ((err && err.message) || err), "err");
+    return;
+  }
+  const a = (d && d.actions) || {};
+  const c = a.config || {};
+  const img = a.image || {};
+  const tools = a.tools || {};
+
+  /* 开关 */
+  if (el("#acEnable")) el("#acEnable").checked = !!c.enable;
+  if (el("#acRecall")) el("#acRecall").checked = !!c.recall;
+  if (el("#acOb"))     el("#acOb").checked = !!c.ob;
+  if (el("#acImgOn"))  el("#acImgOn").checked = !!c.img;
+  if (el("#acHints"))  el("#acHints").checked = !!c.hints;
+  if (el("#acRounds"))  el("#acRounds").value  = (c.rounds == null ? 2 : c.rounds);
+  if (el("#acTimeout")) el("#acTimeout").value = (c.ob_timeout == null ? 20 : c.ob_timeout);
+
+  /* 三块指标 */
+  const on = !!c.enable;
+  if (el("#acState"))    el("#acState").textContent = on ? "开着" : "关着";
+  if (el("#acStateSub")){
+    el("#acStateSub").textContent = on
+      ? ("翻记忆 " + (c.recall ? "✓" : "✗") + " · Haven " + (c.ob ? "✓" : "✗") +
+         " · 画图 " + (c.img ? "✓" : "✗") + " · " + (c.rounds || 0) + " 轮补全")
+      : "标记一律不执行，提示词也不注入";
+  }
+  const tkeys = Object.keys(tools);
+  if (el("#acToolsN"))   el("#acToolsN").textContent = tkeys.length ? String(tkeys.length) : "0";
+  if (el("#acToolsSub")) el("#acToolsSub").textContent =
+    (a.tools_source === "live" ? "问过服务器" : "内置清单") + " · 安全白名单";
+  if (el("#acImg"))      el("#acImg").textContent = img.ready ? "通了" : "没配";
+  if (el("#acImgSub"))   el("#acImgSub").textContent =
+    img.ready ? ((img.model || "?") + (img.has_key ? " · 有 Key" : "")) : "缺配置";
+  if (el("#acNote"))     el("#acNote").textContent = a.hint || "—";
+  if (el("#acImgNote"))  el("#acImgNote").textContent = img.note || "";
+
+  /* 工具清单 */
+  if (el("#acToolsCount")) el("#acToolsCount").textContent = String(tkeys.length);
+  if (el("#acToolsList")){
+    el("#acToolsList").innerHTML = tkeys.length
+      ? tkeys.map((k) => "<div style=\'margin:2px 0\'><b>" + escapeHtml(k) + "</b> —— " +
+                         escapeHtml(tools[k] || "") + "</div>").join("")
+      : "（一个都没有）";
+  }
+  if (el("#acDenyList")){
+    const deny = a.denied || [];
+    el("#acDenyList").innerHTML = deny.length
+      ? deny.map((k) => "<code>" + escapeHtml(k) + "</code>").join("、") +
+        "<div style=\'margin-top:4px\'>删除类（删的是真东西）、暗房正文类（不该被顺手调出来）都不给。" +
+        "要删要改，让它直接跟你说，你点头了再动手。</div>"
+      : "—";
+  }
+  const sub = $("#cardSubActions");
+  if (sub) sub.textContent = on
+    ? ("它现在会自己翻记忆 · " + tkeys.length + " 个工具" + (img.ready ? " · 能画图" : ""))
+    : "已关闭";
+  acStatus(verbose ? ("读到了：注入提示词 " + (a.hint_chars || 0) + " 字") : "", verbose ? "ok" : "");
+}
+async function acSave(){
+  const cfg = {
+    enable: !!($("#acEnable") || {}).checked,
+    recall: !!($("#acRecall") || {}).checked,
+    ob:     !!($("#acOb") || {}).checked,
+    img:    !!($("#acImgOn") || {}).checked,
+    hints:  !!($("#acHints") || {}).checked,
+    rounds: (() => { const v = parseInt(($("#acRounds") || {}).value, 10); return isNaN(v) ? 2 : v; })(),
+    ob_timeout: (() => { const v = parseInt(($("#acTimeout") || {}).value, 10); return isNaN(v) ? 20 : v; })(),
+  };
+  acStatus("保存中…");
+  try{
+    const r = await fetch(appUrl("/app/actions/config"), {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ config: cfg })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+    showToast("已保存");
+    await acLoad(true);
+  }catch(err){
+    acStatus("保存失败 —— " + ((err && err.message) || err), "err");
+  }
+}
+/* 把浏览器里那份生图配置推给服务端 —— 不同步的话它自己画不了图（它读不到 localStorage） */
+async function acSyncImage(){
+  const c = (typeof loadImageGen === "function") ? (loadImageGen() || {}) : {};
+  if (!c.base || !c.model){
+    acStatus("浏览器里也还没配生图（设置 → 生图 · 中转站），先在那儿填好再同步。", "err");
+    return;
+  }
+  acStatus("同步生图配置…");
+  try{
+    const r = await fetch(appUrl("/app/image/config"), {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ base: c.base, key: c.key || "", model: c.model, size: c.size || "" })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+    showToast("同步好了，它现在能自己画图");
+    await acLoad(true);
+  }catch(err){
+    acStatus("同步失败 —— " + ((err && err.message) || err), "err");
+  }
+}
+async function acToolsLive(){
+  acStatus("问服务器要工具清单…");
+  try{
+    const r = await fetch(appUrl("/app/actions/tools?live=1"), { headers: authHeaders() });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+    const t = d.tools || {};
+    const k = Object.keys(t);
+    if ($("#acToolsCount")) $("#acToolsCount").textContent = String(k.length);
+    if ($("#acToolsList")){
+      $("#acToolsList").innerHTML = k.map((x) => "<div style=\'margin:2px 0\'><b>" + escapeHtml(x) +
+        "</b> —— " + escapeHtml(t[x] || "") + "</div>").join("") || "（一个都没有）";
+    }
+    acStatus("服务器说它有 " + k.length + " 个工具可用（来源 " + (d.source || "?") + "）", "ok");
+  }catch(err){
+    acStatus("问不到 —— " + ((err && err.message) || err) + "（多半是 Haven 连不上，此时用内置清单）", "err");
+  }
+}
+/* 试一段：把「写了标记之后到底发生了什么」摊开 —— 解析出什么动作、跑了没有、回灌了什么 */
+async function acTestGo(){
+  const box = $("#acTestText");
+  const text = (box && box.value || "").trim();
+  if (!text){
+    acStatus("先在上面写一段带标记的话，例如：让我翻翻\n[[recall: 说好的旅行]]", "err");
+    return;
+  }
+  const out = $("#acTestOut");
+  acStatus("跑着呢…（翻记忆可能要几秒）");
+  if (out) out.textContent = "…";
+  try{
+    const r = await fetch(appUrl("/app/actions/test"), {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ text: text, session_id: effectiveApiSession() || null })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+    const acts = (d.parsed || []).map((a) => a.name).join("、") || "（一个都没认出来）";
+    const ran = (d.ran || []).map((e) => {
+      const bits = [e.name];
+      if (e.hits) bits.push("命中 " + Object.keys(e.hits).map((k) => k + ":" + e.hits[k]).join("/"));
+      if (e.error) bits.push("失败 " + e.error);
+      return bits.join(" ");
+    }).join("；") || "（没执行）";
+    if (out) out.textContent =
+      "认出来的动作：" + acts + "\n执行情况：" + ran +
+      "\n给 TA 看的正文：" + (d.clean || "（空）") +
+      "\n回灌给它的大约 " + (d.results_chars || 0) + " 字" +
+      "\n\n—— 回灌内容 ——\n" + (d.results || "（没有需要回灌的）");
+    acStatus("跑完了（" + (d.ms || 0) + "ms）", "ok");
+  }catch(err){
+    acStatus("跑失败 —— " + ((err && err.message) || err), "err");
+  }
+}
+if ($("#acSave")) $("#acSave").addEventListener("click", acSave);
+if ($("#acImgSync")) $("#acImgSync").addEventListener("click", acSyncImage);
+if ($("#acToolsLive")) $("#acToolsLive").addEventListener("click", acToolsLive);
+if ($("#acTestGo")) $("#acTestGo").addEventListener("click", acTestGo);
+
 function bkStatusEl(msg, kind){
   const el = $("#bkStatus"); if (!el) return;
   el.textContent = msg || "";
@@ -8974,7 +9267,7 @@ async function appChatStream(text, streamId, conn, onMeta){
   const dec = new TextDecoder();
   let buf = "", acc = "", think = "", sawDone = false;
   const out = { text: "", reasoning: "", model: model, sessionId: "", assistantId: null, usage: null,
-                error: "", incomplete: false };
+                error: "", incomplete: false, actions: [] };
   while (true){
     const { done, value } = await reader.read();
     if (done) break;
@@ -9000,6 +9293,13 @@ async function appChatStream(text, streamId, conn, onMeta){
       }else if (type === "reasoning"){
         think += streamEventText(ev);
         queueStreamDelta({ type:"thinking_delta", stream_id: streamId, text: think });
+      }else if (type === "action"){
+        /* 它自己动手了：翻记忆 / 查长期库 / 记一条 / 画一张。
+           running 时把状态行改成「正在翻记忆…」，done 时放掉 —— 补全轮有一段静默期，
+           不提示的话用户会以为断线了。 */
+        if (String(ev.status) === "running") setStatusNote(ev.label || "…");
+        else setStatusNote("");
+        out.actions.push({ name: ev.name, status: ev.status, arg: ev.arg, detail: ev.detail });
       }else if (type === "usage"){
         out.usage = ev.usage;
       }else if (type === "done"){
@@ -9010,6 +9310,7 @@ async function appChatStream(text, streamId, conn, onMeta){
         out.stored = ev.stored;
         out.usage = ev.usage || out.usage;
         out.sessionId = ev.session_id || out.sessionId;
+        if (Array.isArray(ev.actions) && ev.actions.length) out.actions = out.actions.concat(ev.actions);
         if (ev.error) out.error = ev.error;
       }else if (type === "error"){
         throw new Error(ev.message || ev.content || "后端对话出错");
@@ -9070,6 +9371,7 @@ async function backendSend(text, tempKey){
     errMsg = (err && err.message) || String(err);
   }
   backendStreaming = false;
+  setStatusNote("");
   hideTyping();
 
   if (errMsg){
@@ -9100,6 +9402,10 @@ async function backendSend(text, tempKey){
     resetServerHistoryCache();
     loadSessions();
   }
+  /* 后台动作（生图）是异步的：画一张要几十秒，等它画完流早就结束了。
+     所以要在这里单独取一次 —— 后端只把事件留在缓冲里，等前端来拿。 */
+  try{ await pullActionEvents(); }catch(_){}
+
   /* 连接中途断了（没收到 done）：已有的内容照样显示出来，只是提醒一句可能不完整 */
   if (out.incomplete){
     showToast("连接中断，回复可能没说完");
@@ -9142,6 +9448,43 @@ function imageMarkdownContent(prompt, src, isData){
   const cap = "🎨 " + prompt;
   if (!src || isData) return cap + "\n\n（图片是 base64 返回的，没入库；想要能长期显示的图，换一家返回 url 的中转站）";
   return cap + "\n\n![" + prompt.replace(/[\[\]]/g, "").slice(0, 60) + "](" + src + ")";
+}
+/* ════════════ 后台动作的事件（生图这类要几十秒的）════════════
+   后端只把事件留在缓冲里，等前端来拿 —— 因为「画好了」永远发生在流结束之后。
+   取过就清空，所以重复调用是安全的（不会插出两张一样的图）。 */
+async function pullActionEvents(){
+  let d = null;
+  try{
+    const r = await fetch(appUrl("/app/actions/events"), { headers: authHeaders() });
+    if (!r.ok) return;
+    d = await r.json();
+  }catch(_){ return; }
+  const evs = (d && d.events) || [];
+  let got = 0;
+  for (const ev of evs){
+    if (ev.kind !== "img") continue;
+    if (!ev.ok || !ev.src){
+      showToast("它想画的那张没画成" + (ev.error ? "：" + String(ev.error).slice(0, 60) : ""));
+      continue;
+    }
+    appendActionImage(ev);
+    got++;
+  }
+  return got;
+}
+/* 它自己画的那张：和「🎨 生图」用同一套 meta.attachments 渲染，看着才像同一个人画的 */
+function appendActionImage(ev){
+  const prompt = ev.prompt || "";
+  const isData = !!ev.is_data || String(ev.src || "").startsWith("data:");
+  const att = { url: ev.src, kind: "image", name: "tidal-image.png", mime: "image/png", prompt: prompt };
+  const id = (ev.id != null) ? ev.id : ("act-img-" + Date.now());
+  setMessage({ id: id, ts: new Date().toISOString(), from: "ai", kind: "reply",
+               text: isData ? ("🎨 " + prompt) : "",
+               meta: isData ? { kind: "image", prompt: prompt }
+                            : { attachments: [att], image: true, prompt: prompt,
+                                source: "action" },
+               status: "sent" }, { render: true });
+  showToast("它画好了" + (prompt ? "：" + prompt.slice(0, 16) : ""));
 }
 async function postImageMessage(sid, role, content, meta){
   const r = await fetch(appUrl("/app/sessions/" + encodeURIComponent(sid) + "/messages"), {
@@ -12090,7 +12433,11 @@ function openStream(){
 function renderStatus(){
   const connLabel = { online:"online", reconnecting:"connecting…", offline:"offline" }[appEl.dataset.conn] || "";
   if (typingActive){
-    if (!statusEl.classList.contains("typing")){   // 仅在进入 typing 时写一次,避免重启点动画
+    // 有「正在做什么」就用它（读起来是动作，不是等待）；没有才回到 typing 点点点
+    if (statusNote){
+      statusEl.textContent = statusNote;
+      statusEl.classList.remove("typing");
+    }else if (!statusEl.classList.contains("typing")){   // 仅在进入 typing 时写一次,避免重启点动画
       statusEl.innerHTML = 'typing<span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
       statusEl.classList.add("typing");
     }
@@ -12098,6 +12445,7 @@ function renderStatus(){
     statusEl.textContent = connLabel;
     statusEl.classList.remove("typing");
   }
+  if (!typingActive) statusNote = "";
 }
 function setConn(state){
   appEl.dataset.conn = state;

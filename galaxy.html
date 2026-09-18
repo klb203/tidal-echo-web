@@ -5,11 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#050209">
 <title>Memory · 记忆银河</title>
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400-italic.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/600-italic.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/300.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- 字体 CSS 非阻塞化（同 index.html）：cdn.jsdelivr.net 在大陆手机常慢，阻塞会白屏等它。 -->
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400-italic.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/600-italic.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/300.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400-italic.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/600-italic.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/300.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css">
+</noscript>
 
 <!-- ═══════════════════════════════════════════════════════════
      ① CONFIG —— 只改这里就能变成你们自己的银河

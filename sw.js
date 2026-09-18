@@ -2,21 +2,34 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "Claude";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v39-haven-import";
+const CACHE = "companion-v40-assets";
 const PRECACHE = [
   "./index.html",
+  "./manifest.webmanifest",
+  "./favicon.png",
+  "./apple-touch-icon.png",
+  "./icon-192.png", "./icon-512.png",
   "./chat-light.webp", "./chat-harbor.webp",
   "./menu-light.webp", "./menu-harbor.webp",
   "./avatar-sea.png",
+  "./send.mp3",
 ];
 
+/* 逐个 put，而不是 addAll：addAll 是「全有全无」—— 只要有一条 404
+   （比如某个主题图没传上去），整批预缓存就全废，而且会被 catch 吞掉，
+   表现是「离线打不开 / 装到主屏后壁纸全是空的」。逐条兜底就只丢那一条。 */
+function precache() {
+  return caches.open(CACHE).then((c) => Promise.all(
+    PRECACHE.map((u) =>
+      fetch(new Request(u, { cache: "reload" }))
+        .then((res) => { if (res && (res.ok || res.type === "opaque")) return c.put(u, res); })
+        .catch(() => {})                       // 单条失败不影响其余
+    )
+  ));
+}
+
 self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then((c) => c.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
-  );
+  e.waitUntil(precache().then(() => self.skipWaiting()).catch(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(
@@ -27,24 +40,27 @@ self.addEventListener("activate", (e) => {
 });
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (url.pathname.startsWith("/relay/")) return;          // never intercept the API / SSE
+  if (e.request.method !== "GET") return;                     // 只处理 GET
+  if (url.origin !== location.origin) return;                 // 跨域（后端 / CDN）一律放行不缓存
+  if (url.pathname.startsWith("/relay/")) return;             // never intercept the API / SSE
+  if (url.pathname.endsWith("/sw.js")) return;                // 别把 SW 自己塞进缓存
   if (e.request.mode === "navigate") {
     // network-first for the page → an online reload always gets the latest index.html
     e.respondWith(fetch(e.request, { cache: "reload" }).catch(() => caches.match("./index.html")));
     return;
   }
-  if (e.request.method === "GET" && url.origin === location.origin) {
-    e.respondWith(
-      caches.match(e.request).then((r) => {
-        if (r) return r;
-        return fetch(e.request).then((res) => {
+  e.respondWith(
+    caches.match(e.request).then((r) => {
+      if (r) return r;
+      return fetch(e.request).then((res) => {
+        if (res && (res.ok || res.type === "opaque")) {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-          return res;
-        });
-      })
-    );
-  }
+          caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        }
+        return res;
+      });
+    })
+  );
 });
 
 // ── Web Push (VAPID) ──────────────────────────────

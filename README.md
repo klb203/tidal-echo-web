@@ -31,6 +31,64 @@ DeepSeek / 硅基流动 / 智谱 / Kimi 这些接口**（只有 DeepSeek 放行�
 
 ---
 
+## 部署到 Vercel（并让国内手机不用代理也能打开）
+
+### 1. 导入项目
+
+Vercel → **Add New → Project** → 选这个仓库 → Import。
+**Framework Preset 必须选 `Other`**，Build Command / Output Directory / Install Command 全部留空。
+
+> 本仓库是纯静态、**没有构建步骤**。如果你在 Vercel 里选了 **Vite**，它会去找
+> `npm run build` 和 `dist/` —— 两者都不存在，轻则部署失败，重则部署"成功"但整站 404。
+> 仓库里的 `vercel.json` 已经把 `framework` 钉成 `Other`、输出目录钉成仓库根，
+> 所以即使之前选错过，推一次代码就会自动纠正。
+
+### 2. `vercel.app` 在国内打不开 —— 这是 DNS 污染，不是代码问题
+
+`xxx.vercel.app` 这个域名在国内被污染，且 Vercel 的边缘节点不在大陆。
+**唯一的正解是绑一个你自己的域名**（不需要备案，证书 Vercel 会自动签发）。
+
+1. Vercel → 项目 → **Settings → Domains** → 填 `www.你的域名.com` → Add
+2. 它会让你配一条 DNS 记录。**先别照抄它给的默认值**，回到域名服务商（阿里云 / 腾讯云 / Cloudflare）
+   按下面配：
+
+   | 类型 | 主机记录 | 记录值 | 说明 |
+   |---|---|---|---|
+   | CNAME | `www` | `cname-china.vercel-dns.com` | **关键**：Vercel 的大陆优化节点。默认的 `cname.vercel-dns.com` 国内不稳 |
+   | A | `@` | `76.227.212.86` | 只有想用裸域名访问才需要（Vercel 默认的 `76.76.21.21` 国内基本不通） |
+
+3. 等 1~5 分钟，Vercel 的 Domains 页变成绿色 Valid Configuration，证书自动签发。
+
+**走 Cloudflare 的话**：CNAME 先保持**灰云（DNS only）**让 Vercel 验证通过 ——
+橙云代理会让 Vercel 看不到 CNAME、一直验证失败，验证过了再决定要不要开。
+另外 Cloudflare 的 SSL/TLS 模式必须选 **完全（Full）**，选「灵活」会报 526。
+
+**目标效果**：手机 4G/5G 直接打开 `https://www.你的域名.com`，不需要任何代理 / 节点。
+
+### 3. 缓存与更新（改前端必读）
+
+`vercel.json` 已经做了三件事，都是为了让「装到主屏的 App」能及时更新：
+
+- `sw.js` 强制 `Cache-Control: no-cache` —— 否则 Vercel 的 CDN 会把旧 Service Worker
+  缓存住，手机上会永远停在旧壳；
+- `index.html` / `album.html` / `galaxy.html` 每次回源校验，不缓存；
+- `.webmanifest` 用正确的 `Content-Type: application/manifest+json`。
+
+改完前端照旧要 **bump `sw.js` 顶部的 `CACHE`**，两件事缺一不可。
+
+### 4. 备选：不想折腾域名
+
+把这几个文件整个丢到你自己的 VPS（nginx 指向它）也一样免代理 —— 而且和后端**同源**，
+设置里「云端后端」可以直接留空走相对路径 `/relay`，连跨域都省了。
+
+> **注意仓库里必须有这些文件**，少一个就会 404 / 白屏：
+> `index.html` `album.html` `galaxy.html` `sw.js` `manifest.webmanifest`
+> `favicon.png` `apple-touch-icon.png` `icon-192.png` `icon-512.png`
+> `avatar-sea.png` `chat-light.webp` `chat-harbor.webp` `menu-light.webp`
+> `menu-harbor.webp` `send.mp3` `al-board.png`
+
+---
+
 ## 第一次使用（三步）
 
 **1. 填后端地址**
@@ -97,3 +155,18 @@ Render 免费档 15 分钟没人访问会休眠，第一下是冷启动。之后
 
 **返回「连不上上游 …」？**
 后端所在的服务器访问不了那家接口（少见，通常是那家自己抽风）。看看后端的状态页有没有报错。
+
+**Vercel 上打开是 `404: NOT_FOUND`？**
+Framework Preset 被选成了 `Vite`，它在找不存在的 `dist/`。改成 `Other`（或直接推一次代码，
+`vercel.json` 会自动纠正）。
+
+**手机 4G 打不开，连 Wi-Fi 却正常？**
+`vercel.app` 被污染了，绑自定义域名，见上面的「部署到 Vercel」一节。
+
+**装到主屏后界面一直是旧版？**
+没有 bump `sw.js` 里的 `CACHE`。改完前端把 `companion-vN-xxx` 的版本号加一 ——
+不 bump 的话预缓存的旧 `index.html` 不会被替换掉。
+
+**壁纸 / 头像不见了，只剩一片渐变？**
+说明 `chat-*.webp` / `menu-*.webp` / `avatar-sea.png` 没在仓库里。
+页面有内联矢量兜底所以不会破图，但那只是"看起来不太空"而已 —— 把图传上去就好了。

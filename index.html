@@ -10,12 +10,25 @@
 <link rel="preload" href="chat-light.webp" as="image" fetchpriority="high">
 <link rel="preload" href="avatar-sea.png" as="image">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/500.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@fontsource/pinyon-script@5/400.min.css" rel="stylesheet">
-<meta name="theme-color" content="#F4F4F5">
+<!-- 字体 CSS 用「预加载 + onload 转样式表」：下载仍是高优先级，但不再阻塞首屏。
+     原先 5 个 <link rel=stylesheet> 是渲染阻塞的 —— 大陆手机访问 jsdelivr 常常很慢甚至被污染，
+     整个页面会一直白屏等它。改完之后先用系统兜底字体（Georgia / 宋体）出画，字体到了再换。
+     没 JS 时由下面的 <noscript> 兜底，行为与原来一致。 -->
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/500.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@fontsource/pinyon-script@5/400.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/400.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cormorant-garamond@5/500.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/500.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/pinyon-script@5/400.min.css">
+</noscript>
+<!-- 与默认主题 PEARL 的 --bg 对齐（原值 #F4F4F5 两套主题都不沾；加载后由 applyWall 采壁纸顶带覆盖） -->
+<meta name="theme-color" content="#F7FAFC">
+<meta name="mobile-web-app-capable" content="yes">
 <!-- iOS launch mode is manifest-only; legacy Apple fullscreen meta breaks bottom viewport. -->
 
 <meta name="apple-mobile-web-app-title" content="Tidal Echo">

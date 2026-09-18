@@ -3505,6 +3505,7 @@
      左上角分类 chip、右上角小图标（编辑/删除）。 */
   .mem-actions{ display: flex; flex-wrap: wrap; gap: 8px; }
   .mem-actions .pill-select{ flex: 0 0 auto; max-width: 138px; }
+  .arc-hint{ font-size:11.5px; color:var(--text-faint); line-height:1.6; margin:0 2px 8px; }
   .arc-stats{ display: flex; gap: 22px; margin-top: 14px; }
   .arc-stats > div{ min-width: 0; }
   .arc-stats span{ display: block; font-size: 11px; color: var(--mg-dim); letter-spacing: .06em; }
@@ -12826,8 +12827,12 @@ async function arcLoadOb(force){
   try{
     const d = await memApi("/app/ombre/archive" + (force ? "?refresh=1" : ""));
     arcOb.items = (d.items || []).map((x, i) => ({
-      key: "ob-" + i, kind: "ob", rawId: "", date: "",
-      name: x.name || "", cat: "Haven · " + (x.domain || "记忆"),
+      key: "ob-" + i, kind: "ob", rawId: "",
+      // ★ OB 的条目**本来就带日期**（目录里就是 `2026-08-02 21-20-37 标题 | 分组 | 10`），
+      //   后端解析出来带 created。上一版按「没有日期」写的，把日期白丢了。
+      date: String(x.created || "").slice(0, 10),
+      created: x.created || "",
+      name: x.name || "", cat: (x.domain || "记忆"),
       content: String(x.content || ""), canEdit: false, importance: x.importance,
     }));
     arcOb.note = d.note || "";
@@ -12860,9 +12865,14 @@ function arcRenderOb(host){
     '<button class="arc-eye arc-eye-in" type="button" data-arc-ob-refresh="1" title="重新拉一次">' +
       MEM_ICO.eye + "</button></div>" +
     (arcOb.note ? '<div class="arc-empty">' + escapeHtml(arcOb.note) + "</div>" : "") +
+    (items.length ? '<div class="arc-hint">按权重排序，这里是前 ' + items.length +
+        " 条（Haven 那边总共比这多得多）。点右上角可以重新拉一次。</div>" : "") +
     (items.length
       ? '<div class="arc-tl">' + items.map((it) =>
-          '<div class="arc-entry"><span class="arc-chip">#' + escapeHtml(it.cat) + "</span>" +
+          '<div class="arc-entry">' +
+          (it.date ? '<span class="arc-chip">' + escapeHtml(it.date) + "</span>" : "") +
+          '<span class="arc-chip">#' + escapeHtml(it.cat) + "</span>" +
+          (it.importance ? '<span class="arc-chip">权重 ' + escapeHtml(String(it.importance)) + "</span>" : "") +
           (it.name ? '<div class="arc-title">' + escapeHtml(it.name) + "</div>" : "") +
           '<div class="arc-text' + (arc.full ? "" : " clamp") + '">' +
             escapeHtml(it.content) + "</div></div>").join("") + "</div>"

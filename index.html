@@ -6809,6 +6809,9 @@ function kitNotify(title, body){
 /* ══════════════════════════════════════════════════════════════════════════
    九张卡
    ══════════════════════════════════════════════════════════════════════════ */
+/* Bot 桥的后端状态缓存：标签与详情都从这里读数（避免每次渲染都打后端） */
+const KIT_BOT = { qq: null, qqCfg: null, wx: null, wxCfg: null, xhs: null, xhsCfg: null };
+
 const KIT_TOOLS = [
   /* ── 1. 天气 ─────────────────────────────────────────────────────────── */
   { id:"weather", name:"天气", sub:"现在与未来五天", icon:"weather",
@@ -7116,105 +7119,291 @@ const KIT_TOOLS = [
       go();
     } },
 
-  /* ── 6. QQ Bot ───────────────────────────────────────────────────────── */
-  { id:"qq", name:"QQ Bot", sub:"OneBot v11 配置与状态", icon:"qq",
-    tag:() => { const c = KIT_LS.get("qq", {}); return [c.host ? (c.host + ":" + (c.port || 3000)) : "未配置", c.host ? "ok" : null]; },
+  /* ── 6. QQ Bot（配置与状态都走后端；探针由后端去打）─────────────────────
+     为什么必须走后端：napcat/Lagrange 的 HTTP 接口是 http 明文端口，页面在 https 上
+     会被浏览器以「混合内容」拦掉；对方多半也没开 CORS。这两条前端都绕不过。 */
+  { id:"qq", name:"QQ Bot", sub:"OneBot v11 · 配置与状态", icon:"qq",
+    tag:() => {
+      const st = KIT_BOT.qq;
+      if (!st) return ["未读取", null];
+      if (st.login_status === "online") return ["已连上" + (st.self_id ? " · " + st.self_id : ""), "ok"];
+      if (st.login_status === "error") return ["连不上", "warn"];
+      return [st.host ? (st.host + ":" + (st.port || "")) : "未配置", null];
+    },
     body(){
-      const c = KIT_LS.get("qq", {});
+      const c = (KIT_BOT.qqCfg) || {};
       return '<div class="kit-sec"><div class="kit-sec-t">OneBot 连接</div>' +
-        '<input class="kit-in" id="kitQqHost" placeholder="主机，例如 127.0.0.1 或 你的服务器 IP" value="' + escapeHtml(c.host || "") + '">' +
-        '<input class="kit-in" id="kitQqPort" placeholder="端口，默认 3000（napcat/OneBot 常见 3000 或 5700）" value="' + escapeHtml(c.port || "") + '">' +
+        '<input class="kit-in" id="kitQqHost" placeholder="主机：napcat / Lagrange 所在地址" value="' + escapeHtml(c.host || "") + '">' +
+        '<input class="kit-in" id="kitQqPort" placeholder="端口，常见 3000 或 5700" value="' + escapeHtml(c.port || "") + '">' +
         '<input class="kit-in" id="kitQqToken" placeholder="access_token（可留空）" value="' + escapeHtml(c.token || "") + '">' +
-        '<button class="kit-btn" id="kitQqSave">保存</button>' +
-        '<button class="kit-btn ghost" id="kitQqProbe">探一下</button>' +
+        '<button class="kit-btn" id="kitQqSave">保存到后端</button>' +
+        '<button class="kit-btn" id="kitQqProbe">探一下（由后端去打）</button>' +
+        '<div class="kit-note">host 填的是**后端**要能连到的地址。relay 跑在 Render 上，' +
+        '所以填 127.0.0.1 指的是 Render 那台机器 —— 要够到你本地的 bot，' +
+        '得让 bot 有公网地址（或把 relay 也放到同一台机器上）。</div>' +
         '<div id="kitQqOut"></div></div>' +
-        '<div class="kit-warn">这一项现在**还通不了**，缺两样东西：<br>' +
-        '① 一个 QQ 协议端（napcat / Lagrange.OneBot）在跑，并开了 HTTP 接口；<br>' +
-        '② 后端要有 /relay/bot/qq/* 那几个转发接口（现在这个 relay 没有）。<br>' +
-        '网页也不能直接打 http:// 的本地端口（混合内容会被浏览器拦），所以必须中转。' +
-        '先把配置存这儿，等桥搭好就能直接用。</div>';
+        '<div class="kit-sec"><div class="kit-sec-t">状态</div><div id="kitQqSt" class="kit-lv">读取中…</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">发一条试试（可选）</div>' +
+        '<input class="kit-in" id="kitQqTo" placeholder="QQ 号（私聊）">' +
+        '<input class="kit-in" id="kitQqMsg" placeholder="要说的话">' +
+        '<button class="kit-btn ghost" id="kitQqSend">send_private_msg</button>' +
+        '<div class="kit-note">走 /app/bot/qq/call 转发。没填 target 就别点，会白跑一趟。</div></div>';
     },
     onOpen(root){
       const out = $("#kitQqOut");
-      const save = $("#kitQqSave");
-      if (save) save.addEventListener("click", () => {
-        KIT_LS.set("qq", {
-          host: (($("#kitQqHost") || {}).value || "").trim(),
-          port: (($("#kitQqPort") || {}).value || "").trim(),
-          token: (($("#kitQqToken") || {}).value || "").trim(),
-        });
-        showToast("已保存"); kitRender();
+      const paintSt = (st) => {
+        const el = $("#kitQqSt"); if (!el) return;
+        st = st || {};
+        const rows = [
+          ["启用", st.enable === false ? "否" : "是"],
+          ["后端算出的地址", st.base || "（还没填 host）"],
+          ["令牌", st.has_token ? "已填" : "未填"],
+          ["登录状态", st.login_status || "未知"],
+          ["自己的 QQ", st.self_id || "—"],
+          ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"],
+          ["最近事件", st.last_event_at || "还没有"],
+        ];
+        el.textContent = rows.map((r) => r[0] + "：" + r[1]).join("\n") +
+          (st.probe_msg ? "\n\n提示：" + st.probe_msg : "");
+      };
+      paintSt(KIT_BOT.qq);
+      const loadCfg = async () => {
+        try{
+          const d = await memApi("/app/bot/qq/config");
+          KIT_BOT.qqCfg = d.config || {};
+          const b = $("#kitQqSt"); // 地址也顺手更新一下
+          if (b && d.base) KIT_BOT.qq = Object.assign({}, KIT_BOT.qq || {}, { base: d.base });
+          const hi = $("#kitQqHost"), hp = $("#kitQqPort"), ht = $("#kitQqToken");
+          if (hi && !hi.value) hi.value = KIT_BOT.qqCfg.host || "";
+          if (hp && !hp.value) hp.value = KIT_BOT.qqCfg.port || "";
+          if (ht && !ht.value) ht.value = KIT_BOT.qqCfg.token || "";
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
+      };
+      const loadSt = async () => {
+        try{
+          const d = await memApi("/app/bot/qq/status");
+          KIT_BOT.qq = d.qq || {};
+          paintSt(KIT_BOT.qq); kitRender();
+        }catch(_){}
+      };
+      const sv = $("#kitQqSave");
+      if (sv) sv.addEventListener("click", async () => {
+        if (out) out.innerHTML = '<div class="kit-lv">保存中…</div>';
+        try{
+          await memApi("/app/bot/qq/config", { method:"POST", body: JSON.stringify({
+            host: (($("#kitQqHost") || {}).value || "").trim(),
+            port: (($("#kitQqPort") || {}).value || "").trim(),
+            token: (($("#kitQqToken") || {}).value || "").trim(),
+          }) });
+          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
+          loadSt();
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">保存失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
       });
       const pr = $("#kitQqProbe");
       if (pr) pr.addEventListener("click", async () => {
-        const c = KIT_LS.get("qq", {});
-        if (!c.host){ showToast("先填主机"); return; }
-        if (out) out.innerHTML = '<div class="kit-lv">试连 ' + escapeHtml(c.host) + ":" +
-          escapeHtml(c.port || "3000") + " …</div>";
+        pr.disabled = true;
+        if (out) out.innerHTML = '<div class="kit-lv">后端正在去连…</div>';
         try{
-          const r = await fetch("http://" + c.host + ":" + (c.port || "3000") + "/get_login_info",
-            { headers: c.token ? { Authorization: "Bearer " + c.token } : {} });
-          const d = await r.json().catch(() => ({}));
-          if (out) out.innerHTML = '<div class="kit-ok">通了：' + escapeHtml(JSON.stringify(d).slice(0, 300)) + "</div>";
+          const d = await memApi("/app/bot/qq/probe", { method:"POST", body: "{}" });
+          const ok = d.ok;
+          if (out) out.innerHTML = '<div class="' + (ok ? "kit-ok" : "kit-warn") + '">' +
+            (ok ? "通了！" : "没通。") + "　HTTP " + escapeHtml(String(d.status || "—")) +
+            " · " + escapeHtml(String(d.ms || 0)) + "ms" +
+            "<br>地址：" + escapeHtml(d.url || "") +
+            (d.error ? "<br>错误：" + escapeHtml(d.error) : "") +
+            "<br>返回：" + escapeHtml(JSON.stringify(d.data || {}).slice(0, 300)) +
+            (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
+          loadSt();
         }catch(e){
-          if (out) out.innerHTML = '<div class="kit-warn">连不上：' +
-            escapeHtml((e && e.message) || String(e)) +
-            '<br>预期之内 —— 浏览器会拦 http 明文请求（混合内容），而且对方多半也没开 CORS。' +
-            '这条链路必须由后端代理。</div>';
-        }
+          if (out) out.innerHTML = '<div class="kit-warn">探针失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }finally{ pr.disabled = false; }
       });
+      const sd = $("#kitQqSend");
+      if (sd) sd.addEventListener("click", async () => {
+        const to = (($("#kitQqTo") || {}).value || "").trim();
+        const msg = (($("#kitQqMsg") || {}).value || "").trim();
+        if (!to || !msg){ showToast("先把 QQ 号和内容填上"); return; }
+        sd.disabled = true;
+        if (out) out.innerHTML = '<div class="kit-lv">转发中…</div>';
+        try{
+          const d = await memApi("/app/bot/qq/call", { method:"POST", body: JSON.stringify({
+            action: "send_private_msg", params: { user_id: to, message: msg },
+          }) });
+          if (out) out.innerHTML = '<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
+            escapeHtml(JSON.stringify(d.data || d.error || {}).slice(0, 300)) + "</div>";
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">转发失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }finally{ sd.disabled = false; }
+      });
+      loadCfg().then(loadSt);
     } },
 
-  /* ── 7. 连接微信 ─────────────────────────────────────────────────────── */
-  { id:"wechat", name:"连接微信", sub:"Bot 配置 · 状态 · 扫码位", icon:"wechat",
-    tag:() => { const c = KIT_LS.get("wx", {}); return [c.name ? "已配置" : "未配置", c.name ? "ok" : null]; },
+  /* ── 7. 连接微信（配置与状态走后端；二维码由后端代理）─────────────────── */
+  { id:"wechat", name:"连接微信", sub:"Bot 配置 · 状态 · 扫码", icon:"wechat",
+    tag:() => {
+      const st = KIT_BOT.wx;
+      if (!st) return ["未读取", null];
+      if (st.login_status === "online") return ["有消息进来了", "ok"];
+      if (st.running) return ["已请求启动", null];
+      return [st.has_webhook ? "配好了" : "未配置", null];
+    },
     body(){
-      const c = KIT_LS.get("wx", {});
-      return '<div class="kit-sec"><div class="kit-sec-t">Bot 配置</div>' +
-        '<input class="kit-in" id="kitWxName" placeholder="机器人昵称" value="' + escapeHtml(c.name || "") + '">' +
-        '<input class="kit-in" id="kitWxHook" placeholder="回调地址（你的网关 /webhook）" value="' + escapeHtml(c.hook || "") + '">' +
-        '<input class="kit-in" id="kitWxAllow" placeholder="只回这些人（逗号分隔，留空=全部）" value="' + escapeHtml(c.allow || "") + '">' +
-        '<button class="kit-btn" id="kitWxSave">保存</button>' +
-        '<div class="kit-note">自动回复：' +
-        '<input type="checkbox" id="kitWxAuto"' + (c.auto !== false ? " checked" : "") + '> 开</div></div>' +
+      const c = (KIT_BOT.wxCfg) || {};
+      return '<div class="kit-sec"><div class="kit-sec-t">侧车（chatgpt-on-wechat）</div>' +
+        '<input class="kit-in" id="kitWxHook" placeholder="侧车地址，例如 http://1.2.3.4:8080" value="' + escapeHtml(c.webhook_url || "") + '">' +
+        '<input class="kit-in" id="kitWxQr" placeholder="二维码地址（侧车暴露的，可选）" value="' + escapeHtml(c.qrcode_url || "") + '">' +
+        '<input class="kit-in" id="kitWxName" placeholder="机器人昵称" value="' + escapeHtml(c.bot_name || "") + '">' +
+        '<input class="kit-in" id="kitWxAllow" placeholder="只回这些人（逗号分隔，留空=全部）" value="' + escapeHtml((c.allowed_users || []).join(",")) + '">' +
+        '<label class="kit-note"><input type="checkbox" id="kitWxAuto"' + (c.auto_reply !== false ? " checked" : "") + '> 自动回复</label>' +
+        '<button class="kit-btn" id="kitWxSave">保存到后端</button>' +
+        '<button class="kit-btn" id="kitWxStart">启动</button>' +
+        '<button class="kit-btn ghost" id="kitWxStop">停止</button>' +
+        '<div id="kitWxOut"></div></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">扫码登录位</div>' +
-        '<div style="width:150px;height:150px;border:1px dashed var(--card-line);border-radius:12px;' +
-        'display:grid;place-items:center;color:var(--text-faint);font-size:11.5px">占位</div>' +
-        '<div class="kit-note">真实二维码要由 chatgpt-on-wechat 那侧给出，再由后端转发过来。' +
-        '现在这里只是位置。</div></div>' +
-        '<div class="kit-warn">还差两样：① 一台常驻的 chatgpt-on-wechat（微信这端必须有真机/容器在跑，' +
-        '而且有封号风险）；② 后端 /relay/bot/wechat/* 那几个接口。' +
-        '网页本身**不可能**直接连微信。</div>';
+        '<div id="kitWxQrBox" style="width:150px;height:150px;border:1px dashed var(--card-line);' +
+        'border-radius:12px;display:grid;place-items:center;color:var(--text-faint);font-size:11.5px">' +
+        '未取到</div>' +
+        '<button class="kit-btn ghost" id="kitWxGetQr">取二维码</button>' +
+        '<div class="kit-note">二维码由后端去侧车拿回来（前端直接取会被 CORS 拦住）。</div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">状态</div><div id="kitWxSt" class="kit-lv">读取中…</div></div>' +
+        '<div class="kit-note">回调：把 sidecar 的消息推到 <code>/app/bot/wechat/webhook</code>，' +
+        '这里的状态就会跟着变。</div>';
     },
     onOpen(root){
-      const b = $("#kitWxSave");
-      if (b) b.addEventListener("click", () => {
-        KIT_LS.set("wx", {
-          name: (($("#kitWxName") || {}).value || "").trim(),
-          hook: (($("#kitWxHook") || {}).value || "").trim(),
-          allow: (($("#kitWxAllow") || {}).value || "").trim(),
-          auto: !!($("#kitWxAuto") && $("#kitWxAuto").checked),
-        });
-        showToast("已保存"); kitRender();
+      const out = $("#kitWxOut");
+      const paintSt = (st) => {
+        const el = $("#kitWxSt"); if (!el) return;
+        st = st || {};
+        el.textContent = [
+          ["启用", st.enable === false ? "否" : "是"],
+          ["运行中", st.running ? "是" : "否"],
+          ["模式", st.mode || "—"],
+          ["侧车地址", st.has_webhook ? "已填" : "未填"],
+          ["二维码地址", st.has_qrcode ? "已填" : "未填"],
+          ["登录状态", st.login_status || "未知"],
+          ["最近消息", st.last_at ? ((st.last_from || "?") + " · " + (st.last_text || "")) : "还没有"],
+        ].map((r) => r[0] + "：" + r[1]).join("\n");
+      };
+      const loadCfg = async () => {
+        try{
+          const d = await memApi("/app/bot/wechat/config");
+          KIT_BOT.wxCfg = d.config || {};
+          const set = (id, v) => { const el = $(id); if (el && !el.value) el.value = v || ""; };
+          set("#kitWxHook", KIT_BOT.wxCfg.webhook_url);
+          set("#kitWxQr", KIT_BOT.wxCfg.qrcode_url);
+          set("#kitWxName", KIT_BOT.wxCfg.bot_name);
+          set("#kitWxAllow", (KIT_BOT.wxCfg.allowed_users || []).join(","));
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
+      };
+      const loadSt = async () => {
+        try{
+          const d = await memApi("/app/bot/wechat/status");
+          KIT_BOT.wx = d.wechat || {};
+          paintSt(KIT_BOT.wx); kitRender();
+        }catch(_){}
+      };
+      const sv = $("#kitWxSave");
+      if (sv) sv.addEventListener("click", async () => {
+        if (out) out.innerHTML = '<div class="kit-lv">保存中…</div>';
+        try{
+          await memApi("/app/bot/wechat/config", { method:"POST", body: JSON.stringify({
+            webhook_url: (($("#kitWxHook") || {}).value || "").trim(),
+            qrcode_url: (($("#kitWxQr") || {}).value || "").trim(),
+            bot_name: (($("#kitWxName") || {}).value || "").trim(),
+            allowed_users: (($("#kitWxAllow") || {}).value || "").trim(),
+            auto_reply: !!($("#kitWxAuto") && $("#kitWxAuto").checked),
+          }) });
+          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
+          loadSt();
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">保存失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
       });
+      const act = (id, path, label) => {
+        const b = $(id); if (!b) return;
+        b.addEventListener("click", async () => {
+          b.disabled = true;
+          if (out) out.innerHTML = '<div class="kit-lv">' + label + '中…</div>';
+          try{
+            const d = await memApi(path, { method:"POST", body: "{}" });
+            const s = d.sidecar || {};
+            if (out) out.innerHTML = '<div class="' + (s.ok ? "kit-ok" : "kit-warn") + '">' +
+              escapeHtml(label) + "：本地状态已更新" + (s.ok ? "，侧车也答应了。" : "。") +
+              (s.error ? "<br>侧车那边：" + escapeHtml(s.error) : "") +
+              (s.body ? "<br>返回：" + escapeHtml(String(s.body).slice(0, 200)) : "") + "</div>";
+            loadSt();
+          }catch(e){
+            if (out) out.innerHTML = '<div class="kit-warn">' + escapeHtml(label) +
+              '失败：' + escapeHtml((e && e.message) || String(e)) + "</div>";
+          }finally{ b.disabled = false; }
+        });
+      };
+      act("#kitWxStart", "/app/bot/wechat/start", "启动");
+      act("#kitWxStop", "/app/bot/wechat/stop", "停止");
+      const gq = $("#kitWxGetQr");
+      if (gq) gq.addEventListener("click", async () => {
+        gq.disabled = true;
+        const box = $("#kitWxQrBox");
+        if (box) box.textContent = "取中…";
+        try{
+          const d = await memApi("/app/bot/wechat/qrcode");
+          if (box){
+            box.innerHTML = d.data
+              ? '<img src="' + escapeHtml(d.data) + '" alt="二维码" style="width:100%;height:100%;border-radius:12px">'
+              : "侧车没给图";
+          }
+        }catch(e){
+          if (box) box.innerHTML = '<div style="padding:8px;font-size:11px;color:#A8565F">' +
+            escapeHtml((e && e.message) || String(e)).slice(0, 120) + "</div>";
+        }finally{ gq.disabled = false; }
+      });
+      loadCfg().then(loadSt);
     } },
 
-  /* ── 8. 小红书 ───────────────────────────────────────────────────────── */
-  { id:"xhs", name:"小红书", sub:"跳转搜索 + 自己记笔记", icon:"xhs",
-    tag:() => { const n = KIT_LS.get("xhs", []); return [n.length ? n.length + " 条笔记" : "还没有", n.length ? "ok" : null]; },
+  /* ── 8. 小红书（★ 用户要的「MCP 远程地址」在这里）────────────────────── */
+  { id:"xhs", name:"小红书", sub:"MCP 远程地址 · 跳转 · 记笔记", icon:"xhs",
+    tag:() => {
+      const st = KIT_BOT.xhs;
+      if (!st) return ["未读取", null];
+      if (st.ping_ok === true) return ["MCP 已握手", "ok"];
+      if (st.ping_ok === false) return ["MCP 握手失败", "warn"];
+      return [st.mcp_url ? "已填地址" : "未填地址", null];
+    },
     body(){
-      return '<div class="kit-sec"><div class="kit-sec-t">去小红书搜</div>' +
+      const c = (KIT_BOT.xhsCfg) || {};
+      return '<div class="kit-sec"><div class="kit-sec-t">MCP 远程地址</div>' +
+        '<input class="kit-in" id="kitXhsMcp" placeholder="MCP 地址，例如 http://43.133.254.100:8078/mcp" value="' + escapeHtml(c.mcp_url || "") + '">' +
+        '<input class="kit-in" id="kitXhsTok" placeholder="令牌（可留空；会同时按 Bearer 和 X-Nowhere-Key 发）" value="' + escapeHtml(c.token || "") + '">' +
+        '<button class="kit-btn" id="kitXhsSave">保存到后端</button>' +
+        '<button class="kit-btn" id="kitXhsPing">握手试探（由后端发）</button>' +
+        '<div class="kit-note">MCP 握手前端做不了：要自定义鉴权头 + 读 SSE 回包 + 对方还得开 CORS，' +
+        '所以这一步同样交给后端。</div>' +
+        '<div id="kitXhsOut"></div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">去小红书搜</div>' +
         '<input class="kit-in" id="kitXhsQ" placeholder="想找什么？例如 露营 咖啡">' +
         '<button class="kit-btn" id="kitXhsGo">搜索</button>' +
         '<button class="kit-btn ghost" id="kitXhsApp">试着打开 App</button>' +
-        '<div class="kit-note">网页**没有**小红书的公开接口，所以只能给你跳过去，' +
-        '没法在页面里直接搜/发。这条不是没接好，是它不给。</div></div>' +
+        '<div class="kit-note">小红书**没有**公开接口，所以搜索只能跳过去，' +
+        '没法在页面里直接搜/发。要真在页面里拿到内容，得靠上面那个 MCP。</div></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">我的笔记（存在本机）</div>' +
         '<input class="kit-in" id="kitXhsNote" placeholder="贴一条链接，或写一句要记住的">' +
         '<button class="kit-btn" id="kitXhsAdd">记下来</button>' +
         '<div id="kitXhsList"></div></div>';
     },
     onOpen(root){
+      const out = $("#kitXhsOut");
       const paint = () => {
         const el = $("#kitXhsList");
         if (!el) return;
@@ -7225,6 +7414,55 @@ const KIT_TOOLS = [
               '<button class="kit-x" data-kxhs-del="' + escapeHtml(n.id) + '">✕</button></div>').join("")
           : '<div class="kit-lv">还没有。</div>';
       };
+      (async () => {
+        try{
+          const d = await memApi("/app/bot/xhs/config");
+          KIT_BOT.xhsCfg = d.config || {};
+          KIT_BOT.xhs = d.config || {};
+          const a = $("#kitXhsMcp"), b = $("#kitXhsTok");
+          if (a && !a.value) a.value = KIT_BOT.xhsCfg.mcp_url || "";
+          if (b && !b.value) b.value = KIT_BOT.xhsCfg.token || "";
+          kitRender();
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
+      })();
+      const sv = $("#kitXhsSave");
+      if (sv) sv.addEventListener("click", async () => {
+        if (out) out.innerHTML = '<div class="kit-lv">保存中…</div>';
+        try{
+          await memApi("/app/bot/xhs/config", { method:"POST", body: JSON.stringify({
+            mcp_url: (($("#kitXhsMcp") || {}).value || "").trim(),
+            token: (($("#kitXhsTok") || {}).value || "").trim(),
+          }) });
+          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
+          kitRender();
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">保存失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }
+      });
+      const pg = $("#kitXhsPing");
+      if (pg) pg.addEventListener("click", async () => {
+        pg.disabled = true;
+        if (out) out.innerHTML = '<div class="kit-lv">后端去握手…</div>';
+        try{
+          const d = await memApi("/app/bot/xhs/ping", { method:"POST", body: "{}" });
+          if (out) out.innerHTML = '<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
+            (d.ok ? "握手成功" : "握手失败") + "　HTTP " + escapeHtml(String(d.status || "—")) +
+            " · " + escapeHtml(String(d.ms || 0)) + "ms" +
+            (d.server ? "<br>服务端自称：" + escapeHtml(d.server) : "") +
+            (d.capabilities && d.capabilities.length ? "<br>能力：" + escapeHtml(d.capabilities.join(", ")) : "") +
+            (d.error ? "<br>错误：" + escapeHtml(d.error) : "") +
+            (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
+          KIT_BOT.xhs = Object.assign({}, KIT_BOT.xhs, { ping_ok: !!d.ok });
+          kitRender();
+        }catch(e){
+          if (out) out.innerHTML = '<div class="kit-warn">探针失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }finally{ pg.disabled = false; }
+      });
       const go = $("#kitXhsGo");
       if (go) go.addEventListener("click", () => {
         const q = (($("#kitXhsQ") || {}).value || "").trim();

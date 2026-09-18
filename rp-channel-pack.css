@@ -1,0 +1,359 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tidal Echo · 万花筒（角色扮演渠道）— 样式层
+   ───────────────────────────────────────────────────────────────────────────
+   范式来源：github.com/sebastianevan200-stack/kaleidoscope-rp
+     「摇老虎机开世界 / 旁白和 NPC 召唤制 / 红线分层」
+   本包只抄**机制**，不抄代码，也不内置任何内容 ——
+   人设、尺度、红线全部留给用户自己在「⋯ → 配置」里填（这正是原项目的设计：
+   内容住在 config/*.md，改玩法不动代码）。
+
+   视觉约定（与 group-chat-pack 一致，同一套整页层范式）：
+     · 整页层 fixed inset:0 + 内部 .rp-page 居中到 --ref-width
+     · .hidden 控制存在、.open 触发上浮
+     · 颜色全取自宿主 CSS 变量 → 四套主题自动跟随
+     · 硬编码色只有「旁白 / 主角 / NPC」这三种身份色 —— 扮演界面里
+       谁在说话必须一眼分得开，这个不能交给主题变量
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 整页层 ────────────────────────────────────────────────────────────── */
+/* 同 group-chat-pack：本包所有视图切换都靠 .hidden，
+   不能依赖宿主的全局 .hidden —— 独立预览页里没有，缺了会让两个视图叠着显示。 */
+.rp-panel .hidden{ display: none !important; }
+
+.rp-panel{
+  position: fixed; inset: 0; z-index: 198;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--bg, #F7FAFC);
+}
+.rp-panel.hidden{ display: none; }
+.rp-panel.open .rp-page{ transform: translateY(0); opacity: 1; }
+.rp-page{
+  position: relative;
+  width: min(100vw, var(--ref-width, 941px)); height: 100%;
+  margin: 0 auto; background: var(--bg, #F7FAFC);
+  display: flex; flex-direction: column; min-height: 0;
+  transform: translateY(2.5%); opacity: 0;
+  transition: transform .34s var(--ease-soft, cubic-bezier(.22,1,.36,1)), opacity .28s ease;
+}
+
+/* ── 顶栏 ──────────────────────────────────────────────────────────────── */
+.rp-top{
+  display: flex; align-items: center; gap: 2px;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 2px; flex: 0 0 auto;
+}
+.rp-top button{
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  color: var(--text, #253447); font-size: 19px; cursor: pointer;
+  padding: 4px 8px; opacity: .72; transition: opacity .2s ease;
+  font-family: var(--font-cn, inherit);
+}
+.rp-top button:hover{ opacity: 1; }
+.rp-top button svg{ width: 19px; height: 19px; display: block; }
+.rp-title-wrap{ text-align: center; flex: 1 1 auto; min-width: 0; }
+.rp-title{
+  font-size: 19px; font-weight: 600; color: var(--text, #253447);
+  letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rp-sub{
+  color: var(--text-faint, #8A99A8); font-size: 11.5px; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ══════════ 老虎机（摇世界）══════════ */
+.rp-slot{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 14px 14px calc(env(safe-area-inset-bottom) + 22px);
+}
+.rp-row{ margin-bottom: 13px; }
+.rp-row-t{
+  display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
+  font-size: 11.5px; font-weight: 600; color: var(--text-soft, #5E7080); letter-spacing: .05em;
+}
+.rp-row-t .tag{
+  font-size: 10px; padding: 1px 7px; border-radius: 999px; font-weight: 500;
+  background: var(--seg-track, rgba(140,160,176,.11)); color: var(--text-faint, #8A99A8);
+}
+.rp-row-t .tag.adult{ background: rgba(217,130,43,.14); color: #B36A1A; }
+.rp-row-t button{
+  margin-left: auto; appearance: none; border: none; background: transparent; cursor: pointer;
+  color: var(--text-faint, #8A99A8); font-size: 11px; font-family: var(--font-cn, inherit);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.rp-slots{ display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+.rp-slots.c3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+.rp-cell{
+  position: relative; text-align: center; cursor: pointer;
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.42));
+  border-radius: 12px; padding: 10px 6px 9px;
+  font-family: var(--font-cn, inherit); overflow: hidden;
+  transition: border-color .2s ease, transform .16s var(--ease-soft, ease);
+}
+.rp-cell:active{ transform: scale(.97); }
+.rp-cell.on{ border-color: var(--accent, #4C6378); }
+.rp-cell .k{ display: block; font-size: 10px; color: var(--text-faint, #8A99A8); margin-bottom: 5px; }
+.rp-cell .v{
+  display: block; font-size: 12.5px; font-weight: 600; color: var(--text, #253447);
+  line-height: 1.35; word-break: break-word;
+}
+.rp-cell.rolling .v{ animation: rpRoll .42s var(--ease-soft, ease); }
+@keyframes rpRoll{
+  0%{ transform: translateY(-8px); opacity: .15; }
+  60%{ transform: translateY(2px); opacity: 1; }
+  100%{ transform: translateY(0); opacity: 1; }
+}
+.rp-cell .lock{
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: var(--bg, #F7FAFC); color: var(--text-faint, #8A99A8); font-size: 11px;
+  border-radius: 12px;
+}
+
+/* 摇完得到的世界卡 */
+.rp-world{
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.42));
+  border-radius: 14px; padding: 13px 14px; margin: 12px 0;
+}
+.rp-world-t{ font-size: 15px; font-weight: 700; color: var(--text, #253447); letter-spacing: .03em; }
+.rp-world-bg{
+  font-size: 12.5px; line-height: 1.85; color: var(--text-soft, #5E7080);
+  margin-top: 8px; white-space: pre-wrap; word-break: break-word;
+}
+.rp-world-id{
+  display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--text-faint, #8A99A8);
+}
+.rp-world-id b{ color: var(--text-soft, #5E7080); font-weight: 600; }
+.rp-tags{ display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+.rp-tag{
+  font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--hairline, rgba(120,142,165,.3)); color: var(--text-soft, #5E7080);
+}
+.rp-tag.adult{ border-color: rgba(217,130,43,.4); color: #B36A1A; background: rgba(217,130,43,.07); }
+.rp-acts{ display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ══════════ 扮演聊天界面 ══════════ */
+.rp-scroll{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px 6px;
+}
+.rp-msgs{ display: flex; flex-direction: column; gap: 12px; }
+
+.rp-msg{ display: flex; gap: 8px; align-items: flex-start; max-width: 100%; }
+.rp-msg.human{ flex-direction: row-reverse; }
+.rp-msg.narr{ justify-content: center; }
+.rp-av{
+  width: 27px; height: 27px; border-radius: 50%; flex: 0 0 auto;
+  display: grid; place-items: center; color: #fff;
+  font-size: 11.5px; font-weight: 700; font-family: var(--font-cn, inherit);
+  user-select: none; margin-top: 1px;
+}
+.rp-av.narr{ border-radius: 8px; }
+.rp-body{ min-width: 0; max-width: min(78%, 560px); display: flex; flex-direction: column; }
+.rp-msg.human .rp-body{ align-items: flex-end; }
+.rp-msg.narr .rp-body{ max-width: 92%; }
+.rp-meta{
+  display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px;
+  font-size: 11px; color: var(--text-faint, #8A99A8);
+}
+.rp-msg.human .rp-meta{ flex-direction: row-reverse; }
+.rp-meta b{ font-size: 12px; font-weight: 600; color: var(--text-soft, #5E7080); }
+
+.rp-bubble{
+  border-radius: 14px; padding: 10px 13px;
+  font-size: 13.8px; line-height: 1.85; color: var(--text, #253447);
+  background: var(--card-bg, rgba(236,238,243,.9));
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  white-space: pre-wrap; word-break: break-word;
+}
+.rp-msg.human .rp-bubble{
+  background: var(--bubble-human-bg, #DFE5EE); border-color: transparent;
+  border-top-right-radius: 5px;
+}
+.rp-msg.ai .rp-bubble{ border-top-left-radius: 5px; box-shadow: inset 2.5px 0 0 var(--mc, var(--accent, #4C6378)); }
+
+/* 旁白：整块斜体 + 居中，和对话一眼分开（原项目：旁白只写环境和外部事件） */
+.rp-narr-tag{
+  align-self: center; font-size: 10px; letter-spacing: .22em;
+  color: var(--text-faint, #8A99A8); opacity: .7; margin-bottom: 3px;
+}
+.rp-msg.narr .rp-bubble{
+  background: transparent; border: none; border-top: 1px solid var(--hairline, rgba(120,142,165,.2));
+  border-bottom: 1px solid var(--hairline, rgba(120,142,165,.2));
+  border-radius: 0; padding: 9px 4px;
+  font-style: italic; font-size: 12.8px; line-height: 1.9;
+  color: var(--text-faint, #8A99A8); text-align: center;
+  box-shadow: none;
+}
+.rp-bubble.err{ color: #A8565F; border-color: rgba(168,86,95,.34); background: rgba(168,86,95,.06); font-style: normal; }
+
+/* 私密模式：默认打码，点一下才显形 */
+.rp-blur .rp-bubble, .rp-blur .rp-world-bg, .rp-blur .rp-tk-goal{
+  filter: blur(7px); opacity: .72; cursor: pointer; transition: filter .22s ease;
+}
+.rp-blur .rp-bubble.revealed, .rp-blur .rp-world-bg.revealed{ filter: none; opacity: 1; }
+.rp-msg .rp-hold{
+  align-self: flex-start; font-size: 10px; color: var(--text-faint, #8A99A8);
+  margin-top: 4px; user-select: none;
+}
+
+.rp-sys{
+  align-self: center; max-width: 92%; text-align: center;
+  font-size: 11px; line-height: 1.7; color: var(--text-faint, #8A99A8);
+  white-space: pre-wrap; word-break: break-word;
+}
+.rp-sys.edge{ color: #A8565F; }
+.rp-sys button{
+  appearance: none; border: none; background: transparent; cursor: pointer;
+  color: var(--text-soft, #5E7080); text-decoration: underline; text-underline-offset: 2px;
+  font-size: 11px; font-family: var(--font-cn, inherit); padding: 0 2px;
+}
+.rp-cut{
+  align-self: center; font-size: 10.5px; color: var(--text-faint, #8A99A8);
+  border: 1px dashed var(--hairline, rgba(120,142,165,.34)); border-radius: 9px;
+  padding: 5px 10px; max-width: 92%; line-height: 1.7;
+}
+.rp-day{
+  align-self: center; font-size: 10.5px; color: var(--text-faint, #8A99A8);
+  background: var(--seg-track, rgba(140,160,176,.11));
+  border-radius: 999px; padding: 3px 11px; margin: 2px 0;
+}
+.rp-typing{ display: flex; gap: 3px; align-items: center; padding: 3px 1px; }
+.rp-typing i{
+  width: 5px; height: 5px; border-radius: 50%; background: var(--text-faint, #8A99A8);
+  animation: rpDot 1.25s ease-in-out infinite;
+}
+.rp-typing i:nth-child(2){ animation-delay: .17s; }
+.rp-typing i:nth-child(3){ animation-delay: .34s; }
+@keyframes rpDot{ 0%,60%,100%{ opacity:.25; transform: translateY(0); } 30%{ opacity:1; transform: translateY(-2.5px); } }
+
+/* ── 输入区 ────────────────────────────────────────────────────────────── */
+.rp-composer{
+  flex: 0 0 auto; position: relative;
+  border-top: 1px solid var(--hairline, rgba(120,142,165,.2));
+  background: var(--composer-bg, var(--bg, #F7FAFC));
+  padding: 9px 12px calc(env(safe-area-inset-bottom) + 10px);
+}
+.rp-quick{ display: flex; gap: 6px; margin-bottom: 7px; overflow-x: auto; scrollbar-width: none; }
+.rp-quick::-webkit-scrollbar{ display: none; }
+.rp-qb{
+  appearance: none; border: 1px solid var(--card-line, rgba(150,168,182,.24));
+  background: var(--card-bg, rgba(244,248,250,.5)); color: var(--text-soft, #5E7080);
+  border-radius: 999px; padding: 5px 11px; font-size: 11.5px; cursor: pointer;
+  white-space: nowrap; font-family: var(--font-cn, inherit); flex: 0 0 auto;
+}
+.rp-qb:active{ transform: scale(.96); }
+.rp-qb.stop{ border-color: rgba(224,85,95,.4); color: #C2444E; }
+.rp-inputrow{ display: flex; align-items: flex-end; gap: 8px; }
+.rp-inputrow textarea{
+  flex: 1 1 auto; min-width: 0; resize: none; overflow-y: auto; box-sizing: border-box;
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  background: var(--field-bg, rgba(247,250,252,.92));
+  color: var(--text, #253447);
+  border-radius: 13px; padding: 10px 12px;
+  font-size: 13.5px; line-height: 1.55; font-family: var(--font-cn, inherit);
+  max-height: 32vh;
+}
+.rp-inputrow textarea:focus{ outline: none; border-color: var(--accent, #4C6378); }
+.rp-inputrow textarea::placeholder{ color: var(--text-faint, #8A99A8); }
+.rp-send{
+  appearance: none; border: none; flex: 0 0 auto; cursor: pointer;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--send-bg, var(--accent, #2C4056)); color: var(--accent-fg, #fff);
+  display: grid; place-items: center; transition: transform .16s var(--ease-soft, ease), opacity .2s ease;
+}
+.rp-send:active{ transform: scale(.93); }
+.rp-send[disabled]{ opacity: .4; cursor: default; }
+.rp-send svg{ width: 18px; height: 18px; }
+.rp-send.stop{ background: #C2444E; }
+.rp-hint{ font-size: 10.5px; color: var(--text-faint, #8A99A8); padding: 6px 2px 0; line-height: 1.6; }
+
+/* ══════════ 配置页 ══════════ */
+.rp-cfg{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px calc(env(safe-area-inset-bottom) + 24px);
+}
+.rp-cfg .grp-card, .rp-card{
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.42));
+  border-radius: 14px; padding: 12px 13px; margin-bottom: 10px;
+}
+.rp-card-h{ display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rp-card-h b{ font-size: 13.5px; color: var(--text, #253447); font-weight: 600; }
+.rp-card-h span{ font-size: 11px; color: var(--text-faint, #8A99A8); }
+.rp-lbl{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin: 9px 0 4px; }
+.rp-in, .rp-sel, .rp-ta{
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  background: var(--field-bg, rgba(247,250,252,.92));
+  color: var(--text, #253447); border-radius: 10px;
+  padding: 9px 11px; font-size: 12.5px; font-family: var(--font-cn, inherit);
+}
+.rp-ta{ line-height: 1.7; resize: vertical; }
+.rp-in:focus, .rp-sel:focus, .rp-ta:focus{ outline: none; border-color: var(--accent, #4C6378); }
+.rp-two{ display: flex; gap: 8px; }
+.rp-two > *{ flex: 1 1 0; min-width: 0; }
+.rp-note{ font-size: 11px; line-height: 1.75; color: var(--text-faint, #8A99A8); margin-top: 7px; }
+.rp-note b{ color: var(--text-soft, #5E7080); }
+.rp-btn{
+  appearance: none; border: none; border-radius: 10px; cursor: pointer;
+  background: var(--accent, #4C6378); color: var(--accent-fg, #fff);
+  padding: 9px 15px; font-size: 12.5px; font-weight: 600;
+  font-family: var(--font-cn, inherit); margin: 4px 6px 0 0;
+}
+.rp-btn.ghost{ background: transparent; color: var(--text, #253447); border: 1px solid var(--card-line, rgba(150,168,182,.3)); }
+.rp-btn.danger{ background: transparent; color: #A8565F; border: 1px solid rgba(168,86,95,.34); }
+.rp-btn[disabled]{ opacity: .5; cursor: default; }
+.rp-switch{
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.14));
+}
+.rp-switch:last-of-type{ border-bottom: none; }
+.rp-switch .t{ font-size: 12.5px; color: var(--text, #253447); line-height: 1.55; }
+.rp-switch .t small{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin-top: 2px; line-height: 1.6; }
+.rp-sw{
+  appearance: none; border: none; cursor: pointer; flex: 0 0 auto;
+  width: 42px; height: 25px; border-radius: 999px;
+  background: var(--seg-track, rgba(140,160,176,.24)); position: relative;
+  transition: background .22s ease;
+}
+.rp-sw::after{
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 19px; height: 19px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+  transition: transform .22s var(--ease-soft, cubic-bezier(.22,1,.36,1));
+}
+.rp-sw.on{ background: var(--accent, #4C6378); }
+.rp-sw.on::after{ transform: translateX(17px); }
+
+/* 红线清单 */
+.rp-rl{
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 0; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.14));
+}
+.rp-rl:last-of-type{ border-bottom: none; }
+.rp-rl .x{
+  appearance: none; border: none; background: transparent; cursor: pointer;
+  color: var(--text-faint, #8A99A8); font-size: 15px; padding: 0 4px; flex: 0 0 auto;
+}
+.rp-rl .x:hover{ color: #A8565F; }
+.rp-rl .tx{ font-size: 12px; line-height: 1.7; color: var(--text-soft, #5E7080); min-width: 0; flex: 1 1 auto; }
+.rp-rl.fixed .tx{ color: var(--text, #253447); }
+.rp-rl.fixed .lk{
+  flex: 0 0 auto; font-size: 10px; color: var(--text-faint, #8A99A8);
+  border: 1px solid var(--hairline, rgba(120,142,165,.3)); border-radius: 999px; padding: 1px 7px;
+}
+.rp-rl-add{ display: flex; gap: 7px; margin-top: 9px; }
+.rp-rl-add input{ flex: 1 1 auto; min-width: 0; }
+
+.rp-empty{ text-align: center; padding: 30px 18px; color: var(--text-faint, #8A99A8); }
+.rp-empty svg{ width: 40px; height: 40px; opacity: .4; margin-bottom: 10px; }
+.rp-empty h4{ font-size: 13.5px; color: var(--text-soft, #5E7080); font-weight: 600; margin: 0 0 6px; }
+.rp-empty p{ font-size: 11.5px; line-height: 1.8; margin: 0; }
+
+/* ── 窄屏 ──────────────────────────────────────────────────────────────── */
+@media (max-width: 380px){
+  .rp-body{ max-width: 84%; }
+  .rp-slots{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .rp-slots.c3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+}

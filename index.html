@@ -36,6 +36,8 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <!-- 群聊（多 AI 协作）· 面板样式。整页面板，四套主题自动跟随 -->
 <link rel="stylesheet" href="group-chat-pack.css">
+<!-- 万花筒（角色扮演渠道）· 面板样式。整页面板，四套主题自动跟随 -->
+<link rel="stylesheet" href="rp-channel-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -4396,6 +4398,12 @@
           <span class="menu-copy"><span class="menu-name">群聊</span><span class="menu-sub">派活 · 看进度 · 收结果。</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="rp">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.4"/><path d="M8.6 15.4l6.8-6.8M15.4 15.4L8.6 8.6"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name" id="rpMenuName">万花筒</span><span class="menu-sub">摇个世界，进去演。</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="toolkit">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.4a3.6 3.6 0 0 1 4.9 4.9l-1.5-1.5-1.2 1.2-1.7-1.7-1.2 1.2-1.7-1.7 1.2-1.2-1.7-1.7 1.2-1.2-1.5-1.5Z"/><path d="M12.6 9.8 4.4 18a1.7 1.7 0 0 0 2.4 2.4l8.2-8.2"/></svg></span>
           <span class="menu-dot"></span>
@@ -6239,6 +6247,7 @@ if (menuPanel){
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
     else if (item.dataset.menu === "toolkit") kitOpen();          // 工具与能力（天气/闹钟/Bot/权限…）
     else if (item.dataset.menu === "groupchat") { closeMenu(); if (window.openGroupChat) window.openGroupChat(); }   // 群聊（三个 AI + 你，派活/进度/收结果）
+    else if (item.dataset.menu === "rp") { closeMenu(); if (window.openRp) window.openRp(); }                          // 万花筒（角色扮演渠道：摇世界 / 召唤制旁白与 NPC）
     else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
@@ -17381,6 +17390,10 @@ init().then(() => {
      这样它才能按名字拿到 PROVIDERS / cloudHost / connChatUrl / connHeaders。
      面板的 DOM 由这个包自己注入，index.html 里不需要写那一大坨标记。 -->
 <script defer src="group-chat-pack.js"></script>
+
+<!-- 万花筒（角色扮演渠道）· 面板逻辑。同样 defer，复用宿主连接层。
+     面板 DOM 由包自己注入，index.html 里不需要写那一大坨标记。 -->
+<script defer src="rp-channel-pack.js"></script>
 
 </body>
 </html>

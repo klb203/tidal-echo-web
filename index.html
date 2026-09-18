@@ -6822,6 +6822,8 @@ function kitNotify(title, body){
    ══════════════════════════════════════════════════════════════════════════ */
 /* Bot 桥的后端状态缓存：标签与详情都从这里读数（避免每次渲染都打后端） */
 const KIT_BOT = { qq: null, qqCfg: null, wx: null, wxCfg: null, xhs: null, xhsCfg: null };
+/* 通用 MCP 的本地缓存（查手机那块的地址与 has_token 渲染要用，避免每次都打后端） */
+const KIT_MCP = { cfg: {} };
 
 const KIT_TOOLS = [
   /* ── 1. 天气 ─────────────────────────────────────────────────────────── */
@@ -6833,58 +6835,100 @@ const KIT_TOOLS = [
         '<input class="kit-in" id="kitCity" placeholder="城市名，例如 深圳 / Tokyo" value="' + escapeHtml(c) + '">' +
         '<button class="kit-btn" id="kitWxGo">查天气</button>' +
         '<button class="kit-btn ghost" id="kitWxGeo">用定位</button>' +
-        '<div class="kit-note">数据来自 Open-Meteo（免 key、免注册）。国内直连可用。</div>' +
+        '<div class="kit-note">数据来自 Open-Meteo（免 key、免注册）。' +
+        '<b>查询由后端代发</b> —— 国内手机网络直连 api.open-meteo.com 经常直接超时，' +
+        '这就是以前「查不到」的原因（后端打同一个接口一次就通，而且同源、连跨域预检都省了）。' +
+        '后端没配的时候会自动退回浏览器直连。</div>' +
         '<div id="kitWxOut"></div></div>';
     },
     onOpen(root){
       const out = $("#kitWxOut");
       const set = (h) => { if (out) out.innerHTML = h; };
-      const code = (n) => {
-        const M = {0:"晴",1:"基本晴",2:"少云",3:"阴",45:"雾",48:"雾凇",51:"毛毛雨",53:"小雨",55:"中雨",
-                   61:"小雨",63:"中雨",65:"大雨",71:"小雪",73:"中雪",75:"大雪",80:"阵雨",81:"强阵雨",
-                   82:"暴阵雨",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
-        return M[n] || ("代码 " + n);
+      const CODES = {0:"晴",1:"基本晴",2:"少云",3:"阴",45:"雾",48:"雾凇",51:"毛毛雨",53:"小雨",
+                     55:"中雨",61:"小雨",63:"中雨",65:"大雨",71:"小雪",73:"中雪",75:"大雪",
+                     80:"阵雨",81:"强阵雨",82:"暴阵雨",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
+      const code = (n) => CODES[n] || (n == null || n === "" ? "—" : ("代码 " + n));
+      const C = (v, suffix) => (v == null || v === "" ? "—" : (v + (suffix || "")));
+      const paint = (d, via) => {
+        const cur = d.current || {};
+        let h = '<div class="kit-sec" style="margin-top:10px"><div class="kit-sec-t">' +
+          escapeHtml(d.place || "当前") + (via ? '　<span class="kit-li-s" style="display:inline">' + via + "</span>" : "") +
+          "</div>" +
+          kitRow("天气", cur.text || code(cur.code)) +
+          kitRow("气温", C(cur.temp, "°C")) +
+          kitRow("体感", C(cur.feels, "°C")) +
+          kitRow("湿度", C(cur.humidity, "%")) +
+          kitRow("风速", C(cur.wind, " km/h")) + "</div>";
+        const days = d.daily || [];
+        if (days.length){
+          h += '<div class="kit-sec"><div class="kit-sec-t">未来</div>';
+          days.forEach((x) => {
+            h += kitRow(String(x.date || "").slice(5),
+              (x.text || code(x.code)) + "　" + C(x.min) + "~" + C(x.max) + "°C" +
+              (x.rain == null || x.rain === "" ? "" : "　雨 " + x.rain + "%"));
+          });
+          h += "</div>";
+        }
+        set(h);
       };
-      const go = async (lat, lon, label) => {
+      /* ① 优先走后端 /app/weather：国内手机网络直连 open-meteo 经常超时，
+            这**就是**「天气获取不到」的原因。后端在海外机器上，同一个接口一次就通。
+         ② 后端没配 / 后端也没打通 → 退回浏览器直连（保留旧行为，至少不比原来差）。 */
+      const askBackend = async (qs) => {
+        if (!appBase()) return null;
+        const r = await fetch(appUrl("/app/weather") + "?" + qs, { headers: authHeaders() });
+        if (!r.ok) return null;
+        const d = await r.json().catch(() => null);
+        return (d && d.ok) ? d : null;
+      };
+      const direct = async (lat, lon, name) => {
+        let la = lat, lo = lon, place = name || "当前位置";
+        if (la == null || lo == null){
+          const g = await (await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&format=json&name=" +
+            encodeURIComponent(name || ""))).json();
+          const hit = (g && g.results && g.results[0]) || null;
+          if (!hit) throw new Error("没找到这个地名");
+          la = hit.latitude; lo = hit.longitude;
+          place = hit.name + (hit.admin1 ? "·" + hit.admin1 : "");
+        }
+        const d = await (await fetch("https://api.open-meteo.com/v1/forecast?latitude=" + la + "&longitude=" + lo +
+          "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m" +
+          "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+          "&timezone=auto&forecast_days=5")).json();
+        const cur = d.current || {}, dy = d.daily || {};
+        return { ok: true, place: place,
+          current: { code: cur.weather_code, text: code(cur.weather_code), temp: cur.temperature_2m,
+                     feels: cur.apparent_temperature, humidity: cur.relative_humidity_2m,
+                     wind: cur.wind_speed_10m },
+          daily: (dy.time || []).map((t, i) => ({
+            date: t, code: (dy.weather_code || [])[i], text: code((dy.weather_code || [])[i]),
+            min: (dy.temperature_2m_min || [])[i], max: (dy.temperature_2m_max || [])[i],
+            rain: (dy.precipitation_probability_max || [])[i] })) };
+      };
+      const bothFail = (e) => {
+        set('<div class="kit-warn">查不到：' + escapeHtml((e && e.message) || String(e)) +
+          "<br><br>两条路都没通：<br>· 后端（推荐）：设置 → AI 与记忆 → 云端后端地址 填了吗？" +
+          "<br>· 浏览器直连：国内网络访问 api.open-meteo.com 经常超时，这条路本来就不稳。" +
+          "<br>只要后端地址填对了，天气就走后端，稳定得多。</div>");
+      };
+      const run = async (qs, fallbackArgs) => {
         set('<div class="kit-lv">查询中…</div>');
+        let d = null, via = "";
         try{
-          const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
-            "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m" +
-            "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5";
-          const d = await (await fetch(u)).json();
-          const cur = (d && d.current) || {};
-          let h = '<div class="kit-sec" style="margin-top:10px"><div class="kit-sec-t">' +
-                  escapeHtml(label || "当前") + "</div>" +
-            kitRow("天气", code(cur.weather_code)) +
-            kitRow("气温", cur.temperature_2m + "°C") +
-            kitRow("体感", cur.apparent_temperature + "°C") +
-            kitRow("湿度", cur.relative_humidity_2m + "%") +
-            kitRow("风速", cur.wind_speed_10m + " km/h") + "</div>";
-          const dy = (d && d.daily) || {};
-          const days = dy.time || [];
-          if (days.length){
-            h += '<div class="kit-sec"><div class="kit-sec-t">未来</div>';
-            days.forEach((t, i) => {
-              h += kitRow(t.slice(5), code((dy.weather_code || [])[i]) + "  " +
-                (dy.temperature_2m_min || [])[i] + "~" + (dy.temperature_2m_max || [])[i] + "°C");
-            });
-            h += "</div>";
-          }
-          set(h);
-          if (label){ KIT_LS.set("city", label); kitRender(); }
-        }catch(e){ set('<div class="kit-warn">查不到：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+          d = await askBackend(qs);
+          if (d) via = "经后端";
+        }catch(_){}
+        if (!d){
+          try{ d = await direct.apply(null, fallbackArgs); via = "浏览器直连（后端没通）"; }
+          catch(e){ bothFail(e); return; }
+        }
+        paint(d, via);
+        if (d.place && d.place !== "我的位置"){ KIT_LS.set("city", d.place); kitRender(); }
       };
-      const byName = async () => {
+      const byName = () => {
         const q = (($("#kitCity") || {}).value || "").trim();
         if (!q){ showToast("先填个城市名"); return; }
-        set('<div class="kit-lv">找城市…</div>');
-        try{
-          const g = await (await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&format=json&name=" +
-            encodeURIComponent(q))).json();
-          const hit = g && g.results && g.results[0];
-          if (!hit){ set('<div class="kit-warn">没找到这个地名，换个写法试试。</div>'); return; }
-          await go(hit.latitude, hit.longitude, hit.name + (hit.admin1 ? "·" + hit.admin1 : ""));
-        }catch(e){ set('<div class="kit-warn">找城市失败：' + escapeHtml((e && e.message) || String(e)) + "</div>"); }
+        return run("q=" + encodeURIComponent(q), [null, null, q]);
       };
       const btnGo = $("#kitWxGo"), btnGeo = $("#kitWxGeo");
       if (btnGo) btnGo.addEventListener("click", byName);
@@ -6892,16 +6936,21 @@ const KIT_TOOLS = [
         if (!navigator.geolocation){ showToast("这个浏览器不给定位"); return; }
         set('<div class="kit-lv">定位中…（手机上会弹权限）</div>');
         navigator.geolocation.getCurrentPosition(
-          (p) => go(p.coords.latitude, p.coords.longitude, "我的位置"),
+          (p) => run("lat=" + p.coords.latitude + "&lon=" + p.coords.longitude,
+                     [p.coords.latitude, p.coords.longitude, "我的位置"]),
           (e) => set('<div class="kit-warn">定位失败：' + escapeHtml(e.message || "被拒绝") +
-                     '<br>提示：GitHub Pages 是 https，定位本身可用；但手机浏览器常要求先授权。</div>'),
+                     "<br>提示：GitHub Pages 是 https，定位本身可用；但手机浏览器常要求先授权。</div>"),
           { timeout: 12000 });
       });
-      if (c) byName();          // 以前查过就直接刷一次
+      /* ★ 这里原来是 `if (c) byName();` —— 而 `c` 是 body() 里的局部变量，
+         onOpen 里根本不存在 → **ReferenceError**。它在 onOpen 的最后一行，
+         所以卡片照样渲染，只是"以前查过就自动刷一次"这个行为从来没生效过，
+         而且控制台会安静地多一条错误。改成从 KIT_LS 现取。 */
+      const last = KIT_LS.get("city", "");
+      if (last) byName();
     } },
-
   /* ── 2. 查手机 ───────────────────────────────────────────────────────── */
-  { id:"device", name:"查手机", sub:"设备 / 网络 / 存储实况", icon:"phone",
+  { id:"device", name:"查手机", sub:"设备 / 网络 / 存储 · 远程 MCP", icon:"phone",
     tag:() => [kitIsStandalone() ? "已装到主屏" : "浏览器里", kitIsStandalone() ? "ok" : null],
     body(){
       const n = navigator, sc = window.screen || {};
@@ -6922,7 +6971,23 @@ const KIT_TOOLS = [
         '<div class="kit-note">Battery / 网络类型 / 存储配额点下面按钮现查（有些浏览器不给）。</div>' +
         '<button class="kit-btn" id="kitDevMore">刷新这几项</button><div id="kitDevOut"></div></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">UA</div><div class="kit-lv">' +
-        escapeHtml(n.userAgent || "") + "</div></div>";
+        escapeHtml(n.userAgent || "") + "</div></div>" +
+        /* ── 远程 MCP：手机自己够不到的东西，交给后端去够 ──────────────────
+           典型用法是你自己云服务器上的「掌心窗 MCP」那类服务：
+           浏览器直接调它是过不去的 —— ① 要自定义鉴权头，② 要读 SSE 回包，
+           ③ 对方多半没开 CORS；而且页面是 https，明文 http 还会被当混合内容拦掉。
+           所以这里只做两件事：把地址存到后端；让后端替你握手并列出工具。
+           ★ 地址**只存在后端配置里**，不会进代码仓库。 */
+        '<div class="kit-sec"><div class="kit-sec-t">远程 MCP（可选）</div>' +
+        '<input class="kit-in" id="kitMcpUrl" placeholder="MCP 远程地址，例如 https://你的域名/mcp" value="' +
+          escapeHtml((KIT_MCP.cfg && KIT_MCP.cfg.url) || "") + '">' +
+        '<input class="kit-in" id="kitMcpTok" type="password" placeholder="' +
+          ((KIT_MCP.cfg && KIT_MCP.cfg.has_token) ? "令牌已存好（留空 = 不改动）" : "令牌（可留空）") + '" value="">' +
+        '<button class="kit-btn" id="kitMcpSave">保存到后端</button>' +
+        '<button class="kit-btn ghost" id="kitMcpPing">握手 + 看它有哪些工具</button>' +
+        '<div class="kit-note">握手与列工具都由**后端**做（浏览器做不了那三件事）。' +
+        '<br>★ 地址只写进你后端的配置，<b>不进代码仓库</b>；令牌也不回显。</div>' +
+        '<div id="kitMcpOut"></div></div>';
     },
     onOpen(root){
       const out = $("#kitDevOut");
@@ -6956,6 +7021,62 @@ const KIT_TOOLS = [
       const b = $("#kitDevMore");
       if (b) b.addEventListener("click", more);
       more();
+      /* ── 远程 MCP：读配置 / 保存 / 握手 ─────────────────────────────── */
+      const mout = $("#kitMcpOut");
+      const mset = (h) => { if (mout) mout.innerHTML = h; };
+      const mLoad = async () => {
+        try{
+          const d = await memApi("/app/mcp/config?name=phone");
+          KIT_MCP.cfg = d.config || {};
+          const u = $("#kitMcpUrl");
+          if (u && !u.value) u.value = KIT_MCP.cfg.url || "";
+        }catch(e){
+          mset('<div class="kit-warn">读 MCP 配置失败：' + escapeHtml((e && e.message) || String(e)) + "</div>");
+        }
+      };
+      const mSave = $("#kitMcpSave");
+      if (mSave) mSave.addEventListener("click", async () => {
+        mset('<div class="kit-lv">保存中…</div>');
+        try{
+          const d = await memApi("/app/mcp/config", { method:"POST", body: JSON.stringify({
+            name: "phone",
+            url: (($("#kitMcpUrl") || {}).value || "").trim(),
+            token: (($("#kitMcpTok") || {}).value || "").trim(),
+          }) });
+          KIT_MCP.cfg = d.config || {};
+          mset('<div class="kit-ok">已存到后端（令牌留空 = 没改）。</div>');
+        }catch(e){
+          mset('<div class="kit-warn">保存失败：' + escapeHtml((e && e.message) || String(e)) + "</div>");
+        }
+      });
+      const mPing = $("#kitMcpPing");
+      if (mPing) mPing.addEventListener("click", async () => {
+        mPing.disabled = true;
+        mset('<div class="kit-lv">后端去握手…</div>');
+        try{
+          // 先把当前输入框里的值存下去，再让后端按 name 去探（不然探的是旧地址）
+          await memApi("/app/mcp/config", { method:"POST", body: JSON.stringify({
+            name: "phone",
+            url: (($("#kitMcpUrl") || {}).value || "").trim(),
+            token: (($("#kitMcpTok") || {}).value || "").trim(),
+          }) });
+          const d = await memApi("/app/mcp/ping", { method:"POST", body: JSON.stringify({ name: "phone" }) });
+          const tl = d.tools || [];
+          mset('<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
+            (d.ok ? "握手成功 ✅" : "握手失败") + "　HTTP " + escapeHtml(String(d.status || "—")) +
+            " · " + escapeHtml(String(d.ms || 0)) + "ms" +
+            (d.server ? "<br>服务端自称：" + escapeHtml(d.server) : "") +
+            (d.capabilities && d.capabilities.length ? "<br>能力：" + escapeHtml(d.capabilities.join(", ")) : "") +
+            (tl.length ? "<br>工具（" + tl.length + "）：" + escapeHtml(tl.slice(0, 24).join("、")) +
+                         (tl.length > 24 ? " …" : "") : "") +
+            (d.tools_error ? "<br>列工具没成功：" + escapeHtml(d.tools_error) : "") +
+            (d.error ? "<br>错误：" + escapeHtml(d.error) : "") +
+            (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>");
+        }catch(e){
+          mset('<div class="kit-warn">探针请求失败：' + escapeHtml((e && e.message) || String(e)) + "</div>");
+        }finally{ mPing.disabled = false; }
+      });
+      mLoad();
     } },
 
   /* ── 3. 通知栏 ───────────────────────────────────────────────────────── */
@@ -7133,61 +7254,108 @@ const KIT_TOOLS = [
   /* ── 6. QQ Bot（配置与状态都走后端；探针由后端去打）─────────────────────
      为什么必须走后端：napcat/Lagrange 的 HTTP 接口是 http 明文端口，页面在 https 上
      会被浏览器以「混合内容」拦掉；对方多半也没开 CORS。这两条前端都绕不过。 */
-  { id:"qq", name:"QQ Bot", sub:"OneBot v11 · 配置与状态", icon:"qq",
+  { id:"qq", name:"QQ Bot", sub:"官方 AppID / OneBot", icon:"qq",
     tag:() => {
       const st = KIT_BOT.qq;
       if (!st) return ["未读取", null];
+      if (st.mode !== "onebot"){
+        if (st.token_ok === true) return ["凭证可用" + (st.token_exp_in ? "（剩 " + st.token_exp_in + "s）" : ""), "ok"];
+        if (st.token_ok === false) return ["凭证不对", "warn"];
+        return [st.has_app_id ? "已填 AppID" : "未填 AppID", null];
+      }
       if (st.login_status === "online") return ["已连上" + (st.self_id ? " · " + st.self_id : ""), "ok"];
       if (st.login_status === "error") return ["连不上", "warn"];
       return [st.host ? (st.host + ":" + (st.port || "")) : "未配置", null];
     },
     body(){
       const c = (KIT_BOT.qqCfg) || {};
-      return '<div class="kit-sec"><div class="kit-sec-t">OneBot 连接</div>' +
-        '<input class="kit-in" id="kitQqHost" placeholder="主机：napcat / Lagrange 所在地址" value="' + escapeHtml(c.host || "") + '">' +
-        '<input class="kit-in" id="kitQqPort" placeholder="端口，常见 3000 或 5700" value="' + escapeHtml(c.port || "") + '">' +
-        '<input class="kit-in" id="kitQqToken" placeholder="access_token（可留空）" value="' + escapeHtml(c.token || "") + '">' +
-        '<button class="kit-btn" id="kitQqSave">保存到后端</button>' +
-        '<button class="kit-btn" id="kitQqProbe">探一下（由后端去打）</button>' +
+      const mode = c.mode === "onebot" ? "onebot" : "official";
+      return '<div class="kit-sec"><div class="kit-sec-t">接入方式</div>' +
+        '<label class="kit-note"><input type="radio" name="kitQqMode" value="official"' +
+          (mode === "official" ? " checked" : "") + '> 官方机器人 ｜ AppID + 接入凭证</label>' +
+        '<label class="kit-note"><input type="radio" name="kitQqMode" value="onebot"' +
+          (mode === "onebot" ? " checked" : "") + '> 自建 OneBot ｜ napcat / Lagrange</label>' +
+        '<div class="kit-note">两条路的后端行为完全不同（鉴权头、接口路径都不一样），所以必须选一个。</div>' +
+        '</div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">官方凭证（QQ 开放平台）</div>' +
+        '<input class="kit-in" id="kitQqAppId" placeholder="AppID（机器人 ID，一串数字）" value="' +
+          escapeHtml(c.app_id || "") + '">' +
+        '<input class="kit-in" id="kitQqAppSecret" type="password" placeholder="' +
+          (c.has_app_secret ? "AppSecret 已存好（留空 = 不改动）" : "AppSecret") + '" value="">' +
+        '<label class="kit-note"><input type="checkbox" id="kitQqSandbox"' +
+          (c.sandbox ? " checked" : "") + '> 沙箱环境（地址换成 sandbox.api.sgroup.qq.com）</label>' +
+        '<button class="kit-btn" id="kitQqToken">换 access_token 自检</button>' +
+        '<button class="kit-btn ghost" id="kitQqProbe">探一下（后端去调 /users/@me）</button>' +
+        '<div class="kit-note">凭证在 <b>QQ 开放平台 → 机器人 → 开发设置</b> 里。' +
+        '后端拿它去 bots.qq.com 换 token（官方有效期约 2 小时，后端会缓存，不会每次重换），' +
+        '再带 <b>QQBot &lt;token&gt;</b> 去调 api.sgroup.qq.com。' +
+        '<br>★ 密钥<b>不回显</b>：读回来只告诉你「已存」，输入框留空表示不改动。</div>' +
+        '<div id="kitQqTokOut"></div></div>' +
+        '<div class="kit-sec"><div class="kit-sec-t">OneBot 连接（只在 OneBot 模式下用）</div>' +
+        '<input class="kit-in" id="kitQqHost" placeholder="主机：napcat / Lagrange 所在地址" value="' +
+          escapeHtml(c.host || "") + '">' +
+        '<input class="kit-in" id="kitQqPort" placeholder="端口，常见 3000 或 5700" value="' +
+          escapeHtml(c.port || "") + '">' +
+        '<input class="kit-in" id="kitQqToken2" type="password" placeholder="' +
+          (c.has_token ? "access_token 已存好（留空 = 不改动）" : "access_token（可留空）") + '" value="">' +
         '<div class="kit-note">host 填的是**后端**要能连到的地址。relay 跑在 Render 上，' +
-        '所以填 127.0.0.1 指的是 Render 那台机器 —— 要够到你本地的 bot，' +
-        '得让 bot 有公网地址（或把 relay 也放到同一台机器上）。</div>' +
-        '<div id="kitQqOut"></div></div>' +
+        '所以填 127.0.0.1 指的是 Render 那台机器 —— 要够到你本地的 bot，得让它有公网地址。</div>' +
+        '</div>' +
+        '<button class="kit-btn" id="kitQqSave">保存到后端</button>' +
+        '<div id="kitQqOut"></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">状态</div><div id="kitQqSt" class="kit-lv">读取中…</div></div>' +
-        '<div class="kit-sec"><div class="kit-sec-t">发一条试试（可选）</div>' +
-        '<input class="kit-in" id="kitQqTo" placeholder="QQ 号（私聊）">' +
+        '<div class="kit-sec"><div class="kit-sec-t">发一条试试</div>' +
+        '<input class="kit-in" id="kitQqTo" placeholder="官方模式填 openid ／ OneBot 模式填 QQ 号">' +
         '<input class="kit-in" id="kitQqMsg" placeholder="要说的话">' +
-        '<button class="kit-btn ghost" id="kitQqSend">send_private_msg</button>' +
-        '<div class="kit-note">走 /app/bot/qq/call 转发。没填 target 就别点，会白跑一趟。</div></div>';
+        '<button class="kit-btn ghost" id="kitQqSend">发送</button>' +
+        '<div class="kit-note">官方模式下会打到 <b>POST /v2/users/&lt;openid&gt;/messages</b>。' +
+        'openid 从用户发给机器人的**事件**里来；主动发消息（不是回复某条事件）还需要机器人拿到' +
+        '「主动消息」权限，否则会 403 —— 这时把事件里的 msg_id 一起填上就能当被动回复发出去。</div>' +
+        '<input class="kit-in" id="kitQqMsgId" placeholder="msg_id（可选，被动回复时填）">' +
+        '<input class="kit-in" id="kitQqMsgSeq" placeholder="msg_seq（可选，同一条消息的多次回复要递增）">' +
+        '</div>' +
+        '<div class="kit-note">★ <b>收消息</b>（用户发给机器人）需要官方 WebSocket 或带 Ed25519 校验的 ' +
+        'Webhook —— 这两条 relay 现在还没做，所以这张卡解决的是「凭证能换到 token + 能主动/被动发」' +
+        '以及「配置与状态看得见」。要做到完整收发，得把机器人网关常驻在你自己那台机器上。</div>';
     },
     onOpen(root){
-      const out = $("#kitQqOut");
+      const out = $("#kitQqOut"), tokOut = $("#kitQqTokOut");
       const paintSt = (st) => {
         const el = $("#kitQqSt"); if (!el) return;
         st = st || {};
-        const rows = [
-          ["启用", st.enable === false ? "否" : "是"],
-          ["后端算出的地址", st.base || "（还没填 host）"],
-          ["令牌", st.has_token ? "已填" : "未填"],
-          ["登录状态", st.login_status || "未知"],
-          ["自己的 QQ", st.self_id || "—"],
-          ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"],
-          ["最近事件", st.last_event_at || "还没有"],
-        ];
-        el.textContent = rows.map((r) => r[0] + "：" + r[1]).join("\n") +
-          (st.probe_msg ? "\n\n提示：" + st.probe_msg : "");
+        const rows = st.mode === "onebot"
+          ? [["接入方式", "OneBot（自建）"],
+             ["后端算出的地址", st.base || "（还没填 host）"],
+             ["令牌", st.has_token ? "已填" : "未填"],
+             ["登录状态", st.login_status || "未知"],
+             ["自己的 QQ", st.self_id || "—"],
+             ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"],
+             ["最近事件", st.last_event_at || "还没有"]]
+          : [["接入方式", "官方机器人（AppID）"],
+             ["AppID", st.app_id_mask || (st.has_app_id ? "已填" : "未填")],
+             ["AppSecret", st.has_app_secret ? "已填（不回显）" : "未填"],
+             ["环境", st.sandbox ? "沙箱" : "正式"],
+             ["接口地址", st.official_base || "—"],
+             ["token", st.token_ok === true ? ("可用来（还剩 " + (st.token_exp_in || 0) + " 秒）")
+                        : (st.token_ok === false ? "换不到" : "还没换过")],
+             ["自己的机器人", st.self_id || "—"],
+             ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"]];
+        let txt = rows.map((r) => r[0] + "：" + r[1]).join("\n");
+        const msg = st.token_msg || st.probe_msg || "";
+        if (msg) txt += "\n\n提示：" + msg;
+        el.textContent = txt;
       };
-      paintSt(KIT_BOT.qq);
       const loadCfg = async () => {
         try{
           const d = await memApi("/app/bot/qq/config");
           KIT_BOT.qqCfg = d.config || {};
-          const b = $("#kitQqSt"); // 地址也顺手更新一下
-          if (b && d.base) KIT_BOT.qq = Object.assign({}, KIT_BOT.qq || {}, { base: d.base });
-          const hi = $("#kitQqHost"), hp = $("#kitQqPort"), ht = $("#kitQqToken");
+          if (d.state) KIT_BOT.qq = Object.assign({}, KIT_BOT.qq || {}, d.state);
+          const gi = $("#kitQqAppId");
+          if (gi && !gi.value) gi.value = KIT_BOT.qqCfg.app_id || "";
+          const hi = $("#kitQqHost"), hp = $("#kitQqPort");
           if (hi && !hi.value) hi.value = KIT_BOT.qqCfg.host || "";
           if (hp && !hp.value) hp.value = KIT_BOT.qqCfg.port || "";
-          if (ht && !ht.value) ht.value = KIT_BOT.qqCfg.token || "";
+          paintSt(KIT_BOT.qq); kitRender();
         }catch(e){
           if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
             escapeHtml((e && e.message) || String(e)) + "</div>";
@@ -7200,31 +7368,62 @@ const KIT_TOOLS = [
           paintSt(KIT_BOT.qq); kitRender();
         }catch(_){}
       };
+      const modeOf = () => {
+        const r = document.querySelector('input[name="kitQqMode"]:checked');
+        return (r && r.value) || "official";
+      };
+      const payload = () => ({
+        mode: modeOf(),
+        app_id: (($("#kitQqAppId") || {}).value || "").trim(),
+        app_secret: (($("#kitQqAppSecret") || {}).value || "").trim(),
+        sandbox: !!($("#kitQqSandbox") && $("#kitQqSandbox").checked),
+        host: (($("#kitQqHost") || {}).value || "").trim(),
+        port: (($("#kitQqPort") || {}).value || "").trim(),
+        token: (($("#kitQqToken2") || {}).value || "").trim(),
+      });
       const sv = $("#kitQqSave");
       if (sv) sv.addEventListener("click", async () => {
         if (out) out.innerHTML = '<div class="kit-lv">保存中…</div>';
         try{
-          await memApi("/app/bot/qq/config", { method:"POST", body: JSON.stringify({
-            host: (($("#kitQqHost") || {}).value || "").trim(),
-            port: (($("#kitQqPort") || {}).value || "").trim(),
-            token: (($("#kitQqToken") || {}).value || "").trim(),
-          }) });
-          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
-          loadSt();
+          const d = await memApi("/app/bot/qq/config", { method:"POST", body: JSON.stringify(payload()) });
+          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>' +
+            (d.state && d.state.mode === "official" && !d.state.has_app_secret
+              ? '<div class="kit-warn">还是没看到 AppSecret —— 它是必填的。</div>' : "");
+          loadCfg().then(loadSt);
         }catch(e){
           if (out) out.innerHTML = '<div class="kit-warn">保存失败：' +
             escapeHtml((e && e.message) || String(e)) + "</div>";
         }
       });
+      const tk = $("#kitQqToken");
+      if (tk) tk.addEventListener("click", async () => {
+        tk.disabled = true;
+        if (tokOut) tokOut.innerHTML = '<div class="kit-lv">后端正在去 bots.qq.com 换…</div>';
+        try{
+          await memApi("/app/bot/qq/config", { method:"POST", body: JSON.stringify(payload()) });
+          const d = await memApi("/app/bot/qq/token", { method:"POST", body: "{}" });
+          if (tokOut) tokOut.innerHTML = '<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
+            (d.ok ? "换到了 ✅" : "换不到") +
+            "　" + escapeHtml(String(d.ms || 0)) + "ms" +
+            (d.token_mask ? "<br>token：" + escapeHtml(d.token_mask) : "") +
+            (d.expires_in ? "（约还能用 " + escapeHtml(String(d.expires_in)) + " 秒）" : "") +
+            (d.error ? "<br>原因：" + escapeHtml(d.error) : "") +
+            (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
+          loadSt();
+        }catch(e){
+          if (tokOut) tokOut.innerHTML = '<div class="kit-warn">请求失败：' +
+            escapeHtml((e && e.message) || String(e)) + "</div>";
+        }finally{ tk.disabled = false; }
+      });
       const pr = $("#kitQqProbe");
       if (pr) pr.addEventListener("click", async () => {
         pr.disabled = true;
-        if (out) out.innerHTML = '<div class="kit-lv">后端正在去连…</div>';
+        if (tokOut) tokOut.innerHTML = '<div class="kit-lv">后端正在去调接口…</div>';
         try{
+          await memApi("/app/bot/qq/config", { method:"POST", body: JSON.stringify(payload()) });
           const d = await memApi("/app/bot/qq/probe", { method:"POST", body: "{}" });
-          const ok = d.ok;
-          if (out) out.innerHTML = '<div class="' + (ok ? "kit-ok" : "kit-warn") + '">' +
-            (ok ? "通了！" : "没通。") + "　HTTP " + escapeHtml(String(d.status || "—")) +
+          if (tokOut) tokOut.innerHTML = '<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
+            (d.ok ? "通了！" : "没通。") + "　HTTP " + escapeHtml(String(d.status || "—")) +
             " · " + escapeHtml(String(d.ms || 0)) + "ms" +
             "<br>地址：" + escapeHtml(d.url || "") +
             (d.error ? "<br>错误：" + escapeHtml(d.error) : "") +
@@ -7232,7 +7431,7 @@ const KIT_TOOLS = [
             (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
           loadSt();
         }catch(e){
-          if (out) out.innerHTML = '<div class="kit-warn">探针失败：' +
+          if (tokOut) tokOut.innerHTML = '<div class="kit-warn">探针失败：' +
             escapeHtml((e && e.message) || String(e)) + "</div>";
         }finally{ pr.disabled = false; }
       });
@@ -7240,17 +7439,23 @@ const KIT_TOOLS = [
       if (sd) sd.addEventListener("click", async () => {
         const to = (($("#kitQqTo") || {}).value || "").trim();
         const msg = (($("#kitQqMsg") || {}).value || "").trim();
-        if (!to || !msg){ showToast("先把 QQ 号和内容填上"); return; }
+        if (!to || !msg){ showToast("先把目标 id 和内容填上"); return; }
         sd.disabled = true;
         if (out) out.innerHTML = '<div class="kit-lv">转发中…</div>';
         try{
-          const d = await memApi("/app/bot/qq/call", { method:"POST", body: JSON.stringify({
-            action: "send_private_msg", params: { user_id: to, message: msg },
-          }) });
+          const ps = { user_id: to, message: msg };
+          const mid = (($("#kitQqMsgId") || {}).value || "").trim();
+          const mseq = (($("#kitQqMsgSeq") || {}).value || "").trim();
+          if (mid) ps.msg_id = mid;
+          if (mseq) ps.msg_seq = mseq;
+          const d = await memApi("/app/bot/qq/call", { method:"POST",
+            body: JSON.stringify({ action: "send_private_msg", params: ps }) });
           if (out) out.innerHTML = '<div class="' + (d.ok ? "kit-ok" : "kit-warn") + '">' +
-            escapeHtml(JSON.stringify(d.data || d.error || {}).slice(0, 300)) + "</div>";
+            escapeHtml(JSON.stringify(d.data || d.error || {}).slice(0, 300)) +
+            (d.url ? "<br>打的是：" + escapeHtml(d.url) : "") +
+            (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
         }catch(e){
-          if (out) out.innerHTML = '<div class="kit-warn">转发失败：' +
+          if (out) out.innerHTML = '<div class="kit-warn">发送失败：' +
             escapeHtml((e && e.message) || String(e)) + "</div>";
         }finally{ sd.disabled = false; }
       });
@@ -7395,12 +7600,15 @@ const KIT_TOOLS = [
     body(){
       const c = (KIT_BOT.xhsCfg) || {};
       return '<div class="kit-sec"><div class="kit-sec-t">MCP 远程地址</div>' +
-        '<input class="kit-in" id="kitXhsMcp" placeholder="MCP 地址，例如 http://43.133.254.100:8078/mcp" value="' + escapeHtml(c.mcp_url || "") + '">' +
-        '<input class="kit-in" id="kitXhsTok" placeholder="令牌（可留空；会同时按 Bearer 和 X-Nowhere-Key 发）" value="' + escapeHtml(c.token || "") + '">' +
+        /* ★ 占位符里**不写任何具体地址**：这些是各人自己机器上的服务，
+           写进代码仓库等于把某个内网端口当成产品默认值。地址只存后端配置。 */
+        '<input class="kit-in" id="kitXhsMcp" placeholder="MCP 远程地址，例如 https://你的域名/mcp" value="' + escapeHtml(c.mcp_url || "") + '">' +
+        '<input class="kit-in" id="kitXhsTok" type="password" placeholder="' +
+          (c.has_token ? "令牌已存好（留空 = 不改动）" : "令牌（可留空，会同时按 Bearer / X-Nowhere-Key 发）") + '" value="">' +
         '<button class="kit-btn" id="kitXhsSave">保存到后端</button>' +
         '<button class="kit-btn" id="kitXhsPing">握手试探（由后端发）</button>' +
         '<div class="kit-note">MCP 握手前端做不了：要自定义鉴权头 + 读 SSE 回包 + 对方还得开 CORS，' +
-        '所以这一步同样交给后端。</div>' +
+        '所以这一步同样交给后端。地址只写进你后端的配置，<b>不进代码仓库</b>；令牌不回显。</div>' +
         '<div id="kitXhsOut"></div></div>' +
         '<div class="kit-sec"><div class="kit-sec-t">去小红书搜</div>' +
         '<input class="kit-in" id="kitXhsQ" placeholder="想找什么？例如 露营 咖啡">' +
@@ -7430,9 +7638,9 @@ const KIT_TOOLS = [
           const d = await memApi("/app/bot/xhs/config");
           KIT_BOT.xhsCfg = d.config || {};
           KIT_BOT.xhs = d.config || {};
-          const a = $("#kitXhsMcp"), b = $("#kitXhsTok");
+          const a = $("#kitXhsMcp");
           if (a && !a.value) a.value = KIT_BOT.xhsCfg.mcp_url || "";
-          if (b && !b.value) b.value = KIT_BOT.xhsCfg.token || "";
+          /* 令牌不回显（后端只回 has_token），输入框留空 = 不改动 —— 见后端 keep_if_empty */
           kitRender();
         }catch(e){
           if (out) out.innerHTML = '<div class="kit-warn">读配置失败：' +
@@ -7447,7 +7655,9 @@ const KIT_TOOLS = [
             mcp_url: (($("#kitXhsMcp") || {}).value || "").trim(),
             token: (($("#kitXhsTok") || {}).value || "").trim(),
           }) });
-          if (out) out.innerHTML = '<div class="kit-ok">已存到后端。</div>';
+          if (out) out.innerHTML = '<div class="kit-ok">已存到后端（令牌留空 = 没改）。</div>';
+          const d2 = await memApi("/app/bot/xhs/config");
+          KIT_BOT.xhsCfg = d2.config || {};
           kitRender();
         }catch(e){
           if (out) out.innerHTML = '<div class="kit-warn">保存失败：' +
@@ -7465,6 +7675,8 @@ const KIT_TOOLS = [
             " · " + escapeHtml(String(d.ms || 0)) + "ms" +
             (d.server ? "<br>服务端自称：" + escapeHtml(d.server) : "") +
             (d.capabilities && d.capabilities.length ? "<br>能力：" + escapeHtml(d.capabilities.join(", ")) : "") +
+            ((d.tools && d.tools.length) ? "<br>工具（" + d.tools.length + "）：" +
+              escapeHtml(d.tools.slice(0, 24).join("、")) + (d.tools.length > 24 ? " …" : "") : "") +
             (d.error ? "<br>错误：" + escapeHtml(d.error) : "") +
             (d.hint ? "<br><br>" + escapeHtml(d.hint) : "") + "</div>";
           KIT_BOT.xhs = Object.assign({}, KIT_BOT.xhs, { ping_ok: !!d.ok });

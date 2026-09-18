@@ -131,7 +131,21 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-
       <li>右上角 <code>⋯</code> 进配置：<b>人设 / 尺度 / 红线 / 三个模型位</b>全是空位，由你填。</li>
       <li>配置里还能开<b>成人模式</b>（解锁第三排 状态 / 场所 / 要求）和<b>私密打码</b>（内容默认模糊，点气泡才显形）。</li>
       <li>词池也能改：配置页底部「改词池」，每行一条、整类可清空。</li>
+      <li><b>底部还有一个切换：老虎机 ⇄ 大富翁。</b>切过去是另一套界面 —— 先「取荷官规则」，
+          填好开局设置、勾上知情确认，再开局。</li>
     </ul>
+    <p class="pv-note">
+      <b>大富翁是接 MCP 的</b>（参考 <code>RennAkira/spicy-monopoly</code>）：本包当 MCP 客户端，
+      直接调它那 6 个工具（<code>monopoly_help</code> / <code>new_game</code> / <code>roll</code> /
+      <code>game_action</code> / <code>game_info</code> / <code>game_admin</code>），
+      不自己写玩法、也不自己编骰子和金币。棋盘是<b>原样贴</b>出来的（上游明确要求别重画）。
+      掷骰 / 查状态 / 跳过这几个按钮是<b>不经过模型</b>的直连兜底 —— 万一模型不支持工具调用，
+      光靠它们也能把一局玩完。
+      <br><br>
+      端点默认指向上游公开实例，想放自己云服务器就改那一栏。<b>三个前提缺一不可</b>：
+      端点必须是 <b>HTTPS</b>（Pages 是 HTTPS，HTTP 会被按混合内容拦掉）、
+      必须回 <b>CORS 头</b>、云服务器的<b>安全组和 ufw 都要放行</b>该端口。
+    </p>
     <p class="pv-note">
       <b>这个包不含任何内容。</b>人设、尺度、口味红线全部是空着的输入框 —— 这是照抄参考项目最值得学的一点：
       内容住在配置里，改玩法不动代码、不用重发版本。

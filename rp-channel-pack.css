@@ -351,6 +351,87 @@
 .rp-empty h4{ font-size: 13.5px; color: var(--text-soft, #5E7080); font-weight: 600; margin: 0 0 6px; }
 .rp-empty p{ font-size: 11.5px; line-height: 1.8; margin: 0; }
 
+/* ══════════ 底部模式切换（老虎机 / 大富翁）══════════ */
+.rp-switchbar{
+  flex: 0 0 auto; display: flex; gap: 4px; padding: 7px 12px 2px;
+  border-top: 1px solid var(--hairline, rgba(120,142,165,.18));
+}
+.rp-mode{
+  appearance: none; border: none; background: transparent; cursor: pointer;
+  flex: 1 1 0; position: relative; border-radius: 10px; padding: 7px 8px;
+  font-size: 12px; font-weight: 600; color: var(--text-faint, #8A99A8);
+  font-family: var(--font-cn, inherit);
+  transition: background .22s var(--ease-soft, ease), color .22s ease;
+}
+.rp-mode.active{
+  background: var(--seg-thumb, rgba(255,255,255,.68)); color: var(--text, #253447);
+  box-shadow: var(--seg-thumb-shadow, 0 2px 8px rgba(40,60,78,.08));
+}
+.rp-mode small{ display: block; font-size: 9.5px; font-weight: 400; opacity: .75; margin-top: 1px; }
+
+/* ══════════ 大富翁 ══════════ */
+.rp-mono{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px calc(env(safe-area-inset-bottom) + 14px);
+}
+.rp-mcard{
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.42));
+  border-radius: 14px; padding: 12px 13px; margin-bottom: 10px;
+}
+.rp-mcard-t{ font-size: 13px; font-weight: 700; color: var(--text, #253447); margin-bottom: 7px; letter-spacing: .03em; }
+/* ★ 棋盘**原样**渲染，绝不重画成表格或 ASCII —— 上游手册明确要求「照抄，它已排好版」 */
+.rp-board{
+  font-family: var(--font-en), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px; line-height: 1.55; white-space: pre; overflow-x: auto;
+  color: var(--text, #253447); background: var(--seg-track, rgba(140,160,176,.08));
+  border-radius: 11px; padding: 10px 11px; margin: 0 0 9px;
+  -webkit-overflow-scrolling: touch;
+}
+.rp-status{
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px;
+}
+.rp-st{
+  font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
+  background: var(--seg-track, rgba(140,160,176,.11)); color: var(--text-soft, #5E7080);
+  font-family: var(--font-cn, inherit);
+}
+.rp-st.hot{ background: rgba(217,130,43,.14); color: #B36A1A; }
+.rp-tier{
+  border: 1px solid rgba(217,130,43,.34); background: rgba(217,130,43,.06);
+  border-radius: 11px; padding: 9px 11px; font-size: 11.5px; line-height: 1.75;
+  color: var(--text-soft, #5E7080); margin-bottom: 9px; white-space: pre-wrap;
+}
+.rp-tier b{ color: #B36A1A; }
+.rp-rules{
+  font-size: 11px; line-height: 1.75; color: var(--text-faint, #8A99A8);
+  white-space: pre-wrap; max-height: 30vh; overflow-y: auto;
+  border: 1px dashed var(--hairline, rgba(120,142,165,.34));
+  border-radius: 11px; padding: 9px 11px;
+}
+.rp-fields{ display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.rp-fields .f{ display: flex; flex-direction: column; gap: 4px; }
+.rp-fields .f.full{ grid-column: 1 / -1; }
+.rp-fields label{ font-size: 10.5px; color: var(--text-faint, #8A99A8); }
+.rp-fields input, .rp-fields select{
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  background: var(--field-bg, rgba(247,250,252,.92));
+  color: var(--text, #253447); border-radius: 9px;
+  padding: 7px 9px; font-size: 12px; font-family: var(--font-cn, inherit); width: 100%; box-sizing: border-box;
+}
+.rp-ack{
+  display: flex; align-items: flex-start; gap: 8px; margin-top: 10px;
+  font-size: 11.5px; line-height: 1.7; color: var(--text-soft, #5E7080);
+}
+.rp-ack input{ margin-top: 3px; flex: 0 0 auto; }
+.rp-macts{ display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+.rp-tool{
+  font-size: 10.5px; color: var(--text-faint, #8A99A8);
+  border-top: 1px dashed var(--hairline, rgba(120,142,165,.3));
+  padding-top: 7px; margin-top: 7px; line-height: 1.7; word-break: break-all;
+}
+.rp-tool b{ color: var(--text-soft, #5E7080); }
+
 /* ── 窄屏 ──────────────────────────────────────────────────────────────── */
 @media (max-width: 380px){
   .rp-body{ max-width: 84%; }

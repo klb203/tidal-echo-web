@@ -351,6 +351,95 @@
 .rp-empty h4{ font-size: 13.5px; color: var(--text-soft, #5E7080); font-weight: 600; margin: 0 0 6px; }
 .rp-empty p{ font-size: 11.5px; line-height: 1.8; margin: 0; }
 
+/* ══════════ 开局：整页对话界面（新开一层，盖在大富翁之上）══════════ */
+.rps-panel{
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--bg, #F7FAFC);
+}
+.rps-panel.hidden{ display: none; }
+.rps-panel.open .rps-page{ transform: translateY(0); opacity: 1; }
+.rps-page{
+  position: relative;
+  width: min(100vw, var(--ref-width, 941px)); height: 100%;
+  margin: 0 auto; background: var(--bg, #F7FAFC);
+  display: flex; flex-direction: column; min-height: 0;
+  transform: translateY(2.5%); opacity: 0;
+  transition: transform .34s var(--ease-soft, cubic-bezier(.22,1,.36,1)), opacity .28s ease;
+}
+.rps-top{
+  display: flex; align-items: center; gap: 2px; flex: 0 0 auto;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 2px;
+}
+.rps-top button{
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  color: var(--text, #253447); font-size: 19px; cursor: pointer;
+  padding: 4px 8px; opacity: .72; font-family: var(--font-cn, inherit);
+}
+.rps-top button:hover{ opacity: 1; }
+.rps-title-wrap{ text-align: center; flex: 1 1 auto; min-width: 0; }
+.rps-title{ font-size: 19px; font-weight: 600; color: var(--text, #253447); letter-spacing: .04em; }
+.rps-sub{
+  color: var(--text-faint, #8A99A8); font-size: 11.5px; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 参数区：默认收起，页面主体是聊天 */
+.rps-params{
+  flex: 0 0 auto; max-height: 46vh; overflow-y: auto;
+  padding: 9px 14px 10px; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.2));
+}
+.rps-params.hidden{ display: none; }
+.rps-prog{
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px;
+}
+.rps-chip{
+  font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
+  background: var(--seg-track, rgba(140,160,176,.11)); color: var(--text-faint, #8A99A8);
+}
+.rps-chip.got{ background: rgba(23,160,138,.14); color: #0E7C6B; }
+.rps-scroll{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px 6px;
+}
+.rps-msgs{ display: flex; flex-direction: column; gap: 11px; }
+.rps-composer{
+  flex: 0 0 auto; position: relative;
+  border-top: 1px solid var(--hairline, rgba(120,142,165,.2));
+  background: var(--composer-bg, var(--bg, #F7FAFC));
+  padding: 8px 12px calc(env(safe-area-inset-bottom) + 9px);
+}
+.rps-quick{ display: flex; gap: 6px; margin-bottom: 7px; overflow-x: auto; scrollbar-width: none; }
+.rps-quick::-webkit-scrollbar{ display: none; }
+.rps-qb{
+  appearance: none; border: 1px solid var(--card-line, rgba(150,168,182,.24));
+  background: var(--card-bg, rgba(244,248,250,.5)); color: var(--text-soft, #5E7080);
+  border-radius: 999px; padding: 5px 11px; font-size: 11.5px; cursor: pointer;
+  white-space: nowrap; font-family: var(--font-cn, inherit); flex: 0 0 auto;
+}
+.rps-qb:active{ transform: scale(.96); }
+.rps-inputrow{ display: flex; align-items: flex-end; gap: 8px; }
+.rps-inputrow textarea{
+  flex: 1 1 auto; min-width: 0; resize: none; overflow-y: auto; box-sizing: border-box;
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  background: var(--field-bg, rgba(247,250,252,.92));
+  color: var(--text, #253447); border-radius: 13px; padding: 10px 12px;
+  font-size: 13.5px; line-height: 1.55; font-family: var(--font-cn, inherit); max-height: 26vh;
+}
+.rps-inputrow textarea:focus{ outline: none; border-color: var(--accent, #4C6378); }
+.rps-send{
+  appearance: none; border: none; flex: 0 0 auto; cursor: pointer;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--send-bg, var(--accent, #2C4056)); color: var(--accent-fg, #fff);
+  display: grid; place-items: center;
+}
+.rps-send[disabled]{ opacity: .4; cursor: default; }
+.rps-send svg{ width: 18px; height: 18px; }
+.rps-hint{ font-size: 10.5px; color: var(--text-faint, #8A99A8); padding: 6px 2px 0; line-height: 1.6; }
+.rps-ready{
+  display: flex; gap: 7px; flex-wrap: wrap; padding: 9px 14px 0;
+}
+.rps-ready button{ margin: 0; }
+
 /* ══════════ 底部模式切换（老虎机 / 大富翁）══════════ */
 .rp-switchbar{
   flex: 0 0 auto; display: flex; gap: 4px; padding: 7px 12px 2px;

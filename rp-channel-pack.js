@@ -191,7 +191,8 @@
     setup: { p1_name: "", p2_name: "", p1_sex: "女", p2_sex: "男", p1_role: "受", p2_role: "攻",
              lineup: "男女", flavor: "light", identity_mode: "off", rounds: 20, limits: "", pair_code: "" },
     game: null,          // { game_id, player_token, board, status, ... }
-    msgs: []             // 荷官与玩家的对话（与扮演模式完全隔离）
+    msgs: [],            // 荷官与玩家的对话（与扮演模式完全隔离）
+    setupMsgs: []        // 「开局」整页对话界面的聊天记录（关掉再回来还在）
   };
 
   const state = {
@@ -242,7 +243,8 @@
     lsWrite(K_MONO, {
       endpoint: state.mono.endpoint, token: state.mono.token, rulesAck: state.mono.rulesAck,
       rules: state.mono.rules, ack: state.mono.ack, setup: state.mono.setup, game: state.mono.game,
-      msgs: (state.mono.msgs || []).slice(-60)
+      msgs: (state.mono.msgs || []).slice(-60),
+      setupMsgs: (state.mono.setupMsgs || []).slice(-60)
     });
     if (state.scene) {
       if (state.scene.msgs && state.scene.msgs.length > MSG_CAP) state.scene.msgs = state.scene.msgs.slice(-MSG_CAP);
@@ -1234,36 +1236,28 @@
       return;
     }
 
-    /* 2 已连上、还没开局 → 设置面板 */
+    /* 2 已连上、还没开局 → 进「开局」整页对话界面
+       ★ 上游的规矩本来就是让荷官**在对话里**把参数问清楚（强度 / 红线 / 阵容 / 角色 /
+         身份 / 回合数 / 暗号），不是丢一张表给你填。手机上一度改用表单，
+         现在按你的要求改成：点「开局」→ 打开一整页的聊天界面，让它在里面问。 */
     if (!has) {
       const s = mo.setup;
+      const got = SETUP_FIELDS.filter((f) => String(s[f.key] ?? "").trim() !== "");
       elMono.innerHTML =
         `<div class="rp-mcard">
-          <div class="rp-mcard-t">开局设置</div>
-          <div class="rp-rules">${esc(mo.rules || "")}</div>
-          <div class="rp-fields" style="margin-top:10px">
-            <div class="f"><label>你</label><input data-ms="p1_name" value="${esc(s.p1_name)}" placeholder="你的名字"></div>
-            <div class="f"><label>TA</label><input data-ms="p2_name" value="${esc(s.p2_name)}" placeholder="TA 的名字"></div>
-            <div class="f"><label>你的性别</label><select data-ms="p1_sex">${["女", "男"].map((x) => `<option${s.p1_sex === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>TA 的性别</label><select data-ms="p2_sex">${["男", "女"].map((x) => `<option${s.p2_sex === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>你的角色</label><select data-ms="p1_role">${["受", "攻"].map((x) => `<option${s.p1_role === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>TA 的角色</label><select data-ms="p2_role">${["攻", "受"].map((x) => `<option${s.p2_role === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>强度档位</label><select data-ms="flavor">${FL.map((x) => `<option value="${x}"${s.flavor === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>身份模式</label><select data-ms="identity_mode">${["off", "mixed", "nsfw_only"].map((x) => `<option value="${x}"${s.identity_mode === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f"><label>回合数</label><input type="number" min="5" max="200" data-ms="rounds" value="${esc(s.rounds)}"></div>
-            <div class="f"><label>阵容</label><select data-ms="lineup">${["男女", "男男", "女女"].map((x) => `<option${s.lineup === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
-            <div class="f full"><label>红线 / 不想碰的（写清楚，开局后生效）</label>
-              <input data-ms="limits" value="${esc(s.limits)}" placeholder="可留空"></div>
-            <div class="f full"><label>专属暗号（名字太常见时才需要）</label>
-              <input data-ms="pair_code" value="${esc(s.pair_code)}" placeholder="可留空"></div>
+          <div class="rp-mcard-t">还没开局</div>
+          <div class="rp-note" style="margin-top:0">开局要<b>先聊一聊</b> ——
+            它会把强度、红线、阵容、角色、回合数这些问清楚，再把规矩念给你听，然后才开局。
+            这一页是<b>整页的对话界面</b>，不和棋盘挤在一起。</div>
+          <div class="rps-prog" style="margin-top:9px">
+            ${SETUP_FIELDS.map((f) => `<span class="rps-chip${got.some((g) => g.key === f.key) ? " got" : ""}">${esc(f.label)}</span>`).join("")}
           </div>
-          <label class="rp-ack"><input type="checkbox" data-mf="ack"${mo.ack ? " checked" : ""}>
-            <span>上面这套规矩我已经看过，也知道随时说「404 / 停 / 红线 / 不想做」就能立刻停下并跳过。</span></label>
           <div class="rp-macts">
-            <button class="rp-btn" data-act="mono-new"${mo.ack ? "" : " disabled"}>开局</button>
+            <button class="rp-btn" data-act="setup-open">开局：先聊一聊</button>
+            <button class="rp-btn ghost" data-act="mono-new">不聊了，直接开</button>
           </div>
-          ${mo.ack ? "" : `<div class="rp-note">勾上那条确认才能开局 —— 这是<b>知情确认</b>，
-            不是形式：强度说明会在开局后由服务端返回，到时还能改档。</div>`}
+          <div class="rp-note">「直接开」用的是上面这些参数的当前值 ——
+            名字没填就开不了。</div>
         </div>` + endpointCard;
       return;
     }
@@ -1319,6 +1313,209 @@
     }).join("") + `</div>`;
   }
 
+  /* ════════════════════ 开局：整页对话界面 ════════════════════════════
+     点「开局」不再是一张表单，而是**新开一整页**、只做一件事：跟荷官把开局参数聊清楚。
+     上游的规矩本来就是这个 —— 让 AI 在对话里问，不是丢一张表给人填。 */
+  const SETUP_FIELDS = [
+    { key: "p1_name", label: "你" }, { key: "p2_name", label: "TA" },
+    { key: "flavor", label: "强度" }, { key: "lineup", label: "阵容" },
+    { key: "p1_role", label: "你的角色" }, { key: "p2_role", label: "TA 的角色" },
+    { key: "identity_mode", label: "身份模式" }, { key: "rounds", label: "回合数" },
+    { key: "limits", label: "红线" }, { key: "pair_code", label: "暗号" }
+  ];
+  /* 开局阶段只给它这三个工具 —— 这时候不该掷骰，也不该有戏内操作 */
+  const SETUP_TOOLS = MONO_TOOLS.filter((t) => ["monopoly_help", "new_game", "game_info"].indexOf(t.name) >= 0);
+  const SETUP_MAX_STEPS = 8;
+
+  function setupSystem() {
+    const s = state.mono.setup;
+    const have = SETUP_FIELDS.filter((f) => String(s[f.key] ?? "").trim() !== "");
+    return [
+      "你是这局大富翁的荷官，现在处于**开局前**阶段。用聊天把开局参数问清楚，然后开局。",
+      "",
+      "【你要问清楚的】",
+      SETUP_FIELDS.map((f) => "· " + f.label).join("\n"),
+      "（性别只用 男/女；角色只用 攻/受；阵容只用 男女/男男/女女；强度只用 light/medium/heavy；身份模式只用 off/mixed/nsfw_only）",
+      "",
+      "【规矩（照上游 MCP 使用说明执行）】",
+      "· 先把胜负方式、攻受反转、安全词 404、skip / swap 简要说清楚，再问参数。",
+      "· 强度要说明差别（light/medium/heavy 各自对应哪一档），并告诉玩家随时可以改。",
+      "· 默认名 / 常见名先用 game_info 的 pair_history 查一下；撞名就问一个专属暗号。",
+      "· 一次别问太多，一两样一口气，聊着来。",
+      "· 只有玩家都确认了，才能用 new_game 开局，且必须带 setup_confirmed=true 和 rules_ack。",
+      "· 工具返回 setup_required 就照 checklist 继续问，不要硬开。",
+      "· 开局成功后把服务端返回的 intensity_note / active_limits / history_note 简明说一遍。",
+      "",
+      state.mono.rulesAck ? "rules_ack：" + state.mono.rulesAck : "rules_ack：（还没取，先调 monopoly_help）",
+      "",
+      "【已经收集到的（这些不用再问）】",
+      have.length ? have.map((f) => f.label + "：" + String(s[f.key]).trim()).join("\n") : "（还没有）"
+    ].join("\n");
+  }
+
+  let elSetup, elSetupParams, elSetupScroll, elSetupMsgs, elSetupInput, elSetupSend, elSetupSub;
+  const SETUP_PANEL_HTML = `
+    <div class="rps-page">
+      <div class="rps-top">
+        <button data-sact="back" type="button" aria-label="返回">‹</button>
+        <div class="rps-title-wrap"><div class="rps-title">开局</div><div class="rps-sub"></div></div>
+        <button data-sact="params" type="button" aria-label="参数">⚙</button>
+        <button data-sact="close" type="button" aria-label="关闭">✕</button>
+      </div>
+      <div class="rps-params hidden"></div>
+      <div class="rps-scroll"><div class="rps-msgs"></div></div>
+      <div class="rps-composer">
+        <div class="rps-quick"></div>
+        <div class="rps-inputrow">
+          <textarea rows="1" placeholder="回答它…" autocomplete="off" spellcheck="false"></textarea>
+          <button class="rps-send" type="button" aria-label="发送"></button>
+        </div>
+        <div class="rps-hint">它会在这儿把开局参数问清楚；聊完了自己开局</div>
+      </div>
+    </div>`;
+
+  function setupPush(who, text) {
+    if (!state.mono.setupMsgs) state.mono.setupMsgs = [];
+    state.mono.setupMsgs.push({ id: nid("u"), ts: Date.now(), who, text: String(text || "") });
+    if (state.mono.setupMsgs.length > 80) state.mono.setupMsgs = state.mono.setupMsgs.slice(-80);
+  }
+  function setupScroll() { if (elSetupScroll) elSetupScroll.scrollTop = elSetupScroll.scrollHeight; }
+  function setupGrow() {
+    if (!elSetupInput) return;
+    elSetupInput.style.height = "auto";
+    elSetupInput.style.height = Math.min(elSetupInput.scrollHeight, Math.round(window.innerHeight * 0.26)) + "px";
+  }
+
+  function renderSetup() {
+    if (!elSetup || elSetup.classList.contains("hidden")) return;
+    const s = state.mono.setup;
+    const got = SETUP_FIELDS.filter((f) => String(s[f.key] ?? "").trim() !== "");
+    elSetupSub.textContent = "已定 " + got.length + "/" + SETUP_FIELDS.length + " 项"
+      + (state.mono.game && state.mono.game.game_id ? " · 已开局" : "");
+
+    /* 参数区默认收起 —— 这一页的主体是聊天，不是表单 */
+    if (!elSetupParams.classList.contains("hidden")) {
+      elSetupParams.innerHTML =
+        `<div class="rps-prog">${SETUP_FIELDS.map((f) =>
+          `<span class="rps-chip${got.some((g) => g.key === f.key) ? " got" : ""}">${esc(f.label)}</span>`).join("")}</div>
+        <div class="rp-fields">
+          <div class="f"><label>你</label><input data-ms="p1_name" value="${esc(s.p1_name)}" placeholder="你的名字"></div>
+          <div class="f"><label>TA</label><input data-ms="p2_name" value="${esc(s.p2_name)}" placeholder="TA 的名字"></div>
+          <div class="f"><label>你的性别</label><select data-ms="p1_sex">${["女", "男"].map((x) => `<option${s.p1_sex === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>TA 的性别</label><select data-ms="p2_sex">${["男", "女"].map((x) => `<option${s.p2_sex === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>你的角色</label><select data-ms="p1_role">${["受", "攻"].map((x) => `<option${s.p1_role === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>TA 的角色</label><select data-ms="p2_role">${["攻", "受"].map((x) => `<option${s.p2_role === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>强度</label><select data-ms="flavor">${["light", "medium", "heavy"].map((x) => `<option value="${x}"${s.flavor === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>身份模式</label><select data-ms="identity_mode">${["off", "mixed", "nsfw_only"].map((x) => `<option value="${x}"${s.identity_mode === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f"><label>回合数</label><input type="number" min="5" max="200" data-ms="rounds" value="${esc(s.rounds)}"></div>
+          <div class="f"><label>阵容</label><select data-ms="lineup">${["男女", "男男", "女女"].map((x) => `<option${s.lineup === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+          <div class="f full"><label>红线 / 不想碰的</label><input data-ms="limits" value="${esc(s.limits)}" placeholder="可留空"></div>
+          <div class="f full"><label>专属暗号（撞名时才用）</label><input data-ms="pair_code" value="${esc(s.pair_code)}" placeholder="可留空"></div>
+        </div>
+        <label class="rp-ack"><input type="checkbox" data-mf="ack"${state.mono.ack ? " checked" : ""}>
+          <span>规矩我看过了，也知道随时说「404 / 停 / 红线 / 不想做」就能立刻停下。</span></label>`;
+    }
+
+    const list = state.mono.setupMsgs || [];
+    elSetupMsgs.innerHTML = list.length
+      ? list.map((m) => {
+        if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${esc(m.text)}</div></div></div>`;
+        if (m.who === "sys") return `<div class="rp-sys">${esc(m.text)}</div>`;
+        if (m.who === "tool") return `<div class="rp-cut"><b>调了</b> ${esc(m.text)}</div>`;
+        return `<div class="rp-msg ai" style="--mc:#3E7BE8">
+          <span class="rp-av" style="background:#3E7BE8">荷</span>
+          <div class="rp-body"><div class="rp-meta"><b>荷官</b></div>
+            <div class="rp-bubble">${esc(m.text)}</div></div></div>`;
+      }).join("")
+      : `<div class="rp-empty">${svgMask()}<h4>开局先聊一聊</h4>
+         <p>它会把强度、红线、阵容、角色、回合数问清楚，<br>再把规矩念给你听，然后才开局。</p>
+         <button class="rp-btn" data-sact="go">让它开口</button></div>`;
+
+    const qb = elSetup.querySelector(".rps-quick");
+    if (qb) qb.innerHTML = ["light", "medium", "heavy", "20 回合", "不设红线", "就按你说的来"]
+      .map((x) => `<button class="rps-qb" data-sact="say" data-say="${esc(x)}">${esc(x)}</button>`).join("");
+    if (elSetupSend) elSetupSend.disabled = !!state.running;
+    setupScroll();
+  }
+
+  let setupTimer = null;
+  function openSetup() {
+    if (!elSetup) return;
+    clearTimeout(setupTimer);
+    elSetup.classList.remove("hidden");
+    if (!state.mono.setupMsgs) state.mono.setupMsgs = [];
+    renderSetup();
+    requestAnimationFrame(() => requestAnimationFrame(() => { elSetup.classList.add("open"); setupScroll(); }));
+  }
+  function closeSetup() {
+    if (!elSetup) return;
+    elSetup.classList.remove("open");
+    clearTimeout(setupTimer);
+    setupTimer = setTimeout(() => elSetup.classList.add("hidden"), 360);
+  }
+
+  /* 开局对话：模型 → 工具（只限 help / new_game / info）→ 模型；
+     一旦 new_game 成功就关掉这一页，回到棋盘。 */
+  async function setupSend(t) {
+    const text = String(t || "").trim();
+    if (!text || state.running) return;
+    if (!state.mono.rulesAck) {
+      setupPush("sys", "还没有荷官规则 —— 先回上一页点「取荷官规则」拿到 rules_ack，开局才带着它。");
+      renderSetup(); return;
+    }
+    setupPush("user", text);
+    if (elSetupInput) { elSetupInput.value = ""; setupGrow(); }
+    save(); renderSetup();
+
+    state.running = true; state.abort = false; state.ctrl = new AbortController();
+    renderSetup();
+    const apiTools = SETUP_TOOLS.map((x) => ({ type: "function", function: x }));
+    try {
+      const msgs = [{ role: "system", content: setupSystem() }];
+      (state.mono.setupMsgs || []).slice(-16).forEach((m) => {
+        if (m.who === "user") msgs.push({ role: "user", content: m.text });
+        else if (m.who === "host") msgs.push({ role: "assistant", content: m.text });
+      });
+      msgs.push({ role: "user", content: text });
+      for (let i = 0; i < SETUP_MAX_STEPS; i++) {
+        if (state.abort) break;
+        const out = await callJson("char", msgs, apiTools, state.ctrl && state.ctrl.signal);
+        if (out.tool_calls && out.tool_calls.length) {
+          msgs.push(out);
+          for (const tc of out.tool_calls) {
+            const name = tc.function && tc.function.name;
+            let args = {}; try { args = JSON.parse((tc.function && tc.function.arguments) || "{}"); } catch (_) { }
+            setupPush("tool", name + "  " + JSON.stringify(args).slice(0, 140));
+            let r;
+            try { r = await mcpCall(name, args); }
+            catch (e) { r = { text: "调用失败：" + ((e && e.message) || e), isError: true }; }
+            monoAbsorb(r, name);
+            msgs.push({ role: "tool", tool_call_id: tc.id, content: String(r.text || "").slice(0, 6000) });
+            if (name === "new_game" && state.mono.game && state.mono.game.game_id) {
+              setupPush("sys", "开局成功了 —— 回到棋盘。");
+              save(); renderSetup();
+              setTimeout(() => {
+                closeSetup();
+                pushMono("sys", "开局了。服务端返回的强度说明和本局限制在上面，不满意可以结束这局换档重开。");
+                save(); render();
+              }, 900);
+              return;
+            }
+          }
+          renderSetup();
+          continue;
+        }
+        if (out.content) setupPush("host", String(out.content).trim());
+        break;
+      }
+    } catch (e) {
+      setupPush("sys", "（荷官没回上话）" + ((e && e.message) || e));
+    } finally {
+      state.running = false; state.ctrl = null;
+      save(); renderSetup(); setupScroll();
+    }
+  }
+
   /* ════════════════════════════ 大富翁：动作 ════════════════════════════ */
   function pushMono(who, text, edge, trace) {
     if (!state.mono.msgs) state.mono.msgs = [];
@@ -1357,6 +1554,7 @@
     const r = await monoRun("new_game",
       Object.assign({}, s, { setup_confirmed: true, rules_ack: state.mono.rulesAck }), "开局失败");
     if (r && state.mono.game && state.mono.game.game_id) {
+      closeSetup();                                  // 「不聊了，直接开」时顺手关掉开局那页
       pushMono("sys", "开局了。服务端返回的强度说明和本局限制在上面，不满意可以结束这局换档重开。");
       save(); render();
     }
@@ -1513,6 +1711,7 @@
           if (confirm("删掉这一场的所有消息？不可恢复。")) { state.scene = null; state.view = "slot"; save(); render(); }
         }
         /* ── 大富翁 ── */
+        else if (a === "setup-open") openSetup();
         else if (a === "mcp-hello") monoHello();
         else if (a === "mcp-reset") { state.mono.endpoint = MCP_DEFAULT; state.mono.token = ""; mcpReady = false; mcpSession = null; save(); render(); }
         else if (a === "mono-new") monoStart();
@@ -1651,6 +1850,56 @@
       </div>
     </div>`;
 
+  /* 开局对话是**独立的一整页**：单独一个面板，层级在大富翁之上（200），
+     所以打开时它盖住整个万花筒，关掉才回到棋盘那层。 */
+  function ensureSetupDom() {
+    let el = document.getElementById("rpSetupPanel");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "rps-panel hidden"; el.id = "rpSetupPanel";
+      el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "开局");
+      document.body.appendChild(el);
+    }
+    if (!el.querySelector(".rps-page")) el.innerHTML = SETUP_PANEL_HTML;
+    return el;
+  }
+  function bindSetup() {
+    elSetup.addEventListener("click", (e) => {
+      const say = e.target.closest("[data-sact='say']");
+      if (say) { setupSend(say.dataset.say); return; }
+      const s = e.target.closest("[data-sact]");
+      if (!s) return;
+      const a = s.dataset.sact;
+      if (a === "close") closeSetup();
+      else if (a === "back") closeSetup();
+      else if (a === "params") { elSetupParams.classList.toggle("hidden"); renderSetup(); }
+      else if (a === "go") setupSend("开始吧，把要问的问清楚。");
+    });
+    elSetupSend.addEventListener("click", () => setupSend(elSetupInput.value));
+    elSetupInput.addEventListener("input", setupGrow);
+    elSetupInput.addEventListener("keydown", (e) => {
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !coarse) { e.preventDefault(); setupSend(elSetupInput.value); }
+    });
+    /* 参数区里的字段（与 mono 那套同名同逻辑，但绑在这一页上） */
+    elSetupParams.addEventListener("input", (e) => {
+      const t = e.target, k = t.dataset && t.dataset.ms;
+      if (k && t.type !== "number") { state.mono.setup[k] = t.value; save(); }
+    });
+    elSetupParams.addEventListener("change", (e) => {
+      const t = e.target, k = t.dataset && t.dataset.ms;
+      if (k) { state.mono.setup[k] = (k === "rounds") ? clamp(+t.value || 20, 5, 200) : t.value; save(); renderSetup(); }
+      else if (t.dataset && t.dataset.mf === "ack") { state.mono.ack = !!t.checked; save(); }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (elSetup.classList.contains("hidden")) return;
+      if (!elSetupParams.classList.contains("hidden")) { elSetupParams.classList.add("hidden"); renderSetup(); }
+      else closeSetup();
+      e.stopPropagation();
+    }, true);
+  }
+
   function ensureDom() {
     let el = document.getElementById("rpPanel");
     if (!el) {
@@ -1677,6 +1926,14 @@
     elTitle = $(".rp-title", elPanel);
     elSub = $(".rp-sub", elPanel);
     elBack = $(".rp-top button[data-back]", elPanel);
+    elSetup = ensureSetupDom();
+    elSetupParams = $(".rps-params", elSetup);
+    elSetupScroll = $(".rps-scroll", elSetup);
+    elSetupMsgs = $(".rps-msgs", elSetup);
+    elSetupInput = $(".rps-inputrow textarea", elSetup);
+    elSetupSend = $(".rps-send", elSetup);
+    elSetupSub = $(".rps-sub", elSetup);
+    bindSetup();
     load();
     bind();
     render();

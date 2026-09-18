@@ -1540,6 +1540,107 @@
   .pk-res b{ color: var(--pk-on-fg, #8E4A5E); }
 
   /* ══════════ 收藏馆（整页 · 三 Tab）══════════ */
+  /* ── 网关：把「它会的」和「你能开的」全摊成按钮 ───────────────────────
+     沿用设置页/收藏页那套「整页层」约定（z-index 195 > 菜单的 190）。
+     视觉全部走现有 CSS 变量，所以四套主题（蓝白/粉黛/墨夜/港湾）自动跟随。 */
+  .cap-panel{
+    position: fixed; inset: 0; z-index: 195;
+    display:flex; flex-direction: column; justify-content: center;
+    background: var(--bg);
+  }
+  .cap-panel.hidden{ display:none; }
+  .cap-panel.open .cap-page{ transform: translateY(0); opacity: 1; }
+  .cap-page{
+    position: relative;
+    width: min(100vw, var(--ref-width)); height: 100%;
+    margin: 0 auto;
+    background: var(--bg);
+    display:flex; flex-direction: column;
+    transform: translateY(2.5%); opacity: 0;
+    transition: transform .34s var(--ease-soft), opacity .28s ease;
+  }
+  .cap-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 2px;
+  }
+  .cap-top button{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px;
+    opacity:.72; transition: opacity .2s ease;
+  }
+  .cap-top button:hover{ opacity:1; }
+  .cap-top button svg{ width: 19px; height: 19px; }
+  .cap-title-wrap{ text-align:center; flex: 1 1 auto; min-width:0; }
+  .cap-title{ font-size: 19px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
+  .cap-sub{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  .cap-body{
+    flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding: 10px 14px calc(env(safe-area-inset-bottom) + 26px);
+  }
+  .cap-sec{ margin: 16px 0 0; }
+  .cap-sec:first-child{ margin-top: 4px; }
+  .cap-sec-t{ font-size: 13.5px; font-weight: 600; color: var(--text); letter-spacing:.03em; }
+  .cap-sec-s{ font-size: 11.5px; color: var(--text-faint); margin-top: 3px; line-height:1.6; }
+  .cap-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; margin-top: 10px; }
+  .cap-tile{
+    appearance:none; -webkit-appearance:none; text-align:left; cursor:pointer;
+    border: 1px solid var(--card-line); background: var(--card-bg);
+    border-radius: 14px; padding: 11px 12px 12px;
+    display:flex; flex-direction:column; gap: 5px; min-height: 76px;
+    font-family: var(--font-cn);
+    transition: transform .16s var(--ease-soft), border-color .2s ease;
+  }
+  .cap-tile:active{ transform: scale(.975); }
+  .cap-tile:hover{ border-color: var(--accent); }
+  .cap-tile-t{ font-size: 14px; font-weight: 600; color: var(--text); display:flex; align-items:center; gap:6px; }
+  .cap-tile-t i{ font-style:normal; width:16px; height:16px; display:grid; place-items:center; color: var(--accent); flex:0 0 auto; }
+  .cap-tile-t i svg{ width:16px; height:16px; }
+  .cap-tile-s{ font-size: 11.5px; color: var(--text-faint); line-height:1.5; flex:1 1 auto; }
+  .cap-badge{
+    align-self:flex-start; font-size: 10.5px; padding: 1.5px 7px; border-radius: 999px;
+    background: var(--seg-thumb); color: var(--text-soft); border:1px solid var(--hairline);
+    white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cap-badge.on{ color:#2E7D5B; border-color: rgba(46,125,91,.35); }
+  .cap-badge.warn{ color:#A8565F; border-color: rgba(168,86,95,.35); }
+  .cap-wide{ grid-column: 1 / -1; }
+  .cap-toolname{ font-family: var(--font-en), ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .cap-run{ display:flex; gap:7px; margin-top:10px; align-items:center; }
+  .cap-run input{
+    flex:1 1 auto; min-width:0;
+    border:1px solid var(--field-line); background: var(--field-bg); color: var(--text);
+    border-radius: 10px; padding: 9px 11px; font-size: 12.5px; font-family: var(--font-cn);
+  }
+  .cap-run button{
+    flex:0 0 auto; border:none; border-radius:10px; padding: 9px 15px; cursor:pointer;
+    background: var(--accent); color: var(--accent-fg); font-size:12.5px; font-weight:600;
+    font-family: var(--font-cn);
+  }
+  .cap-run button[disabled]{ opacity:.5; cursor:default; }
+  .cap-out{
+    margin-top:9px; padding: 10px 12px; border-radius: 12px;
+    border:1px solid var(--card-line); background: var(--card-bg);
+    color: var(--text-soft); font-size: 12px; line-height:1.7;
+    white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow-y:auto;
+  }
+  .cap-out.err{ color:#A8565F; }
+  .cap-out-t{ font-size:11px; color: var(--text-faint); margin-bottom:5px; }
+  .cap-denied{ display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; }
+  .cap-denied span{
+    font-size:10.5px; padding: 1.5px 7px; border-radius:999px;
+    background: var(--seg-thumb); color: var(--text-faint); border:1px solid var(--hairline);
+    font-family: var(--font-en), ui-monospace, monospace;
+  }
+  .cap-note{ font-size:11px; color: var(--text-faint); margin-top:9px; line-height:1.65; }
+  .cap-flash{ animation: capFlash 1.4s ease; }
+  @keyframes capFlash{
+    0%,100%{ box-shadow: none; }
+    18%{ box-shadow: 0 0 0 3px var(--info-ring); }
+  }
+  /* 极窄屏（≤340px）改单列：两列时子标题要折 4 行、卡高到 130px+，很难看 */
+  @media (max-width: 340px){
+    .cap-grid{ grid-template-columns: minmax(0,1fr); }
+  }
   .fav-panel{
     /* 195 = 和设置页/记忆页同级的「整页」层；必须 > 菜单的 190 */
     position: fixed; inset: 0; z-index: 195;
@@ -4156,6 +4257,12 @@
           <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet place.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="gateway">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l7.6 4.4v8.8L12 20.8l-7.6-4.4V7.6L12 3.2Z"/><path d="M12 8.4l3.4 2v4l-3.4 2-3.4-2v-4l3.4-2Z"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">Gateway</span><span class="menu-sub">Everything it can do.</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="theme">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/><circle cx="8.4" cy="10.4" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.6" cy="10.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
           <span class="menu-dot"></span>
@@ -4201,6 +4308,21 @@
       <span id="favPageInfo">第 1/1 页 · 每页 10 条</span>
       <button id="favNext" type="button" aria-label="下一页">›</button>
     </div>
+  </div>
+</div>
+
+<!-- ── 网关：全部能力，一个能力一个按钮 ── -->
+<div class="cap-panel hidden" id="capPanel" role="dialog" aria-modal="true" aria-label="网关能力">
+  <div class="cap-page">
+    <div class="cap-top">
+      <button id="capClose" type="button" aria-label="关闭">✕</button>
+      <div class="cap-title-wrap">
+        <div class="cap-title">网关</div>
+        <div class="cap-sub" id="capSub">它会的每一件事，都是一个按钮</div>
+      </div>
+      <button id="capRefresh" type="button" aria-label="刷新"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 11.6a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.4 4.4v5.1h-5.1"/></svg></button>
+    </div>
+    <div class="cap-body" id="capBody"></div>
   </div>
 </div>
 
@@ -5952,6 +6074,7 @@ if (menuPanel){
     else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
     else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
+    else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
     else showToast("即将开放");                           // placeholder items
@@ -5959,7 +6082,8 @@ if (menuPanel){
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
-    if (palacePanel && palacePanel.classList.contains("open")) closePalace();
+    if ($("#capPanel") && $("#capPanel").classList.contains("open")) capClose();
+    else if (palacePanel && palacePanel.classList.contains("open")) closePalace();
     else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
     else if ($("#themePanel") && $("#themePanel").classList.contains("open")) themeClose();
     else if ($("#favPanel") && $("#favPanel").classList.contains("open")) favClose();
@@ -5967,6 +6091,485 @@ document.addEventListener("keydown", (e) => {
     else if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
   }
 });
+
+/* ════════════════════════════════════════════════════════════════════════════
+   网关 · 全部能力（一个能力一个按钮）
+   ────────────────────────────────────────────────────────────────────────────
+   为什么要有这一页：它的能力其实早就全都在了 —— 动作层（它自己在聊天里会调的
+   Haven 工具）、记忆宫殿、近景、哨兵、影子推送、线头整理、记忆库、生图、一起听、
+   备份、同步……但这些东西以前**散在十几个折叠卡和几个独立面板里**，
+   必须先知道「有这么个东西」才找得到。
+
+   这一页只做一件事：**先把全部能力摆出来**。一个能力一个按钮，点一下就能看、
+   就能用。状态徽标全部来自后端的只读接口（/app/actions/status、/app/sentinel/status
+   → /app/shadow/status → /app/forge/status …），所以看到的是此刻真实的样子，
+   没有一个是写死的。
+
+   新增，不改动任何现有布局 —— 它是一个独立的整页层，和收藏页同级。
+   ════════════════════════════════════════════════════════════════════════════ */
+
+const CAP_TTL = 20000;                 // 状态缓存 20 秒，避免来回开关时反复打后端
+const CAP_STATE = { ts: 0, busy: false, data: {}, err: "" };
+
+/* ── 状态取值小工具：任何一步缺数据都不许把整页搞崩 ───────────────────── */
+function capDig(obj, path, dflt){
+  try{
+    let cur = obj;
+    for (const k of String(path).split(".")){
+      if (cur == null) return dflt;
+      cur = cur[k];
+    }
+    return (cur === undefined || cur === null) ? dflt : cur;
+  }catch(_){ return dflt; }
+}
+function capNum(n){ return (typeof n === "number" && isFinite(n)) ? n : 0; }
+function capMoney(v){ return "$" + (capNum(v)).toFixed(4); }
+function capBytes(b){
+  b = capNum(b);
+  if (b < 1024) return b + " B";
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
+  return (b / 1048576).toFixed(1) + " MB";
+}
+function capAgo(iso){
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (!isFinite(t)) return "";
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 1) return "刚刚";
+  if (m < 60) return m + " 分钟前";
+  if (m < 1440) return Math.round(m / 60) + " 小时前";
+  return Math.round(m / 1440) + " 天前";
+}
+/* 徽标：返回 [文字, 样式类]；没数据就返回 null（不显示徽标，而不是显示"未知"） */
+function capB(fn){
+  try{ const r = fn(); if (!r || !r[0]) return null; return r; }catch(_){ return null; }
+}
+function capBadgeHtml(b){
+  if (!b) return "";
+  return '<span class="cap-badge' + (b[1] ? " " + b[1] : "") + '">' + escapeHtml(String(b[0])) + "</span>";
+}
+
+/* ── 按钮表 ────────────────────────────────────────────────────────────────
+   act 用字符串描述，故意不写闭包：这样表本身是可读的、也能被自检脚本检查。 */
+const CAP_TILES = [
+  /* ── 你可以打开的 ── */
+  { g:"open", n:"记忆宫殿", s:"七个房间里的长期记忆", ic:"palace",
+    act:"fn:openPalace", badge:() => capB(() => {
+      const n = capDig(CAP_STATE.data, "palace.nodes.length", null);
+      const pl = capDig(CAP_STATE.data, "palace.plates.length", null);
+      if (n == null && pl == null) return null;
+      return ["门牌 " + capNum(pl) + " · 节点 " + capNum(n), "on"];
+    }) },
+  { g:"open", n:"记忆", s:"银河 · 近景 · 记忆库", ic:"memory",
+    act:"fn:openMemory", badge:() => capB(() => {
+      const c = capDig(CAP_STATE.data, "mem.counts", null);
+      if (!c) return null;
+      return [capNum(c.total) + " 条记忆", capNum(c.total) ? "on" : null];
+    }) },
+  { g:"open", n:"收藏馆", s:"聊天 / 语音 / 图片", ic:"star", act:"fn:favOpen" },
+  { g:"open", n:"一起听", s:"把正在放的那首交给它", ic:"music",
+    act:'cs:music', badge:() => capB(() => {
+      const n = capDig(CAP_STATE.data, "music.songs.length", null);
+      if (n == null) return null;
+      const cur = capDig(CAP_STATE.data, "music.playing", false);
+      return [capNum(n) + " 首" + (cur ? " · 正在放" : ""), n ? "on" : null];
+    }) },
+  { g:"open", n:"生图", s:"让它自己画一张", ic:"image",
+    act:'cs:image', badge:() => capB(() => {
+      const ready = capDig(CAP_STATE.data, "actions.image.ready", null);
+      if (ready == null) return null;
+      return ready ? ["已就绪", "on"] : ["未同步", "warn"];
+    }) },
+  { g:"open", n:"戳一戳", s:"让它做个动作", ic:"poke", act:'cs:poke' },
+  { g:"open", n:"找我说话的时间", s:"定它主动开口的时段", ic:"clock", act:'cs:at' },
+  { g:"open", n:"相册", s:"收起来的那些画面", ic:"image", act:"link:album.html" },
+  { g:"open", n:"终端", s:"看它跑的每一步", ic:"terminal", act:"fn:setTerminalOpen" },
+  { g:"open", n:"消息库", s:"按会话翻全部记录", ic:"db",
+    act:"fn:openMessageDb", badge:() => capB(() => {
+      const r = capDig(CAP_STATE.data, "backup.tables.messages.rows", null);
+      if (r == null) return null;
+      return [capNum(r) + " 条", "on"];
+    }) },
+  { g:"open", n:"主题美化", s:"头像 / 名字 / 背景 / 语音条", ic:"palette", act:"fn:themeOpen" },
+  { g:"open", n:"连接与模型", s:"中转站 · Key · 人格", ic:"plug", act:"fn:openSettings" },
+
+  /* ── 后台自动在跑 ── */
+  { g:"auto", n:"哨兵巡逻", s:"定时看一眼，值得才叫醒它", ic:"eye", act:"card:sentinel",
+    badge:() => capB(() => {
+      const st = capDig(CAP_STATE.data, "sentinel.sentinel", null);
+      if (!st) return null;
+      if (!st.enable) return ["已关", "warn"];
+      if (st.in_quiet) return ["夜间静默", null];
+      return [st.interval_min + "–" + st.interval_max + " 分钟一次", "on"];
+    }) },
+  { g:"auto", n:"影子推送", s:"它自己浮上来找你", ic:"bell", act:"card:shadow",
+    badge:() => capB(() => {
+      const sh = capDig(CAP_STATE.data, "shadow.shadow", null);
+      if (!sh) return null;
+      if (!sh.enable) return ["已关", "warn"];
+      if (sh.in_quiet) return ["静默时段", null];
+      if (!sh.can_push) return ["冷却中（" + capDig(CAP_STATE.data, "shadow.shadow.blocked_by", "—") + "）", null];
+      return ["可推", "on"];
+    }) },
+  { g:"auto", n:"线头整理", s:"没聊完的话，它记着", ic:"thread", act:"card:forge",
+    badge:() => capB(() => {
+      const fg = capDig(CAP_STATE.data, "forge.forge", null);
+      if (!fg) return null;
+      if (!fg.enable) return ["已关", "warn"];
+      const th = capDig(CAP_STATE.data, "forge.forge.state.threads.length", 0);
+      return [capNum(th) + " 个线头" + (fg.busy ? " · 忙着" : ""), th ? "on" : null];
+    }) },
+  { g:"auto", n:"近景", s:"最近几天的气味", ic:"wave", act:"card:nearfield",
+    badge:() => capB(() => {
+      const st = capDig(CAP_STATE.data, "nearfield.status", null);
+      if (!st) return null;
+      if (!st.enabled) return ["已关", "warn"];
+      return [capNum(capDig(st, "days.length", 0)) + " 天 · 今天 " +
+              capNum(capDig(st, "current.chars", 0)) + " 字", "on"];
+    }) },
+  { g:"auto", n:"动作层", s:"它在聊天里能自己动手", ic:"bolt", act:"card:actions",
+    badge:() => capB(() => {
+      const a = capDig(CAP_STATE.data, "actions.actions", null);
+      if (!a) return null;
+      const c = capDig(a, "config", {});
+      if (!c.enable) return ["已关", "warn"];
+      const on = ["recall", "ob", "img", "remember"].filter((k) => c[k]).length;
+      return ["4 项里开了 " + on + " · 最多 " + capNum(c.rounds) + " 个动作", on ? "on" : "warn"];
+    }) },
+  { g:"auto", n:"Haven 长期记忆", s:"服务器上的那座记忆库", ic:"brain", act:"card:ombre",
+    badge:() => capB(() => {
+      const om = capDig(CAP_STATE.data, "ombre.ombre", null);
+      if (!om) return null;
+      const last = om.last;
+      if (!om.token_set) return ["未设令牌", "warn"];
+      if (!last) return ["已配好，还没调过", null];
+      return [last.count + " 条 · " + capAgo(last.at), "on"];
+    }) },
+  { g:"auto", n:"生图同步", s:"把浏览器里的配置给后端一份", ic:"image", act:"card:image",
+    badge:() => capB(() => {
+      const r = capDig(CAP_STATE.data, "actions.image.ready", null);
+      if (r == null) return null;
+      return r ? ["已同步", "on"] : ["没同步，它画不了", "warn"];
+    }) },
+
+  /* ── 数据与花销 ── */
+  { g:"data", n:"网关用量", s:"今天花了多少 token", ic:"chart", act:"card:gateway",
+    badge:() => capB(() => {
+      const t = capDig(CAP_STATE.data, "gateway.today", null);
+      if (!t) return null;
+      return [capNum(t.calls) + " 次 · " + capMoney(t.cost) +
+              (t.avg_ms ? " · " + capNum(t.avg_ms) + "ms" : ""), "on"];
+    }) },
+  { g:"data", n:"备份", s:"全部数据导出 / 恢复", ic:"box", act:"card:backup",
+    badge:() => capB(() => {
+      const b = capDig(CAP_STATE.data, "backup.tables", null);
+      if (!b) return null;
+      const rows = Object.keys(b).reduce((a, k) => a + capNum(b[k].rows), 0);
+      return [rows + " 行 · " + capBytes(capDig(CAP_STATE.data, "backup.text_bytes", 0)), "on"];
+    }) },
+  { g:"data", n:"同步到 GitHub", s:"定时把备份推上去", ic:"cloud", act:"palaceSync",
+    badge:() => capB(() => {
+      const sy = capDig(CAP_STATE.data, "sync.sync", null);
+      if (!sy) return null;
+      if (!sy.config || !sy.config.enable) return ["已关", "warn"];
+      if (!sy.ready) return ["仓库没配全", "warn"];
+      return [sy.last_ok === null ? "还没推过" : (sy.last_ok ? "上次成功" : "上次失败"),
+              sy.last_ok === null ? null : (sy.last_ok ? "on" : "warn")];
+    }) },
+];
+
+const CAP_ICONS = {
+  palace:'<path d="M3.5 10.2 12 3.6l8.5 6.6"/><path d="M5.4 11.4V20h13.2v-8.6"/><path d="M9.6 20v-5.1h4.8V20"/>',
+  memory:'<path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/>',
+  star:'<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8L12 3.6Z"/>',
+  music:'<circle cx="7" cy="17.5" r="2.6"/><circle cx="17.5" cy="15.5" r="2.6"/><path d="M9.6 17.5V7.2l10.5-2.2v10.5"/>',
+  image:'<rect x="3" y="4.5" width="18" height="15" rx="2.6"/><circle cx="8.6" cy="9.8" r="1.5"/><path d="M3.6 17.2l4.2-4.2a1.6 1.6 0 0 1 2.3 0l4.6 4.6"/>',
+  poke:'<path d="M9 11V4.8a1.4 1.4 0 0 1 2.8 0V11"/><path d="M11.8 11V6.4a1.4 1.4 0 0 1 2.8 0V11"/><path d="M14.6 11.6V8.4a1.4 1.4 0 0 1 2.8 0v6.9c0 2.9-2.2 5.2-5.1 5.2-2.6 0-4.1-1.1-5.4-3.2L5.2 14c-.6-1 .1-2 1.1-1.9.6 0 1.1.4 1.4.9L9 14.6"/>',
+  clock:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3.2 2"/>',
+  terminal:'<rect x="3" y="4.5" width="18" height="15" rx="2.4"/><path d="M7.4 10l2.6 2.4-2.6 2.4"/><path d="M12.6 14.8h4"/>',
+  db:'<ellipse cx="12" cy="6.6" rx="7.4" ry="3"/><path d="M4.6 6.6v10.8c0 1.7 3.3 3 7.4 3s7.4-1.3 7.4-3V6.6"/><path d="M4.6 12c0 1.7 3.3 3 7.4 3s7.4-1.3 7.4-3"/>',
+  palette:'<path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/>',
+  plug:'<path d="M9 3.5v5.2M15 3.5v5.2"/><path d="M6.4 8.7h11.2v2.6a5.6 5.6 0 0 1-11.2 0V8.7Z"/><path d="M12 17v3.4"/>',
+  eye:'<path d="M2.8 12S6.4 5.9 12 5.9 21.2 12 21.2 12 17.6 18.1 12 18.1 2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.9"/>',
+  bell:'<path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 4 1.6 5.6 1.6 5.6H5s1.6-1.6 1.6-5.6Z"/><path d="M10.2 19a2 2 0 0 0 3.6 0"/>',
+  thread:'<path d="M4 7.2h9.4a3.6 3.6 0 0 1 0 7.2H9.2"/><path d="M6.4 11l-2.4-3.8"/><path d="M11.6 11l2.4 3.8"/><circle cx="17.8" cy="17.6" r="2.6"/>',
+  wave:'<path d="M3 8.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/><path d="M3 13c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/><path d="M3 17.5c1.8-2.2 3.6-2.2 5.4 0s3.6 2.2 5.4 0 3.6-2.2 5.4 0"/>',
+  bolt:'<path d="M13.4 2.8 5.2 13.4h5.5l-.9 7.8 8.2-10.6h-5.5l.9-7.8Z"/>',
+  brain:'<path d="M12 6.2a3 3 0 0 0-5.6 1.2c-1.6.3-2.8 1.7-2.8 3.4 0 1.1.5 2 1.3 2.7-.2.5-.3 1-.3 1.5a3.4 3.4 0 0 0 4.9 3.1A3 3 0 0 0 12 20.3Z"/><path d="M12 6.2a3 3 0 0 1 5.6 1.2c1.6.3 2.8 1.7 2.8 3.4 0 1.1-.5 2-1.3 2.7.2.5.3 1 .3 1.5a3.4 3.4 0 0 1-4.9 3.1A3 3 0 0 1 12 20.3Z"/>',
+  chart:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17v-5M12 17V8M16 17v-3"/>',
+  box:'<path d="M3.6 7.8 12 3.6l8.4 4.2v8.4L12 20.4l-8.4-4.2V7.8Z"/><path d="M3.6 7.8 12 12l8.4-4.2"/><path d="M12 12v8.4"/>',
+  cloud:'<path d="M7.4 18.4h9.2a4 4 0 0 0 .5-8 5.6 5.6 0 0 0-10.8 1.4 3.3 3.3 0 0 0 1.1 6.6Z"/>',
+};
+function capIcon(name){
+  const d = CAP_ICONS[name] || CAP_ICONS.bolt;
+  return '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+         'stroke-linecap="round" stroke-linejoin="round">' + d + "</svg></i>";
+}
+
+const CAP_GROUPS = [
+  { k:"ai",   t:"它自己能用的", s:"聊天里它可以直接调这些 —— 点开就能自己试一次" },
+  { k:"open", t:"你可以打开的", s:"每个按钮就是一整页功能" },
+  { k:"auto", t:"后台自动在跑", s:"点进去调开关（落在设置页对应的那张卡）" },
+  { k:"data", t:"数据与花销",   s:"备份、同步、用了多少" },
+];
+
+function capOpen(){
+  const panel = $("#capPanel"); if (!panel) return;
+  panel.classList.remove("hidden");
+  requestAnimationFrame(() => panel.classList.add("open"));
+  capRender();                      // 先把章节骨架铺出来，别让人对着空白等
+  capLoad(false);
+}
+function capClose(){
+  const panel = $("#capPanel"); if (!panel) return;
+  panel.classList.remove("open");
+  setTimeout(() => { if (!panel.classList.contains("open")) panel.classList.add("hidden"); }, 340);
+}
+
+/* 一次性把要的状态全拿回来。任何一个失败都不影响别的（allSettled）。 */
+async function capLoad(force){
+  if (CAP_STATE.busy) return;
+  if (!force && CAP_STATE.ts && (Date.now() - CAP_STATE.ts) < CAP_TTL) return;
+  if (!appBase()){ CAP_STATE.err = "还没填「云端后端地址」"; capRender(); return; }
+  CAP_STATE.busy = true;
+  const want = [
+    ["actions",  "/app/actions/status"],
+    ["tools",    "/app/actions/tools"],
+    ["gateway",  "/app/gateway/stats?days=14"],
+    ["mem",      "/app/memory/counts"],
+    ["ombre",    "/app/ombre/status"],
+    ["sentinel", "/app/sentinel/status"],
+    ["shadow",   "/app/shadow/status"],
+    ["forge",    "/app/forge/status"],
+    ["nearfield","/app/nearfield/status"],
+    ["music",    "/app/music/status"],
+    ["sync",     "/app/sync/status"],
+    ["backup",   "/app/backup/status"],
+    ["palace",   "/app/palace/status"],
+  ];
+  const results = await Promise.allSettled(
+    want.map(([, p]) => fetch(appUrl(p), { headers: authHeaders() }).then((r) => r.json()))
+  );
+  const failed = [];
+  results.forEach((r, i) => {
+    const key = want[i][0];
+    if (r.status === "fulfilled" && r.value && !r.value.error) CAP_STATE.data[key] = r.value;
+    else failed.push(key);
+  });
+  CAP_STATE.err = failed.length ? ("这几项没拿到：" + failed.join("、")) : "";
+  CAP_STATE.ts = Date.now();
+  CAP_STATE.busy = false;
+  capRender();
+}
+
+/* 动作分发：只认表里写好的那几种前缀，别的一律不执行 */
+function capAct(str){
+  try{
+    if (str === "palaceSync"){                       // 同步的界面在宫殿页里
+      capClose();
+      setTimeout(() => {
+        openPalace();
+        setTimeout(() => {
+          const el = $("#syStatus");
+          if (el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"center" });
+          if (el){ el.classList.add("cap-flash"); setTimeout(() => el.classList.remove("cap-flash"), 1500); }
+          showToast("同步设置在宫殿页往下一点");
+        }, 700);
+      }, 240);
+      return;
+    }
+    if (str.indexOf("fn:") === 0){
+      const fn = str.slice(3);
+      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen, openSettings };
+      if (typeof map[fn] !== "function"){ showToast("暂时打不开：" + fn); return; }
+      capClose();
+      setTimeout(() => {
+        try{
+          if (fn === "setTerminalOpen") map[fn](true);
+          else map[fn]();
+        }catch(e){ showToast("打不开：" + ((e && e.message) || e)); }
+      }, 240);
+      return;
+    }
+    if (str.indexOf("card:") === 0){
+      const name = str.slice(5);
+      capClose();
+      setTimeout(() => {
+        openSettings();
+        setTimeout(() => { expandSetCard(name); showToast("在设置里展开了这张卡"); }, 320);
+      }, 240);
+      return;
+    }
+    if (str.indexOf("cs:") === 0){
+      const view = str.slice(3);
+      capClose();
+      setTimeout(() => { try{ csOpen(view); }catch(e){ showToast("打不开：" + ((e && e.message) || e)); } }, 240);
+      return;
+    }
+    if (str.indexOf("link:") === 0){ location.assign(str.slice(5)); return; }
+    showToast("这个按钮还没接上");
+  }catch(e){
+    showToast("出错了：" + ((e && e.message) || e));
+  }
+}
+
+function capRender(){
+  const body = $("#capBody"); if (!body) return;
+  const sub = $("#capSub");
+  const tiles = {};
+  CAP_TILES.forEach((t) => { (tiles[t.g] = tiles[t.g] || []).push(t); });
+
+  let html = "";
+
+  /* ── A. 它自己能用的（动态来自后端，不在前端写死）────────────────── */
+  const tools = capDig(CAP_STATE.data, "tools.tools", null);
+  const denied = capDig(CAP_STATE.data, "tools.denied", []) || [];
+  html += '<section class="cap-sec"><div class="cap-sec-t">' + CAP_GROUPS[0].t + '</div>' +
+          '<div class="cap-sec-s">' + CAP_GROUPS[0].s + '</div>';
+  if (!tools){
+    html += '<div class="cap-note">' + (CAP_STATE.busy ? "正在问后端…" : "没拿到工具清单。点右上角刷新试试。") + "</div>";
+  } else {
+    const names = Object.keys(tools);
+    html += '<div class="cap-grid">';
+    names.forEach((n) => {
+      // 工具的描述都比较长 —— 一律整行排，两列会把字挤成一坨
+      html += '<button class="cap-tile cap-wide" type="button" data-cap-tool="' +
+              escapeHtml(n) + '">' +
+              '<span class="cap-tile-t">' + capIcon("bolt") +
+              '<span class="cap-toolname">' + escapeHtml(n) + "</span></span>" +
+              '<span class="cap-tile-s">' + escapeHtml(String(tools[n] || "")) + "</span></button>";
+    });
+    html += "</div>";
+    html += '<div class="cap-note">共 ' + names.length + ' 个工具。点任意一个 → 填参数 → 直接运行一次' +
+            '（它聊天时也会自己调）。</div>';
+    if (denied.length){
+      html += '<div class="cap-note">这几个是<b>故意不给它</b>的（破坏性操作）：</div><div class="cap-denied">' +
+              denied.slice(0, 14).map((d) => "<span>" + escapeHtml(String(d)) + "</span>").join("") +
+              "</div>";
+    }
+  }
+  html += '<div id="capToolBox"></div></section>';
+
+  /* ── B / C / D. 三组静态按钮 ────────────────────────────────────────── */
+  CAP_GROUPS.slice(1).forEach((grp) => {
+    const list = tiles[grp.k] || [];
+    if (!list.length) return;
+    html += '<section class="cap-sec"><div class="cap-sec-t">' + grp.t + "</div>" +
+            '<div class="cap-sec-s">' + grp.s + "</div><div class=\"cap-grid\">";
+    list.forEach((t) => {
+      const b = typeof t.badge === "function" ? t.badge() : null;
+      html += '<button class="cap-tile" type="button" data-cap-act="' + escapeHtml(t.act) + '">' +
+              '<span class="cap-tile-t">' + capIcon(t.ic) + escapeHtml(t.n) + "</span>" +
+              '<span class="cap-tile-s">' + escapeHtml(t.s) + "</span>" +
+              capBadgeHtml(b) + "</button>";
+    });
+    html += "</div></section>";
+  });
+
+  if (CAP_STATE.err){
+    html += '<div class="cap-note">' + escapeHtml(CAP_STATE.err) + "</div>";
+  }
+  const when = CAP_STATE.ts ? new Date(CAP_STATE.ts).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) :
+                             "—";
+  html += '<div class="cap-note">状态来自后端只读接口，' + when + " 取的 · 缓存 " + (CAP_TTL / 1000) + " 秒</div>";
+
+  body.innerHTML = html;
+  if (sub && tools) sub.textContent = Object.keys(tools).length + " 个工具 · " + CAP_TILES.length + " 个功能入口";
+}
+
+/* ── 点工具 → 展开「参数 + 运行」────────────────────────────────────────
+   这些是 Haven(OB) 的工具，后端 /app/ombre/call 可以直接调。
+   参数名按工具给个最可能的默认值；填错也不怕 —— OB 会把错误原样返回，照实显示。 */
+const CAP_TOOL_ARGS = {
+  breath:       { k:"query",  ph:"想问它什么？例如「过年」（留空 = 列目录）" },
+  hold:         { k:"content",ph:"要记下的一句事实 / 承诺 / 偏好" },
+  grow:         { k:"content",ph:"一段长内容，会被拆成若干条记忆" },
+  dream:        { k:"window_hours", ph:"回顾最近多少小时（默认 48）" },
+  pulse:        { k:"",       ph:"不需要参数，直接运行" },
+  plan:         { k:"content",ph:"待办 / 承诺 / 没闭环的事" },
+  letter_write: { k:"content",ph:"信的内容" },
+  letter_read:  { k:"query",  ph:"想找的信（留空 = 全部）" },
+  trace:        { k:"id",     ph:"记忆 ID" },
+  restore:      { k:"id",     ph:"要恢复的记忆 ID" },
+  anchor:       { k:"id",     ph:"要钉住的桶（ID 或名字）" },
+  release:      { k:"id",     ph:"要解除钉住的桶" },
+  I:            { k:"content",ph:"自我认知条目（留空 = 读取）" },
+};
+function capToolForm(name){
+  const cfg = CAP_TOOL_ARGS[name] || { k:"query", ph:"参数（按 OB 的字段名）" };
+  const noArg = !cfg.k;
+  return '<div class="cap-run">' +
+    (noArg ? "" : '<input id="capToolArg" type="text" autocomplete="off" placeholder="' + escapeHtml(cfg.ph) + '">') +
+    '<button type="button" id="capToolRun" data-tool="' + escapeHtml(name) + '" data-key="' +
+    escapeHtml(cfg.k) + '">运行</button></div>' +
+    '<div class="cap-note">' + escapeHtml(cfg.ph || "") + "</div>" +
+    '<div id="capToolOut"></div>';
+}
+async function capToolGo(btn){
+  const name = btn.dataset.tool, key = btn.dataset.key;
+  const inp = $("#capToolArg");
+  const out = $("#capToolOut");
+  const args = {};
+  if (key){
+    const v = (inp && inp.value || "").trim();
+    if (!v && name !== "breath" && name !== "letter_read" && name !== "I"){
+      showToast("先填参数"); return;
+    }
+    if (v) args[key] = (key === "window_hours") ? Number(v) || 48 : v;
+  }
+  btn.disabled = true;
+  if (out) out.innerHTML = '<div class="cap-out">运行中…（OB 可能要几秒）</div>';
+  try{
+    const d = await memApi("/app/ombre/call", { method:"POST", body: JSON.stringify({ tool: name, args: args }) });
+    if (out){
+      out.innerHTML = '<div class="cap-out"><div class="cap-out-t">' + escapeHtml(name) + " · " +
+        capNum(d.chars) + " 字 · " + capNum(d.ms) + 'ms</div>' +
+        escapeHtml(String(d.text || "(空)")) + "</div>";
+    }
+    CAP_STATE.ts = 0;                       // 调用可能改了记忆库，下次重拿状态
+  }catch(err){
+    if (out) out.innerHTML = '<div class="cap-out err">失败：' +
+      escapeHtml((err && err.message) || String(err)) + "</div>";
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ── 事件（用委托，按钮是动态生成的）─────────────────────────────────── */
+(function capBind(){
+  const panel = $("#capPanel");
+  if (!panel) return;
+  if ($("#capClose")) $("#capClose").addEventListener("click", capClose);
+  if ($("#capRefresh")) $("#capRefresh").addEventListener("click", () => { CAP_STATE.ts = 0; capLoad(true); });
+
+  panel.addEventListener("click", async (e) => {
+    const runBtn = e.target.closest("#capToolRun");
+    if (runBtn){ capToolGo(runBtn); return; }
+
+    const tool = e.target.closest("[data-cap-tool]");
+    if (tool){
+      const name = tool.dataset.capTool;
+      const box = $("#capToolBox");
+      if (box){
+        box.innerHTML = '<section class="cap-sec"><div class="cap-sec-t">运行一次 · ' +
+          escapeHtml(name) + "</div>" + capToolForm(name) + "</section>";
+        try{ box.scrollIntoView({ behavior:"smooth", block:"nearest" }); }catch(_){}
+        const inp = $("#capToolArg"); if (inp) setTimeout(() => inp.focus(), 120);
+      }
+      return;
+    }
+
+    const act = e.target.closest("[data-cap-act]");
+    if (act){ capAct(act.dataset.capAct); return; }
+  });
+
+  // 键盘：Enter 直接运行
+  panel.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target && e.target.id === "capToolArg"){
+      const btn = $("#capToolRun"); if (btn){ e.preventDefault(); capToolGo(btn); }
+    }
+  });
+})();
 
 /* ── 设置面板:连接管理(中转站 / DeepSeek)── */
 function openSettings(){

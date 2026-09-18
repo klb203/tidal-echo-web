@@ -339,14 +339,14 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   <img class="photo" id="detailImg" alt="">
   <div class="author">
     <div class="av"></div>
-    <div class="nm"><b id="peerName">Claude<small></small></b><span id="detailTime"></span></div>
+    <div class="nm"><b id="peerName">DeepSeek<small></small></b><span id="detailTime"></span></div>
   </div>
   <h1 id="detailCap"></h1>
   <div class="tags" id="detailTags"></div>
   <div class="views" id="detailViews"></div>
 
   <div class="notes">
-    <div class="nh" id="notesTitle">Claude的评语</div>
+    <div class="nh" id="notesTitle">DeepSeek的评语</div>
     <div id="notesBox"></div>
   </div>
 
@@ -408,20 +408,31 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
    Album — a reusable photo-gallery SHELL.
    The relay backend in this repo does NOT implement album endpoints.
    To use it, wire these on your own backend (all Bearer-authed like the rest):
-     GET  /relay/app/album/list             → { photos: [{id, img, caption, time, group, views, ...}] }
-     GET  /relay/app/album/photo/{id}       → one photo (+ notes_list)
-     GET  /relay/app/album/random           → one random photo
-     POST /relay/app/album/upload?name=&caption=&time=&group=  (raw image body)
-     POST /relay/app/trace                  → optional analytics (safe to ignore)
+     GET  /app/album/list             → { photos: [{id, img, caption, time, group, views, ...}] }
+     GET  /app/album/photo/{id}       → one photo (+ notes_list)
+     GET  /app/album/random           → one random photo
+     POST /app/album/upload?name=&caption=&time=&group=  (raw image body)
+     POST /app/trace                  → optional analytics (safe to ignore)
    Until then the gallery shows the key gate / empty state.
    ───────────────────────────────────────────────────────────── */
-const API_BASE="/relay";
+/* ★ 这里原来写死 "/relay"，于是拼出来是 /relay/app/album/list —— **必 404**。
+   index.html 的 appBase() 注释里早就记着这个坑：/app/* 必须打后端的**根**，
+   "/relay" 只是给 "/relay/<供应商>/v1" 那套上游代理用的前缀。
+   按同样的优先级解析：设置里填的云端地址 → 代码默认值 → 同源根。 */
+const CLOUD_HOST_KEY="companion_cloud_relay";
+const CLOUD_RELAY_DEFAULT="https://tidal-echo-relay-1-vudb.onrender.com";
+function appBase(){
+  let h="";
+  try{ h=localStorage.getItem(CLOUD_HOST_KEY)||""; }catch(_){}
+  return (h||CLOUD_RELAY_DEFAULT).replace(/\/+$/,"");
+}
+const API_BASE=appBase();          // 仅用于展示；真正请求一律走 appBase()
 const LS_KEY="companion_secret";
 let secret=localStorage.getItem(LS_KEY)||"";
 
 /* sync the AI avatar + remark name from the PWA (same localStorage keys) */
 const peerAvatar=localStorage.getItem("companion_avatar");
-const AI_NAME="Claude";  // keep in sync with the PWA's CONFIG.AI_NAME
+const AI_NAME="DeepSeek";  // keep in sync with the PWA's CONFIG.AI_NAME
 const peerName=(localStorage.getItem("companion_profile_remark")||"").trim()||AI_NAME;
 document.documentElement.style.setProperty("--peer-avatar", peerAvatar?`url("${peerAvatar}")`:'url("avatar-sea.png")');
 
@@ -456,14 +467,14 @@ function imgUrl(p){
 function authHeaders(extra){ return Object.assign({"Authorization":"Bearer "+secret}, extra||{}); }
 function trace(kind, fields){
   try{
-    fetch(API_BASE+"/app/trace",{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),
+    fetch(appBase()+"/app/trace",{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),
       body:JSON.stringify({surface:"album",kind:kind,fields:fields||{}}),keepalive:true}).catch(function(){});
   }catch(_){}
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 async function api(path,opts){
-  const r=await fetch(API_BASE+path, opts||{headers:authHeaders()});
+  const r=await fetch(appBase()+path, opts||{headers:authHeaders()});
   if(r.status===401){ secret=""; localStorage.removeItem(LS_KEY); show("gate"); throw new Error("401"); }
   if(!r.ok){ let d=""; try{ d=(await r.json()).detail; }catch(_){} throw new Error(d||("HTTP "+r.status)); }
   return r;
@@ -486,7 +497,15 @@ async function loadList(){
     renderRecent();
     renderAlbums();
   }catch(e){
-    if(e.message!=="401"){ $("listMsg").textContent="加载失败："+e.message; $("listMsg").classList.remove("hidden"); }
+    if(e.message!=="401"){
+      const m=String(e.message||"");
+      /* 这个 relay **确实还没有**相册接口（本文件顶部就写着 "SHELL"）。
+         与其甩一句 "未知的 /app 路由"，不如直接说清缺什么。 */
+      $("listMsg").textContent = /未知的\s*\/app|404|HTTP 404/.test(m)
+        ? "相册接口还没接上（这个后端没有 /app/album/*）· 需要先实现：GET /app/album/list · GET /app/album/photo/{id} · GET /app/album/random · POST /app/album/upload"
+        : ("加载失败："+m);
+      $("listMsg").classList.remove("hidden");
+    }
   }
 }
 

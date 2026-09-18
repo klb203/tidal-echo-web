@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>群聊 · 预览（Tidal Echo）</title>
+
+<!-- 群聊包本体（与 index.html 引用的是同一份） -->
+<link rel="stylesheet" href="group-chat-pack.css">
+
+<style>
+/* ── 四套主题的调色板，原样搬自 index.html（:root 与 data-theme 选择器）──
+   这样预览里看到的配色就是正式页面里的配色，不是近似值。 */
+:root{
+  --ref-width: 941px;
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-en: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --wall-default: none;
+  --bg: #F7FAFC; --header-bg: #F7FAFC;
+  --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --bubble-ai-bg: #ECEEF3; --bubble-ai-fg: #253447; --bubble-ai-line: transparent;
+  --bubble-human-bg: #DFE5EE; --bubble-human-fg: #253447; --bubble-human-line: transparent;
+  --accent: #4C6378; --send-bg: #2C4056; --tick: #7E93A4; --accent-fg: #ffffff;
+  --composer-bg: #EEF4FA;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --shadow: 0 18px 46px rgba(74,93,108,.10);
+  --soft-shadow: 0 14px 34px rgba(86,104,118,.08);
+  --card-bg: rgba(244,248,250,.42); --card-line: rgba(150,168,182,.12);
+  --card-shadow: 0 10px 28px rgba(70,92,108,.05);
+  --seg-track: rgba(140,160,176,.11); --seg-thumb: rgba(255,255,255,.68);
+  --seg-thumb-shadow: 0 2px 8px rgba(40,60,78,.08);
+  --row-press: rgba(140,160,176,.09);
+  --info-ring: rgba(143,162,176,.38);
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --header-bg:#F4F2EF;
+  --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --bubble-ai-bg:#EAE6E4; --bubble-human-bg:#E1E0E3;
+  --accent:#4A5D6C; --send-bg:#4A5D6C; --tick:#7E8E9C;
+  --composer-bg:#EFEBE8; --field-bg:rgba(244,242,239,.92);
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --header-bg:#FFF4F8;
+  --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --bubble-human-bg:#E8558F; --bubble-human-fg:#FFFFFF;
+  --bubble-ai-bg:#FFFFFF; --bubble-ai-fg:#6B3348;
+  --accent:#E8558F; --send-bg:#E8558F; --tick:#E58BAE;
+  --composer-bg:#FDE9F1; --field-bg:rgba(255,255,255,.86);
+  --field-line:rgba(212,120,158,.20);
+  --card-bg:rgba(255,255,255,.60); --card-line:rgba(212,120,158,.14);
+  --seg-track:rgba(224,150,182,.18); --seg-thumb:rgba(255,255,255,.86);
+  --row-press:rgba(224,150,182,.14);
+  --shadow:0 18px 46px rgba(180,100,140,.12);
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --header-bg:#0F0F12;
+  --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --bubble-human-bg:#E7E3EC; --bubble-human-fg:#1A1A1F;
+  --bubble-ai-bg:#26262E; --bubble-ai-fg:#E8E8EE;
+  --accent:#C9A9E0; --send-bg:#C9A9E0; --tick:#8E8E9C; --accent-fg:#17171C;
+  --composer-bg:#17171C; --field-bg:rgba(255,255,255,.06);
+  --field-line:rgba(255,255,255,.10);
+  --card-bg:rgba(255,255,255,.05); --card-line:rgba(255,255,255,.09);
+  --seg-track:rgba(255,255,255,.08); --seg-thumb:rgba(255,255,255,.18);
+  --row-press:rgba(255,255,255,.07);
+  --shadow:0 18px 46px rgba(0,0,0,.45);
+}
+
+/* ── 预览外壳 ───────────────────────────────────────────────────────── */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font-cn);
+  -webkit-font-smoothing:antialiased;
+}
+.pv-wrap{ max-width:640px; margin:0 auto; padding:26px 18px 40px; }
+.pv-h1{ font-size:21px; font-weight:600; letter-spacing:.03em; margin:0 0 4px; }
+.pv-sub{ font-size:12.5px; color:var(--text-faint); line-height:1.8; margin:0 0 20px; }
+.pv-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.pv-lab{ font-size:11.5px; color:var(--text-faint); margin-right:2px; }
+.pv-btn{
+  appearance:none; border:1px solid var(--card-line); background:var(--card-bg);
+  color:var(--text); border-radius:10px; padding:7px 13px; font-size:12.5px;
+  cursor:pointer; font-family:var(--font-cn);
+  transition:border-color .2s ease, transform .16s var(--ease-soft);
+}
+.pv-btn:hover{ border-color:var(--accent); }
+.pv-btn:active{ transform:scale(.97); }
+.pv-btn.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv-btn.primary{ background:var(--accent); color:var(--accent-fg); border-color:transparent; padding:11px 22px; font-size:13.5px; font-weight:600; }
+.pv-card{
+  border:1px solid var(--card-line); background:var(--card-bg);
+  border-radius:14px; padding:15px 16px; margin-bottom:14px;
+}
+.pv-card h3{ font-size:13.5px; margin:0 0 8px; font-weight:600; }
+.pv-card p, .pv-card li{ font-size:12px; line-height:1.85; color:var(--text-soft); margin:0; }
+.pv-card ul{ margin:6px 0 0; padding-left:19px; }
+.pv-card code{
+  font-family:var(--font-en); font-size:11.5px;
+  background:var(--seg-track); border-radius:5px; padding:1px 5px;
+}
+.pv-k{ color:var(--text); font-weight:600; }
+.pv-note{
+  font-size:11.5px; line-height:1.8; color:var(--text-faint);
+  border-left:2.5px solid var(--accent); padding-left:11px; margin-top:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="pv-wrap">
+  <h1 class="pv-h1">群聊 · 预览</h1>
+  <p class="pv-sub">
+    这是 <code style="font-family:var(--font-en)">group-chat-pack.css / .js</code> 的独立试衣间 ——
+    正式页面里它挂在左侧菜单的「群聊」上。这里可以直接开、可以直接用，配色与正式页面完全一致。
+  </p>
+
+  <div class="pv-row">
+    <span class="pv-lab">主题</span>
+    <button class="pv-btn on" data-theme="light">珍珠潮汐</button>
+    <button class="pv-btn" data-theme="harbor">港湾</button>
+    <button class="pv-btn" data-theme="pink">粉黛</button>
+    <button class="pv-btn" data-theme="dark">墨夜</button>
+  </div>
+
+  <div class="pv-row">
+    <button class="pv-btn primary" data-open>打开群聊</button>
+    <button class="pv-btn" data-reset>清空记录</button>
+  </div>
+
+  <div class="pv-card">
+    <h3>在这个预览里怎么试</h3>
+    <ul>
+      <li>点「打开群聊」→ 在输入框里写一件事，回车发出去。</li>
+      <li>打一个 <code>@</code> 会弹出成员列表；也可以直接点上面那排成员小胶囊来 @ 人。</li>
+      <li>看它自己往下跑：<span class="pv-k">主助手派活 → 执行者回报 → 主助手收尾</span>，
+          最后冒出一张红卡等你拍板。这就是「三层协作」的完整一圈。</li>
+      <li>切到「进度」页看任务看板五区；点右上角 <code>⋯</code> 看角色配置与群规。</li>
+    </ul>
+    <p class="pv-note">
+      预览里没有后端地址，所以三个成员都解析不出可用连接 ——
+      群聊会自动切到<span class="pv-k">演示模式</span>：流程、任务账本、待确认卡片都是真的，
+      只有文案是预置的，而且每条都会带「演示」角标。
+      在正式页面里配好「设置 → 云端后端」之后，它会真的分别去调
+      <span class="pv-k">DeepSeek</span>（主助手）、<span class="pv-k">Kimi</span>（执行者）、
+      <span class="pv-k">智谱 GLM</span>（互审者）。
+    </p>
+  </div>
+
+  <div class="pv-card">
+    <h3>接入正式页面要动的地方</h3>
+    <ul>
+      <li><code>index.html</code> 的 <code>&lt;head&gt;</code> 里 link 本包的 css。</li>
+      <li><code>#menuPanel</code> 的 <code>&lt;nav class="menu-list"&gt;</code> 里加一个 <code>data-menu="groupchat"</code> 的菜单项。</li>
+      <li>菜单点击处理里加一条分支 → <code>closeMenu(); openGroupChat();</code></li>
+      <li><code>&lt;/body&gt;</code> 之前加一行 <code>&lt;script defer src="group-chat-pack.js"&gt;&lt;/script&gt;</code>。</li>
+      <li><code>sw.js</code> 的 <code>CACHE</code> 版本号要 +1，否则装了主屏的手机会继续用旧壳。</li>
+    </ul>
+    <p class="pv-note">面板 DOM 由包自己注入，所以不需要在 index.html 里手写那一大坨标记。</p>
+  </div>
+</div>
+
+<script src="group-chat-pack.js" defer></script>
+<script>
+/* 预览外壳的小交互：主题切换 / 打开 / 清空
+   ⚠️ 选择器必须写成 button[data-theme] —— <html> 自身就带 data-theme，
+      用裸的 "[data-theme]" 配 closest() 会把**每一次点击**都判成切主题，
+      于是「打开群聊」永远点不动（这个坑是冒烟测试抓出来的）。 */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t){
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  if (e.target.closest("[data-open]")){ if (window.openGroupChat) window.openGroupChat(); return; }
+  if (e.target.closest("[data-reset]")){
+    if (window.GroupChat) { window.GroupChat.reset(); if (window.openGroupChat) window.openGroupChat(); }
+    return;
+  }
+});
+</script>
+</body>
+</html>

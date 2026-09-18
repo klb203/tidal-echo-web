@@ -4683,7 +4683,7 @@
           <div class="fld-row" style="margin-top:12px">
             <button class="btn ghost" id="acSave">保存</button>
             <button class="btn ghost" id="acImgSync">把生图配置同步到服务端</button>
-            <button class="btn ghost" id="acToolsLive">刷新工具清单（问一次服务器）</button>
+            <button class="btn ghost" id="acToolsLive">刷新工具清单（问服务器并记下来）</button>
           </div>
 
           <div class="bk-sub" id="acImgNote" style="margin-top:10px"></div>
@@ -7224,7 +7224,8 @@ async function acLoad(verbose){
   const tkeys = Object.keys(tools);
   if (el("#acToolsN"))   el("#acToolsN").textContent = tkeys.length ? String(tkeys.length) : "0";
   if (el("#acToolsSub")) el("#acToolsSub").textContent =
-    (a.tools_source === "live" ? "问过服务器" : "内置清单") + " · 安全白名单";
+    ({ saved: "已记下真实清单", live: "问过服务器", builtin: "内置兜底清单" }[a.tools_source] ||
+      a.tools_source || "?") + " · 安全白名单";
   if (el("#acImg"))      el("#acImg").textContent = img.ready ? "通了" : "没配";
   if (el("#acImgSub"))   el("#acImgSub").textContent =
     img.ready ? ((img.model || "?") + (img.has_key ? " · 有 Key" : "")) : "缺配置";
@@ -7301,11 +7302,15 @@ async function acSyncImage(){
   }
 }
 async function acToolsLive(){
+  /* ★ 问服务器**并落库**。为什么要存下来：注入用的是存下来的那一份 ——
+     每次都去问服务器的话，清单哪天多一个字，system prompt 的稳定段就整段作废，
+     前缀缓存全丢。而且线上实测过：照源码抄的清单和真实部署对不上（read_bucket 线上根本没有），
+     所以这份清单必须是**真实问回来的**。 */
   acStatus("问服务器要工具清单…");
   try{
-    const r = await fetch(appUrl("/app/actions/tools?live=1"), { headers: authHeaders() });
+    const r = await fetch(appUrl("/app/actions/tools?live=1&save=1"), { headers: authHeaders() });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+    if (!r.ok || d.error) throw new Error((d && d.error) || ("HTTP " + r.status));
     const t = d.tools || {};
     const k = Object.keys(t);
     if ($("#acToolsCount")) $("#acToolsCount").textContent = String(k.length);
@@ -7313,7 +7318,9 @@ async function acToolsLive(){
       $("#acToolsList").innerHTML = k.map((x) => "<div style=\'margin:2px 0\'><b>" + escapeHtml(x) +
         "</b> —— " + escapeHtml(t[x] || "") + "</div>").join("") || "（一个都没有）";
     }
-    acStatus("服务器说它有 " + k.length + " 个工具可用（来源 " + (d.source || "?") + "）", "ok");
+    acStatus("服务器说它有 " + k.length + " 个工具可用，已经记下来了（以后注入就用这份，" +
+             "不再每次去问 —— 问来的清单会变，一变前缀缓存就作废）", "ok");
+    await acLoad(false);
   }catch(err){
     acStatus("问不到 —— " + ((err && err.message) || err) + "（多半是 Haven 连不上，此时用内置清单）", "err");
   }

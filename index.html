@@ -6822,6 +6822,17 @@ function kitNotify(title, body){
    ══════════════════════════════════════════════════════════════════════════ */
 /* Bot 桥的后端状态缓存：标签与详情都从这里读数（避免每次渲染都打后端） */
 const KIT_BOT = { qq: null, qqCfg: null, wx: null, wxCfg: null, xhs: null, xhsCfg: null };
+/* 状态布尔要容错：后端现在存的是真布尔，但**库里可能还留着修复前存的字符串 "True"**
+   （旧数据不自愈的话，「MCP 已握手 / 凭证可用」这两个标签永远不亮，
+   而且完全看不出来为什么）。所以这里三种形态都认。 */
+function kitTri(v){
+  if (v === true || v === false || v === null || v === undefined || v === "") return v;
+  if (typeof v === "number") return v !== 0;
+  const t = String(v).trim().toLowerCase();
+  if (t === "true" || t === "1" || t === "yes" || t === "on") return true;
+  if (t === "false" || t === "0" || t === "no" || t === "off") return false;
+  return null;
+}
 /* 通用 MCP 的本地缓存（查手机那块的地址与 has_token 渲染要用，避免每次都打后端） */
 const KIT_MCP = { cfg: {} };
 
@@ -7259,8 +7270,9 @@ const KIT_TOOLS = [
       const st = KIT_BOT.qq;
       if (!st) return ["未读取", null];
       if (st.mode !== "onebot"){
-        if (st.token_ok === true) return ["凭证可用" + (st.token_exp_in ? "（剩 " + st.token_exp_in + "s）" : ""), "ok"];
-        if (st.token_ok === false) return ["凭证不对", "warn"];
+        const tk = kitTri(st.token_ok);
+        if (tk === true) return ["凭证可用" + (st.token_exp_in ? "（剩 " + st.token_exp_in + "s）" : ""), "ok"];
+        if (tk === false) return ["凭证不对", "warn"];
         return [st.has_app_id ? "已填 AppID" : "未填 AppID", null];
       }
       if (st.login_status === "online") return ["已连上" + (st.self_id ? " · " + st.self_id : ""), "ok"];
@@ -7329,15 +7341,15 @@ const KIT_TOOLS = [
              ["令牌", st.has_token ? "已填" : "未填"],
              ["登录状态", st.login_status || "未知"],
              ["自己的 QQ", st.self_id || "—"],
-             ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"],
+             ["最近探针", st.probe_at ? ((kitTri(st.probe_ok) ? "成功 " : "失败 ") + st.probe_at) : "还没探过"],
              ["最近事件", st.last_event_at || "还没有"]]
           : [["接入方式", "官方机器人（AppID）"],
              ["AppID", st.app_id_mask || (st.has_app_id ? "已填" : "未填")],
              ["AppSecret", st.has_app_secret ? "已填（不回显）" : "未填"],
              ["环境", st.sandbox ? "沙箱" : "正式"],
              ["接口地址", st.official_base || "—"],
-             ["token", st.token_ok === true ? ("可用来（还剩 " + (st.token_exp_in || 0) + " 秒）")
-                        : (st.token_ok === false ? "换不到" : "还没换过")],
+             ["token", kitTri(st.token_ok) === true ? ("可用来（还剩 " + (st.token_exp_in || 0) + " 秒）")
+                        : (kitTri(st.token_ok) === false ? "换不到" : "还没换过")],
              ["自己的机器人", st.self_id || "—"],
              ["最近探针", st.probe_at ? ((st.probe_ok ? "成功 " : "失败 ") + st.probe_at) : "还没探过"]];
         let txt = rows.map((r) => r[0] + "：" + r[1]).join("\n");
@@ -7593,8 +7605,9 @@ const KIT_TOOLS = [
     tag:() => {
       const st = KIT_BOT.xhs;
       if (!st) return ["未读取", null];
-      if (st.ping_ok === true) return ["MCP 已握手", "ok"];
-      if (st.ping_ok === false) return ["MCP 握手失败", "warn"];
+      if (kitTri(st.ping_ok) === true) return ["MCP 已握手" +
+        ((st.tools && st.tools.length) ? " · " + st.tools.length + " 个工具" : ""), "ok"];
+      if (kitTri(st.ping_ok) === false) return ["MCP 握手失败", "warn"];
       return [st.mcp_url ? "已填地址" : "未填地址", null];
     },
     body(){

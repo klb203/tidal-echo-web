@@ -1,8 +1,8 @@
 /* Tidal Echo — service worker (offline shell + Web Push).
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
-const AI_NAME = "Claude";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v40-assets";
+const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
+const CACHE = "companion-v41-themes";
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
@@ -13,6 +13,8 @@ const PRECACHE = [
   "./menu-light.webp", "./menu-harbor.webp",
   "./avatar-sea.png",
   "./send.mp3",
+  "./chat-pink.png", "./chat-dark.png",
+  "./mascot-raccoon.png",
 ];
 
 /* 逐个 put，而不是 addAll：addAll 是「全有全无」—— 只要有一条 404

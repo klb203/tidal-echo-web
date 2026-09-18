@@ -22,12 +22,36 @@ DeepSeek / 硅基流动 / 智谱 / Kimi 这些接口**（只有 DeepSeek 放行�
 
 ## 部署到 GitHub Pages
 
-1. 仓库 **Settings → Pages**
-2. Source 选 **Deploy from a branch**
-3. Branch 选 **main**，目录选 **/ (root)**，Save
-4. 等 1 分钟左右，访问 `https://klb203.github.io/tidal-echo-web/`
+**已启用**，线上地址 → <https://klb203.github.io/tidal-echo-web/>
+
+仓库 Settings → Pages 的当前配置（供重装或换仓库时参考）：
+
+1. Source 选 **Deploy from a branch**
+2. Branch 选 **main**，目录选 **/ (root)**，Save
+3. 等 1 分钟左右即可访问
 
 > `.nojekyll` 已经在仓库里了，防止 GitHub 的 Jekyll 处理干扰静态文件。
+
+### 为什么国内推荐把 GitHub Pages 当主入口
+
+实测（2026-09，从国内网络**不走任何代理**直连）：
+
+| 目标 | 结果 |
+|---|---|
+| `klb203.github.io/tidal-echo-web/` 全部 17 个 URL | 全部 200 |
+| `index.html`（771 KB）首次加载 | **0.51 秒** |
+| 对比：`*.vercel.app` | **完全不可达** |
+
+GitHub Pages 在国内属于「半可用」——大城市的宽带和移动网络基本能直连，
+但二三线城市、校园网和部分运营商可能变慢或打不开（GitHub 走的是境外 CDN，
+节点覆盖不均衡）。`*.vercel.app` 则是整体不可用。
+
+所以建议：**GitHub Pages 当国内主入口，Vercel 留着做备份 / 桌面端**。
+两边内容完全一样，一次 push 同时更新。
+
+> HTTPS 是强制开启的，所以 Service Worker、离线缓存、锁屏推送、装到主屏都可用。
+> 想要 100% 稳定的国内访问，只有「自有服务器 + 备案域名」这一条路，
+> 免费方案做不到（免备案就拿不到大陆节点，这是规则不是平台问题）。
 
 ---
 

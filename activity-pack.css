@@ -1,0 +1,195 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tidal Echo · 自由活动（让 TA 自己出门逛逛）— 样式层
+   ───────────────────────────────────────────────────────────────────────────
+   范式来源：death34018-hue/AionsHome 的「娱乐室」（MCP 服务接入 + AI 自主探索 +
+   行动日志 + 经历总结归档）。这里把同一套思路搬进本前端的侧边栏整页面板。
+
+   视觉沿用本前端既有的整页层约定（与群聊 / 万花筒同一套）：
+     · position:fixed inset:0 + 内部 .act-page 居中到 --ref-width
+     · .hidden 控制存在、.open 触发上浮
+     · 颜色全取宿主 CSS 变量 → 四套主题自动跟随
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.act-panel .hidden{ display: none !important; }
+
+.act-panel{
+  position: fixed; inset: 0; z-index: 199;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--bg, #F7FAFC);
+}
+.act-panel.hidden{ display: none; }
+.act-panel.open .act-page{ transform: translateY(0); opacity: 1; }
+.act-page{
+  position: relative;
+  width: min(100vw, var(--ref-width, 941px)); height: 100%;
+  margin: 0 auto; background: var(--bg, #F7FAFC);
+  display: flex; flex-direction: column; min-height: 0;
+  transform: translateY(2.5%); opacity: 0;
+  transition: transform .34s var(--ease-soft, cubic-bezier(.22,1,.36,1)), opacity .28s ease;
+}
+
+/* ── 顶栏 ──────────────────────────────────────────────────────────────── */
+.act-top{
+  display: flex; align-items: center; gap: 2px;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 2px; flex: 0 0 auto;
+}
+.act-top button{
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  color: var(--text, #253447); font-size: 19px; cursor: pointer;
+  padding: 4px 8px; opacity: .72; transition: opacity .2s ease;
+  font-family: var(--font-cn, inherit);
+}
+.act-top button:hover{ opacity: 1; }
+.act-top button svg{ width: 19px; height: 19px; display: block; }
+.act-title-wrap{ text-align: center; flex: 1 1 auto; min-width: 0; }
+.act-title{
+  font-size: 19px; font-weight: 600; color: var(--text, #253447);
+  letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.act-sub{
+  color: var(--text-faint, #8A99A8); font-size: 11.5px; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── 主体 ──────────────────────────────────────────────────────────────── */
+.act-body{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px calc(env(safe-area-inset-bottom) + 24px);
+}
+.act-card{
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.42));
+  border-radius: 14px; padding: 12px 13px; margin-bottom: 10px;
+}
+.act-card-t{
+  display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 700; color: var(--text, #253447); letter-spacing: .03em;
+}
+.act-card-t .n{
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
+  background: var(--seg-track, rgba(140,160,176,.14)); color: var(--text-soft, #5E7080);
+  font-size: 10.5px; line-height: 17px; text-align: center; font-weight: 600;
+}
+.act-card-t button{
+  margin-left: auto; appearance: none; border: none; background: transparent; cursor: pointer;
+  color: var(--text-faint, #8A99A8); font-size: 11.5px; font-family: var(--font-cn, inherit);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.act-lbl{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin: 9px 0 4px; }
+.act-in, .act-sel, .act-ta{
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  background: var(--field-bg, rgba(247,250,252,.92));
+  color: var(--text, #253447); border-radius: 10px;
+  padding: 9px 11px; font-size: 12.5px; font-family: var(--font-cn, inherit);
+}
+.act-ta{ line-height: 1.7; resize: vertical; }
+.act-in:focus, .act-sel:focus, .act-ta:focus{ outline: none; border-color: var(--accent, #4C6378); }
+.act-two{ display: flex; gap: 8px; }
+.act-two > *{ flex: 1 1 0; min-width: 0; }
+.act-note{ font-size: 11px; line-height: 1.75; color: var(--text-faint, #8A99A8); margin-top: 7px; }
+.act-note b{ color: var(--text-soft, #5E7080); }
+.act-warn{
+  font-size: 11.5px; line-height: 1.7; color: #A8565F;
+  border: 1px solid rgba(168,86,95,.3); background: rgba(168,86,95,.06);
+  border-radius: 11px; padding: 9px 11px; margin-top: 8px;
+}
+.act-ok{
+  font-size: 11.5px; line-height: 1.7; color: #2E7D5B;
+  border: 1px solid rgba(46,125,91,.3); background: rgba(46,125,91,.06);
+  border-radius: 11px; padding: 9px 11px; margin-top: 8px;
+}
+.act-btn{
+  appearance: none; border: none; border-radius: 10px; cursor: pointer;
+  background: var(--accent, #4C6378); color: var(--accent-fg, #fff);
+  padding: 9px 15px; font-size: 12.5px; font-weight: 600;
+  font-family: var(--font-cn, inherit); margin: 4px 6px 0 0;
+}
+.act-btn.ghost{ background: transparent; color: var(--text, #253447); border: 1px solid var(--card-line, rgba(150,168,182,.3)); }
+.act-btn.danger{ background: transparent; color: #A8565F; border: 1px solid rgba(168,86,95,.34); }
+.act-btn[disabled]{ opacity: .5; cursor: default; }
+.act-switch{
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.14));
+}
+.act-switch:last-of-type{ border-bottom: none; }
+.act-switch .t{ font-size: 12.5px; color: var(--text, #253447); line-height: 1.55; min-width: 0; }
+.act-switch .t small{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin-top: 2px; line-height: 1.6; }
+.act-sw{
+  appearance: none; border: none; cursor: pointer; flex: 0 0 auto;
+  width: 42px; height: 25px; border-radius: 999px;
+  background: var(--seg-track, rgba(140,160,176,.24)); position: relative;
+  transition: background .22s ease;
+}
+.act-sw::after{
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 19px; height: 19px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+  transition: transform .22s var(--ease-soft, cubic-bezier(.22,1,.36,1));
+}
+.act-sw.on{ background: var(--accent, #4C6378); }
+.act-sw.on::after{ transform: translateX(17px); }
+
+/* ── MCP 服务条目 ─────────────────────────────────────────────────────── */
+.act-sv{
+  border: 1px solid var(--card-line, rgba(150,168,182,.14));
+  background: var(--seg-track, rgba(140,160,176,.06));
+  border-radius: 12px; padding: 10px 11px; margin-bottom: 8px;
+}
+.act-sv-h{ display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.act-sv-h b{ font-size: 12.5px; color: var(--text, #253447); font-weight: 600; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-sv-h .st{
+  font-size: 10px; padding: 1px 7px; border-radius: 999px; flex: 0 0 auto;
+  border: 1px solid var(--hairline, rgba(120,142,165,.3)); color: var(--text-faint, #8A99A8);
+}
+.act-sv-h .st.ok{ color: #2E7D5B; border-color: rgba(46,125,91,.35); }
+.act-sv-h .st.bad{ color: #A8565F; border-color: rgba(168,86,95,.35); }
+.act-sv-h .x{
+  margin-left: auto; appearance: none; border: none; background: transparent; cursor: pointer;
+  color: var(--text-faint, #8A99A8); font-size: 15px; padding: 0 3px; flex: 0 0 auto;
+}
+.act-sv-h .x:hover{ color: #A8565F; }
+.act-tools{ font-size: 10.5px; line-height: 1.7; color: var(--text-faint, #8A99A8); word-break: break-word; }
+
+/* ── 行动日志 ─────────────────────────────────────────────────────────── */
+.act-log{ max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.act-step{
+  display: flex; gap: 8px; padding: 7px 0;
+  border-bottom: 1px dashed var(--hairline, rgba(120,142,165,.26));
+  font-size: 11.5px; line-height: 1.7;
+}
+.act-step:last-child{ border-bottom: none; }
+.act-step .g{
+  flex: 0 0 auto; width: 18px; height: 18px; border-radius: 6px; margin-top: 1px;
+  display: grid; place-items: center; font-size: 10px; font-weight: 700;
+  background: var(--seg-track, rgba(140,160,176,.16)); color: var(--text-soft, #5E7080);
+}
+.act-step.tool .g{ background: rgba(62,123,232,.14); color: #2F63C4; }
+.act-step.think .g{ background: rgba(217,130,43,.14); color: #B36A1A; }
+.act-step.say .g{ background: rgba(23,160,138,.14); color: #0E7C6B; }
+.act-step .tx{ min-width: 0; flex: 1 1 auto; word-break: break-word; }
+.act-step .tx b{ color: var(--text, #253447); font-weight: 600; }
+.act-step .tx code{
+  font-family: var(--font-en, ui-monospace, monospace); font-size: 10.5px;
+  background: var(--seg-track, rgba(140,160,176,.16)); border-radius: 4px; padding: 1px 4px;
+}
+.act-step .tx .res{ color: var(--text-faint, #8A99A8); display: block; margin-top: 2px; white-space: pre-wrap; }
+.act-empty{ text-align: center; padding: 22px 16px; color: var(--text-faint, #8A99A8); }
+.act-empty svg{ width: 36px; height: 36px; opacity: .4; margin-bottom: 8px; }
+.act-empty h4{ font-size: 13px; color: var(--text-soft, #5E7080); font-weight: 600; margin: 0 0 5px; }
+.act-empty p{ font-size: 11.5px; line-height: 1.8; margin: 0; }
+
+.act-run{
+  border-top: 1px solid var(--hairline, rgba(120,142,165,.14));
+  padding: 8px 0; font-size: 11.5px; line-height: 1.7; color: var(--text-soft, #5E7080);
+}
+.act-run:first-child{ border-top: none; }
+.act-run .h{ display: flex; gap: 7px; align-items: baseline; }
+.act-run .h b{ color: var(--text, #253447); font-weight: 600; }
+.act-run .h span{ font-size: 10.5px; color: var(--text-faint, #8A99A8); margin-left: auto; flex: 0 0 auto; }
+.act-run .b{ color: var(--text-faint, #8A99A8); margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
+
+@media (max-width: 380px){
+  .act-two{ flex-direction: column; }
+}

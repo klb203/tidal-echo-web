@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>自由活动 · 预览（Tidal Echo）</title>
+<link rel="stylesheet" href="activity-pack.css">
+<style>
+/* 四套主题的调色板，原样搬自 index.html —— 预览里的配色就是正式页面的配色 */
+:root{
+  --ref-width: 941px;
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-en: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg:#F7FAFC; --hairline:rgba(120,142,165,.24);
+  --text:#253447; --text-soft:#5E7080; --text-faint:#8A99A8;
+  --accent:#4C6378; --accent-fg:#ffffff;
+  --field-bg:rgba(247,250,252,.92); --field-line:rgba(151,169,181,.18);
+  --card-bg:rgba(244,248,250,.42); --card-line:rgba(150,168,182,.12);
+  --seg-track:rgba(140,160,176,.11); --seg-thumb:rgba(255,255,255,.68);
+  --seg-thumb-shadow:0 2px 8px rgba(40,60,78,.08);
+  --row-press:rgba(140,160,176,.09);
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --accent:#4A5D6C; --field-bg:rgba(244,242,239,.92);
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --accent:#E8558F; --field-bg:rgba(255,255,255,.86); --field-line:rgba(212,120,158,.20);
+  --card-bg:rgba(255,255,255,.60); --card-line:rgba(212,120,158,.14);
+  --seg-track:rgba(224,150,182,.18); --seg-thumb:rgba(255,255,255,.86);
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --accent:#C9A9E0; --accent-fg:#17171C;
+  --field-bg:rgba(255,255,255,.06); --field-line:rgba(255,255,255,.10);
+  --card-bg:rgba(255,255,255,.05); --card-line:rgba(255,255,255,.09);
+  --seg-track:rgba(255,255,255,.08); --seg-thumb:rgba(255,255,255,.18);
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-cn); -webkit-font-smoothing:antialiased; }
+.pv-wrap{ max-width:640px; margin:0 auto; padding:26px 18px 40px; }
+.pv-h1{ font-size:21px; font-weight:600; letter-spacing:.03em; margin:0 0 4px; }
+.pv-sub{ font-size:12.5px; color:var(--text-faint); line-height:1.8; margin:0 0 20px; }
+.pv-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.pv-lab{ font-size:11.5px; color:var(--text-faint); margin-right:2px; }
+.pv-btn{
+  appearance:none; border:1px solid var(--card-line); background:var(--card-bg);
+  color:var(--text); border-radius:10px; padding:7px 13px; font-size:12.5px;
+  cursor:pointer; font-family:var(--font-cn);
+}
+.pv-btn:hover{ border-color:var(--accent); }
+.pv-btn.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv-btn.primary{ background:var(--accent); color:var(--accent-fg); border-color:transparent; padding:11px 22px; font-size:13.5px; font-weight:600; }
+.pv-card{ border:1px solid var(--card-line); background:var(--card-bg); border-radius:14px; padding:15px 16px; margin-bottom:14px; }
+.pv-card h3{ font-size:13.5px; margin:0 0 8px; font-weight:600; }
+.pv-card p, .pv-card li{ font-size:12px; line-height:1.85; color:var(--text-soft); margin:0; }
+.pv-card ul{ margin:6px 0 0; padding-left:19px; }
+.pv-card code{ font-family:var(--font-en); font-size:11.5px; background:var(--seg-track); border-radius:5px; padding:1px 5px; }
+.pv-k{ color:var(--text); font-weight:600; }
+.pv-note{ font-size:11.5px; line-height:1.8; color:var(--text-faint); border-left:2.5px solid var(--accent); padding-left:11px; margin-top:14px; }
+</style>
+</head>
+<body>
+
+<div class="pv-wrap">
+  <h1 class="pv-h1">自由活动 · 预览</h1>
+  <p class="pv-sub">
+    <code style="font-family:var(--font-en)">activity-pack.css / .js</code> 的独立试衣间。
+    正式页面里它挂在左侧菜单上。思路来自
+    <code style="font-family:var(--font-en)">death34018-hue/AionsHome</code> 的「娱乐室」——
+    MCP 服务接入 + AI 自主探索 + 行动日志 + 经历总结归档。
+  </p>
+
+  <div class="pv-row">
+    <span class="pv-lab">主题</span>
+    <button class="pv-btn on" data-theme="light">珍珠潮汐</button>
+    <button class="pv-btn" data-theme="harbor">港湾</button>
+    <button class="pv-btn" data-theme="pink">粉黛</button>
+    <button class="pv-btn" data-theme="dark">墨夜</button>
+  </div>
+  <div class="pv-row">
+    <button class="pv-btn primary" data-open>打开自由活动</button>
+    <button class="pv-btn" data-reset>清空配置</button>
+  </div>
+
+  <div class="pv-card">
+    <h3>它做什么</h3>
+    <ul>
+      <li><b>设时间</b>：活动时段（可跨零点）、两次之间至少隔多久、每天最多几次。
+          到点了它会自己出门逛一趟。</li>
+      <li><b>接服务</b>：填远程 MCP 地址，点「测连通 / 发现工具」会把那个服务的工具拉回来，
+          之后它就能调。</li>
+      <li><b>带回记忆</b>：逛完由模型收尾写一段总结，经宿主的
+          <code>/app/memory/save</code> 写进记忆库 —— 分区可选
+          （事件 / 参考资料 / 工作记忆 / 摘要 / 故事 / 我的房间 / 留给西西的话）。</li>
+      <li><b>行动日志</b>：它调了哪个工具、参数是什么、拿回什么，一步一步都看得见。</li>
+    </ul>
+    <p class="pv-note">
+      <b>⚠️ 只有页面开着它才会跑。</b>这是个静态 PWA，浏览器里没有常驻进程 ——
+      关掉页面就是关掉。所以调度是「开着时每分钟查一次 + 回到前台立刻补检」，
+      错过的时段会在下次打开时补跑一次。<b>真要 7×24 得把这份配置搬到后端当定时任务</b>，
+      这份配置就是它的草稿。
+      <br><br>
+      预览页里没有宿主的记忆接口，所以「写进记忆」会明确告诉你写不了 ——
+      <b>这是有意的</b>：宁可说写不了，也不假装写了。在正式前端里打开就正常。
+    </p>
+  </div>
+
+  <div class="pv-card">
+    <h3>接入正式页面要动的地方</h3>
+    <ul>
+      <li><code>index.html</code> 的 <code>&lt;head&gt;</code> 里 link 本包 css。</li>
+      <li><code>#menuPanel</code> 的 <code>&lt;nav class="menu-list"&gt;</code> 里加一个 <code>data-menu="activity"</code> 的菜单项。</li>
+      <li>菜单点击处理里加一条分支 → <code>closeMenu(); openActivity();</code></li>
+      <li><code>&lt;/body&gt;</code> 之前加 <code>&lt;script defer src="activity-pack.js"&gt;&lt;/script&gt;</code>。</li>
+      <li><code>sw.js</code> 的 <code>CACHE</code> 版本号 +1，并把两个包文件加进 PRECACHE。</li>
+    </ul>
+    <p class="pv-note">面板 DOM 由包自己注入，不需要在 index.html 里手写标记。</p>
+  </div>
+</div>
+
+<script src="activity-pack.js" defer></script>
+<script>
+/* ⚠️ 选择器必须写 button[data-theme] —— <html> 自身带 data-theme，
+   用裸的 "[data-theme]" 配 closest() 会把每一次点击都判成切主题。 */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t){
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  if (e.target.closest("[data-open]")){ if (window.openActivity) window.openActivity(); return; }
+  if (e.target.closest("[data-reset]")){
+    try { localStorage.removeItem("companion_activity"); } catch (_) {}
+    if (window.ActivityPanel) { window.ActivityPanel._load(); window.ActivityPanel._render(); }
+    return;
+  }
+});
+</script>
+</body>
+</html>

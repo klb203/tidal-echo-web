@@ -10926,6 +10926,13 @@ function brRender(){
   let html = "";
   if (ps.length) html += '<div class="br-empty" style="padding:2px 2px 0">计划 · 它记着还没闭环的事</div>' + ps.map(brRowHtml).join("");
   if (bs.length) html += '<div class="br-empty" style="padding:8px 2px 0">记忆桶 · 按权重排</div>' + bs.map(brRowHtml).join("");
+  // ★ 条数多的时候后端只回前 N 条（450 条的 pulse 会吐 64KB）——
+  //   截了就得说清楚，不然看着像「记忆丢了」
+  if (brData && brData.truncated){
+    const bt = brData.buckets_total || 0, pt = brData.plans_total || 0;
+    html += '<div class="br-empty" style="padding:8px 2px 0">共 ' + (bt + pt) +
+            ' 条，这里按权重显示前 ' + (bs.length + ps.length) + ' 条。</div>';
+  }
   if (!bs.length && !ps.length) {
     html = '<div class="br-empty">记忆库里还没有活着的条目。<br>'
       + '（它会在聊天里自己决定记什么 —— 你多聊几句、或者直接跟它说「这个记一下」。）</div>';
@@ -10960,16 +10967,17 @@ async function brLoad(verbose){
   const c = b.counts || {};
   const tag = $("#brTag");
   if (tag) tag.textContent = (c["总占用"] ? ("占用 " + c["总占用"]) : "已连接");
+  const bTotal = (b.buckets_total != null) ? b.buckets_total : (b.buckets || []).length;
+  const pTotal = (b.plans_total != null) ? b.plans_total : (b.plans || []).length;
   const lead = $("#brLead");
-  if (lead) lead.textContent = "服务器上的记忆库 · " + ((b.buckets || []).length + (b.plans || []).length) + " 条活着 · 只读";
+  if (lead) lead.textContent = "服务器上的记忆库 · " + (bTotal + pTotal) + " 条活着 · 只读";
   const st = $("#brStats");
   if (st) st.innerHTML = brStatsHtml(c);
   brRender();
+  /* 概览只打一次 pulse（见后端注释：一页打四个 MCP 工具太重），所以这里没有
+     信件/自我认知/最近变动 —— 那三样在 /app/brain/letters 等单独接口上，需要时再取。 */
   const extra = [];
-  if (b.recent && b.recent.text && !b.recent.empty) extra.push("最近动过：" + b.recent.text.split("\n")[0]);
-  if (b.letters && b.letters.text && !b.letters.empty) extra.push("有信件");
-  if (b.self && b.self.text && !b.self.empty) extra.push("有自我认知");
-  if (verbose) brStatus("读好了 · " + ((b.buckets || []).length + (b.plans || []).length) + " 条" + (extra.length ? "（" + extra.join(" · ") + "）" : ""), "ok");
+  if (verbose) brStatus("读好了 · " + (bTotal + pTotal) + " 条" + (extra.length ? "（" + extra.join(" · ") + "）" : ""), "ok");
 }
 async function brOpen(id, name, row){
   brOpenIds[id] = !brOpenIds[id];

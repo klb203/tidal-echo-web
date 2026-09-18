@@ -35,10 +35,18 @@ const CONFIG = {
 // ── 数据源：优先 ?src= 参数，其次本机记着的后端地址（Tidal Echo 的「云端后端」）──
 (function(){
   try{
+    // ★ 键名必须和主应用一致：index.html 用的是 companion_cloud_relay。
+    //   这里原先写 companion_cloud —— 读不到，于是「直接打开这张星图」时永远退回内嵌示例数据，
+    //   只有从主应用点进来（带 ?src=）才拿得到真数据。
+    var host = (localStorage.getItem('companion_cloud_relay') || '').replace(/\/+$/, '');
+    var sec  = localStorage.getItem('companion_secret') || '';
     var q = new URLSearchParams(location.search).get('src');
-    if (q) { CONFIG.dataUrl = q; return; }
-    var host = (localStorage.getItem('companion_cloud') || '').replace(/\/+$/, '');
-    if (host) CONFIG.dataUrl = host + '/app/galaxy.json';
+    if (q) CONFIG.dataUrl = q;
+    else if (host) CONFIG.dataUrl = host + '/app/galaxy.json';
+    // 后端设了 RELAY_SECRET 的话这里必须带上 —— 否则 401，星图会退回示例数据
+    if (sec && CONFIG.dataUrl.indexOf('/app/') >= 0 && CONFIG.dataUrl.indexOf('token=') < 0){
+      CONFIG.dataUrl += (CONFIG.dataUrl.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(sec);
+    }
   }catch(e){}
 })();
 </script>
@@ -529,7 +537,7 @@ function boot(d){
   document.getElementById('head').classList.add('in');
   animate();
 }
-fetch(CONFIG.dataUrl+'?d='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(boot)
+fetch(CONFIG.dataUrl+(CONFIG.dataUrl.indexOf('?')>=0?'&':'?')+'d='+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()}).then(boot)
   .catch(()=>{ // 双击直接打开(file://)或没有 memory.json 时：用内嵌示例数据
     try{ boot(JSON.parse(document.getElementById('memory-data').textContent)); }
     catch(e){ document.getElementById('loading').textContent='星光加载失败，稍后再来 ♡';console.error(e); }

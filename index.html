@@ -5678,6 +5678,39 @@
 
       </div><!-- /近景页 -->
 
+      <!-- ⑦ 时间线 · 一个它（独立一页）──────────────────────────────────
+           后端「统一场景层」那本账（表 scene_events）的只读窗口。
+           聊天 / 朋友圈 / 房间 / 自由活动 / 大富翁 / 主动联系 都把「刚干了什么」记在同一本账上，
+           而且**任何场景开口前都会先看一眼这本账** —— 这就是「它们是同一个它」的机制。
+           ⚠️ 这里不另起存储：只读后端 /app/scene/*；与档案室、银河（memories 表）没有数据交集。 -->
+      <div class="mem-page hidden" data-mp="timeline">
+      <section class="mg-card" id="tlCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">时间线 · 一个它</div>
+            <div class="mg-sub" id="tlLead">聊天 · 朋友圈 · 房间 · 自由活动 · 大富翁 · 主动联系 —— 同一本账</div>
+          </div>
+          <span class="mg-tag" id="tlTag">—</span>
+        </div>
+        <div class="br-stats" id="tlStats"></div>
+        <div class="br-search">
+          <input id="tlQ" type="search" placeholder="只看某个场景：聊天 / 朋友圈 / 房间 / 自由活动 / 大富翁" autocomplete="off">
+          <button class="btn ghost" id="tlFilterGo" type="button">筛</button>
+        </div>
+        <div class="nf-actions">
+          <button id="tlRefresh" type="button">刷新</button>
+          <button id="tlDistill" type="button" class="primary">写进记忆（统一总结）</button>
+        </div>
+        <div class="conn-sub" id="tlStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+        <div class="br-list" id="tlList"></div>
+        <div class="br-foot" id="tlFoot">—</div>
+        <div class="settings-tip">这本账是「同一个它」的地基：<b>写</b>——任何场景调一次模型，
+        聊天/朋友圈/房间/自由活动/大富翁 都会往这儿记一笔；<b>读</b>——任何场景开口前，
+        后端自动把「聊天那份人格 + 别处刚发生的事」接到它提示词的末尾，聊天这一侧反过来也一样。
+        所以它换个地方也还是同一个它。这里只是把账摊开给你看（含「写进记忆」= 把这本账脱水成一条记忆，进档案室与银河）。</div>
+      </section>
+      </div><!-- /时间线页 -->
+
       <!-- ③ 记忆库分区卡（JS 生成 · 每张自己一页）-->
       <!-- ── Haven · 长期记忆（服务器上的 Ombre Brain，只读浏览）—— 独立一页 ── -->
       <div class="mem-page hidden" data-mp="haven">
@@ -14038,8 +14071,133 @@ function buildLibCards(){
    点一张翻一页 —— 一次只显示一个 .mem-page，其余 .hidden。
    卡片沿用档案室那套「存放方式」：同一份 memories / galaxy 数据，
    这里只是换个摆放，不另起一套存储。 */
+/* ════════════ 时间线 · 一个它（后端「统一场景层」那本账的只读窗口）═════════
+   为什么要有这一页：那本账本来只在后台长着 —— 它长没长、有没有真的互通，你看不见。
+   摊开之后一眼能看出来三件事：
+     ① 各场景到底有没有在往同一本账上记（统计条）；
+     ② 记的是什么（每条的时间、场景、正文）；
+     ③ 它有没有真的「带着别处的记忆」在说话（注入是后端自动做的，这里给的是原料）。
+   ⚠️ 只读。读后端 /app/scene/*，写只有「写进记忆」那一个动作（POST /app/scene/distill）。
+      与档案室 / 银河没有数据交集：那两处是 memories 表，这本账是 scene_events 表。 */
+let tlData = null, tlScene = "";
+const TL_ICO = { chat:"💬", moments:"🖼", room:"🚪", activity:"🚶", monopoly:"🎲", rp:"🎭",
+                 group:"👥", clock:"⏱", shadow:"🌙", wander:"🧭", mcp:"🔧", other:"•" };
+/* 中文输入直接当场景键用（用户不会去记 moments / monopoly 这些英文名） */
+const TL_ALIAS = { "聊天":"chat", "朋友圈":"moments", "房间":"room", "屋子":"room",
+                   "自由活动":"activity", "大富翁":"monopoly", "万花筒":"rp",
+                   "群聊":"group", "时钟":"clock", "主动联系":"shadow", "漫想":"wander" };
+function tlStatus(msg, kind){
+  const el = $("#tlStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = kind === "err" ? "var(--danger, #e06c75)"
+                 : (kind === "ok" ? "var(--ok, #7ec699)" : "var(--text-faint)");
+}
+function tlAgo(ts){
+  if (!ts) return "";
+  const d = new Date(ts); if (isNaN(d.getTime())) return "";
+  const s = (Date.now() - d.getTime()) / 1000;
+  if (s < 90) return "刚刚";
+  if (s < 3600) return Math.floor(s / 60) + " 分钟前";
+  if (s < 21600) return Math.floor(s / 3600) + " 小时前";
+  const p = (x) => String(x).padStart(2, "0");
+  return (d.getMonth() + 1) + "/" + d.getDate() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function tlRowHtml(it){
+  const ico = TL_ICO[it.scene] || "•";
+  return '<div class="br-row" style="cursor:default">'
+    + '<div class="br-row-top">'
+      + '<span class="br-ico">' + ico + "</span>"
+      + '<span class="br-name">' + escapeHtml(it.label || it.scene || "别处") + "</span>"
+      + '<span class="br-meta">' + escapeHtml(it.ago || tlAgo(it.ts)) + "</span>"
+    + "</div>"
+    + (it.body ? '<div class="br-body">' + escapeHtml(it.body) + "</div>" : "")
+    + "</div>";
+}
+function tlRender(){
+  const host = $("#tlList"); if (!host) return;
+  const items = tlData || [];
+  if (!items.length){
+    host.innerHTML = '<div class="br-empty">这本账还是空的。'
+      + (tlScene ? "（当前只在看「" + escapeHtml(tlScene) + "」，点「筛」清空再看全部。）<br>" : "<br>")
+      + "去朋友圈点个赞、让它出门逛一趟、或者开一局大富翁 —— 那些事都会记到这儿，"
+      + "而且<b>它自己看得见</b>：下次聊天时它就知道自己在别处干了什么。</div>";
+    return;
+  }
+  host.innerHTML = items.map(tlRowHtml).join("");
+}
+async function tlLoad(verbose){
+  const tag = $("#tlTag");
+  if (verbose) tlStatus("读时间线…");
+  try{
+    const r = await memApi("/app/scene/recent?limit=60"
+      + (tlScene ? "&scene=" + encodeURIComponent(tlScene) : ""));
+    tlData = r.items || [];
+    if (tag) tag.textContent = tlScene ? ((r.labels && r.labels[tlScene]) || tlScene) : "全部";
+    /* 统计条：近 24 小时各场景记了多少（直接回答「有没有真的在互通」） */
+    let st = null;
+    try { st = await memApi("/app/scene/status?hours=24"); } catch (_) { st = null; }
+    const by = (st && st.by_scene) || {}, labels = (st && st.labels) || {};
+    const keys = Object.keys(by).sort((a, b) => by[b] - by[a]).slice(0, 6);
+    const pill = $("#tlStats");
+    if (pill){
+      pill.innerHTML = keys.length
+        ? keys.map((k) => '<span class="br-pill">' + escapeHtml(labels[k] || k)
+                          + " <b>" + by[k] + "</b></span>").join("")
+        : '<span class="br-pill">近 24 小时还没有记录</span>';
+    }
+    const lead = $("#tlLead");
+    if (lead) lead.textContent = (st && st.enabled === false)
+      ? "后端统一层已关闭（SCENE_UNIFY=0）"
+      : "聊天 · 朋友圈 · 房间 · 自由活动 · 大富翁 · 主动联系 —— 同一本账";
+    const foot = $("#tlFoot");
+    if (foot) foot.textContent = "共 " + tlData.length + " 条"
+      + (tlScene ? "（已按场景筛选）" : "（最近 60 条）")
+      + " · 每个场景开口前都会先看一眼这本账（后端自动注入，不需要前端配合）";
+    tlRender();
+    if (verbose) tlStatus("已读取 " + tlData.length + " 条", "ok");
+  }catch(err){
+    tlData = [];
+    if (tag) tag.textContent = "连不上";
+    tlStatus("读不到时间线 —— " + ((err && err.message) || err), "err");
+    tlRender();
+  }
+}
+async function tlDistill(){
+  tlStatus("正在把这段时间的账脱水成一条记忆…");
+  const btn = $("#tlDistill"); if (btn) btn.disabled = true;
+  try{
+    const r = await memApi("/app/scene/distill", {
+      method: "POST", body: JSON.stringify({ hours: 24, kind: "summary" }) });
+    if (r && r.ok){
+      tlStatus(r.message || "已写进记忆", "ok");
+      try { memLoad(false); } catch (_) { }        // 让计数条跟着更新
+    }else{
+      tlStatus((r && r.message) || "没写成（记录太少？）", "err");
+    }
+  }catch(err){
+    tlStatus("总结失败 —— " + ((err && err.message) || err), "err");
+  }finally{
+    if (btn) btn.disabled = false;
+    tlLoad(false);
+  }
+}
+if ($("#tlList")){
+  if ($("#tlRefresh")) $("#tlRefresh").addEventListener("click", () => tlLoad(true));
+  if ($("#tlDistill")) $("#tlDistill").addEventListener("click", tlDistill);
+  if ($("#tlFilterGo")) $("#tlFilterGo").addEventListener("click", () => {
+    const q = $("#tlQ");
+    let v = q ? String(q.value || "").trim().toLowerCase() : "";
+    tlScene = v ? (TL_ALIAS[v] || v) : "";
+    tlLoad(true);
+  });
+  if ($("#tlQ")) $("#tlQ").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && $("#tlFilterGo")) $("#tlFilterGo").click();
+  });
+}
+
 const MEM_BAR_FIXED = [
   { key: "overview", ico: "◍", name: "总览",        sub: "银河 · 日历 · 档案室" },
+  { key: "timeline", ico: "◷", name: "时间线",      sub: "别处 · 聊天 合一" },
   { key: "near",     ico: "✦", name: "近景 · 七天", sub: "" },
   { key: "haven",    ico: "☁", name: "Haven",       sub: "长期记忆 · 只读" },
 ];
@@ -14079,6 +14237,8 @@ function memShowPage(key){
   /* Haven 那一页的内容是异步拉的（/app/brain，走外网）：切过去时补一次，
      免得首次没拉到就一直是空壳 —— 它现在不在首屏，没有别的时机来补。 */
   if (target.dataset.mp === "haven") { try { brLoad(false); } catch (_) { } }
+  /* 时间线同理：它的内容也全靠异步拉（/app/scene/recent），不在首屏就没有别的时机补 */
+  if (target.dataset.mp === "timeline") { try { tlLoad(false); } catch (_) { } }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }
@@ -14088,6 +14248,7 @@ function memBarSync(){
   const counts = memData.counts || {};
   const put = (k, v) => { const el = $("#mbSub-" + k); if (el) el.textContent = v; };
   put("overview", "银河 · 日历 · 档案室");
+  put("timeline", tlData ? (tlData.length + " 条") : "别处 · 聊天 合一");
   put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
   put("haven", "长期记忆 · 只读");
   LIB_DEFS.forEach((d) => put("lib-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));

@@ -227,10 +227,19 @@
   /* ══════════════ ③ 挂钩：renderText / setMessage / onMessage ════════ */
   let liveTide = false;          /* 正在处理一条**实时**消息（不是历史回放） */
 
+  /* ★★★ 包住宿主函数时，必须把**被包那个函数身上的标记一起接过来**。
+     这个前端有多个包会包同一个 renderText（topic-pack 也包）。后包的如果只给自己打标记，
+     前一个的标记就丢了 → 前一个下次 init 会以为"还没包过" → 再套一层 → 套娃。
+     （2026-09-19 回归跑出 `renderText.__choice === false` 才逮到。） */
+  function carryFlags(wrapped, orig) {
+    try { Object.keys(orig).forEach((k) => { if (k.indexOf("__") === 0) wrapped[k] = orig[k]; }); } catch (_) { }
+  }
+
   function hookRenderText() {
     if (typeof window.renderText !== "function" || window.renderText.__choice) return false;
     const orig = window.renderText;
     const wrapped = function (t) { return orig.call(this, stripChoice(t)); };
+    carryFlags(wrapped, orig);
     wrapped.__choice = true;
     window.renderText = wrapped;
     return true;
@@ -265,6 +274,7 @@
       } catch (_) { }
       return arguments.length > 1 ? orig.call(this, raw, opt) : orig.call(this, raw);
     };
+    carryFlags(wrapped, orig);
     wrapped.__choice = true;
     window.setMessage = wrapped;
     return true;
@@ -277,6 +287,7 @@
       liveTide = true;
       try { return orig.apply(this, arguments); } finally { liveTide = false; }
     };
+    carryFlags(wrapped, orig);
     wrapped.__choice = true;
     window.onMessage = wrapped;
     return true;

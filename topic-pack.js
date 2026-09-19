@@ -122,7 +122,16 @@
       + `</span>`;
   }
 
-  /* ── 挂钩 ───────────────────────────────────────────────────────────── */
+  /* ── 挂钩 ─────────────────────────────────────────────────────────────
+     ★★★ 包住宿主函数时，必须把**被包那个函数身上的标记一起接过来**。
+     这个前端有多个包会包同一个 renderText（choice-pack 也包）。后包的如果只给自己打
+     `__topic`，前一个的 `__choice` 就丢了 —— 于是前一个包下一次 init 会以为"还没包过"，
+     再包一层；下次再 init 再套一层……套娃而且标记再也信不过。
+     （2026-09-19 真踩到：回归跑出 `renderText.__choice === false`。） */
+  function carryFlags(wrapped, orig) {
+    try { Object.keys(orig).forEach((k) => { if (k.indexOf("__") === 0) wrapped[k] = orig[k]; }); } catch (_) { }
+  }
+
   function hookRenderText() {
     if (typeof window.renderText !== "function" || window.renderText.__topic) return false;
     const orig = window.renderText;
@@ -133,6 +142,7 @@
         return parts.map((p) => (p.data ? cardHtml(p.data) : orig.call(this, p.text))).join("");
       } catch (_) { return orig.call(this, t); }
     };
+    carryFlags(wrapped, orig);
     wrapped.__topic = true;
     window.renderText = wrapped;
     return true;
@@ -158,6 +168,7 @@
       } catch (_) { }
       return row;
     };
+    carryFlags(wrapped, orig);
     wrapped.__topic = true;
     window.makeMessage = wrapped;
     return true;

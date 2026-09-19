@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v65-topic";        // v65：Topic Pool —— 自由活动把这一趟做成卡发进聊天
+const CACHE = "companion-v66-flags";        // v66：修跨包包装丢标记（renderText.__choice 被后者盖掉 → 套娃）
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

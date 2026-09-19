@@ -5843,7 +5843,7 @@
         <div class="mg-head">
           <div>
             <div class="mg-title">召回</div>
-            <div class="mg-sub">向量 0.7 + 关键词 0.3 → 房间权重 → 扩散激活 → 反刍</div>
+            <div class="mg-sub">最多四路：关键词 / 语义 / 关联 / 它的余味 → RRF 融合 → 房间权重 → 扩散激活 → 反刍</div>
           </div>
         </div>
         <div class="model-row" style="margin-top:13px">
@@ -5887,6 +5887,66 @@
           <span class="mg-tag" id="palChunkTag">—</span>
         </div>
         <div id="palChunks"></div>
+      </section>
+
+      <!-- ⑥ 参考项目 · 向量检索（地址可复制给 AI）
+           这一层是「怎么把记忆找回来」的三种成熟做法。宫殿自己的检索已经吸收了里面几条
+           （见卡片末尾那段），留地址是为了以后想再往下挖时，直接把仓库丢给 AI 让它读。 -->
+      <section class="mg-card">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">参考项目 · 向量检索</div>
+            <div class="mg-sub">同一件事（把记忆找回来）的三种做法 —— 地址可复制给 AI</div>
+          </div>
+        </div>
+
+        <div class="settings-section-label" style="margin-top:12px">kiwi-mem · 记忆热度 / Dream 整合 / 日历摘要</div>
+        <div class="sd-secret-row">
+          <input class="nf-box" id="pvKiwi" type="text" readonly value="https://github.com/LucieEveille/kiwi-mem">
+          <button type="button" data-pv-copy="pvKiwi">复制给 AI</button>
+        </div>
+        <div class="settings-tip" style="margin-top:6px">
+          <b>kiwi-mem</b>（Python + pgvector 自托管记忆网关）—— 三样值得抄：
+          <b>热度</b>（时间半衰期 + 召回升温 + 情绪权重；高热度全文注入、中热度只给摘要、冷记忆不打扰）、
+          <b>Dream</b>（夜里把碎片融成「记忆场景」，并给场景建向量索引，白天还能被搜到 ——
+          睡觉的产出回流到清醒的日子）、<b>日历层级摘要</b>（近的详细、远的压缩）。
+        </div>
+
+        <div class="settings-section-label" style="margin-top:14px">paramecium · 原文 + 检索</div>
+        <div class="sd-secret-row">
+          <input class="nf-box" id="pvPara" type="text" readonly value="https://github.com/Shitsuten/paramecium">
+          <button type="button" data-pv-copy="pvPara">复制给 AI</button>
+        </div>
+        <div class="settings-tip" style="margin-top:6px">
+          <b>paramecium</b>（草履虫：一个不打算成为大脑的记忆网关）—— 立场最清楚的一条：
+          <b>向量是原文的投影，不是替代品</b>。embedding 只负责指路（attention 里的 K），
+          命中后取回的是一字不差的<b>原文</b>（V）；<b>token 只为命中付费</b>。
+          另外两个具体做法：<b>回复的余味</b>（它刚说出口的那句话，单独作查询的第二路）、
+          「菜单递过去就行、夹不夹菜是人格的事」（目录只给标题，翻不翻由模型自己定）。
+        </div>
+
+        <div class="settings-section-label" style="margin-top:14px">imprint-memory · 混合检索 + MCP</div>
+        <div class="sd-secret-row">
+          <input class="nf-box" id="pvImprint" type="text" readonly value="https://github.com/Qizhan7/imprint-memory">
+          <button type="button" data-pv-copy="pvImprint">复制给 AI</button>
+        </div>
+        <div class="settings-tip" style="margin-top:6px">
+          <b>imprint-memory</b>（Claude Code 的持久记忆 · MCP server）—— 混合检索那条链写得最直白：
+          <b>FTS5 + 中文分词</b> 与 <b>向量 cosine</b> 并行召回，再用 <b>RRF</b> 按<b>排名</b>融合
+          （分数尺度对不齐，排名对得齐）；外加 pin（永不衰减）、标签、图谱边给排名加成。
+          它那节「嵌入模型不许混用 ⚠️」也是踩过坑才写的 —— 换模型就等于全库向量作废。
+        </div>
+
+        <div class="settings-tip" style="margin-top:14px;border-top:1px dashed var(--line, rgba(127,127,127,.22));padding-top:10px">
+          <b>这本仓库已经吸收了这几条</b>（都能在下面「召回」那张卡的返回里看到）：
+          <b>RRF 按排名融合</b>（关键词 / 语义 / 关联 / 它的余味，最多四路）·
+          <b>相关性地板</b>（三路都没够格就说「没找到」，不拿沾边的去圆）·
+          <b>回复的余味</b>（用它上一轮自己的话单独查一路，而不是拼进查询被稀释）·
+          <b>注入预算分层</b>（按分数填字符预算，超出退成简报）·
+          <b>结果去重</b>（太像的只留一条，名次让给真正不同的）·
+          <b>BM25 索引缓存</b>（不再每轮全库重新分词）。<br>
+          <b>还没做的</b>：Dream 式夜间整合、日历层级摘要 —— 那是另一条链（近景正在做按天的那一半）。
+        </div>
       </section>
     </div>
   </div>
@@ -6439,6 +6499,25 @@ const backBtn = $("#backBtn");
 const menuPanel = $("#menuPanel"), menuDaysEl = $("#menuDays");
 const settingsPanel = $("#settingsPanel");
 const memoryPanel = $("#memoryPanel");
+/* ── 参考项目 · 地址可复制给 AI（记忆宫殿里那张卡）────────────────────────────
+   一个通用的绑定：凡是 <button data-pv-copy="<inputId>"> 都会去读那个只读输入框的值。
+   加第四个参考项目时只要再写一行 HTML，不用再写一段 JS。 */
+(function pvCopyBind(){
+  const btns = document.querySelectorAll("[data-pv-copy]");
+  if (!btns.length) return;
+  btns.forEach((b) => b.addEventListener("click", async () => {
+    const el = document.getElementById(b.dataset.pvCopy);
+    const v = el ? String(el.value || "") : "";
+    if (!v) return;
+    const back = b.textContent;
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
+      else { el.select(); document.execCommand("copy"); }
+      b.textContent = "已复制 ✓";
+    }catch(_){ b.textContent = "复制失败"; }
+    setTimeout(() => { b.textContent = back; }, 1400);
+  }));
+})();
 const palacePanel = $("#palacePanel");
 let editingConnId = null;
 const TOGETHER_START = (function(){
@@ -14167,8 +14246,19 @@ async function tlLoad(verbose){
       const cf = await memApi("/app/scene/fragments?limit=1");
       const cs = (cf && cf.status) || {};
       const el = $("#tlFrag");
-      if (el) el.textContent = "片段：已组装 " + (cs.fragments || 0) + " 条 · 待组装 "
-        + (cs.pending || 0) + " 条碎片" + (cs.pending >= (cs.min || 3) ? "（够一轮了，可以点「组装成片段」）" : "");
+      if (el){
+        const autoOn = cs.auto !== false;
+        el.innerHTML = "片段：已组装 <b>" + (cs.fragments || 0) + "</b> 条 · 待组装 "
+          + "<b>" + (cs.pending || 0) + "</b> 条碎片"
+          + (cs.pending >= (cs.min || 3)
+              ? "（够一轮了，可以手动点「组装成片段」）"
+              : "（攒到 " + (cs.auto_min || 12) + " 条会自动组装）")
+          + "<br>自动组装：" + (autoOn
+              ? "开 —— 每聊完一轮顺手检查一次，攒够就自己长"
+                + (cs.auto_cooldown ? "（两次之间至少隔 " + Math.round(cs.auto_cooldown / 60) + " 分钟）" : "")
+                + (cs.auto_last ? " · 上次检查 " + escapeHtml(cs.auto_last) : "")
+              : "关（SCENE_COMPOSE_AUTO=0）");
+      }
       const cb = $("#tlCompose");
       if (cb) cb.disabled = !(cs.pending >= (cs.min || 3));
     }catch(_){ }

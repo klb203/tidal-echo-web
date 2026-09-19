@@ -44,6 +44,8 @@
 <link rel="stylesheet" href="moments-pack.css">
 <!-- 图片记忆（原 Album，现在是 App 内整页面板）样式 -->
 <link rel="stylesheet" href="album-pack.css">
+<!-- 我们的房间（人格核/关系/档案/生活线/状态卡/日记/回忆种子）样式 -->
+<link rel="stylesheet" href="room-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -6273,6 +6275,9 @@ if (menuPanel){
     /* 图片记忆 = App 内的整页面板。原来是 location.assign("album.html")，
        那是整页跳走 —— 返回时又要把 index.html 整个重载一遍，会再走一次开屏。 */
     else if (item.dataset.menu === "album") { closeMenu(); if (window.openAlbum) window.openAlbum(); }
+    /* 我们的房间：人格核 / 关系 / 记忆档案 / 生活线 / 状态卡 / 日记 / 回忆种子。
+       原来这一项是占位（点了弹「即将开放」）。 */
+    else if (item.dataset.menu === "room") { closeMenu(); if (window.openRoom) window.openRoom(); }
     else showToast("即将开放");                           // placeholder items
   });
 }
@@ -17434,6 +17439,7 @@ init().then(() => {
 <!-- 共享存储层：图片本体走 /app/upload，元数据走 /app/fav。必须先于用它的包加载。 -->
 <script defer src="media-store.js"></script>
 <script defer src="album-pack.js"></script>
+<script defer src="room-pack.js"></script>
 <script defer src="moments-pack.js"></script>
 <script defer src="activity-pack.js"></script>
 

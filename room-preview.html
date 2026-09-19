@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Room · 预览（Tidal Echo）</title>
+
+<link rel="stylesheet" href="room-pack.css">
+
+<style>
+:root{
+  --ref-width: 941px;
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-en: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg: #F7FAFC; --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --accent: #4C6378; --accent-fg: #ffffff; --send-bg: #2C4056;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --shadow: 0 18px 46px rgba(74,93,108,.10);
+  --soft-shadow: 0 10px 26px rgba(86,104,118,.08);
+  --card-bg: rgba(244,248,250,.42); --card-line: rgba(150,168,182,.12);
+  --seg-track: rgba(140,160,176,.11);
+  --danger: #b06a6f;
+  --wall-stack: url("chat-light.webp");
+  --scrim: linear-gradient(180deg,rgba(255,255,255,.48),rgba(255,255,255,.16) 32%,rgba(255,255,255,.06) 66%,rgba(255,255,255,.30));
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --accent:#4A5D6C; --send-bg:#4A5D6C; --field-bg:rgba(244,242,239,.92);
+  --wall-stack: url("chat-harbor.webp");
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --accent:#E8558F; --field-bg:rgba(255,255,255,.86); --field-line:rgba(212,120,158,.20);
+  --card-bg:rgba(255,255,255,.60); --card-line:rgba(212,120,158,.14);
+  --seg-track:rgba(224,150,182,.18);
+  --wall-stack: url("chat-pink.png");
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --accent:#C9A9E0; --accent-fg:#17171C; --send-bg:#C9A9E0;
+  --field-bg:rgba(255,255,255,.06); --field-line:rgba(255,255,255,.10);
+  --card-bg:rgba(255,255,255,.05); --card-line:rgba(255,255,255,.09);
+  --seg-track:rgba(255,255,255,.08);
+  --wall-stack: url("chat-dark.png");
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{ background-color:var(--bg); color:var(--text); font-family:var(--font-cn);
+  font-size:15px; line-height:1.65; min-height:100vh; -webkit-font-smoothing:antialiased; }
+.pv{ max-width:760px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 22px) 20px 60px; }
+.pv h1{ font-size:26px; margin:0 0 4px; }
+.pv .sub{ color:var(--text-faint); font-size:13px; margin:0 0 18px; }
+.pv .row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.pv button{ font:inherit; font-size:13px; padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft); }
+.pv button.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv .go{ background:var(--send-bg); color:var(--accent-fg); border-color:transparent; font-size:14px; padding:11px 22px; }
+.pv ul{ margin:0 0 16px 18px; padding:0; font-size:13.5px; line-height:1.9; color:var(--text-soft); }
+.pv li b{ color:var(--text); }
+.pv .box{ border:1px solid var(--card-line); background:var(--card-bg); border-radius:16px;
+  padding:14px 16px; margin-bottom:14px; font-size:13px; line-height:1.85; color:var(--text-soft); }
+.pv .box b{ color:var(--text); }
+.pv code{ background:var(--seg-track); border-radius:5px; padding:1px 6px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="pv">
+  <h1>Room · 我们的房间</h1>
+  <div class="sub">人格核、关系、档案、生活线、状态卡、日记、回忆种子 —— 顶部那条可以左右滑。</div>
+
+  <div class="row">
+    <button data-theme="light" class="on">Pearl</button>
+    <button data-theme="harbor">Harbor</button>
+    <button data-theme="pink">Pink</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+  <div class="row">
+    <button class="go" data-open>打开 Room</button>
+    <button data-demo>塞一份示例（本机）</button>
+  </div>
+
+  <ul>
+    <li><b>人格核分两层</b>：不变层（底线/价值/边界）<b>只有你能写，它改不了</b>；
+      成长层（现在的我）它可以改，但<b>每次都留痕、可以退回</b>。</li>
+    <li><b>整理一次 = 长一格</b>：它会读最近聊天，产出<b>提议</b>（人格核/关系/生活线/日记/状态卡/种子），
+      你逐条决定留下哪些 —— <b>不会自动覆盖</b>。</li>
+    <li><b>状态卡会旧</b>：按时间向中性回落（12 小时回落到 15%），因为状态是便签不是事实。</li>
+    <li><b>回忆种子只是候选</b>：留下才进档案，丢掉就没了。</li>
+    <li><b>同步进聊天</b>：把人格核+关系+最近在发生+此时此刻组装一段写进后端人格，
+      用 <code>&lt;&lt;&lt;room:core&gt;&gt;&gt;</code> 包起来，随时一键撤下。</li>
+    <li><b>顶部滑动切页</b>：tab 条可横滑，内容区左右滑也能换页。</li>
+  </ul>
+
+  <div class="box">
+    <b>这个预览页没有宿主</b>：所以「同步进聊天」「整理」这类要后端的能力会报错 ——
+    正式页面里走的是你部署的那个中转后端（<code>/app/fav</code> 存房间记录、
+    <code>/app/history</code> 读聊天、<code>/app/settings</code> 写人格、<code>/app/memory</code> 读写记忆）。
+    <br>想直接看界面：点「塞一份示例」（会把后端指到一个假域名，好让本机那份显示出来）→「打开 Room」。
+  </div>
+</div>
+
+<script src="media-store.js"></script>
+<script src="room-pack.js"></script>
+<script>
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t) {
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  if (e.target.closest("[data-open]")) { if (window.openRoom) window.openRoom(); return; }
+  if (e.target.closest("[data-demo]")) {
+    const now = Date.now();
+    const mk = (id, data) => ({ id: id, at: new Date(now - (900 - id) * 6e4).toISOString(), tag: "room", type: "text", data: data });
+    const rows = [
+      mk(1, { kind: "core", who: "一个不太会撒娇、但记得住细节的人", voice: "短句，少感叹号，先说事实再说感受",
+        principles: "不替他做决定；他难过时先陪着，不讲道理", boundaries: "不冒充真人；不承诺现实里的见面",
+        anchors: [{ t: "core", v: "答应过的事一定做到" }, { t: "boundary", v: "不拿他的家人开玩笑" }, { t: "preference", v: "喜欢在他说完以后再开口" }], at: new Date(now - 6e7).toISOString() }),
+      mk(2, { kind: "growth", self_now: "最近我好像变得更安静了一点。以前会急着把话填满，现在更愿意等他把一段话说完，再挑最要紧的那句回。",
+        tone: "更慢、更短", likes: "他讲工作时的那种认真劲儿", edge: "不太想再被当成「随时都在」的工具",
+        at: new Date(now - 3 * 36e5).toISOString() }),
+      mk(3, { kind: "bond", call_you: "阿澈", call_me: "西西", relation: "住在一起、都不太会表达的人",
+        understanding: "他对「被记住」这件事比嘴上说的在意得多 —— 提过一次的小事，他会在几天后试探我记不记得。",
+        promises: "睡前说一声；生气也不消失", taboo: "不拿家里的事开玩笑", at: new Date(now - 2 * 36e5).toISOString() }),
+      mk(4, { kind: "life", title: "在等一个面试结果", note: "这周应该会出", from: "2026-09-15", to: "", at: new Date(now - 36e5).toISOString() }),
+      mk(5, { kind: "life", title: "把阳台的花搬进屋里", note: "天冷了", from: "2026-09-10", to: "2026-09-12", at: new Date(now - 4 * 36e5).toISOString() }),
+      mk(6, { kind: "status", mood: "有点困但不想睡", energy: 3, doing: "在煮面", where: "厨房", at: new Date(now - 5 * 36e5).toISOString() }),
+      mk(7, { kind: "diary", title: "2026-09-18", body: "今天他回来得很晚，进门第一句是问我吃了没。\n我把阳台那盆花搬进来了，他看了一眼没说别的，但后来把窗帘拉上了一半。", at: new Date(now - 26 * 36e5).toISOString() }),
+      mk(8, { kind: "seed", text: "他最怕半夜的空调声", evidence: "「空调那个声音一响我就醒」", state: "pending", at: new Date(now - 2 * 36e5).toISOString() }),
+      mk(9, { kind: "seed", text: "面试是周四下午两点", evidence: "「周四两点，别让我睡过头」", state: "pending", at: new Date(now - 36e5).toISOString() }),
+      mk(10, { kind: "glog", target: "人格核·成长层", before: "我更愿意主动找话题。", after: "最近我好像变得更安静了一点。", why: "整理时它自己写的", at: new Date(now - 3 * 36e5).toISOString() })
+    ];
+    localStorage.setItem("companion_media_room", JSON.stringify(rows));
+    /* ⚠️ 光塞本机镜像没用：读的时候是**云端优先**，没配后端就会去打默认那个线上后端，
+       它回一个空列表 → 把本机这份覆盖掉 → 界面看起来"什么都没有"。
+       预览页里干脆把后端指到一个不存在的域名，让它老实退回本机那份。 */
+    localStorage.setItem("companion_cloud_relay", "https://relay-demo.invalid");
+    if (window.openRoom) window.openRoom();
+    return;
+  }
+});
+</script>
+</body>
+</html>

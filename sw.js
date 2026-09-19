@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v60-album-panel";  // v60：图片记忆改成 App 内整页面板（返回不再整页重载/回开屏）
+const CACHE = "companion-v61-room";         // v61：侧边栏 Room 上线（人格核/关系/档案/生活线/状态卡/日记/回忆种子）
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
@@ -20,6 +20,7 @@ const PRECACHE = [
   "./activity-pack.css", "./activity-pack.js",
   "./media-store.js",
   "./album-pack.css", "./album-pack.js",
+  "./room-pack.css", "./room-pack.js",
   "./moments-pack.css", "./moments-pack.js",
 ];
 

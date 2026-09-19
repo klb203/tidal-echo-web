@@ -561,7 +561,13 @@
   font-size: 11px; padding: 3.5px 10px; border-radius: 6px;
   color: var(--text-faint, #8A99A8); font-family: var(--font-cn, inherit);
 }
-.rpm-seg button.on{ background: var(--bg, #fff); color: var(--text, #253447); box-shadow: 0 1px 2px rgba(20,40,60,.1); }
+/* 选中的那一段要用**实色**：原先是 --bg（白底白字感），跟面板底色几乎一样，
+   于是「你来玩 / AI 来玩」和「自动接着走」这两个开关根本看不出选的是哪个 ——
+   而它们恰好决定 AI 会不会自己玩。 */
+.rpm-seg button.on{
+  background: var(--accent, #4C6378); color: var(--accent-fg, #fff);
+  box-shadow: 0 1px 3px rgba(20,40,60,.22);
+}
 .rpm-note{ font-size: 10.5px; color: var(--text-faint, #8A99A8); line-height: 1.65; }
 
 /* ── 窄屏 ──────────────────────────────────────────────────────────────── */
@@ -571,3 +577,6 @@
   .rp-slots.c3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
   .rpm-board{ max-height: 26vh; font-size: 10px; }
 }
+
+/* 说话人头像：AI 那一席用聊天里的头像图（原来全桌只有一个「荷」字） */
+.rp-av.pic{ background-size: cover; background-position: center; background-color: var(--hairline, #DCE5EE); }

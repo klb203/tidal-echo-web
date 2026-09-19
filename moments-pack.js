@@ -40,6 +40,14 @@
 
   const $ = (s, r) => (r || document).querySelector(s);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* 强调还原：**这样** → 粗体。这套 prompt 里没有 Markdown，但模型可能自己带 ——
+     纯文本渲染就会看到星号挡在字中间（牌桌那边就是这么被用户发现的）。 */
+  function mdInline(x) {
+    return esc(x)
+      .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<i>$2</i>");
+  }
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const rnd = (a, b) => a + Math.random() * (b - a);
   const ts = (x) => { const t = new Date(x || 0).getTime(); return isNaN(t) ? 0 : t; };
@@ -394,7 +402,7 @@
       <div class="mms-av${isMe ? " me" : ""}">${esc(name.slice(0, 1))}</div>
       <div class="mms-main">
         <div class="mms-head"><span class="mms-name">${esc(name)}</span><span class="mms-time">${esc(timeText(ts(m.created_at)))}</span></div>
-        ${m.content ? `<div class="mms-body">${esc(m.content)}</div>` : ""}
+        ${m.content ? `<div class="mms-body">${mdInline(m.content)}</div>` : ""}
         ${m.image_url ? `<img class="mms-img" loading="lazy" src="${esc(G.fileUrl(m.image_url))}" alt="">
           <div class="mms-imgcap">${m.image_desc ? "这张 TA 已经看过（之后只用文字，不再传图）" : "TA 还没看过这张"}</div>` : ""}
         <div class="mms-acts">
@@ -420,7 +428,7 @@
     </div>`;
   }
   function cm2(name, text, liked, pending, due) {
-    return `<div class="mms-cmt${pending ? " pending" : ""}"><b>${esc(name)}</b>${esc(text)}</div>`
+    return `<div class="mms-cmt${pending ? " pending" : ""}"><b>${esc(name)}</b>${mdInline(text)}</div>`
       + (pending ? `<div class="mms-wait">${esc(aiName)} 还没看到 · ${esc(dueText(ts(due)))}</div>` : "");
   }
   function render() {

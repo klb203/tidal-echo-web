@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>图片记忆 · 预览（Tidal Echo）</title>
+
+<!-- 本体（与 index.html 引用的是同一份） -->
+<link rel="stylesheet" href="album-pack.css">
+
+<style>
+/* 四套主题（与宿主 index.html 同一张色板）—— 面板里的颜色全部来自这些变量 */
+:root{
+  --ref-width: 941px;
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-en: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg: #F7FAFC; --header-bg: #F7FAFC;
+  --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --accent: #4C6378; --accent-fg: #ffffff; --send-bg: #2C4056;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --shadow: 0 18px 46px rgba(74,93,108,.10);
+  --card-bg: rgba(244,248,250,.42); --card-line: rgba(150,168,182,.12);
+  --seg-track: rgba(140,160,176,.11);
+  --wall-stack: url("chat-light.webp");
+  --scrim: linear-gradient(180deg,rgba(255,255,255,.48),rgba(255,255,255,.16) 32%,rgba(255,255,255,.06) 66%,rgba(255,255,255,.30));
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --accent:#4A5D6C; --send-bg:#4A5D6C;
+  --field-bg:rgba(244,242,239,.92);
+  --wall-stack: url("chat-harbor.webp");
+  --scrim: linear-gradient(180deg,rgba(255,255,255,.44),rgba(255,255,255,.12) 34%,rgba(255,255,255,.04) 68%,rgba(255,255,255,.26));
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --accent:#E8558F; --send-bg:#E8558F; --accent-fg:#ffffff;
+  --field-bg:rgba(255,255,255,.86); --field-line:rgba(212,120,158,.20);
+  --card-bg:rgba(255,255,255,.60); --card-line:rgba(212,120,158,.14);
+  --seg-track:rgba(224,150,182,.18);
+  --wall-stack: url("chat-pink.png");
+  --scrim: linear-gradient(180deg,rgba(255,255,255,.40),rgba(255,255,255,.10) 36%,rgba(255,240,246,.26));
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --accent:#C9A9E0; --send-bg:#C9A9E0; --accent-fg:#17171C;
+  --field-bg:rgba(255,255,255,.06); --field-line:rgba(255,255,255,.10);
+  --card-bg:rgba(255,255,255,.05); --card-line:rgba(255,255,255,.09);
+  --seg-track:rgba(255,255,255,.08);
+  --wall-stack: url("chat-dark.png");
+  --scrim: linear-gradient(180deg,rgba(0,0,0,.30),rgba(0,0,0,.12) 40%,rgba(0,0,0,.35));
+}
+
+/* ── 预览外壳 ── */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  background-color:var(--bg); color:var(--text); font-family:var(--font-cn);
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.pv{ max-width:760px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 22px) 20px 60px; }
+.pv h1{ font-size:26px; margin:0 0 4px; letter-spacing:.02em; }
+.pv .sub{ color:var(--text-faint); font-size:13px; margin:0 0 18px; }
+.pv .row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.pv button{
+  font:inherit; font-size:13px; padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft);
+}
+.pv button.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv .go{ background:var(--send-bg); color:var(--accent-fg); border-color:transparent; font-size:14px; padding:11px 22px; }
+.pv ul{ margin:0 0 16px 18px; padding:0; font-size:13.5px; line-height:1.9; color:var(--text-soft); }
+.pv li b{ color:var(--text); }
+.pv .box{
+  border:1px solid var(--card-line); background:var(--card-bg); border-radius:16px;
+  padding:14px 16px; margin-bottom:14px; font-size:13px; line-height:1.85; color:var(--text-soft);
+}
+.pv .box b{ color:var(--text); }
+.pv code{ background:var(--seg-track); border-radius:5px; padding:1px 6px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="pv">
+  <h1>图片记忆</h1>
+  <div class="sub">同一张图不再看第二遍 —— 复用只传文字，不传像素。</div>
+
+  <div class="row">
+    <button data-theme="light" class="on">Pearl</button>
+    <button data-theme="harbor">Harbor</button>
+    <button data-theme="pink">Pink</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+  <div class="row">
+    <button class="go" data-open>打开图片记忆</button>
+  </div>
+
+  <ul>
+    <li><b>现在它是 App 内的一个整页面板</b>，不再是独立网页。所以 <b>返回 = 关掉这一层</b>，
+      不会再整页重载、也不会再回开屏。</li>
+    <li><b>SHA-256 去重</b>：指纹只算图片本身的字节，<b>不含标题/描述</b> ——
+      所以改标题不会被下次上传覆盖。</li>
+    <li><b>两条线分开写</b>：客观描述由<b>不带人格的中性工人</b>写，第一印象由<b>人格</b>写。</li>
+    <li><b>复用只传文字</b>：这张被看过之后再进对话，只用那段描述，不重发像素。</li>
+  </ul>
+
+  <div class="box">
+    <b>这个预览页要用真后端才看得到内容</b>：图本体走 <code>/app/upload</code>，
+    元数据走 <code>/app/fav</code>（就是你部署的那个中转后端）。<br>
+    没配「云端后端地址」时会退到本机 localStorage 那份 —— 能看能写，但不跨设备，
+    而且 <b>上传会失败</b>（图存不下来）。要看真实效果，先在正式页面的
+    「设置 → 云端后端」把地址填上。
+  </div>
+</div>
+
+<script src="media-store.js"></script>
+<script src="album-pack.js"></script>
+<script>
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t) {
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  if (e.target.closest("[data-open]")) { if (window.openAlbum) window.openAlbum(); return; }
+});
+</script>
+</body>
+</html>

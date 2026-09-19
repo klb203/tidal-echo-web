@@ -42,6 +42,8 @@
 <link rel="stylesheet" href="activity-pack.css">
 <!-- 朋友圈 · 整页（各自经过同一面墙留痕迹）样式 -->
 <link rel="stylesheet" href="moments-pack.css">
+<!-- 图片记忆（原 Album，现在是 App 内整页面板）样式 -->
+<link rel="stylesheet" href="album-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -6268,7 +6270,9 @@ if (menuPanel){
     else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈                          // 万花筒（角色扮演渠道：摇世界 / 召唤制旁白与 NPC）
     else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
-    else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
+    /* 图片记忆 = App 内的整页面板。原来是 location.assign("album.html")，
+       那是整页跳走 —— 返回时又要把 index.html 整个重载一遍，会再走一次开屏。 */
+    else if (item.dataset.menu === "album") { closeMenu(); if (window.openAlbum) window.openAlbum(); }
     else showToast("即将开放");                           // placeholder items
   });
 }
@@ -6377,7 +6381,7 @@ const CAP_TILES = [
     }) },
   { g:"open", n:"戳一戳", s:"让它做个动作", ic:"poke", act:'cs:poke' },
   { g:"open", n:"找我说话的时间", s:"定它主动开口的时段", ic:"clock", act:'cs:at' },
-  { g:"open", n:"相册", s:"收起来的那些画面", ic:"image", act:"link:album.html" },
+  { g:"open", n:"图片记忆", s:"它看过、并且记住的画面", ic:"image", act:"album" },
   { g:"open", n:"终端", s:"看它跑的每一步", ic:"terminal", act:"fn:setTerminalOpen" },
   { g:"open", n:"消息库", s:"按会话翻全部记录", ic:"db",
     act:"fn:openMessageDb", badge:() => capB(() => {
@@ -6599,6 +6603,11 @@ function capAct(str){
       const view = str.slice(3);
       capClose();
       setTimeout(() => { try{ csOpen(view); }catch(e){ showToast("打不开：" + ((e && e.message) || e)); } }, 240);
+      return;
+    }
+    if (str === "album"){                            // 图片记忆（面板，不是独立页）
+      capClose();
+      setTimeout(() => { try{ openAlbum(); }catch(e){ showToast("打不开：" + ((e && e.message) || e)); } }, 240);
       return;
     }
     if (str.indexOf("link:") === 0){ location.assign(str.slice(5)); return; }
@@ -17401,6 +17410,14 @@ if ($("#wipeLocal")) $("#wipeLocal").addEventListener("click", wipeLocalChat);
 
 init().then(() => {
   if (pendingFakeNotice) showToast("已清理 " + pendingFakeNotice + " 条演示模式留下的假消息");
+  /* ?open=album —— album.html 那个老入口现在只是个跳转壳，指到这里来。
+     开完就把参数擦掉，免得刷新一次又被弹进相册。 */
+  try {
+    if (/[?&]open=album/.test(location.search)) {
+      history.replaceState(null, "", location.pathname + location.hash);
+      setTimeout(() => { if (window.openAlbum) window.openAlbum(); }, 120);
+    }
+  } catch (_) { }
 });
 </script>
 
@@ -17416,6 +17433,7 @@ init().then(() => {
 <!-- 自由活动 · 面板逻辑。同样 defer，复用宿主连接层与记忆接口（memApi /app/memory/save）。 -->
 <!-- 共享存储层：图片本体走 /app/upload，元数据走 /app/fav。必须先于用它的包加载。 -->
 <script defer src="media-store.js"></script>
+<script defer src="album-pack.js"></script>
 <script defer src="moments-pack.js"></script>
 <script defer src="activity-pack.js"></script>
 

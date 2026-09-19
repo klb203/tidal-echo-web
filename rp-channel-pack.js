@@ -121,6 +121,33 @@
   const esc = (s) => String(s == null ? "" : s)
     .replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  /* ── 气泡里的强调：**这样** → 粗体，*这样* → 斜体 ──────────────────────
+     为什么非做不可：模型会**照抄 system 的排版风格**。我在 system 里写了
+     `**先调工具**` 这种 Markdown，它回话里也就带上了 ** —— 而气泡是纯文本渲染，
+     结果就是一堆星号挡在字中间（用户报的「有 * 遮挡」就是这个）。
+     两头一起治：下面是渲染兜底，deStar() 是发出去前把源头洗掉。 */
+  function mdInline(s) {
+    return esc(s)
+      .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")        // **粗**
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<i>$2</i>")   // *斜*（不碰 ** 的残留）
+      .replace(/^#{1,6}\s+(.+)$/gm, "<b>$1</b>")            // 行首 # 标题
+      .replace(/^\s*[-*]\s+/gm, "· ");                       // 行首 - / * 列表 → 中点
+  }
+
+  /* 发给模型的 system 里不要留 Markdown 记法 —— 模型会学。
+     只洗 system，用户消息和工具返回原样不动（工具返回里可能有对格式敏感的棋盘）。 */
+  function deStar(msgs) {
+    return (msgs || []).map((m) => {
+      if (!m || m.role !== "system" || typeof m.content !== "string") return m;
+      return Object.assign({}, m, {
+        content: m.content
+          .replace(/\*\*/g, "")
+          .replace(/^\s*[-*]\s+/gm, "· ")
+          .replace(/^#{1,6}\s+/gm, "")
+      });
+    });
+  }
+
   const FALLBACK_PROVIDERS = {
     "cloud:deepseek": { name: "☁ 云端 · DeepSeek", ver: "v1", models: ["deepseek-chat", "deepseek-reasoner"] },
     "cloud:moonshot": { name: "☁ 云端 · Kimi", ver: "v1", models: ["kimi-k2-0711-preview", "moonshot-v1-8k", "moonshot-v1-32k"] },
@@ -195,7 +222,9 @@
     setupMsgs: [],       // 「开局」整页对话界面的聊天记录（关掉再回来还在）
     boardFolded: false,  // 牌桌上棋盘是否收起（屏幕小的时候要先看对话）
     /* 谁在玩 + AI 代打。persona 留空 —— 内容归 config，代码里不写玩法。 */
-    ai: { p1: false, p2: true, persona: "", auto: 5 }
+    /* autoJoin：掷骰/跳过这类**绕开模型**的直连动作做完之后，要不要自动把那一轮
+       交回模型。关掉的话，AI 那一席就只有在你点「自动跑」或「AI 走一步」时才动。 */
+    ai: { p1: false, p2: true, persona: "", auto: 5, autoJoin: true }
   };
 
   const state = {
@@ -266,7 +295,7 @@
     const conn = resolve(state.models[slotKey]);
     if (!conn) throw new Error("「" + slotName(slotKey) + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
     if (!conn.model) throw new Error("「" + slotName(slotKey) + "」没填模型名。");
-    const body = { model: conn.model, messages, stream: true, temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
+    const body = { model: conn.model, messages: deStar(messages), stream: true, temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
     const res = await fetch(conn.url, { method: "POST", headers: conn.headers, body: JSON.stringify(body), signal });
     if (!res.ok) {
       let d = "HTTP " + res.status;
@@ -779,7 +808,7 @@
     const conn = resolve(state.models[slotKey]);
     if (!conn) throw new Error("「" + slotName(slotKey) + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
     if (!conn.model) throw new Error("「" + slotName(slotKey) + "」没填模型名。");
-    const body = { model: conn.model, messages, temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
+    const body = { model: conn.model, messages: deStar(messages), temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
     if (tools && tools.length) { body.tools = tools; body.tool_choice = "auto"; }
     const res = await fetch(conn.url, { method: "POST", headers: conn.headers, body: JSON.stringify(body), signal });
     if (!res.ok) {
@@ -790,6 +819,23 @@
     const j = await res.json();
     const m = (j && j.choices && j.choices[0] && j.choices[0].message) || {};
     return m;
+  }
+
+  /* ── 开局参数：聊天开局时得从**模型调的 args** 里收回来 ─────────────────
+     表格开局（monoStart）的参数是自己 set 进 state.mono.setup 的；
+     聊天开局（跟荷官聊清楚再开）走的却是模型自己调 new_game ——
+     那份 args 从来没被记下来。后果有两个，都很难看：
+       ① 牌桌座位条没有名字（只显示局号和强度）；
+       ② 说话人归属认不出角色 → 那个 AI 说的话全被算成「荷官」说的，
+          界面上永远只有荷官和你在说话。 */
+  const SETUP_KEYS = ["p1_name", "p2_name", "p1_sex", "p2_sex", "p1_role", "p2_role",
+    "flavor", "lineup", "identity_mode", "rounds", "limits", "pair_code"];
+  function absorbSetup(args) {
+    if (!args) return;
+    if (!state.mono.setup) state.mono.setup = {};
+    SETUP_KEYS.forEach((k) => {
+      if (args[k] != null && String(args[k]).trim() !== "") state.mono.setup[k] = args[k];
+    });
   }
 
   /* 从工具返回里把该记住的东西抓出来（game_id / 棋盘 / 状态 / 规则回执） */
@@ -842,6 +888,13 @@
       "· 任何人说 404 / 停 / 红线 / 不想做，立刻用 game_action 的 skip，或停止游戏。",
       "· 玩家已在设置面板确认过开局参数（setup_confirmed=true），不要再追问一遍。",
       "",
+      "【谁在说话（很重要，界面上按这个分行显示）】",
+      "· 你同时扮两个身份：① 荷官（主持、念规则、贴棋盘、报进度）② 玩家席位里的角色。",
+      "· 每一段话都要在行首标出说话人：【荷官】或【" + (ai.p1 ? p1 : p2) + "】这种写法，一段一行。",
+      "· 例：【" + (ai.p1 ? p1 : p2) + "】行，那我掷了。 / 【荷官】轮到 " + p2 + "。",
+      "· 属于同一个人的连续几行，只在第一行写标记就行。",
+      "· 标错人比不标更糟 —— 界面上会顶着别人的名字和头像说话。",
+      "",
       "【这一局谁在玩】",
       whoPlays,
       anyAi
@@ -851,6 +904,10 @@
             "  **不要停下来问他、也不要说「该你了」** —— 他没在电脑前，问了就卡住。",
             ai.persona ? "· 他的玩法风格：" + ai.persona : "· 玩法风格：没特别设定，按最省事、最不容易翻车的方式走。",
             "· 你替 AI 那一席做的每个决定，都要用一句话说明理由，别默默调工具。",
+            "· ★ 轮到 AI 那一席时，**先调工具、再说话**：该掷骰就调 roll，该选就调 game_action。",
+            "  只描述「该谁了」而不动工具，游戏不会往前走 —— 这是最容易犯的错。",
+            "· 轮到人类那一席时：一句话提示就够，不要复述棋盘、不要催他。",
+            "· 替 AI 那一席说话时，要用**它自己的名字**，不要用「荷官」自称 —— 那两个不是一个人。",
             "",
             "【什么时候才停下来等人类】只有这三种，其余情况一律自己往下走：",
             "1 人类玩家主动说话；2 牵涉到安全词 / 红线；3 工具返回的信息确实不足以判断该怎么选。",
@@ -914,6 +971,7 @@
           try { r = await mcpCall(tc.function.name, args); }
           catch (e) { r = { text: "调用失败：" + ((e && e.message) || e), isError: true }; }
           monoAbsorb(r, tc.function.name);
+          if (tc.function.name === "new_game") absorbSetup(args);
           trace[trace.length - 1].ok = !r.isError;
           trace[trace.length - 1].brief = briefOf(r);
           renderMono(); renderTable();                      // 每步都把新棋盘画出来，看得见进展
@@ -1069,7 +1127,7 @@
       return `<div class="rp-msg narr" data-mid="${esc(m.id)}">
         <div class="rp-body">
           <div class="rp-narr-tag">旁白</div>
-          <div class="rp-bubble">${esc(m.text)}</div>
+          <div class="rp-bubble">${mdInline(m.text)}</div>
         </div></div>`;
     }
     if (m.who === "user") {
@@ -1077,7 +1135,7 @@
         <span class="rp-av" style="background:${WHO_COLOR.human}">我</span>
         <div class="rp-body">
           <div class="rp-meta"><b>我</b><span>${esc(fmtTime(m.ts))}</span>${m.stop ? "<em>出戏信号</em>" : ""}</div>
-          <div class="rp-bubble">${esc(m.text)}</div>
+          <div class="rp-bubble">${mdInline(m.text)}</div>
         </div></div>`;
     }
     const isNpc = m.who === "npc";
@@ -1089,7 +1147,7 @@
       <span class="rp-av" style="background:${esc(color)}">${esc(av)}</span>
       <div class="rp-body">
         <div class="rp-meta"><b>${esc(name)}</b><span>${esc(fmtTime(m.ts))}</span>${m.ooc ? "<em>已出戏</em>" : ""}</div>
-        <div class="rp-bubble">${esc(m.text)}</div>
+        <div class="rp-bubble">${mdInline(m.text)}</div>
         ${state.cfg.blur ? `<span class="rp-hold">（点气泡显形）</span>` : ""}
       </div></div>`;
   }
@@ -1394,21 +1452,93 @@
       seats.map((s) => `<span class="rpm-seat ${s.ai ? "ai" : "human"}">${esc(s.name)} · ${s.ai ? "AI" : "你"}</span>`).join("");
   }
 
+  /* ── 桌上都有谁 ─────────────────────────────────────────────────────────
+     原来这里把**所有**非人类消息都画成「荷官」（蓝底一个「荷」字），
+     于是替你玩的那一席说的话也被算成荷官说的 —— 界面上只剩荷官和你在说话，
+     跟你聊天的那个 AI 像没坐上桌。现在按标记切开，各用各的名字与头像。 */
+  const AV_KEY = "companion_avatar", RM_KEY = "companion_profile_remark";
+  /* ⚠️ 名字别叫 lsRead —— 这个包里已经有一个 `lsRead(k, d)`（读 JSON 带默认值）。
+     函数声明是**静默覆盖**的：同名再来一个，后定义的那个赢，于是 load() 里的
+     lsRead(K_MONO, null) 会拿到原始字符串/空串 → 整局的存档读不出来 →
+     一进牌桌就"还没开局"。这个 bug 是牌桌那套冒烟测试整片飘红才暴露的。 */
+  function lsStr(k) { try { return (localStorage.getItem(k) || "").trim(); } catch (_) { return ""; } }
+  function monoCast() {
+    const st = state.mono.setup || {}, ai = state.mono.ai || {};
+    const peerFace = lsStr(AV_KEY);
+    const cast = {};
+    [["p1", st.p1_name], ["p2", st.p2_name]].forEach((pair) => {
+      const nm = String(pair[1] || "").trim();
+      if (!nm || cast[nm]) return;
+      cast[nm] = {
+        name: nm, ai: !!ai[pair[0]],
+        /* AI 那一席就是跟你聊天的那个它 → 用聊天里的头像与显示名 */
+        avatar: ai[pair[0]] ? peerFace : "",
+        color: ai[pair[0]] ? "#B0713A" : "#5E7080"
+      };
+    });
+    return cast;
+  }
+  /* 把一条消息按【说话人】切成若干段。
+     没标记的一律算荷官（主持、念规则、贴棋盘都是它），这样模型不听话时也不会乱。 */
+  function monoSplit(text) {
+    const cast = monoCast(), names = Object.keys(cast), segs = [];
+    const push = (role, line) => {
+      const last = segs[segs.length - 1];
+      if (last && last.role === role) last.text += (last.text ? "\n" : "") + line;
+      else segs.push({ role: role, text: line });
+    };
+    String(text || "").split(/\r?\n/).forEach((raw) => {
+      const line = raw.trim();
+      if (!line) return;
+      const m = /^【([^】]{1,12})】\s*([\s\S]*)$/.exec(line);
+      if (m) {
+        const nm = m[1].trim();
+        if (nm === "荷官") { push("dealer", m[2].trim()); return; }
+        if (names.indexOf(nm) >= 0) { push(nm, m[2].trim()); return; }
+      }
+      /* 也认「名字：」这种写法 —— 模型不一定守约定 */
+      for (let i = 0; i < names.length; i++) {
+        const nm = names[i];
+        if (line.indexOf(nm + "：") === 0) { push(nm, line.slice(nm.length + 1).trim()); return; }
+        if (line.indexOf(nm + ":") === 0) { push(nm, line.slice(nm.length + 1).trim()); return; }
+      }
+      push("dealer", line);
+    });
+    return segs.filter((x) => x.text.trim() !== "");
+  }
+  /* 一条 host 消息 → 若干条气泡 */
+  function monoBubbles(m) {
+    const cast = monoCast();
+    const segs = monoSplit(m.text);
+    const list = segs.length ? segs : [{ role: "dealer", text: m.text }];
+    return list.map((sg, i) => {
+      const tail = i === list.length - 1;
+      const isDealer = sg.role === "dealer";
+      const who = isDealer
+        ? { name: "荷官", color: "#3E7BE8", avatar: "" }
+        : (cast[sg.role] || { name: sg.role, color: "#B0713A", avatar: "" });
+      const av = who.avatar
+        ? `<span class="rp-av pic" style="background-image:url('${esc(who.avatar)}')"></span>`
+        : `<span class="rp-av" style="background:${who.color}">${esc(isDealer ? "荷" : String(who.name).slice(0, 1))}</span>`;
+      return `<div class="rp-msg ai" style="--mc:${who.color}">
+        ${av}
+        <div class="rp-body">
+          <div class="rp-meta"><b>${esc(who.name)}</b>${tail && m.tools ? `<em>${esc(m.tools)}</em>` : ""}</div>
+          <div class="rp-bubble">${mdInline(sg.text)}</div>
+          ${tail && m.trace ? `<div class="rp-tool"><b>这一轮调了</b> ${esc(m.trace)}</div>` : ""}
+        </div></div>`;
+    }).join("");
+  }
+
   function monoMsgsHtml(limit) {
     const list = (state.mono.msgs || []).slice(-(limit || 60));
     if (!list.length) {
       return `<div class="rp-sys">（还没有对话）先说一句，或者点下面的「掷骰」／「自动跑」。</div>`;
     }
     return list.map((m) => {
-      if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${esc(m.text)}</div></div></div>`;
+      if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${mdInline(m.text)}</div></div></div>`;
       if (m.who === "sys") return `<div class="rp-sys${m.edge ? " edge" : ""}">${esc(m.text)}</div>`;
-      return `<div class="rp-msg ai" style="--mc:#3E7BE8">
-        <span class="rp-av" style="background:#3E7BE8">荷</span>
-        <div class="rp-body">
-          <div class="rp-meta"><b>荷官</b>${m.tools ? `<em>${esc(m.tools)}</em>` : ""}</div>
-          <div class="rp-bubble">${esc(m.text)}</div>
-          ${m.trace ? `<div class="rp-tool"><b>这一轮调了</b> ${esc(m.trace)}</div>` : ""}
-        </div></div>`;
+      return monoBubbles(m);
     }).join("");
   }
 
@@ -1426,6 +1556,14 @@
           <span class="rpm-seg">${seg("p2", "human", "你来玩")}${seg("p2", "ai", "AI 来玩")}</span></div>
         <label class="rp-lbl">AI 的玩法风格（留空就按最省事的方式走）</label>
         <textarea class="rp-ta" data-mai="persona" rows="2" placeholder="比如：爱冒险、喜欢买断、不太在意代价">${esc(a.persona || "")}</textarea>
+        <label class="rp-lbl" style="margin-top:10px">轮到 AI 那一席时，自动接着走</label>
+        <span class="rpm-seg">
+          <button type="button" data-mai="autoJoin" data-val="on"  class="${a.autoJoin === false ? "" : "on"}">自动（推荐）</button>
+          <button type="button" data-mai="autoJoin" data-val="off" class="${a.autoJoin === false ? "on" : ""}">我点一下才走</button>
+        </span>
+        <div class="rpm-note" style="margin-top:6px">「掷骰 / 跳过」这几个按钮是<b>不经过模型</b>的
+          直连兜底。开着这一条，它们做完会自动把那一轮交回模型，AI 那席才会接着走；
+          关掉就只能靠「AI 走一步」或「自动跑」。</div>
         <label class="rp-lbl" style="margin-top:8px">一次「自动跑」最多几轮</label>
         <input class="rp-in" type="number" min="1" max="20" data-mai="auto" value="${esc(a.auto || 5)}">
         <div class="rpm-note" style="margin-top:8px">标了 <b>AI</b> 的那一席，轮到他时由模型自己拍板
@@ -1469,7 +1607,8 @@
     elTableQuick.innerHTML =
       (state.running
         ? `<button class="rp-qb stop" data-mact="stop">停下</button>`
-        : (anyAi ? `<button class="rp-qb" data-mact="auto">自动跑 ${clamp(+a.auto || 5, 1, 20)} 轮</button>` : "")) +
+        : (anyAi ? `<button class="rp-qb" data-mact="auto">自动跑 ${clamp(+a.auto || 5, 1, 20)} 轮</button>`
+                 + `<button class="rp-qb" data-mact="step">AI 走一步</button>` : "")) +
       `<button class="rp-qb${state.running ? " disabled" : ""}" data-act="mono-roll">掷骰</button>` +
       `<button class="rp-qb" data-act="mono-info">查状态</button>` +
       `<button class="rp-qb stop" data-act="mono-skip">404 停下</button>` +
@@ -1503,6 +1642,7 @@
     if (a === "back" || a === "close") { closeTable(); render(); return; }
     if (a === "stop") { stopAll(); return; }
     if (a === "auto") { monoAuto(); return; }
+    if (a === "step") { monoContinue("你按了「AI 走一步」"); return; }
     if (a === "end") { monoEnd(); return; }
   }
 
@@ -1652,13 +1792,13 @@
     const list = state.mono.setupMsgs || [];
     elSetupMsgs.innerHTML = list.length
       ? list.map((m) => {
-        if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${esc(m.text)}</div></div></div>`;
+        if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${mdInline(m.text)}</div></div></div>`;
         if (m.who === "sys") return `<div class="rp-sys">${esc(m.text)}</div>`;
         if (m.who === "tool") return `<div class="rp-cut"><b>调了</b> ${esc(m.text)}</div>`;
         return `<div class="rp-msg ai" style="--mc:#3E7BE8">
           <span class="rp-av" style="background:#3E7BE8">荷</span>
           <div class="rp-body"><div class="rp-meta"><b>荷官</b></div>
-            <div class="rp-bubble">${esc(m.text)}</div></div></div>`;
+            <div class="rp-bubble">${mdInline(m.text)}</div></div></div>`;
       }).join("")
       : `<div class="rp-empty">${svgMask()}<h4>开局先聊一聊</h4>
          <p>它会把强度、红线、阵容、角色、回合数问清楚，<br>再把规矩念给你听，然后才开局。</p>
@@ -1723,6 +1863,7 @@
             try { r = await mcpCall(name, args); }
             catch (e) { r = { text: "调用失败：" + ((e && e.message) || e), isError: true }; }
             monoAbsorb(r, name);
+            if (name === "new_game") absorbSetup(args);      // ★ 名字/强度/回合都要留下来
             msgs.push({ role: "tool", tool_call_id: tc.id, content: String(r.text || "").slice(0, 6000) });
             if (name === "new_game" && state.mono.game && state.mono.game.game_id) {
               setupPush("sys", "开局成功了 —— 回到棋盘。");
@@ -1733,6 +1874,10 @@
                   + "标了 AI 的那一席会自己拍板，也可以随时按「自动跑」。");
                 save(); render();
                 openTable();                       // 开局完直接进牌桌 —— 对局就是整页的
+                /* ★ 这一步最容易漏：**聊天开局**才是常用的那条路（跟荷官把参数聊清楚），
+                   而它走的是这里、不是 monoStart()。不在这儿接一下，开完局就是
+                   「只有荷官和你在说话」——AI 那一席要等你手动点「AI 走一步」才动。 */
+                monoContinue("刚开局，棋盘与身份已就绪");
               }, 900);
               return;
             }
@@ -1748,6 +1893,72 @@
     } finally {
       state.running = false; state.ctrl = null;
       save(); renderSetup(); setupScroll();
+    }
+  }
+
+  /* ════════════ AI 接续：把「模型没参与的那一轮」补上 ════════════════════
+     为什么必须有这个：
+     「掷骰 / 查状态 / 跳过」这几个按钮是**直接调 MCP、绕开模型**的兜底路径
+     （模型不支持工具调用时，光靠按钮也能把一局玩完）。代价是 —— 模型根本不知道
+     刚才发生了什么，于是它永远不发言，AI 那一席就**一直不动**：界面上只看得到
+     荷官和人类在说话，另一个人像没坐上桌。
+     所以每次直连动作之后，都由这里把这一轮交回模型，让它替 AI 席拍板。
+     它应该**什么都不做**（只回一个「·」）的三种情况：轮的是人类、没轮到它、它在等人类。
+     ⚠️ 这个「·」约定是关键：没有它，人类每掷一次骰都会多出一条「该你了」的废话，
+     而且每次都要白花一次模型调用。                                            */
+  const MONO_SILENT = /^[·.。，,\s]*$/;      // 「我不需要说话」
+  let monoJoinLock = false;                 // 单飞：别和「自动跑」或手动重入叠在一起
+
+  async function monoContinue(trigger) {
+    const a = state.mono.ai || {};
+    if (!a.p1 && !a.p2) return null;               // 两边都是人类 → 没有可代打的席位
+    if (a.autoJoin === false) return null;         // 用户关了「自动接着走」
+    if (state.running || monoJoinLock) return null;
+    const g = state.mono.game;
+    if (!g || !g.game_id) return null;
+
+    monoJoinLock = true;
+    state.running = true; state.abort = false; state.ctrl = new AbortController();
+    render(); renderTable();
+    try {
+      const out = await monoAgent(
+        "（系统）刚刚发生了这件事：" + (trigger || "局面有更新") + "\n"
+        + "现在接着往下走。如果轮到标了「AI」的那一席，由你自己拍板 —— "
+        + "先把工具调了再说（该 roll 就 roll，该 game_action 就 game_action），不要只用嘴描述。\n"
+        + "说话要带署名：【荷官】是你主持时用，替 AI 那一席说话就用它自己的名字，例如【"
+        + (state.mono.setup.p2_name || "TA") + "】。\n"
+        + "如果现在等的是人类、或者没轮到你，就什么都别做："
+        + "不要复述棋盘、不要说「该你了」，只回一个「·」。");
+      if (out.aborted) return null;
+      if (out.err) { pushMono("sys", "（AI 这一步没跑起来）", true); return out; }
+
+      const said = String(out.reply || "").trim();
+      const acted = !!(out.trace && out.trace.length);
+      if (acted) {
+        /* 有工具的走法：正常留一条气泡；模型要是只回了「·」，补一条系统说明，
+           免得界面上看着"什么都没发生" */
+        if (MONO_SILENT.test(said)) {
+          pushMono("sys", "（轮到 AI 那一席，它自己走了一步：" + out.trace.map((t) => t.name).join(" → ") + "）");
+        } else {
+          pushMono("host", said, false, out.trace);
+        }
+      } else if (!MONO_SILENT.test(said)) {
+        pushMono("host", said);
+      } else if (!state.mono.toolHinted) {
+        /* 既没调工具、又不说话 —— 最可能是这个模型压根不支持工具调用。只说一次。 */
+        state.mono.toolHinted = true;
+        pushMono("sys", "（它这一步没调任何工具。要是每次都这样、AI 那一席一直不动，"
+          + "多半是这个模型不支持「工具调用」—— 去 ⚙ 里换成 deepseek-chat / glm-4-plus 这类能调工具的。）");
+      }
+      if (MONO_WAIT.test(said)) pushMono("sys", "（它在等你回一句话）");
+      return out;
+    } catch (e) {
+      pushMono("sys", "（AI 接续出错）" + ((e && e.message) || e), true);
+      return null;
+    } finally {
+      monoJoinLock = false;
+      state.running = false; state.ctrl = null;
+      save(); render(); renderTable(); tableScroll();
     }
   }
 
@@ -1794,12 +2005,16 @@
         + "标了 AI 的那一席会自己拍板，也可以随时按「自动跑」。");
       save(); render();
       openTable();                                   // 直接进牌桌
+      monoContinue("刚开局，棋盘与身份已就绪");        // ★ 开局后立刻把第一轮交给 AI 席
     }
   }
   async function monoRoll() {
     const g = state.mono.game;
     if (!g || !g.game_id) { toast("先开一局"); return; }
-    await monoRun("roll", { game_id: g.game_id }, "掷骰失败");
+    /* ⚠️ 按钮是**直连**（不过模型）—— 所以掷完必须把这一轮交回模型，
+       否则轮到 AI 席时它完全不知情，界面就只剩荷官和你在说话。 */
+    const r = await monoRun("roll", { game_id: g.game_id }, "掷骰失败");
+    if (r) await monoContinue("掷了一次骰 → " + (briefOf(r) || "棋盘已更新"));
   }
   async function monoInfo() {
     const g = state.mono.game;
@@ -1813,6 +2028,7 @@
       { action: "skip", game_id: g.game_id, who: state.mono.setup.p1_name || "" }, "跳过失败");
     if (r) pushMono("sys", "已跳过这一步。");
     save(); render();
+    if (r) await monoContinue("刚才跳过了这一步 → " + (briefOf(r) || "已跳过"));
   }
   async function monoEnd() {
     const g = state.mono.game;
@@ -2177,6 +2393,11 @@
         if (k === "p1" || k === "p2") {
           state.mono.ai[k] = seat.dataset.val === "ai";
           save(); render(); renderTable();
+        } else if (k === "autoJoin") {
+          /* 关掉的话，AI 席就只在点「AI 走一步」/「自动跑」时才动 */
+          state.mono.ai.autoJoin = seat.dataset.val !== "off";
+          save(); renderTableParams(); renderTable();
+          if (state.mono.ai.autoJoin) monoContinue("你打开了「自动接着走」");
         }
         return;
       }
@@ -2287,6 +2508,9 @@
     _openTable: () => openTable(),
     _closeTable: () => closeTable(),
     _auto: () => monoAuto(),
+    _continue: (t) => monoContinue(t),
+    _split: (t) => monoSplit(t),
+    _cast: () => monoCast(),
     _tableEl: () => document.getElementById("rpMonoPanel")
   };
   window.openRp = open;

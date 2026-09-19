@@ -3581,6 +3581,38 @@
      左上角分类 chip、右上角小图标（编辑/删除）。 */
   .mem-actions{ display: flex; flex-wrap: wrap; gap: 8px; }
   .mem-actions .pill-select{ flex: 0 0 auto; max-width: 138px; }
+
+  /* ══ 记忆页 · 底部栏（横向可滑）＋ 分页 ══════════════════════════════════
+     把「近景七天 + 下面那几块」从一条竖向长滚动里拆出来：底部一条横滑卡，
+     点哪张就翻到哪页（一次只显示一页，其余 .hidden）。
+     卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，
+     不另起一套存储，只是换个摆放。 */
+  .mem-bar{
+    position: sticky; bottom: calc(-1 * clamp(20px, 5vw, 30px));
+    z-index: 3;
+    margin: 2px calc(-1 * clamp(20px, 6vw, 40px)) calc(-1 * clamp(20px, 5vw, 30px));
+    padding: 12px clamp(20px, 6vw, 40px) 10px;
+    display: flex; gap: 10px;
+    overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 42%);
+  }
+  .mem-bar::-webkit-scrollbar{ height: 0; }
+  .mem-bar-card{
+    flex: 0 0 auto; width: 128px; min-width: 0;
+    display: flex; flex-direction: column; align-items: flex-start;
+    padding: 11px 12px 10px; border-radius: 16px;
+    text-align: left; cursor: pointer; white-space: normal;
+    background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+    color: var(--text);
+    appearance: none; -webkit-appearance: none;
+  }
+  .mem-bar-card.on{ background: var(--mg-surface); border-color: rgba(var(--mg-heat), .55); }
+  .mem-bar-card .mb-ico{ font-size: 15px; line-height: 1; color: #b98a3f; }
+  .mem-bar-card .mb-name{ font-size: 12.5px; font-weight: 600; margin-top: 6px; letter-spacing: .02em; }
+  .mem-bar-card .mb-sub{ font-size: 10.5px; color: var(--mg-dim); margin-top: 3px; }
+  .mem-page.hidden{ display: none; }
   .arc-hint{ font-size:11.5px; color:var(--text-faint); line-height:1.6; margin:0 2px 8px; }
   .arc-stats{ display: flex; gap: 22px; margin-top: 14px; }
   .arc-stats > div{ min-width: 0; }
@@ -5542,6 +5574,8 @@
         <button id="nfRefresh" type="button">刷新</button>
       </div>
 
+      <!-- ① 抬头 → ④ 档案室 = 「总览」这一页 -->
+      <div class="mem-page" data-mp="overview">
       <!-- ① 抬头：一共多少条记忆 + 2×2 统计格 -->
       <div class="mem-hero">
         <div class="mem-hero-num" id="memTotal">—</div>
@@ -5607,7 +5641,10 @@
         <div id="arcBody"></div>
       </section>
 
-      <!-- ⑤ 近景 · 七天 -->
+      </div><!-- /总览页 -->
+
+      <!-- ⑤ 近景 · 七天（独立一页）-->
+      <div class="mem-page hidden" data-mp="near">
       <section class="set-card open" data-card="nearfield">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
@@ -5632,8 +5669,11 @@
         </div>
       </section>
 
-      <!-- ③ 记忆库分区卡（JS 生成） -->
-      <!-- ── Haven · 长期记忆（服务器上的 Ombre Brain，只读浏览）── -->
+      </div><!-- /近景页 -->
+
+      <!-- ③ 记忆库分区卡（JS 生成 · 每张自己一页）-->
+      <!-- ── Haven · 长期记忆（服务器上的 Ombre Brain，只读浏览）—— 独立一页 ── -->
+      <div class="mem-page hidden" data-mp="haven">
       <section class="mg-card" id="brainCard">
         <div class="mg-head">
           <div>
@@ -5651,8 +5691,13 @@
         <div class="br-list" id="brList"></div>
         <div class="br-foot" id="brFoot">—</div>
       </section>
+      </div><!-- /Haven 页 -->
 
       <div id="libCards" style="display:flex;flex-direction:column;gap:14px"></div>
+
+      <!-- 底部栏：横向可滑的分区卡，点哪张就翻到哪页（一次只显示一页）。
+           卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，不另起存储。 -->
+      <nav class="mem-bar" id="memBar" aria-label="记忆分区"></nav>
     </div>
   </div>
 </div>
@@ -13699,6 +13744,7 @@ async function openMemory(){
   memoryPanel.classList.remove("hidden");
   requestAnimationFrame(() => memoryPanel.classList.add("open"));
   buildLibCards();
+  buildMemBar();
   memLoad(true);
 }
 function closeMemory(){
@@ -13724,6 +13770,7 @@ async function memLoad(verbose){
     renderLibs();
     workLoad();
     memRenderStats();
+    memBarSync();
     arcRender();
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
@@ -13914,6 +13961,7 @@ function buildLibCards(){
   const host = $("#libCards"); if (!host || host.dataset.built) return;
   host.dataset.built = "1";
   host.innerHTML = LIB_DEFS.map((d) => (
+    '<div class="mem-page hidden" data-mp="lib-' + d.kind + '">' +
     '<section class="set-card" data-card="lib-' + d.kind + '">' +
       '<button class="set-card-head" type="button" aria-expanded="false">' +
         '<span class="set-card-ico" style="font-size:15px">' + d.ico + "</span>" +
@@ -13953,7 +14001,8 @@ function buildLibCards(){
             ? "（技术记忆单独一层：按项目分文件夹、能真删、按项目查进度；情感记忆在 Ombre / 记忆宫殿那两层，两者互不干扰）"
             : "（存在后端 memories 表，按 kind 分区）") + "</div>" +
       "</div>" +
-    "</section>"
+    "</section>" +
+    "</div>"
   )).join("");
   host.querySelectorAll(".set-card-head").forEach((h) => h.addEventListener("click", () => toggleSetCard(h.closest(".set-card"))));
   wireWork();                       // 工作记忆那套控件是刚生成的，监听器得在这之后挂
@@ -13973,6 +14022,53 @@ function buildLibCards(){
       if (it) libEditOpen(kind, it);
     }
   });
+}
+/* ── 底部栏：横向可滑的分区卡（总览 / 近景 / Haven / 7 个记忆库）───────────
+   点一张翻一页 —— 一次只显示一个 .mem-page，其余 .hidden。
+   卡片沿用档案室那套「存放方式」：同一份 memories / galaxy 数据，
+   这里只是换个摆放，不另起一套存储。 */
+const MEM_BAR_FIXED = [
+  { key: "overview", ico: "◍", name: "总览",        sub: "银河 · 日历 · 档案室" },
+  { key: "near",     ico: "✦", name: "近景 · 七天", sub: "" },
+  { key: "haven",    ico: "☁", name: "Haven",       sub: "长期记忆 · 只读" },
+];
+function buildMemBar(){
+  const host = $("#memBar"); if (!host || host.dataset.built) return;
+  host.dataset.built = "1";
+  const cards = MEM_BAR_FIXED.concat(LIB_DEFS.map((d) => ({ key: "lib-" + d.kind, ico: d.ico, name: d.name, sub: "" })));
+  host.innerHTML = cards.map((c) =>
+    '<button type="button" class="mem-bar-card' + (c.key === "overview" ? " on" : "") + '" data-mp-go="' + c.key + '">' +
+      '<span class="mb-ico">' + c.ico + "</span>" +
+      '<span class="mb-name">' + escapeHtml(c.name) + "</span>" +
+      '<span class="mb-sub" id="mbSub-' + c.key + '">' + escapeHtml(c.sub || "—") + "</span>" +
+    "</button>").join("");
+  host.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mp-go]");
+    if (b) memShowPage(b.dataset.mpGo);
+  });
+  memBarSync();
+}
+function memShowPage(key){
+  const panel = $("#memoryPanel"); if (!panel) return;
+  const pages = Array.prototype.slice.call(panel.querySelectorAll(".mem-page"));
+  let target = pages.filter((p) => p.dataset.mp === key)[0];
+  if (!target) target = pages.filter((p) => p.dataset.mp === "overview")[0];
+  if (!target) return;
+  pages.forEach((p) => p.classList.toggle("hidden", p !== target));
+  Array.prototype.slice.call(panel.querySelectorAll(".mem-bar-card"))
+    .forEach((c) => c.classList.toggle("on", c.dataset.mpGo === target.dataset.mp));
+  const sc = panel.querySelector(".settings-scroll");
+  if (sc) sc.scrollTop = 0;
+}
+function memBarSync(){
+  const st = memData.status || {};
+  const days = (st.days || []).length;
+  const counts = memData.counts || {};
+  const put = (k, v) => { const el = $("#mbSub-" + k); if (el) el.textContent = v; };
+  put("overview", "银河 · 日历 · 档案室");
+  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
+  put("haven", "长期记忆 · 只读");
+  LIB_DEFS.forEach((d) => put("lib-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));
 }
 function libEditOpen(kind, item){
   const box = $("#libEdit-" + kind); if (!box) return;

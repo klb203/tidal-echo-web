@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v72-tides";        // v72：侧边栏 Tides 接上 Tidefall 的身体面板（tides.html + #tidesPanel 壳）  // v71：相关项目加 Tidefall 地址
+const CACHE = "companion-v73-tides-src";        // v73：Tides 面板加「来源」栏（Tidefall / Eventide 两个可复制给 AI 的地址）  // v72：Tides 接上 Tidefall 面板
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

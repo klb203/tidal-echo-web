@@ -14092,6 +14092,39 @@ function memBarSync(){
   put("haven", "长期记忆 · 只读");
   LIB_DEFS.forEach((d) => put("lib-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));
 }
+
+/* ── 手指在内容区左右滑 = 翻上一页 / 下一页 ────────────────────────────────
+   底部栏本身是横滑的，但「滑屏幕翻页」更顺手（用户要的也是这个）。
+   判定三条：① 单指 ② 横向位移 ≥ 48px ③ 横向大于纵向 1.5 倍 —— 免得把纵向滚动误判成翻页。
+   往左滑 = 下一页，往右滑 = 上一页；到头就停住（不循环，免得划过头回不去）。
+   ★ 底部栏不在这块区域里（它挂在 .settings-page 上），所以在栏上横滑仍然是滚那条栏，
+     不会误触发翻页。 */
+(function memSwipe(){
+  const panel = $("#memoryPanel"); if (!panel) return;
+  const zone = panel.querySelector(".settings-scroll"); if (!zone) return;
+  let sx = 0, sy = 0, armed = false;
+  zone.addEventListener("touchstart", (e) => {
+    if (!e.touches || e.touches.length !== 1) { armed = false; return; }
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; armed = true;
+  }, { passive: true });
+  zone.addEventListener("touchend", (e) => {
+    if (!armed) return;
+    armed = false;
+    const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const bar = $("#memBar"); if (!bar) return;
+    const cards = Array.prototype.slice.call(bar.querySelectorAll(".mem-bar-card"));
+    if (cards.length < 2) return;
+    let cur = -1;
+    cards.forEach((c, i) => { if (c.classList.contains("on")) cur = i; });
+    if (cur < 0) return;
+    const next = dx < 0 ? cur + 1 : cur - 1;
+    if (next < 0 || next >= cards.length) return;
+    memShowPage(cards[next].dataset.mpGo);
+  }, { passive: true });
+})();
+
 function libEditOpen(kind, item){
   const box = $("#libEdit-" + kind); if (!box) return;
   memLibEditing[kind] = item ? item.id : null;

@@ -302,11 +302,17 @@
   function sysPrompt() {
     const H = hostApi();
     const kinds = (H.LIB_DEFS || KIND_FALLBACK).map((k) => k.kind + "（" + k.name + "）").join(" / ");
+    /* ★ 统一人格：用**聊天那份**（/app/settings 的 system_prompt），不是本包自己配的那份 ——
+       「自由活动」里说话的必须是同一个它，否则就成"另一个 AI"了。
+       拿不到（离网/没连后端）才退回本包配置。 */
+    let who = "";
+    try { who = (window.MediaStore && window.MediaStore.persona && window.MediaStore.persona()) || ""; } catch (_) { }
+    if (!who) who = state.cfg.persona || "";
     return [
       "现在是你的「自由活动」时间：没有人跟你说话，这一段是你自己的。",
       "你可以用给你的工具去逛逛，看看有没有值得带回来的东西。",
       "",
-      state.cfg.persona ? "【你是谁】\n" + state.cfg.persona : "",
+      who ? "【你是谁】\n" + who : "",
       "【这次的目标】\n" + (state.cfg.goal || "随便逛逛 —— 你自己决定去哪、看什么。"),
       "",
       "【规矩】",

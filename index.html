@@ -17611,36 +17611,45 @@ async function init(){
   const rl = currentRelay();
   if (rl) secret = rl.key;                 // 中转站模式:用连接里的密钥
   if (isMock() && !secret) secret = "mock";   // 演示模式：跳过开屏连接密钥，直接进聊天
-  pendingFakeNotice = await purgeFakeMessages();   // 清掉旧版演示模式写进来的假消息
-  /* ★ 开屏那道「连接密钥」门已取消 —— 不再 showLogin() 拦人，直接进聊天。
-     真要鉴权就去「设置 → 云端后端 → 访问令牌」填，由 authHeaders() 带上；
-     没有密钥时后端若回 401，也只在界面上说一句（见 handle401），不会把人挡在门外。 */
-  try { await loadSessions(); } catch (err) { /* 401 / 离线都不拦人，继续往下走 */ }
-  try { loadBrain(); } catch (_) { }
+
+  /* ★ 顺序反过来：先把界面亮出来，再去拉会话/历史。
+     上一版是「拉到了才进聊天」—— 后端冷启动、401、网络一卡，界面就永远起不来；
+     开屏门取消之后，那一下就变成一片壁纸白（什么都不显示）。
+     现在无论后端什么状态，都先给你一个能进的聊天界面，历史拉到再铺进去；
+     鉴权也一样：401 只提示、不拦人（见 handle401）。 */
   let showedCache = false;
   /* 后端对话模式下，本机 IndexedDB 缓存不再是权威来源（历史以后端为准），
      别再把它读出来和库里的记录混在一起。 */
   let cached = [];
   try { cached = hasBackendChat() ? [] : await readCachedMessages(); } catch (_) { cached = []; }
-  if (cached.length){
-    startChat(sessionFiltered(cached), { connect:false, fromCache:true });
-    showedCache = true;
+
+  try {
+    if (cached.length){
+      startChat(sessionFiltered(cached), { connect:false, fromCache:true });
+      showedCache = true;
+    } else {
+      startChat([], { connect:false });        // 没有缓存就先亮个空壳
+    }
+  } catch (_) {
+    /* 真起不来就手动把壳亮出来 —— 绝不留一片白 */
+    try { loginEl.classList.add("hidden"); appEl.classList.remove("hidden"); } catch (_) { }
   }
-  try{
+
+  try { pendingFakeNotice = await purgeFakeMessages(); } catch (_) { pendingFakeNotice = 0; }
+  try { await loadSessions(); } catch (_) { }   // 401 / 离线都不拦人，界面已经在了
+  try { loadBrain(); } catch (_) { }
+
+  try {
     const msgs = await apiLatestHistory();
     if (showedCache){
       hasMoreOlder = true;
       mergeHistoryMessages(msgs, { stickToBottom:true });
-      startRealtime();
-    }else{
-      startChat(msgs);
+    } else {
+      startChat(msgs);                   // 把真实历史铺进刚才那个空壳
     }
-  }catch(err){
-    /* 门已取消：拉不到历史就直接进聊天（空壳），不再把人拦在登录页。
-       能用的那几种模式照旧去重连；什么都不是就先给个能进的界面。 */
-    if (showedCache || useDirect() || hasBackendChat()) startRealtime();
-    else startChat([]);
-  }
+  } catch (_) { /* 拉不到就先用缓存/空壳，界面照常能进 */ }
+
+  startRealtime();
 }
 
 /* 回前台重同步:iOS 后台会挂起连接 */

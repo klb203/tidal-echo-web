@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v74-membar";        // v74：Memory 页拆成底部横滑栏 + 分页（近景/Haven/记忆库各一页）  // v73：Tides 面板加「来源」栏
+const CACHE = "companion-v75-membar-fix";        // v75：修底部栏被 column flex 压扁（flex:none + min-height + touch-action:pan-x）  // v74：Memory 页底部横滑栏 + 分页
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

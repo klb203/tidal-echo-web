@@ -272,7 +272,10 @@
       box = document.createElement("div");
       box.id = HOST;
       box.className = "wd-root";
-      view.appendChild(box);
+      /* ★ 插在**最前面**：这一块是「现在的状态 + 浓度 + 还差多久」——
+         是打开这一屏最想先看的东西（宿主下面那些是配置，可以慢慢调）。
+         插到末尾的话得滚到底才看得见，等于没做。 */
+      view.insertBefore(box, view.firstChild);
       box.addEventListener("click", (e) => {
         const chip = e.target.closest("[data-wd-state]");
         if (chip) { chooseState(chip.dataset.wdState); return; }

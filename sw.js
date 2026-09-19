@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v68-wander-mcp";  // v68：漫想模式接进「主动消息」（按状态算浓度）+ 聊天里的 MCP 动作层
+const CACHE = "companion-v68b-wander-mcp";  // v68b：漫想那块改到「主动消息」最上面（浓度是现状，要先看见）  // v68：漫想模式接进「主动消息」（按状态算浓度）+ 聊天里的 MCP 动作层
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

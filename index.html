@@ -5699,15 +5699,21 @@
         </div>
         <div class="nf-actions">
           <button id="tlRefresh" type="button">刷新</button>
-          <button id="tlDistill" type="button" class="primary">写进记忆（统一总结）</button>
+          <button id="tlCompose" type="button" class="primary">组装成片段</button>
+          <button id="tlDistill" type="button">写进记忆（一条总述）</button>
         </div>
+        <div class="conn-sub" id="tlFrag" style="padding:2px 2px 2px;color:var(--text-faint);line-height:1.55"></div>
         <div class="conn-sub" id="tlStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
         <div class="br-list" id="tlList"></div>
         <div class="br-foot" id="tlFoot">—</div>
         <div class="settings-tip">这本账是「同一个它」的地基：<b>写</b>——任何场景调一次模型，
         聊天/朋友圈/房间/自由活动/大富翁 都会往这儿记一笔；<b>读</b>——任何场景开口前，
         后端自动把「聊天那份人格 + 别处刚发生的事」接到它提示词的末尾，聊天这一侧反过来也一样。
-        所以它换个地方也还是同一个它。这里只是把账摊开给你看（含「写进记忆」= 把这本账脱水成一条记忆，进档案室与银河）。</div>
+        所以它换个地方也还是同一个它。<br>
+        <b>「组装成片段」</b>是把这本账里的碎碎念组装成一条条<b>能单独讲出来的小记忆</b>
+        （同一件事合并成一条、不同场合分开、带时间和出处），落到记忆库的「片段」分区 ——
+        由它自动长出来，不用你写。<b>「写进记忆」</b>则是另一种口径：压成<b>一条</b>总述。
+        一个是颗粒（片段），一个是轮廓（总述），两种都留着。</div>
       </section>
       </div><!-- /时间线页 -->
 
@@ -13263,6 +13269,7 @@ const LIB_DEFS = [
   { kind: "working", name: "工作记忆",   ico: "☰", tip: "正在进行、还没结束的事。" },
   { kind: "summary", name: "摘要",       ico: "≡", tip: "对话压缩出来的长期摘要（自动生成）。" },
   { kind: "story",   name: "故事",       ico: "❋", tip: "值得复述的片段。" },
+  { kind: "fragment",name: "片段",       ico: "◈", tip: "由时间线里的碎片**自动组装**出来的小场景（朋友圈 / 屋子 / 自由活动 / 大富翁…）。同一件事合并成一条、不同场合分开，带时间与出处。" },
   { kind: "room",    name: "我的房间",   ico: "⌂", tip: "你自己的一方天地。" },
   { kind: "letter",  name: "留给西西的话", ico: "✉", tip: "想对 TA 说、但还没说出口的。" },
 ];
@@ -14154,6 +14161,17 @@ async function tlLoad(verbose){
       + (tlScene ? "（已按场景筛选）" : "（最近 60 条）")
       + " · 每个场景开口前都会先看一眼这本账（后端自动注入，不需要前端配合）";
     tlRender();
+    /* 片段组装的状态：还有多少碎片没被组装、已经组装出多少条。
+       这一行是「记忆怎么被组成」的仪表盘 —— 攒够了就值得点一次「组装成片段」。 */
+    try{
+      const cf = await memApi("/app/scene/fragments?limit=1");
+      const cs = (cf && cf.status) || {};
+      const el = $("#tlFrag");
+      if (el) el.textContent = "片段：已组装 " + (cs.fragments || 0) + " 条 · 待组装 "
+        + (cs.pending || 0) + " 条碎片" + (cs.pending >= (cs.min || 3) ? "（够一轮了，可以点「组装成片段」）" : "");
+      const cb = $("#tlCompose");
+      if (cb) cb.disabled = !(cs.pending >= (cs.min || 3));
+    }catch(_){ }
     if (verbose) tlStatus("已读取 " + tlData.length + " 条", "ok");
   }catch(err){
     tlData = [];
@@ -14181,9 +14199,32 @@ async function tlDistill(){
     tlLoad(false);
   }
 }
+/* 「组装成片段」：把游标之后的碎片交给模型，组装成一条条独立的小记忆（kind=fragment）——
+   同一件事合并、不同场合分开，每条带时间和出处，落进记忆库的「片段」分区。
+   与上面那个 distill 的区别：那个压成一条总述，这个组装成若干条片段。 */
+async function tlCompose(){
+  tlStatus("正在把碎片组装成片段记忆…（要调一次模型，几十秒）");
+  const btn = $("#tlCompose"); if (btn) btn.disabled = true;
+  try{
+    const r = await memApi("/app/scene/compose", {
+      method: "POST", body: JSON.stringify({ max: 8 }) });
+    if (r && r.ok){
+      tlStatus((r.message || "已组装") + " —— 去「片段」那一页看", "ok");
+      try { memLoad(false); } catch (_) { }
+    }else{
+      tlStatus((r && r.message) || "没组装出来", "err");
+    }
+  }catch(err){
+    tlStatus("组装失败 —— " + ((err && err.message) || err), "err");
+  }finally{
+    if (btn) btn.disabled = false;
+    tlLoad(false);
+  }
+}
 if ($("#tlList")){
   if ($("#tlRefresh")) $("#tlRefresh").addEventListener("click", () => tlLoad(true));
   if ($("#tlDistill")) $("#tlDistill").addEventListener("click", tlDistill);
+  if ($("#tlCompose")) $("#tlCompose").addEventListener("click", tlCompose);
   if ($("#tlFilterGo")) $("#tlFilterGo").addEventListener("click", () => {
     const q = $("#tlQ");
     let v = q ? String(q.value || "").trim().toLowerCase() : "";

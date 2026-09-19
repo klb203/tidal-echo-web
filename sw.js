@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v81-timeline";          // v81：Memory 加「时间线 · 一个它」页（统一场景层那本账的只读窗口 + 写进记忆）  // v80：统一人格（MediaStore 自动前置聊天人格）
+const CACHE = "companion-v82-fragments";         // v82：记忆库第 8 个分区「片段」—— 时间线碎片自动组装成小记忆（时间线页加「组装成片段」）  // v81：Memory 加「时间线 · 一个它」页
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

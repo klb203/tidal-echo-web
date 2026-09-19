@@ -5144,7 +5144,7 @@
             <label class="fld"><span>ntfy 服务器</span><input id="sdNtfyServer" type="text" placeholder="https://ntfy.sh" autocomplete="off" spellcheck="false"></label>
           </div>
 
-          <div class="settings-section-label" style="margin-top:14px">相关项目 · 同一个问题的另一种解法（地址可复制给 AI）</div>
+          <div class="settings-section-label" style="margin-top:14px">相关项目 · 地址可复制给 AI</div>
           <div class="sd-secret-row">
             <input class="nf-box" id="sdJiwenUrl" type="text" readonly value="https://github.com/ClaraShafiq/jiwen">
             <button type="button" id="sdJiwenCopy">复制给 AI</button>
@@ -5153,6 +5153,21 @@
             <b>积温（jiwen）</b> —— 不靠概率骰子的 AI 角色主动意识引擎：把「想不想找你 / 嘴硬不硬 / 心情好坏 /
             焦不焦躁 / 手头有没有事做」五个连续数值放后台漂移，到阈值自然触发开口，而不是每 N 分钟掷一次骰子。
             和这里的影子推送解的是同一件事 —— 嫌随机冷静期不够顺手时，可以把地址复制给 AI，对着它改写决策那一段。
+          </div>
+
+          <div class="sd-secret-row" style="margin-top:10px">
+            <input class="nf-box" id="sdTidefallUrl" type="text" readonly value="https://github.com/Vael-KY/Tidefall">
+            <button type="button" id="sdTidefallCopy">复制给 AI</button>
+          </div>
+          <div class="sd-secret-row" style="margin-top:6px">
+            <input class="nf-box" id="sdTidefallKey" type="text" placeholder="Supabase key —— 只存本机，不进仓库" autocomplete="off" spellcheck="false">
+            <button type="button" id="sdTidefallKeySave">存本机</button>
+          </div>
+          <div class="settings-tip" style="margin-top:6px">
+            <b>Tidefall · 接入 tides</b> —— 给 Ta 一套随时间涨落的「身体」：6 个周期轮转、7 项身体数值、
+            18 种短时事件，靠 Supabase 的 pg_cron + DB Trigger 全自动跑，不用另外开服务器（基于 Eventide）。
+            「复制给 AI」会把项目地址 + 你本机这份 Supabase key 一起复制出去，直接丢给 AI 就能开始接入。
+            <br><b>key 不走仓库</b> —— 这个前端是公开的，所以 key 只落在你这台设备的 localStorage；换设备要重新填一次。
           </div>
 
           <div class="editor-actions om-acts">
@@ -9230,6 +9245,29 @@ if ($("#sdJiwenCopy")) $("#sdJiwenCopy").addEventListener("click", async () => {
     if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
     else { const e = $("#sdJiwenUrl"); e.select(); document.execCommand("copy"); }
     sdStatusEl("项目地址已复制 —— 直接丢给 AI 就行", "ok");
+  }catch(_){ sdStatusEl("复制失败，手动选中复制吧", "err"); }
+});
+/* Tidefall · 接入 tides：地址是公开的，key 不是 ——
+   这个前端扔在公开的 GitHub Pages 上，key 写进文件就等于公开整库读写权限，
+   所以 key 只落本机 localStorage（和「连接」里那些 API Key 同一个约定），复制时再临时拼一起。 */
+const TIDEFALL_KEY_LS = "companion_tidefall_key";
+(function tidefallInit(){
+  const el = $("#sdTidefallKey");
+  if (el){ const v = lsGet(TIDEFALL_KEY_LS); if (v) el.value = v; }
+})();
+if ($("#sdTidefallKeySave")) $("#sdTidefallKeySave").addEventListener("click", () => {
+  const v = (($("#sdTidefallKey") || {}).value || "").trim();
+  lsSet(TIDEFALL_KEY_LS, v);
+  sdStatusEl(v ? "Supabase key 存到本机了（只在这台设备上）" : "本机的 key 清掉了", v ? "ok" : "err");
+});
+if ($("#sdTidefallCopy")) $("#sdTidefallCopy").addEventListener("click", async () => {
+  const url = ($("#sdTidefallUrl") || {}).value || "";
+  const key = (lsGet(TIDEFALL_KEY_LS) || (($("#sdTidefallKey") || {}).value || "")).trim();
+  const text = "接入 tides：" + url + "\nsupabase：" + (key || "（还没填 key —— 在设置里填一次，只存本机）");
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+    else { const e = $("#sdTidefallUrl"); e.select(); document.execCommand("copy"); }
+    sdStatusEl("接入信息已复制（地址" + (key ? " + key" : "，key 还空着") + "）", "ok");
   }catch(_){ sdStatusEl("复制失败，手动选中复制吧", "err"); }
 });
 if ($("#sdPush")) $("#sdPush").addEventListener("click", sdPushNow);

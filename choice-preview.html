@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>选项卡 · 预览（Tidal Echo）</title>
+
+<link rel="stylesheet" href="choice-pack.css">
+
+<style>
+:root{
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg: #F7FAFC; --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --accent: #4C6378; --accent-fg: #ffffff;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --row-press: rgba(140,160,176,.12);
+  --seg-track: rgba(140,160,176,.11);
+  --danger: #b06a6f;
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --accent:#4A5D6C; --field-bg:rgba(244,242,239,.92);
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --accent:#E8558F; --field-bg:rgba(255,255,255,.86); --field-line:rgba(212,120,158,.20);
+  --row-press:rgba(224,150,182,.16); --seg-track:rgba(224,150,182,.18);
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --accent:#C9A9E0; --accent-fg:#17171C;
+  --field-bg:rgba(255,255,255,.06); --field-line:rgba(255,255,255,.10);
+  --row-press:rgba(255,255,255,.10); --seg-track:rgba(255,255,255,.08);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; height:100%; }
+body{ background:var(--bg); color:var(--text); font-family:var(--font-cn); font-size:15px;
+  line-height:1.6; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
+
+/* 迷你聊天壳：只为让卡片有个真实的底 */
+.head{ flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:12px 14px 10px; border-bottom:1px solid var(--hairline); }
+.head b{ font-size:16px; }
+.head .pvrow{ margin-left:auto; display:flex; gap:5px; }
+.head button{ font:inherit; font-size:11px; padding:5px 10px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft); }
+.head button.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+.row{ display:flex; }
+.row.human{ justify-content:flex-end; }
+.bubble{ max-width:78%; padding:9px 13px; border-radius:16px; font-size:14.5px; line-height:1.65;
+  background:var(--field-bg); border:1px solid var(--field-line); word-break:break-word; }
+.row.human .bubble{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.composer{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--hairline); background:var(--bg); }
+.composer .field{ flex:1 1 auto; display:flex; align-items:center; gap:6px;
+  background:var(--field-bg); border:1px solid var(--field-line); border-radius:999px; padding:6px 8px; }
+.composer input{ flex:1 1 auto; border:none; outline:none; background:transparent; font:inherit; font-size:14px; color:var(--text); }
+.composer .ic{ width:34px; height:34px; border-radius:50%; border:none; cursor:pointer; background:transparent;
+  color:var(--accent); font-size:19px; display:grid; place-items:center; }
+.composer .send{ background:var(--accent); color:var(--accent-fg); }
+
+/* 上拉面板：照抄宿主的类名与结构，只为让包能插进去 */
+.csheet{ position:fixed; inset:0; z-index:200; }
+.csheet.hidden{ display:none !important; }
+.csheet-scrim{ position:absolute; inset:0; background:rgba(20,28,38,.30); }
+.csheet-body{ position:absolute; left:0; right:0; bottom:0; max-height:78%; overflow:auto;
+  background:var(--bg); border-radius:20px 20px 0 0; border-top:1px solid var(--hairline);
+  padding:8px 0 14px; box-shadow:0 -10px 40px rgba(30,44,60,.18); }
+.csheet-head{ display:flex; align-items:center; gap:10px; padding:6px 14px 2px; font-size:13.5px; }
+.csheet-head #csClose{ margin-left:auto; border:none; background:transparent; font-size:16px; cursor:pointer; color:var(--text-soft); }
+.cs-view{ padding:6px 14px 14px; }
+.cs-view.hidden{ display:none; }
+.cs-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px 4px; padding:8px 2px 4px; }
+.cs-item{ appearance:none; border:none; background:transparent; display:flex; flex-direction:column;
+  align-items:center; gap:8px; padding:10px 2px; border-radius:14px; cursor:pointer;
+  color:var(--text-soft); font-size:11.5px; line-height:1.2; }
+.cs-item i{ font-style:normal; width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
+  background:var(--field-bg); border:1px solid var(--field-line); color:var(--accent); }
+.cs-item i svg{ width:24px; height:24px; }
+.cs-note{ margin:4px 2px 0; padding:9px 11px; border-radius:11px; background:var(--field-bg);
+  border:1px solid var(--field-line); color:var(--text-soft); font-size:12px; line-height:1.6; }
+.cs-note b{ color:var(--text); }
+#chToast{ position:fixed; left:50%; bottom:96px; transform:translateX(-50%); z-index:260;
+  background:rgba(30,44,60,.92); color:#fff; font-size:12.5px; padding:8px 16px; border-radius:999px;
+  opacity:0; transition:opacity .2s; pointer-events:none; }
+#chToast.on{ opacity:1; }
+.pvbar{ flex:0 0 auto; display:flex; gap:6px; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--hairline); }
+.pvbar button{ font:inherit; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft); }
+.pvbar button.pri{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <b>DeepSeek</b>
+  <div class="pvrow">
+    <button data-theme="light" class="on">Pearl</button>
+    <button data-theme="harbor">Harbor</button>
+    <button data-theme="pink">Pink</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+</div>
+
+<div class="pvbar">
+  <button class="pri" data-sim="live">模拟：AI 实时弹一张卡</button>
+  <button data-sim="hist">模拟：历史回放（只打点，不弹）</button>
+  <button data-sim="line">模拟：行式写法（A. B. C.）</button>
+  <button data-sim="sheet">打开上拉面板</button>
+  <button data-sim="reset">清空</button>
+</div>
+
+<div class="scroll" id="scroll"></div>
+
+<div class="composer">
+  <div class="field">
+    <input id="input" type="text" placeholder="说点什么…">
+    <button class="ic" id="csOpenBtn" aria-label="更多">＋</button>
+  </div>
+  <button class="ic send" id="sendBtn" aria-label="发送">↑</button>
+</div>
+
+<div class="csheet hidden" id="cSheet" role="dialog">
+  <div class="csheet-scrim" id="csScrim"></div>
+  <div class="csheet-body" id="csBody">
+    <div class="csheet-head"><span id="csTitle">更多</span><button id="csClose">✕</button></div>
+    <div class="cs-view" id="csMain">
+      <div class="cs-grid">
+        <button class="cs-item" data-cs="clip"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M3.6 17.2l4.3-4.3a1.7 1.7 0 0 1 2.4 0l4.7 4.7"/></svg></i><span>相册 / 文件</span></button>
+        <button class="cs-item" data-cs="image"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3.6l1.6 4.3 4.3 1.6-4.3 1.6L12 15.4l-1.6-4.3L6.1 9.5l4.3-1.6z"/></svg></i><span>生图</span></button>
+        <button class="cs-item" data-cs="at"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg></i><span>主动消息</span></button>
+        <button class="cs-item" data-cs="poke"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 11V5.6a1.6 1.6 0 0 1 3.2 0V11"/><path d="M12.2 10.6V4.9a1.6 1.6 0 0 1 3.2 0v5.7"/></svg></i><span>戳一戳</span></button>
+        <button class="cs-item" data-cs="quick"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h9"/></svg></i><span>快捷设置</span></button>
+      </div>
+      <div class="cs-note" id="csHint">把你正在打的字往上拉，或者点输入框右边那个 ＋ —— 都打开这里。</div>
+    </div>
+  </div>
+</div>
+
+<div id="chToast"></div>
+
+<script src="media-store.js"></script>
+<script>
+/* ── 宿主替身：预览页里只补包真正会碰的那几个名字 ─────────────────────
+   renderText / setMessage / onMessage / showToast / csClose 一定要有，
+   否则包会以为「宿主没准备好」而放弃挂载。 */
+const CONFIG = { AI_NAME: "DeepSeek" };
+const AI_NAME = CONFIG.AI_NAME;
+function showToast(m){
+  const t = document.getElementById("chToast");
+  t.textContent = m; t.classList.add("on");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("on"), 2000);
+}
+function csClose(){ document.getElementById("cSheet").classList.add("hidden"); }
+function csOpen(){ document.getElementById("cSheet").classList.remove("hidden"); }
+function appUrl(p){ return p; }
+function authHeaders(){ return {}; }
+function isImageRequest(t){ return /^\s*\/(img|draw|画图|生图)\b/i.test(String(t || "")); }
+
+let mid = 0;
+const seen = [];
+function renderText(t){ return String(t == null ? "" : t).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])).replace(/\n/g, "<br>"); }
+function setMessage(raw){
+  const m = Object.assign({ id: ++mid }, raw);
+  seen.push(m);
+  const sc = document.getElementById("scroll");
+  const row = document.createElement("div");
+  row.className = "row " + (m.from === "human" ? "human" : "ai");
+  row.dataset.id = m.id;
+  row.innerHTML = '<div class="bubble">' + (m.text ? renderText(m.text) : "") + "</div>";
+  sc.appendChild(row);
+  sc.scrollTop = sc.scrollHeight;
+  return m;
+}
+function onMessage(m){ return setMessage(m); }
+
+/* 设置接口替身：拿本机这份顶掉 /app/settings，好让开关真的能读写人设 */
+let sysPrompt = "你叫 DeepSeek。"
+  + "\n\n<<<room:core>>>\n【人格核】这是一个别的 pack 写进来的块，摘你自己的段落时不许碰它。\n<<<room:end>>>";
+window.fetch = function (url, init){
+  const u = String(url || "");
+  const j = (o) => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(o) });
+  if (u.indexOf("/app/settings") >= 0){
+    if ((init && init.method) === "PUT"){
+      try { sysPrompt = JSON.parse(init.body).system_prompt; } catch (_) { }
+    }
+    return j({ ok: true, settings: { system_prompt: sysPrompt } });
+  }
+  return j({ ok: true });
+};
+window.__sys = () => sysPrompt;
+document.getElementById("csOpenBtn").addEventListener("click", () => csOpen());
+document.getElementById("csScrim").addEventListener("click", csClose);
+document.getElementById("csClose").addEventListener("click", csClose);
+document.getElementById("sendBtn").addEventListener("click", () => {
+  const i = document.getElementById("input");
+  const v = i.value.trim(); if (!v) return;
+  i.value = "";
+  onMessage({ from: "human", text: v });
+});
+document.getElementById("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("sendBtn").click();
+});
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t){
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  const s = e.target.closest("[data-sim]");
+  if (!s) return;
+  const what = s.dataset.sim;
+  if (what === "sheet"){ csOpen(); return; }
+  if (what === "reset"){
+    document.getElementById("scroll").innerHTML = "";
+    localStorage.removeItem("companion_choice_done");
+    if (window.ChoicePack) window.ChoicePack.preset(null);
+    return;
+  }
+  if (what === "live"){
+    showToast("走实时路径（onMessage）—— 应该自动弹出卡片");
+    onMessage({ from: "ai", kind: "chat", text:
+      "我盯着这张测试卡看了半天。\n<<<choice>>>\n{\"q\":\"这张测试卡现在看起来怎么样？\",\"opts\":[\"排版终于没有偷偷滑下去\",\"差两像素也会让飞鼠皱眉\",\"卡片没坏，是文案欠调教\",\"把黑猫当测试数据生成器\"]}\n<<<choice:end>>>" });
+    return;
+  }
+  if (what === "hist"){
+    showToast("走历史路径（setMessage）—— 不该自动弹，只在 ＋ 上打点");
+    setMessage({ from: "ai", kind: "chat", text:
+      "顺手再问一句。\n<<<choice>>>\n{\"q\":\"要不要我把这套卡片的间距也一起调了？\",\"opts\":[\"调，顺手的事\",\"先别动，稳一版\"]}\n<<<choice:end>>>" });
+    return;
+  }
+  if (what === "line"){
+    showToast("行式写法也认（A. / 1. / - 开头的行都算选项）");
+    onMessage({ from: "ai", kind: "chat", text:
+      "换个写法试试。\n<<<choice:今晚怎么安排>>>\nA. 先把选项卡的样式收一收\nB. 去把朋友圈那条回复处理掉\n2. 什么都不干，早点睡\n<<<choice:end>>>" });
+    return;
+  }
+});
+</script>
+<script src="choice-pack.js"></script>
+</body>
+</html>

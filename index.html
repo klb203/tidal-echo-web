@@ -46,6 +46,8 @@
 <link rel="stylesheet" href="album-pack.css">
 <!-- 我们的房间（人格核/关系/档案/生活线/状态卡/日记/回忆种子）样式 -->
 <link rel="stylesheet" href="room-pack.css">
+<!-- 选项卡（AI 抛给你的选择题）样式：上拉里的开关 + 聊天上的浮动卡片 -->
+<link rel="stylesheet" href="choice-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -17442,6 +17444,13 @@ init().then(() => {
 <script defer src="room-pack.js"></script>
 <script defer src="moments-pack.js"></script>
 <script defer src="activity-pack.js"></script>
+
+<!-- 选项卡（AI 抛给你的选择题）。同样 defer，且必须**排在宿主主体脚本之后** ——
+     它要按名字包住宿主的 renderText / setMessage / onMessage 三个函数：
+       · renderText —— 流式时把半截标记当场吃掉，别让标记从正文里长出来
+       · setMessage —— 落库前剥掉标记，顺便把题干/选项解析出来（历史回放也干净）
+       · onMessage  —— 只为分清「实时收到」和「历史回放」：只有实时的才自动弹卡 -->
+<script defer src="choice-pack.js"></script>
 
 </body>
 </html>

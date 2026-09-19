@@ -3588,15 +3588,21 @@
      卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，
      不另起一套存储，只是换个摆放。 */
   .mem-bar{
-    position: sticky; bottom: calc(-1 * clamp(20px, 5vw, 30px));
-    z-index: 3;
-    margin: 2px calc(-1 * clamp(20px, 6vw, 40px)) calc(-1 * clamp(20px, 5vw, 30px));
-    padding: 12px clamp(20px, 6vw, 40px) 10px;
+    position: sticky; bottom: 0; z-index: 3;
+    /* ★ 这两条是必须的 —— .settings-scroll 是 column flex 容器，而这里写了
+       overflow-y:hidden，按规范会把这条的「自动最小尺寸」变成 0：
+       不显式锁住 flex:none（再垫一个 min-height），整条会被压成一根线，
+       卡片全被裁掉 —— 表现就是「滑不动 / 后面的卡够不到」。 */
+    flex: none;
+    min-height: 74px;
+    padding: 10px 0 8px;
     display: flex; gap: 10px;
     overflow-x: auto; overflow-y: hidden;
-    overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;                 /* 横滑交给这一条自己处理，别被外层纵向滚动抢走 */
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 42%);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 62%);
   }
   .mem-bar::-webkit-scrollbar{ height: 0; }
   .mem-bar-card{
@@ -14055,8 +14061,16 @@ function memShowPage(key){
   if (!target) target = pages.filter((p) => p.dataset.mp === "overview")[0];
   if (!target) return;
   pages.forEach((p) => p.classList.toggle("hidden", p !== target));
-  Array.prototype.slice.call(panel.querySelectorAll(".mem-bar-card"))
-    .forEach((c) => c.classList.toggle("on", c.dataset.mpGo === target.dataset.mp));
+  let onEl = null;
+  Array.prototype.slice.call(panel.querySelectorAll(".mem-bar-card")).forEach((c) => {
+    const on = c.dataset.mpGo === target.dataset.mp;
+    c.classList.toggle("on", on);
+    if (on) onEl = c;
+  });
+  /* 底部栏是横滑的：翻到某页后把那张卡滑进视野，否则它可能在屏幕外、看起来像没反应 */
+  if (onEl && onEl.scrollIntoView) {
+    try { onEl.scrollIntoView({ inline: "center", block: "nearest" }); } catch (_) { }
+  }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }

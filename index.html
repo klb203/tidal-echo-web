@@ -5144,6 +5144,17 @@
             <label class="fld"><span>ntfy 服务器</span><input id="sdNtfyServer" type="text" placeholder="https://ntfy.sh" autocomplete="off" spellcheck="false"></label>
           </div>
 
+          <div class="settings-section-label" style="margin-top:14px">相关项目 · 同一个问题的另一种解法（地址可复制给 AI）</div>
+          <div class="sd-secret-row">
+            <input class="nf-box" id="sdJiwenUrl" type="text" readonly value="https://github.com/ClaraShafiq/jiwen">
+            <button type="button" id="sdJiwenCopy">复制给 AI</button>
+          </div>
+          <div class="settings-tip" style="margin-top:6px">
+            <b>积温（jiwen）</b> —— 不靠概率骰子的 AI 角色主动意识引擎：把「想不想找你 / 嘴硬不硬 / 心情好坏 /
+            焦不焦躁 / 手头有没有事做」五个连续数值放后台漂移，到阈值自然触发开口，而不是每 N 分钟掷一次骰子。
+            和这里的影子推送解的是同一件事 —— 嫌随机冷静期不够顺手时，可以把地址复制给 AI，对着它改写决策那一段。
+          </div>
+
           <div class="editor-actions om-acts">
             <button id="sdSave" type="button" class="primary">保存</button>
             <button id="sdPush" type="button">立即推一条</button>
@@ -9209,6 +9220,16 @@ if ($("#sdCopy")) $("#sdCopy").addEventListener("click", async () => {
     if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
     else { const e = $("#sdSecret"); e.select(); document.execCommand("copy"); }
     sdStatusEl("密钥已复制", "ok");
+  }catch(_){ sdStatusEl("复制失败，手动选中复制吧", "err"); }
+});
+/* 相关项目地址：只读输入框里那一份，点一下就进剪贴板 —— 复制出去丢给 AI 就行（不经过任何后端） */
+if ($("#sdJiwenCopy")) $("#sdJiwenCopy").addEventListener("click", async () => {
+  const v = ($("#sdJiwenUrl") || {}).value || "";
+  if (!v){ sdStatusEl("地址没读到", "err"); return; }
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
+    else { const e = $("#sdJiwenUrl"); e.select(); document.execCommand("copy"); }
+    sdStatusEl("项目地址已复制 —— 直接丢给 AI 就行", "ok");
   }catch(_){ sdStatusEl("复制失败，手动选中复制吧", "err"); }
 });
 if ($("#sdPush")) $("#sdPush").addEventListener("click", sdPushNow);

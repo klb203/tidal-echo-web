@@ -202,11 +202,53 @@ window.MediaStore = (function () {
     if (Array.isArray(c)) return c.map((p) => (typeof p === "string" ? p : (p && p.text) || "")).join("");
     return m.reasoning_content || "";
   }
+  /* ══ 共享人格：「朋友圈 / 自由活动 / room / 群聊」里说话的必须是同一个它 ══
+     聊天那份人格存在后端 /app/settings 的 system_prompt。各功能包以前各自写死自己的
+     system prompt，于是每个场景里说话的其实是"另一个人"。这里统一前置：谁走这条通道，
+     谁的系统消息就自动接上聊天那份人格。
+     · 同步读缓存 —— 拿不到就原样放行，绝不因为人格没读到让功能报错；
+     · 首次没缓存时后台拉一次，下一次调用就带上了；
+     · opt.json（JSON / 工具调用）或调用方显式 voice:false 的跳过 —— 那是干活的调用，不要人格。 */
+  const PERSONA_TTL = 5 * 60 * 1000;
+  let _persona = "", _personaAt = 0, _personaBusy = false;
+  async function refreshPersona(force) {
+    if (_personaBusy) return _persona;
+    if (!force && _persona && Date.now() - _personaAt < PERSONA_TTL) return _persona;
+    _personaBusy = true;
+    try {
+      const r = await fetch(base() + "/app/settings", { headers: headers() });
+      const d = await r.json().catch(() => ({}));
+      const s = (d.settings || {}).system_prompt;
+      if (typeof s === "string" && s.trim()) { _persona = s.trim(); _personaAt = Date.now(); }
+    } catch (_) { }
+    _personaBusy = false;
+    return _persona;
+  }
+  function persona() {
+    if (!_persona && !_personaBusy) { try { refreshPersona(false); } catch (_) { } }
+    return _persona;
+  }
+  function withPersona(sys) {
+    const p = persona();
+    const task = String(sys == null ? "" : sys).trim();
+    if (!p) return task;
+    if (task.indexOf(p.slice(0, 40)) === 0) return task;      // 已经带上了，别叠两份
+    return p + "\n\n———— 以下是这个场景的说明（人格仍是上面那一个，别变成另一个人）————\n" + task;
+  }
+  try { refreshPersona(false); } catch (_) { }   // 模块一加载就先拉一次，后面的调用就有人格了
+
   async function chat(opt) {
     const cfg = opt.model ? { provider: opt.provider, model: opt.model } : modelCfg();
+    const msgs = (Array.isArray(opt.messages) ? opt.messages : [])
+      .map((m) => (m && typeof m === "object" ? Object.assign({}, m) : m));
+    /* ★ 统一人格：默认给系统消息接上聊天那份；json / voice:false 除外 */
+    if (opt.json !== true && opt.voice !== false && msgs.length && msgs[0] && msgs[0].role === "system") {
+      const merged = withPersona(msgs[0].content);
+      if (merged !== msgs[0].content) msgs[0] = Object.assign({}, msgs[0], { content: merged });
+    }
     const body = {
       model: cfg.model,
-      messages: opt.messages,
+      messages: msgs,
       temperature: opt.temperature == null ? 0.85 : opt.temperature
     };
     if (opt.json) body.response_format = { type: "json_object" };
@@ -240,6 +282,7 @@ window.MediaStore = (function () {
     base, token, secret, headers, fileUrl,
     sha256, hashFile, shrink, uploadImage,
     kvList, kvSave, kvDel, kvReplace, listSynced, mirrorGet, mirrorSet, mirrorUpsert, mirrorRemove,
-    chat, chatUrl, modelCfg, setModelCfg, activeConn, dataUrl
+    chat, chatUrl, modelCfg, setModelCfg, activeConn, dataUrl,
+    persona, withPersona, refreshPersona
   };
 })();

@@ -4030,8 +4030,9 @@
 </head>
 <body>
 
-<!-- ── Login ── -->
-<div class="login" id="login">
+<!-- ── Login（开屏那道「连接密钥」门 · 已取消，见 init()）── -->
+<!-- 保留 DOM 只是为了万一以后要恢复：去掉下面的 hidden 即可。启动时不会再显示它。 -->
+<div class="login hidden" id="login">
   <div class="orb"></div>
   <h1>DeepSeek</h1>
   <p class="sub">输入连接密钥,进入你和DeepSeek的频道。</p>
@@ -17521,9 +17522,12 @@ function handle401(){
   localStorage.removeItem(LS_KEY);
   if (es){ try{ es.close(); }catch(e){} es = null; }
   if (healthTimer){ clearInterval(healthTimer); healthTimer = null; }
-  showLogin("密钥不对,请重新输入。");
+  /* 门已取消：401 不再把登录页拉回来，只在界面上如实说一句 */
+  setConn("offline");
+  try { showToast("后端说密钥不对（401）—— 去「设置 → 云端后端 → 访问令牌」重填；登录页已经取消了。"); } catch (_) { }
 }
 
+/* 保留这个函数只是为了万一要恢复那道门；启动路径已经不再调用它了。 */
 function showLogin(msg){
   appEl.classList.add("hidden");
   loginEl.classList.remove("hidden");
@@ -17608,13 +17612,16 @@ async function init(){
   if (rl) secret = rl.key;                 // 中转站模式:用连接里的密钥
   if (isMock() && !secret) secret = "mock";   // 演示模式：跳过开屏连接密钥，直接进聊天
   pendingFakeNotice = await purgeFakeMessages();   // 清掉旧版演示模式写进来的假消息
-  if (!secret && !useDirect() && !hasBackendChat()){ showLogin(); return; }
-  await loadSessions();
-  loadBrain();
+  /* ★ 开屏那道「连接密钥」门已取消 —— 不再 showLogin() 拦人，直接进聊天。
+     真要鉴权就去「设置 → 云端后端 → 访问令牌」填，由 authHeaders() 带上；
+     没有密钥时后端若回 401，也只在界面上说一句（见 handle401），不会把人挡在门外。 */
+  try { await loadSessions(); } catch (err) { /* 401 / 离线都不拦人，继续往下走 */ }
+  try { loadBrain(); } catch (_) { }
   let showedCache = false;
   /* 后端对话模式下，本机 IndexedDB 缓存不再是权威来源（历史以后端为准），
      别再把它读出来和库里的记录混在一起。 */
-  const cached = hasBackendChat() ? [] : await readCachedMessages();
+  let cached = [];
+  try { cached = hasBackendChat() ? [] : await readCachedMessages(); } catch (_) { cached = []; }
   if (cached.length){
     startChat(sessionFiltered(cached), { connect:false, fromCache:true });
     showedCache = true;
@@ -17629,8 +17636,10 @@ async function init(){
       startChat(msgs);
     }
   }catch(err){
-    if (String(err.message) !== "401" && !showedCache && !useDirect() && !hasBackendChat()) showLogin("连不上,请确认密钥。");
-    else if (showedCache || useDirect() || hasBackendChat()) startRealtime();
+    /* 门已取消：拉不到历史就直接进聊天（空壳），不再把人拦在登录页。
+       能用的那几种模式照旧去重连；什么都不是就先给个能进的界面。 */
+    if (showedCache || useDirect() || hasBackendChat()) startRealtime();
+    else startChat([]);
   }
 }
 

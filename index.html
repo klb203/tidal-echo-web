@@ -55,6 +55,8 @@
 <!-- 漫想模式（接在「主动消息」那一屏）+ 聊天里的 MCP 动作层 样式 -->
 <link rel="stylesheet" href="wander-pack.css">
 <link rel="stylesheet" href="mcp-pack.css">
+<!-- 时间锚（给 TA 一只表：余光 / 抬手看表 / 时间皮层）样式 -->
+<link rel="stylesheet" href="clock-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -17476,6 +17478,11 @@ init().then(() => {
 <!-- 聊天里的 MCP 动作层：包 renderText / setMessage / makeMessage / onMessage，
      让 TA 在聊天里自己写 [[mcp: 服务/工具 {参数}]] 去调工具。必须排在 wander 之后。 -->
 <script defer src="mcp-pack.js"></script>
+
+<!-- 时间锚：包 apiSend（发送前按规则把「余光」写进人格段）+ renderText/setMessage/
+     makeMessage/onMessage（响应 AI 自己写的 [[clock]] 抬手看表）。
+     排最后：它也包 renderText，后包的在外层 —— 先判断「这是不是我的标记」。 -->
+<script defer src="clock-pack.js"></script>
 
 </body>
 </html>

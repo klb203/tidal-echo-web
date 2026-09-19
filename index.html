@@ -48,6 +48,8 @@
 <link rel="stylesheet" href="room-pack.css">
 <!-- 选项卡（AI 抛给你的选择题）样式：上拉里的开关 + 聊天上的浮动卡片 -->
 <link rel="stylesheet" href="choice-pack.css">
+<!-- Topic Pool（自由活动带回来的卡，作为一条消息发到聊天里）样式 -->
+<link rel="stylesheet" href="topic-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -17451,6 +17453,11 @@ init().then(() => {
        · setMessage —— 落库前剥掉标记，顺便把题干/选项解析出来（历史回放也干净）
        · onMessage  —— 只为分清「实时收到」和「历史回放」：只有实时的才自动弹卡 -->
 <script defer src="choice-pack.js"></script>
+
+<!-- Topic Pool（自由活动带回来的卡 → 作为一条消息发进聊天）。
+     必须排在 choice-pack 之后：两者都包 renderText，后包的在外层，
+     先拿到文本判断「这是不是我的标记块」——topic 的标记块不该被 choice 的剥离逻辑碰。 -->
+<script defer src="topic-pack.js"></script>
 
 </body>
 </html>

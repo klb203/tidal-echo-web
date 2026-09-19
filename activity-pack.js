@@ -50,6 +50,7 @@
     memOn: true,            // 跑完自动写入记忆
     memKind: "event",       // 写进哪个分区
     memConfirm: false,      // 写之前问一下
+    cardOn: true,           // 跑完把这一趟做成一张卡发到聊天里（Topic Pool）
     goal: "",               // 这次自由活动要做什么（用户填）
     persona: "",            // 以什么身份去（留空 = 用主聊天的人格）
     model: { provider: "cloud:deepseek", model: "deepseek-chat", temp: 0.85, connId: "" }
@@ -412,10 +413,38 @@
     state.lastRun = Date.now();
     state.today = dayKey(Date.now());
     state.todayCount += 1;
-    state.runs.push({ ts: Date.now(), trigger, steps: state.log.length, tools: usedTools, summary, memOk, memMsg, failed });
+    const rec = { rid: "r" + Date.now().toString(36), ts: Date.now(), trigger, steps: state.log.length,
+      tools: usedTools, summary, memOk, memMsg, failed };
+    state.runs.push(rec);
     state.runs = state.runs.slice(-RUN_CAP);
     save(); render();
+    /* 把这一趟做一张卡发到聊天里 —— 放在最后：卡片要读 summary/tools，两者此刻才齐 */
+    if (state.cfg.cardOn && summary && !failed) sendCard(rec);
     return summary;
+  }
+
+  /* ── 把「这一趟」做成一张卡：去过哪（MCP 服务/工具）、看到什么（总结）────────
+     内容是用户要的那两样：**用 MCP 带回来的总结** + **在哪里玩的**。
+     真正的发送交给 topic-pack（它负责把卡塞进聊天）。 */
+  function topicPayload(r) {
+    const sum = String((r && r.summary) || "").trim();
+    const lines = sum.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    const title = (lines[0] || "出去逛了一趟").slice(0, 60);
+    const body = (lines.length > 1 ? lines.slice(1).join("\n") : sum).slice(0, 2000);
+    const urls = (sum.match(/https?:\/\/[^\s<>"'）)】]+/g) || []).slice(0, 6);
+    const tools = Array.from(new Set(r && r.tools || []));
+    const src = [
+      tools.length ? "去过：" + tools.join("、") : "",
+      urls.length ? urls.join("\n") : ""
+    ].filter(Boolean).join("\n");
+    return { title, body, src, when: fmtT(r.ts), from: "自由活动 · " + (r.trigger || "") };
+  }
+  function sendCard(r) {
+    if (!r || !String(r.summary || "").trim()) { toast("这一趟没有总结，没什么可发的"); return null; }
+    if (!window.TopicCard) { toast("卡片模块没加载（独立预览页里发不了）"); return null; }
+    const id = window.TopicCard.send(topicPayload(r));
+    if (id) toast("已发到聊天 —— 去聊天界面看那张卡");
+    return id || null;
   }
 
   /* ── 写入宿主记忆（复用宿主记忆页「新建一条」的同一个接口）────────────── */
@@ -591,6 +620,12 @@
           <small>开着的话，写完前会把总结给你看一眼，你点头才写。</small></div>
         <button class="act-sw${state.cfg.memConfirm ? " on" : ""}" data-act="mem-confirm"></button>
       </div>
+      <div class="act-switch">
+        <div class="t">跑完发一张卡到聊天
+          <small>把「去过哪 + 看到什么」做成一张 Topic Pool 卡片，作为一条消息发到聊天界面 ——
+            在对话里能翻回去、也能点「想聊这个」接着聊。</small></div>
+        <button class="act-sw${state.cfg.cardOn ? " on" : ""}" data-act="card-on"></button>
+      </div>
       <label class="act-lbl">写进哪个分区</label>
       <select class="act-sel" data-f="memKind">
         ${kinds.map((k) => `<option value="${esc(k.kind)}"${state.cfg.memKind === k.kind ? " selected" : ""}>${esc(k.name)}（${esc(k.kind)}）</option>`).join("")}
@@ -621,6 +656,9 @@
           <div class="h"><b>${esc(r.trigger)}</b>
             <span>${esc(fmtT(r.ts))}${r.memOk ? " · 已写记忆" : (r.memMsg ? " · " + esc(r.memMsg) : "")}</span></div>
           <div class="b">${esc((r.summary || r.failed || "(没有总结)").slice(0, 220))}</div>
+          ${(r.summary && !r.failed) ? `<div class="act-run-acts">
+            <button class="act-btn ghost" data-act="run-card" data-rid="${esc(r.rid || r.ts)}">发到聊天</button>
+          </div>` : ""}
         </div>`).join("")
       : `<div class="act-note" style="margin-top:0">还没有历史记录。</div>`;
     return card("历史记录", state.runs.length, body, state.runs.length ? { a: "runs-clear", t: "清空" } : null);
@@ -681,6 +719,12 @@
       else if (a === "sv-all") { state.servers.forEach((s) => { if (s.url) probe(s); }); }
       else if (a === "mem-on") { state.cfg.memOn = !state.cfg.memOn; save(); render(); }
       else if (a === "mem-confirm") { state.cfg.memConfirm = !state.cfg.memConfirm; save(); render(); }
+      else if (a === "card-on") { state.cfg.cardOn = !state.cfg.cardOn; save(); render();
+        toast(state.cfg.cardOn ? "跑完会发一张卡到聊天" : "跑完不发卡了"); }
+      else if (a === "run-card") {
+        const r = state.runs.find((x) => String(x.rid || x.ts) === String(id));
+        if (r) sendCard(r); else toast("找不到这一条记录");
+      }
       else if (a === "runs-clear") { if (confirm("清空历史记录？")) { state.runs = []; save(); render(); } }
       else if (a === "close") close();
     });
@@ -785,7 +829,9 @@
   window.ActivityPanel = {
     open, close, toggle, init,
     state, runOnce,
-    _render: render, _save: save, _load: load, _tick: tick, _due: dueAt, _inWindow: inWindow
+    _render: render, _save: save, _load: load, _tick: tick, _due: dueAt, _inWindow: inWindow,
+    /* 给探针用的两个口子 —— 造一条运行记录再发卡，不必真去跑一次 MCP */
+    _sendCard: sendCard, _payload: topicPayload
   };
   window.openActivity = open;
 })();

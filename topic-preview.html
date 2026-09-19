@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Topic Pool · 预览（Tidal Echo）</title>
+
+<link rel="stylesheet" href="topic-pack.css">
+
+<style>
+/* 这里复刻宿主的关键布局数字，好让卡片量出来的比例和真宿主一致：
+   .bubble 的 max-width / .row.ai 的 padding-left / 卡片所在的滚动容器 */
+:root{
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --avatar-size: 30px;
+  --bg: #F7FAFC; --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --accent: #4C6378; --accent-fg: #ffffff;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --card-bg: rgba(244,248,250,.5); --card-line: rgba(150,168,182,.16);
+  --seg-track: rgba(140,160,176,.11); --danger: #b06a6f;
+  --wall: linear-gradient(180deg,#eef3f8,#e6eef6);
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --hairline:rgba(74,93,108,.20); --text:#36404B; --text-soft:#5E6B78;
+  --text-faint:#9197A0; --accent:#4A5D6C; --field-bg:rgba(244,242,239,.92);
+  --card-bg:rgba(244,242,239,.6); --wall: linear-gradient(180deg,#f2efe9,#eae5dd);
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --hairline:rgba(212,120,158,.22); --text:#4A2B39; --text-soft:#8A5A6E;
+  --text-faint:#B08D9C; --accent:#E8558F; --field-bg:rgba(255,255,255,.86);
+  --field-line:rgba(212,120,158,.20); --card-line:rgba(212,120,158,.16);
+  --seg-track:rgba(224,150,182,.18); --wall: linear-gradient(180deg,#ffe9f1,#fbd3e2);
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --hairline:rgba(255,255,255,.10); --text:#EDEDF2; --text-soft:#A8A8B4;
+  --text-faint:#75757F; --accent:#C9A9E0; --accent-fg:#17171C;
+  --field-bg:rgba(255,255,255,.06); --field-line:rgba(255,255,255,.10);
+  --card-line:rgba(255,255,255,.09); --seg-track:rgba(255,255,255,.08);
+  --wall: linear-gradient(180deg,#141419,#0b0b0e);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; height:100%; }
+body{ background:var(--bg); color:var(--text); font-family:var(--font-cn); font-size:15px;
+  line-height:1.6; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; }
+
+.head{ flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:12px 14px 10px; border-bottom:1px solid var(--hairline); }
+.head b{ font-size:16px; }
+.head .pvrow{ margin-left:auto; display:flex; gap:5px; }
+.head button{ font:inherit; font-size:11px; padding:5px 10px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft); }
+.head button.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pvbar{ flex:0 0 auto; display:flex; gap:6px; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--hairline); }
+.pvbar button{ font:inherit; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft); }
+.pvbar button.pri{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+
+/* 消息区：照宿主的数字 */
+.scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:14px 14px 20px; background:var(--wall); }
+.row{ display:flex; position:relative; margin-top:18px; }
+.row.human{ justify-content:flex-end; }
+.row.ai{ justify-content:flex-start; padding-left:calc(var(--avatar-size) + 14px); }
+.row.ai::before{ content:""; position:absolute; left:0; top:0; width:var(--avatar-size); height:var(--avatar-size);
+  border-radius:50%; background:var(--seg-track); }
+.bubble{
+  max-width:min(61vw,506px);
+  padding:10px 15px; border-radius:16px;
+  background:var(--field-bg); border:1px solid var(--field-line);
+  font-size:15px; line-height:1.58; word-wrap:break-word; overflow-wrap:break-word;
+}
+.row.human .bubble{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.bubble .txt{ white-space:normal; }
+
+.composer{ flex:0 0 auto; display:flex; gap:8px; padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--hairline); background:var(--bg); }
+.composer input{ flex:1 1 auto; border:1px solid var(--field-line); border-radius:999px; padding:9px 14px;
+  font:inherit; font-size:14px; background:var(--field-bg); color:var(--text); outline:none; }
+.composer .send{ width:42px; border:none; border-radius:50%; background:var(--accent); color:var(--accent-fg); font-size:17px; cursor:pointer; }
+
+#chToast{ position:fixed; left:50%; bottom:96px; transform:translateX(-50%); z-index:260;
+  background:rgba(30,44,60,.92); color:#fff; font-size:12.5px; padding:8px 16px; border-radius:999px;
+  opacity:0; transition:opacity .2s; pointer-events:none; }
+#chToast.on{ opacity:1; }
+/* 「自由活动」面板的替身：只为了让「返回列表」有个落地 */
+#actStub{ position:fixed; inset:0; z-index:300; display:none; align-items:flex-end; }
+#actStub.on{ display:flex; }
+#actStub .bg{ position:absolute; inset:0; background:rgba(24,34,46,.34); }
+#actStub .bd{ position:relative; width:100%; background:var(--bg); border-radius:20px 20px 0 0;
+  border-top:1px solid var(--hairline); padding:16px 16px calc(20px + env(safe-area-inset-bottom)); }
+#actStub h3{ margin:0 0 8px; font-size:15px; }
+#actStub p{ margin:0; font-size:12.5px; color:var(--text-soft); line-height:1.7; }
+#actStub .x{ position:absolute; right:14px; top:12px; border:none; background:none; font-size:16px; cursor:pointer; color:var(--text-soft); }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <b>DeepSeek</b>
+  <div class="pvrow">
+    <button data-theme="light" class="on">Pearl</button>
+    <button data-theme="harbor">Harbor</button>
+    <button data-theme="pink">Pink</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+</div>
+
+<div class="pvbar">
+  <button class="pri" data-sim="simple">模拟：逛回来一张卡</button>
+  <button data-sim="rich">模拟：带链接的一条（小红书 / 论坛）</button>
+  <button data-sim="plain">插一条普通 AI 消息（不许被影响）</button>
+  <button data-sim="rerender">强制重渲染（验「收起」状态保得住）</button>
+  <button data-sim="reset">清空</button>
+</div>
+
+<div class="scroll" id="scroll"></div>
+
+<div class="composer">
+  <input id="input" type="text" placeholder="说点什么…">
+  <button class="send" id="sendBtn" aria-label="发送">↑</button>
+</div>
+
+<div id="chToast"></div>
+<div id="actStub"><div class="bg" data-act-close></div><div class="bd">
+  <button class="x" data-act-close>✕</button>
+  <h3>自由活动</h3>
+  <p>（这是替身面板）真页面里这里就是那张长长的自由活动面板 ——<br>
+     卡片上的「返回列表」会把你带回它的历史记录，每条记录旁边都有「发到聊天」。</p>
+</div></div>
+
+<script>
+/* ── 宿主替身：只补 topic-pack 会碰的那几个名字 ───────────────────────
+   renderText / setMessage / makeMessage 三个必须**形状一致**：
+   包靠包住它们来把卡片塞进消息流，形状不对就挂不上。 */
+const CONFIG = { AI_NAME: "DeepSeek" };
+const AI_NAME = CONFIG.AI_NAME;
+function showToast(m){
+  const t = document.getElementById("chToast");
+  t.textContent = m; t.classList.add("on");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("on"), 2000);
+}
+function scrollToBottom(){ const s = document.getElementById("scroll"); s.scrollTop = s.scrollHeight; }
+function scheduleRender(){ renderAll(); }
+function appUrl(p){ return p; }
+function authHeaders(){ return {}; }
+
+const messages = [];
+function renderText(t){
+  return String(t == null ? "" : t)
+    .replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))
+    .replace(/\n/g, "<br>");
+}
+function makeMessage(rowData){
+  const m = rowData.message;
+  const row = document.createElement("div");
+  row.className = "row " + (m.from === "human" ? "human" : "ai");
+  row.dataset.messageKey = String(m.id);
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = m.text ? '<span class="txt">' + renderText(m.text) + "</span>" : "";
+  row.appendChild(bubble);
+  return row;
+}
+function setMessage(raw){
+  const m = Object.assign({ id: raw.id, ts: raw.ts || Date.now(), from: raw.from || "ai", kind: raw.kind || "chat", text: raw.text, meta: raw.meta || {} }, raw);
+  const i = messages.findIndex((x) => String(x.id) === String(m.id));
+  if (i >= 0) messages[i] = m; else messages.push(m);
+  renderAll();
+  return m;
+}
+function renderAll(){
+  const sc = document.getElementById("scroll");
+  sc.innerHTML = "";
+  messages.slice().sort((a, b) => (Number(a.id) || Number.MAX_SAFE_INTEGER) - (Number(b.id) || Number.MAX_SAFE_INTEGER))
+    .forEach((m) => sc.appendChild(makeMessage({ message: m })));
+  scrollToBottom();
+}
+
+/* 「自由活动」面板替身 */
+window.ActivityPanel = { open(){ document.getElementById("actStub").classList.add("on"); },
+                         close(){ document.getElementById("actStub").classList.remove("on"); } };
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-act-close]")) window.ActivityPanel.close();
+  const t = e.target.closest("button[data-theme]");
+  if (t){
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  const s = e.target.closest("[data-sim]");
+  if (!s) return;
+  const what = s.dataset.sim;
+  if (what === "reset"){ messages.length = 0; renderAll(); return; }
+  if (what === "plain"){ setMessage({ id: 100 + messages.length, from: "ai", text: "这是一条普通消息，里面没有标记 —— 不许被卡片逻辑碰到。" }); return; }
+  if (what === "rerender"){ renderAll(); showToast("已强制重渲染"); return; }
+  if (what === "simple"){
+    window.TopicCard.send({
+      title: "夜里在论坛刷到一个关于「拟人化 AI 服务」的新规讨论",
+      body: "规则落在「情感交互服务」这一档：提供陪伴、情感支持的要单独说明。回帖里吵得最凶的是——\n"
+          + "「它记得我」到底算功能还是算承诺。有人贴了一句：能被记住的东西，才谈得上被弄丢。",
+      src: "去过：forum-mcp · search_threads\nblog-mcp · fetch_article",
+      when: "今天 21:40", from: "自由活动 · 定时"
+    });
+    return;
+  }
+  if (what === "rich"){
+    window.TopicCard.send({
+      title: "小红书那边在教人怎么给阳台种香草",
+      body: "记下来三条：薄荷要单独一盆（会串根）、迷迭香宁干勿湿、罗勒要掐尖才长得旺。\n"
+          + "底下最高赞的评论是「先养死三盆再说」，看着挺有道理。",
+      src: "去过：xiaohongshu · search_notes、xiaohongshu · get_note\n"
+          + "https://www.xiaohongshu.com/explore/66f0a1b2000000001e02d3c4\n"
+          + "https://www.xiaohongshu.com/explore/66f0c9d1000000001d0a77b1",
+      when: "今天 15:12", from: "自由活动 · 补一次（页面重新打开）"
+    });
+    return;
+  }
+});
+document.getElementById("sendBtn").addEventListener("click", () => {
+  const i = document.getElementById("input");
+  const v = i.value.trim(); if (!v) return;
+  i.value = "";
+  setMessage({ id: 900 + messages.length, from: "human", text: v });
+});
+document.getElementById("input").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sendBtn").click(); });
+</script>
+<script src="topic-pack.js"></script>
+</body>
+</html>

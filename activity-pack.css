@@ -189,6 +189,9 @@
 .act-run .h b{ color: var(--text, #253447); font-weight: 600; }
 .act-run .h span{ font-size: 10.5px; color: var(--text-faint, #8A99A8); margin-left: auto; flex: 0 0 auto; }
 .act-run .b{ color: var(--text-faint, #8A99A8); margin-top: 3px; white-space: pre-wrap; word-break: break-word; }
+/* 每条记录底下的动作行：目前只有「发到聊天」（做成一张 Topic Pool 卡） */
+.act-run .act-run-acts{ display: flex; gap: 7px; margin-top: 7px; }
+.act-run .act-run-acts .act-btn{ padding: 5px 12px; font-size: 11.5px; }
 
 @media (max-width: 380px){
   .act-two{ flex-direction: column; }

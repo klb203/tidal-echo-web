@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v64-choice2";      // v64：选项卡吉祥物位置按参考图量的比例改（下沉 2.7%、宽 0.281、标题不缩进）
+const CACHE = "companion-v65-topic";        // v65：Topic Pool —— 自由活动把这一趟做成卡发进聊天
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
@@ -23,6 +23,7 @@ const PRECACHE = [
   "./room-pack.css", "./room-pack.js",
   "./moments-pack.css", "./moments-pack.js",
   "./choice-pack.css", "./choice-pack.js", "./mascot-ask.png",
+  "./topic-pack.css", "./topic-pack.js", "./mascot-topic.png",
 ];
 
 /* 逐个 put，而不是 addAll：addAll 是「全有全无」—— 只要有一条 404

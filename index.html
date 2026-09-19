@@ -3587,22 +3587,22 @@
      点哪张就翻到哪页（一次只显示一页，其余 .hidden）。
      卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，
      不另起一套存储，只是换个摆放。 */
+  /* Memory 底部栏：绝对定位钉在面板底部（内容从它下面滚过去），横向可滑、点哪张翻哪页。
+     ★ 它现在挂在 .settings-page 上、而不是 .settings-scroll 里 ——
+     所以不再受 column flex「自动最小尺寸为 0」那条规则影响，也不会随内容滚走。
+     同时给滚动区垫出等高的底部内边距，免得最后一屏被它盖住。 */
+  #memoryPanel .settings-scroll{ padding-bottom: calc(env(safe-area-inset-bottom) + 108px); }
   .mem-bar{
-    position: sticky; bottom: 0; z-index: 3;
-    /* ★ 这两条是必须的 —— .settings-scroll 是 column flex 容器，而这里写了
-       overflow-y:hidden，按规范会把这条的「自动最小尺寸」变成 0：
-       不显式锁住 flex:none（再垫一个 min-height），整条会被压成一根线，
-       卡片全被裁掉 —— 表现就是「滑不动 / 后面的卡够不到」。 */
-    flex: none;
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
     min-height: 74px;
-    padding: 10px 0 8px;
+    padding: 10px clamp(14px, 4.5vw, 40px) calc(env(safe-area-inset-bottom) + 10px);
     display: flex; gap: 10px;
     overflow-x: auto; overflow-y: hidden;
     touch-action: pan-x;                 /* 横滑交给这一条自己处理，别被外层纵向滚动抢走 */
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 62%);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 55%);
   }
   .mem-bar::-webkit-scrollbar{ height: 0; }
   .mem-bar-card{
@@ -5704,8 +5704,12 @@
 
       <!-- 底部栏：横向可滑的分区卡，点哪张就翻到哪页（一次只显示一页）。
            卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，不另起存储。 -->
-      <nav class="mem-bar" id="memBar" aria-label="记忆分区"></nav>
     </div>
+
+    <!-- 底部栏：绝对定位钉在面板底部（内容从它下面滚过去），横向可滑；点哪张就翻到哪页。
+         注意它现在是 .settings-page 的子元素 —— 不放在 .settings-scroll 里，
+         所以既不会被 column flex 压扁，也不会随内容滚走。 -->
+    <nav class="mem-bar" id="memBar" aria-label="记忆分区"></nav>
   </div>
 </div>
 
@@ -14072,6 +14076,9 @@ function memShowPage(key){
   if (onEl && onEl.scrollIntoView) {
     try { onEl.scrollIntoView({ inline: "center", block: "nearest" }); } catch (_) { }
   }
+  /* Haven 那一页的内容是异步拉的（/app/brain，走外网）：切过去时补一次，
+     免得首次没拉到就一直是空壳 —— 它现在不在首屏，没有别的时机来补。 */
+  if (target.dataset.mp === "haven") { try { brLoad(false); } catch (_) { } }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }

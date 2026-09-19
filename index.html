@@ -2483,10 +2483,38 @@
   }
   .tides-back:hover{ border-color: var(--hairline); }
   .tides-title{ font-size: 13px; font-weight: 600; color: var(--text-soft); }
-  .tides-credit{
-    margin-left: auto; font-size: 9.5px; letter-spacing: .16em;
-    text-transform: uppercase; color: var(--text-faint); white-space: nowrap;
+  .tides-src-btn{
+    margin-left: auto; appearance: none; -webkit-appearance: none;
+    border: 1px solid var(--field-line); background: transparent;
+    color: var(--text-soft); font-size: 12px; line-height: 1.5;
+    padding: 5px 11px; border-radius: 9px; cursor: pointer; white-space: nowrap;
   }
+  .tides-src-btn:hover{ border-color: var(--hairline); }
+  /* 「来源」展开的那一栏：两个可复制给 AI 的项目地址（Tidefall 本体 / Eventide 引擎） */
+  .tides-src{
+    position: relative; z-index: 2; flex: 0 0 auto;
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--hairline);
+    background: var(--bg);
+  }
+  .tides-src-row{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tides-src-k{
+    flex: 0 0 auto; min-width: 70px;
+    font-size: 12px; font-weight: 600; color: var(--text-soft); line-height: 1.35;
+  }
+  .tides-src-k span{ display: block; font-size: 10px; font-weight: 400; color: var(--text-faint); }
+  .tides-src-row .nf-box{
+    flex: 1 1 150px; min-width: 0; min-height: auto; padding: 6px 9px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+  }
+  .tides-src-row button{
+    flex: none; appearance: none; -webkit-appearance: none;
+    font-size: 11.5px; line-height: 1.6; padding: 4px 9px; border-radius: 8px;
+    border: 1px solid var(--field-line); background: transparent;
+    color: var(--text-faint); cursor: pointer; white-space: nowrap;
+  }
+  .tides-src-row button:hover{ color: var(--text-soft); border-color: var(--hairline); }
+  .tides-src-tip{ font-size: 11px; line-height: 1.6; color: var(--text-faint); }
   .tides-frame{
     position: relative; z-index: 1; flex: 1 1 auto;
     width: 100%; min-height: 0; border: 0; display: block; background: #FDF9EE;
@@ -4498,7 +4526,25 @@
     <div class="tides-bar">
       <button type="button" id="tidesBack" class="tides-back">← 返回</button>
       <span class="tides-title">Tides · 身体涨落</span>
-      <span class="tides-credit">panel by V &amp; K</span>
+      <button type="button" id="tidesSrcBtn" class="tides-src-btn">来源</button>
+    </div>
+    <div class="tides-src hidden" id="tidesSrcBox">
+      <div class="tides-src-row">
+        <span class="tides-src-k">Tidefall<span>Tides 面板本体 · 已接入</span></span>
+        <input class="nf-box" id="tidesSrcTf" type="text" readonly value="https://github.com/Vael-KY/Tidefall">
+        <button type="button" id="tidesSrcTfCopy">复制给 AI</button>
+      </div>
+      <div class="tides-src-row">
+        <span class="tides-src-k">Eventide<span>Tidefall 的上游引擎 · Python 包</span></span>
+        <input class="nf-box" id="tidesSrcEv" type="text" readonly value="https://github.com/chuli1122/Eventide">
+        <button type="button" id="tidesSrcEvCopy">复制给 AI</button>
+      </div>
+      <div class="tides-src-tip">
+        两个地址都可以复制出去丢给 AI，让它照着重写或扩展这套身体系统。
+        <b>Eventide 是引擎蓝图</b>（周期设计 + 事件体系，Python 包，要自己搭宿主），
+        <b>Tidefall 是把它跑起来的房子</b>（SQL + 这个面板，靠 Supabase 全自动）。
+        面板由 V &amp; K 设计，许可 PolyForm Noncommercial 1.0.0。
+      </div>
     </div>
     <iframe id="tidesFrame" class="tides-frame" title="Tides · Tidefall"></iframe>
   </div>
@@ -6383,6 +6429,28 @@ function closeTides(){
   setTimeout(() => { if (!tidesPanel.classList.contains("open")) tidesPanel.classList.add("hidden"); }, 400);
 }
 if ($("#tidesBack")) $("#tidesBack").addEventListener("click", closeTides);
+
+/* Tides 面板里的「来源」：两个出处地址（Tidefall 本体 / Eventide 引擎），点一下就进剪贴板。
+   只是可复制的出处 —— 复制出去丢给 AI 让它照着重写或扩展这套身体系统。 */
+(function tidesSrc(){
+  const btn = $("#tidesSrcBtn"), box = $("#tidesSrcBox");
+  if (!btn || !box) return;
+  btn.addEventListener("click", () => box.classList.toggle("hidden"));
+  [["tidesSrcTfCopy", "tidesSrcTf"], ["tidesSrcEvCopy", "tidesSrcEv"]].forEach((pair) => {
+    const el = $("#" + pair[0]);
+    if (!el) return;
+    el.addEventListener("click", async () => {
+      const input = $("#" + pair[1]);
+      const v = (input || {}).value || "";
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
+        else { input.select(); document.execCommand("copy"); }
+        el.textContent = "已复制";
+        setTimeout(() => { el.textContent = "复制给 AI"; }, 1400);
+      } catch (_) { el.textContent = "复制失败"; }
+    });
+  });
+})();
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){

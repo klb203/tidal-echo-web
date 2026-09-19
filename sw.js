@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v71-tidefall";        // v71：相关项目加 Tidefall（接入 tides 的地址 + 只存本机的 Supabase key）  // v70：影子推送加「相关项目」地址（积温 jiwen）
+const CACHE = "companion-v72-tides";        // v72：侧边栏 Tides 接上 Tidefall 的身体面板（tides.html + #tidesPanel 壳）  // v71：相关项目加 Tidefall 地址
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
@@ -28,6 +28,7 @@ const PRECACHE = [
   "./wander-pack.css", "./wander-pack.js",
   "./mcp-pack.css", "./mcp-pack.js",
   "./clock-pack.css", "./clock-pack.js",
+  "./tides.html",
 ];
 
 /* 逐个 put，而不是 addAll：addAll 是「全有全无」—— 只要有一条 404

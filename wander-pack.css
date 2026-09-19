@@ -1,0 +1,92 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   wander-pack.css · 漫想模式（接在「主动消息」那一屏里）
+
+   不上新页面：这块 DOM 由包自己插进宿主已有的 #csAtV（上拉面板的「主动消息」）。
+   所以样式只补自己的部分，宿主的 .cs-note/.cs-fld/.cs-acts/.primary 照旧用。
+   颜色只走宿主变量。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 浓度条 ─────────────────────────────────────────────────────────── */
+.wd-conc{ margin: 10px 2px 0; }
+.wd-conc-h{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
+.wd-conc-h b{ font-size: 15px; color: var(--text, #253447); font-weight: 600; }
+.wd-conc-h em{ font-style: normal; font-size: 11px; color: var(--text-faint, #8A99A8); }
+.wd-track{
+  position: relative; height: 9px; border-radius: 6px; margin-top: 7px; overflow: hidden;
+  background: var(--seg-track, rgba(140,160,176,.14));
+}
+.wd-track i{
+  display: block; height: 100%; border-radius: 6px;
+  background: var(--accent, #4C6378);
+  transition: width .4s var(--ease-soft, cubic-bezier(.22,1,.36,1)), background .3s;
+}
+/* 过线（≥0.6）换成暖色：一眼看出「它现在可以开口了」 */
+.wd-track.hot i{ background: var(--danger, #b06a6f); }
+/* 闸门刻度：阈值的竖线 */
+.wd-track u{
+  position: absolute; top: -2px; bottom: -2px; width: 2px;
+  background: var(--text-faint, #8A99A8); opacity: .55;
+}
+.wd-scale{ display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-faint, #8A99A8); margin-top: 4px; }
+
+/* ── 状态芯片 ───────────────────────────────────────────────────────── */
+.wd-chips{ display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 4px; scrollbar-width: none; }
+.wd-chips::-webkit-scrollbar{ display: none; }
+.wd-chip{
+  flex: 0 0 auto; appearance: none; cursor: pointer; font-family: inherit;
+  border: 1px solid var(--field-line, rgba(151,169,181,.20));
+  background: var(--field-bg, rgba(247,250,252,.9));
+  color: var(--text-soft, #5E7080);
+  border-radius: 999px; padding: 6px 12px; font-size: 12.5px; white-space: nowrap;
+  transition: transform .15s;
+}
+.wd-chip:active{ transform: scale(.96); }
+.wd-chip.on{ background: var(--accent, #4C6378); color: var(--accent-fg, #fff); border-color: transparent; }
+.wd-chip .wd-em{ margin-right: 4px; }
+
+/* ── 参数表（折叠）──────────────────────────────────────────────────── */
+.wd-params{ margin-top: 8px; }
+.wd-params summary{
+  cursor: pointer; font-size: 12px; color: var(--text-soft, #5E7080);
+  padding: 7px 0; list-style: none;
+}
+.wd-params summary::-webkit-details-marker{ display: none; }
+.wd-params summary::before{ content: "▸ "; color: var(--text-faint, #8A99A8); }
+.wd-params[open] summary::before{ content: "▾ "; }
+.wd-tab{ width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 4px; }
+.wd-tab th, .wd-tab td{ padding: 5px 4px; text-align: right; border-top: 1px solid var(--hairline, rgba(120,142,165,.18)); }
+.wd-tab th{ color: var(--text-faint, #8A99A8); font-weight: 400; font-size: 10.5px; }
+.wd-tab th:first-child, .wd-tab td:first-child{ text-align: left; }
+.wd-tab input{
+  width: 46px; box-sizing: border-box; padding: 3px 5px; border-radius: 7px; text-align: right;
+  border: 1px solid var(--field-line, rgba(151,169,181,.20));
+  background: var(--bg, #fff); color: var(--text, #253447); font-family: inherit; font-size: 11.5px;
+}
+.wd-tab tr.hold td:first-child::after{ content: " · 不打扰"; color: var(--danger, #b06a6f); font-size: 10px; }
+
+/* ── 决策记录 ───────────────────────────────────────────────────────── */
+.wd-log{ margin-top: 9px; }
+.wd-log .wd-li{
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 6px 0; border-top: 1px dashed var(--hairline, rgba(120,142,165,.22));
+  font-size: 11.5px; line-height: 1.6;
+}
+.wd-log .wd-li:first-child{ border-top: none; }
+.wd-log .wd-li em{ font-style: normal; flex: 0 0 auto; color: var(--text-faint, #8A99A8); font-size: 10.5px; }
+.wd-log .wd-li span{ flex: 1 1 auto; min-width: 0; color: var(--text-soft, #5E7080); }
+.wd-log .wd-li b{ color: var(--text, #253447); font-weight: 600; }
+.wd-log .wd-li.push b{ color: var(--accent, #4C6378); }
+.wd-log .wd-li.hold b{ color: var(--danger, #b06a6f); }
+
+/* ── 一行警告（比如「后端调度还开着，会两边都推」）───────────────────── */
+.wd-warn{
+  margin: 8px 2px 0; padding: 8px 11px; border-radius: 11px;
+  background: rgba(176,106,111,.09); border: 1px solid rgba(176,106,111,.30);
+  font-size: 11.5px; line-height: 1.7; color: var(--text, #253447);
+}
+.wd-warn b{ color: var(--danger, #b06a6f); }
+.wd-warn button{
+  margin-top: 6px; appearance: none; cursor: pointer; font-family: inherit;
+  font-size: 11.5px; padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--danger, #b06a6f); background: transparent; color: var(--danger, #b06a6f);
+}

@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v67-ghost";       // v67：工具与能力多了「男鬼模式」条目（可复制给 AI 的施工单）
+const CACHE = "companion-v68-wander-mcp";  // v68：漫想模式接进「主动消息」（按状态算浓度）+ 聊天里的 MCP 动作层
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
@@ -25,6 +25,8 @@ const PRECACHE = [
   "./choice-pack.css", "./choice-pack.js", "./mascot-ask.png",
   "./topic-pack.css", "./topic-pack.js", "./mascot-topic.png",
   "./ghost-pack.css", "./ghost-pack.js",
+  "./wander-pack.css", "./wander-pack.js",
+  "./mcp-pack.css", "./mcp-pack.js",
 ];
 
 /* 逐个 put，而不是 addAll：addAll 是「全有全无」—— 只要有一条 404

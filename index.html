@@ -52,6 +52,9 @@
 <link rel="stylesheet" href="topic-pack.css">
 <!-- 男鬼模式（接进「工具与能力」目录的一个条目）样式 -->
 <link rel="stylesheet" href="ghost-pack.css">
+<!-- 漫想模式（接在「主动消息」那一屏）+ 聊天里的 MCP 动作层 样式 -->
+<link rel="stylesheet" href="wander-pack.css">
+<link rel="stylesheet" href="mcp-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -17465,6 +17468,14 @@ init().then(() => {
      别的 classic script 能按名字读到，也能 push）。顺带包一下 kitIcon 让它认识 ghost 图标。
      DOM 一行都不用写进 index.html。 -->
 <script defer src="ghost-pack.js"></script>
+
+<!-- 漫想模式（MIRROW 的「主动联系」）：把自己那块 DOM 插进上拉面板的「主动消息」，
+     把「多久算久」从固定随机间隔改成按你现在的状态算浓度。只加 link + script。 -->
+<script defer src="wander-pack.js"></script>
+
+<!-- 聊天里的 MCP 动作层：包 renderText / setMessage / makeMessage / onMessage，
+     让 TA 在聊天里自己写 [[mcp: 服务/工具 {参数}]] 去调工具。必须排在 wander 之后。 -->
+<script defer src="mcp-pack.js"></script>
 
 </body>
 </html>

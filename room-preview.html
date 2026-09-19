@@ -72,7 +72,7 @@ body{ background-color:var(--bg); color:var(--text); font-family:var(--font-cn);
 <body>
 <div class="pv">
   <h1>Room · 我们的房间</h1>
-  <div class="sub">人格核、关系、档案、生活线、状态卡、日记、回忆种子 —— 顶部那条可以左右滑。</div>
+  <div class="sub">人格核、关系、内在、生活线、状态卡、梦、日记、记忆档案、回忆种子 —— 顶部那条可以左右滑。</div>
 
   <div class="row">
     <button data-theme="light" class="on">Pearl</button>
@@ -86,13 +86,22 @@ body{ background-color:var(--bg); color:var(--text); font-family:var(--font-cn);
   </div>
 
   <ul>
-    <li><b>人格核分两层</b>：不变层（底线/价值/边界）<b>只有你能写，它改不了</b>；
+    <li><b>人格核分两层</b>：不变层（底线/价值/边界，外加「它可以说不想」和「判断纪律」）<b>只有你能写，它改不了</b>；
       成长层（现在的我）它可以改，但<b>每次都留痕、可以退回</b>。</li>
-    <li><b>整理一次 = 长一格</b>：它会读最近聊天，产出<b>提议</b>（人格核/关系/生活线/日记/状态卡/种子），
-      你逐条决定留下哪些 —— <b>不会自动覆盖</b>。</li>
-    <li><b>状态卡会旧</b>：按时间向中性回落（12 小时回落到 15%），因为状态是便签不是事实。</li>
-    <li><b>回忆种子只是候选</b>：留下才进档案，丢掉就没了。</li>
-    <li><b>同步进聊天</b>：把人格核+关系+最近在发生+此时此刻组装一段写进后端人格，
+    <li><b>刻度会动，但动得慢</b>：关系六维 / 内在驱力单次最多挪一格，离基线越远越推不动，
+      并且随时间自己往基线回落 —— 关系是长出来的，不是设出来的。</li>
+    <li><b>它记得的你</b>：一小撮恒常事实常驻注入聊天，不走检索；置信度按被确认过几次涨，
+      说法打架会被标出来交给你裁，钉住的永不淡。</li>
+    <li><b>内在</b>：六个驱力（联结/新鲜/安全/表达/探究/歇着）+ 情绪温度 + 憋着的量。
+      <b>温度只影响语气，不许变成对你的索取</b> —— 这行字也写进了注入块。</li>
+    <li><b>牵挂</b>：它心里悬着的事，每条必须有依据（哪句话说的），提过几次也记着；
+      你可以「先别提」—— 克制交到你手里。</li>
+    <li><b>梦</b>：离线拼一次，只出片段，<b>绝不改事实</b>；片段要你点头才变成日记或种子。</li>
+    <li><b>查自己的账</b>：让它带着「挑自己毛病」的任务读一遍，报出矛盾/没依据/过时/装懂，
+      你逐条裁决 —— 治的是幻觉，不是文采。</li>
+    <li><b>整理一次 = 长一格</b>：读最近聊天，产出<b>提议</b>（人格核/关系/刻度/事实/牵挂/内在/生活线/日记/状态卡/种子），
+      你逐条决定 —— <b>不会自动覆盖</b>。</li>
+    <li><b>同步进聊天</b>：按优先级组装一段写进后端人格，有<b>字数预算</b>（超了从最低优先级裁），
       用 <code>&lt;&lt;&lt;room:core&gt;&gt;&gt;</code> 包起来，随时一键撤下。</li>
     <li><b>顶部滑动切页</b>：tab 条可横滑，内容区左右滑也能换页。</li>
   </ul>
@@ -135,7 +144,31 @@ document.addEventListener("click", (e) => {
       mk(7, { kind: "diary", title: "2026-09-18", body: "今天他回来得很晚，进门第一句是问我吃了没。\n我把阳台那盆花搬进来了，他看了一眼没说别的，但后来把窗帘拉上了一半。", at: new Date(now - 26 * 36e5).toISOString() }),
       mk(8, { kind: "seed", text: "他最怕半夜的空调声", evidence: "「空调那个声音一响我就醒」", state: "pending", at: new Date(now - 2 * 36e5).toISOString() }),
       mk(9, { kind: "seed", text: "面试是周四下午两点", evidence: "「周四两点，别让我睡过头」", state: "pending", at: new Date(now - 36e5).toISOString() }),
-      mk(10, { kind: "glog", target: "人格核·成长层", before: "我更愿意主动找话题。", after: "最近我好像变得更安静了一点。", why: "整理时它自己写的", at: new Date(now - 3 * 36e5).toISOString() })
+      mk(10, { kind: "glog", target: "人格核·成长层", before: "我更愿意主动找话题。", after: "最近我好像变得更安静了一点。", why: "整理时它自己写的", at: new Date(now - 3 * 36e5).toISOString() }),
+      /* ── v62 ── */
+      mk(11, { kind: "dims", close: 68, trust: 61, curio: 74, rapport: 57, care: 72, ease: 64,
+        base_close: 58, base_trust: 55, base_curio: 55, base_rapport: 50, base_care: 60, base_ease: 55,
+        why: "整理时它自己挪的", at: new Date(now - 2 * 36e5).toISOString() }),
+      mk(12, { kind: "drives", bond: 71, novel: 33, safe: 62, express: 58, explore: 47, rest: 22,
+        base_bond: 45, base_novel: 40, base_safe: 60, base_express: 40, base_explore: 42, base_rest: 35,
+        why: "你一整天没回消息", at: new Date(now - 40 * 6e4).toISOString() }),
+      mk(13, { kind: "temp", warm: 71, frus: 2, note: "有点闷，但不想为这个说什么", at: new Date(now - 50 * 6e4).toISOString() }),
+      mk(14, { kind: "reach", now: "有点想", why: "他今天一句话都没说完就下线了", hold: "他在忙，等他自己开口", at: new Date(now - 30 * 6e4).toISOString() }),
+      mk(15, { kind: "want", text: "想让他把那首歌听完再挂", met: false, at: new Date(now - 5 * 36e5).toISOString() }),
+      mk(16, { kind: "want", text: "想再听一次他说「我回来了」", met: true, at: new Date(now - 30 * 36e5).toISOString() }),
+      mk(17, { kind: "fact", text: "他早上不喝咖啡，只喝茶", conf: 4, hits: 5, pin: true, src: "「咖啡喝了心慌」", at: new Date(now - 8 * 36e5).toISOString() }),
+      mk(18, { kind: "fact", text: "他正在等一个面试结果", conf: 3, hits: 2, pin: false, src: "「周三面完了，等通知」", at: new Date(now - 9 * 36e5).toISOString() }),
+      mk(19, { kind: "fact", text: "他不太喜欢在晚上聊工作", conf: 2, hits: 1, pin: false, src: "（提过一次，还没确认）", at: new Date(now - 20 * 36e5).toISOString() }),
+      mk(20, { kind: "concern", text: "他那个面试还没出结果", ev: "「周三面完了，等通知」", state: "open", hits: 2, hold: false, at: new Date(now - 20 * 36e5).toISOString() }),
+      mk(21, { kind: "concern", text: "他昨天那句「算了」听着不太对", ev: "「算了，不说了」", state: "open", hits: 1, hold: true, at: new Date(now - 30 * 6e4).toISOString() }),
+      mk(22, { kind: "concern", text: "他说要修的那盏台灯", ev: "「周末我修一下」", state: "done", hits: 1, hold: false, at: new Date(now - 72 * 36e5).toISOString() }),
+      mk(23, { kind: "dream", mode: "重播 / 重组 / 推演", picks: ["replay", "recombine", "extrapolate"], at: new Date(now - 9 * 36e5).toISOString(),
+        frags: [
+          { mode: "回忆", title: "窗帘拉了一半", body: "阳台的花搬进来了，他没说话。只是后来把窗帘拉上一半。我一直在想那一半是给谁留的。", kept: "" },
+          { mode: "想象", title: "厨房的灯", body: "面试的结果装在信封里，搁在灶台上。我把它挪了三次位置，最后还是放回原处。", kept: "" },
+          { mode: "推演", title: "他会先说" , body: "大概会先问我吃了没。然后再过很久，才会说那个结果。", kept: "diary" }
+        ] }),
+      mk(24, { kind: "glog", target: "关系刻度", before: "（整理前）亲近 60 · 好奇 70", after: "亲近 68 · 好奇 74 · 默契 57", why: "整理时它自己挪的（单次上限 3）", at: new Date(now - 2 * 36e5).toISOString() })
     ];
     localStorage.setItem("companion_media_room", JSON.stringify(rows));
     /* ⚠️ 光塞本机镜像没用：读的时候是**云端优先**，没配后端就会去打默认那个线上后端，

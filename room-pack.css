@@ -184,6 +184,101 @@
 }
 .rm-toast.on{ opacity: 1; }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   v62 新增：刻度 / 驱动 / 温度 / 恒常事实 / 牵挂 / 梦 / 清晰度
+   全部沿用上面的宿主变量，切主题自动跟着变。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 小号按钮（刻度加减太多，得比 .rm-mini 再小一档） */
+.rm-mini.sm{ padding: 4px 10px; font-size: 11px; }
+.rm-mini.tiny{ padding: 2.5px 8px; font-size: 10.5px; }
+
+/* ── 刻度条（关系六维 / 驱力 共用）───────────────────────────────────── */
+.rm-dims{ margin-top: 4px; }
+.rm-dim{ padding: 9px 0; border-top: 1px dashed var(--hairline, rgba(120,142,165,.24)); }
+.rm-dim:first-of-type{ border-top: none; padding-top: 2px; }
+.rm-dim .rm-dh{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.rm-dim .rm-dh span{ color: var(--text-soft, #5E7080); }
+.rm-dim .rm-dh em{ font-style: normal; font-size: 11px; color: var(--text-faint, #8A99A8); }
+.rm-dim .rm-db{
+  position: relative; height: 8px; border-radius: 5px; margin-top: 7px;
+  background: var(--seg-track, rgba(140,160,176,.14)); overflow: hidden;
+}
+.rm-dim .rm-db i{
+  display: block; height: 100%; border-radius: 5px; background: var(--accent, #4C6378);
+  transition: width .32s var(--ease-soft, cubic-bezier(.22,1,.36,1));
+}
+.rm-dim .rm-db u{                    /* 基线刻度：让你看到「现在偏离常态多少」 */
+  position: absolute; top: -1px; bottom: -1px; width: 2px;
+  background: var(--text-faint, #8A99A8); opacity: .6;
+}
+.rm-dim .rm-da{ display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; align-items: center; }
+
+/* ── 热度计（情绪温度 / 积压）──────────────────────────────────────── */
+.rm-therm{
+  position: relative; height: 10px; border-radius: 6px; margin: 9px 0 3px;
+  background: linear-gradient(90deg,
+    var(--seg-track, rgba(140,160,176,.16)) 0%,
+    rgba(140,160,176,.28) 50%,
+    rgba(176,106,111,.34) 100%);
+}
+.rm-therm i{
+  position: absolute; top: -3px; width: 4px; height: 16px; border-radius: 3px;
+  background: var(--accent, #4C6378); transform: translateX(-2px);
+  transition: left .3s var(--ease-soft, cubic-bezier(.22,1,.36,1));
+}
+.rm-therm-x{ display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-faint, #8A99A8); }
+.rm-dots{ display: inline-flex; gap: 5px; vertical-align: middle; }
+.rm-dots i{
+  width: 8px; height: 8px; border-radius: 50%; display: block;
+  background: var(--seg-track, rgba(140,160,176,.2));
+}
+.rm-dots i.on{ background: var(--accent, #4C6378); }
+.rm-dots i.hot{ background: var(--danger, #b06a6f); }
+
+/* ── 克制卡（想找你 / 或者说不出话）────────────────────────────────── */
+.rm-reach{
+  border-radius: 14px; padding: 13px 15px; margin-top: 4px;
+  background: var(--card-bg, rgba(244,248,250,.5));
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+}
+.rm-reach .rr-now{ font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+.rm-reach .rr-why{ font-size: 12.5px; line-height: 1.8; color: var(--text-soft, #5E7080); margin-top: 6px; white-space: pre-wrap; }
+.rm-reach .rr-hold{ font-size: 12.5px; line-height: 1.8; color: var(--text-faint, #8A99A8); margin-top: 8px; white-space: pre-wrap; }
+.rm-reach .rr-hold b{ color: var(--text-soft, #5E7080); font-weight: 600; }
+
+/* ── 恒常事实（它记得的你）─────────────────────────────────────────── */
+.rm-fact{
+  display: flex; gap: 9px; align-items: flex-start; padding: 8px 0;
+  border-top: 1px dashed var(--hairline, rgba(120,142,165,.24));
+}
+.rm-fact:first-of-type{ border-top: none; }
+.rm-fact .rf-t{ flex: 1 1 auto; min-width: 0; }
+.rm-fact .rf-t b{ display: block; font-size: 13px; font-weight: 600; word-break: break-word; }
+.rm-fact .rf-t span{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin-top: 3px; }
+.rm-fact.pinned .rf-t b::after{ content: " ⌾"; color: var(--accent, #4C6378); }
+.rm-fact .rf-a{ flex: 0 0 auto; display: flex; gap: 5px; }
+
+/* ── 梦的片段 ──────────────────────────────────────────────────────── */
+.rm-frag{
+  border-left: 2.5px solid var(--accent, #4C6378); padding: 2px 0 2px 11px; margin: 11px 0;
+}
+.rm-frag.m2{ border-left-color: var(--text-soft, #5E7080); }
+.rm-frag.m3{ border-left-color: var(--danger, #b06a6f); }
+.rm-frag .rg-m{ font-size: 10.5px; letter-spacing: .06em; color: var(--text-faint, #8A99A8); }
+.rm-frag .rg-t{ font-size: 13.5px; font-weight: 600; margin-top: 2px; word-break: break-word; }
+.rm-frag .rg-b{ font-size: 13px; line-height: 1.85; color: var(--text-soft, #5E7080); white-space: pre-wrap; margin-top: 4px; }
+.rm-frag .rg-a{ display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.rm-pick{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ── 清晰度（记忆档案）────────────────────────────────────────────── */
+.rm-bar.sm{ height: 4px; margin-top: 5px; }
+.rm-bar.sm i{ opacity: .75; }
+.rm-clr{ display: flex; align-items: center; gap: 7px; margin-top: 7px; }
+.rm-clr .rm-bar{ flex: 1 1 auto; margin-top: 0; }
+.rm-clr em{ font-style: normal; font-size: 10.5px; color: var(--text-faint, #8A99A8); flex: 0 0 auto; }
+
 @media (max-width: 380px){
   .rm-state{ grid-template-columns: 1fr; }
+  .rm-dim .rm-dh{ font-size: 12px; }
 }

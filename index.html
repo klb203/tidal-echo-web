@@ -50,6 +50,8 @@
 <link rel="stylesheet" href="choice-pack.css">
 <!-- Topic Pool（自由活动带回来的卡，作为一条消息发到聊天里）样式 -->
 <link rel="stylesheet" href="topic-pack.css">
+<!-- 男鬼模式（接进「工具与能力」目录的一个条目）样式 -->
+<link rel="stylesheet" href="ghost-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -17458,6 +17460,11 @@ init().then(() => {
      必须排在 choice-pack 之后：两者都包 renderText，后包的在外层，
      先拿到文本判断「这是不是我的标记块」——topic 的标记块不该被 choice 的剥离逻辑碰。 -->
 <script defer src="topic-pack.js"></script>
+
+<!-- 男鬼模式：把自己注册进「工具与能力」的 KIT_TOOLS 目录（顶层 const 是全局词法绑定，
+     别的 classic script 能按名字读到，也能 push）。顺带包一下 kitIcon 让它认识 ghost 图标。
+     DOM 一行都不用写进 index.html。 -->
+<script defer src="ghost-pack.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,80 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ghost-pack.css · 「男鬼模式」在「工具与能力」里的那两屏
+
+   宿主那一套 .kit-*（卡片/小节/行/按钮/提示条）在 index.html 里，这里**不重复写**，
+   只补这个条目自己的几个块：流程条 / 引用 / 只读复制区 / 授权块。
+   颜色只走宿主变量，切主题跟着变。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 开头那个「效果长什么样」的引用 ──────────────────────────────────── */
+.gh-quote{
+  margin: 10px 2px 0; padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--field-bg, rgba(247,250,252,.9));
+  border: 1px solid var(--field-line, rgba(151,169,181,.18));
+  border-left: 3px solid var(--accent, #4C6378);
+  font-size: 13px; line-height: 1.8; color: var(--text, #253447);
+}
+.gh-quote em{ font-style: normal; color: var(--text-faint, #8A99A8); display: block; margin-top: 6px; font-size: 11.5px; }
+
+/* ── 流水线：五步，一步一行，行间有箭头 ─────────────────────────────── */
+.gh-flow{ margin: 10px 2px 0; }
+.gh-step{
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; font-size: 12.5px; line-height: 1.7;
+}
+.gh-step + .gh-step{ border-top: 1px dashed var(--hairline, rgba(120,142,165,.24)); }
+.gh-step i{
+  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-style: normal;
+  font-size: 10.5px; font-weight: 700;
+  background: var(--seg-track, rgba(140,160,176,.14)); color: var(--accent, #4C6378);
+}
+.gh-step b{ color: var(--text, #253447); font-weight: 600; }
+.gh-step span{ color: var(--text-soft, #5E7080); }
+.gh-step .gh-side{ display: block; color: var(--text-faint, #8A99A8); font-size: 11px; margin-top: 2px; }
+
+/* ── 只读复制区 ─────────────────────────────────────────────────────── */
+.gh-copy{
+  width: 100%; box-sizing: border-box; margin-top: 9px;
+  min-height: 148px; max-height: 320px; resize: vertical;
+  padding: 11px 12px; border-radius: 12px;
+  border: 1px solid var(--field-line, rgba(151,169,181,.20));
+  background: var(--bg, #fff); color: var(--text-soft, #5E7080);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px; line-height: 1.72;
+  white-space: pre; overflow: auto;
+}
+.gh-acts{ display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; align-items: center; }
+.gh-ok{ font-size: 11.5px; color: #2E7D5B; }
+
+/* ── 正文段落（宿主的 .kit-lv 只有 11px，读长句偏小）──────────────────── */
+.gh-p{
+  font-size: 12.5px; line-height: 1.82; color: var(--text-soft, #5E7080);
+  margin-top: 8px; white-space: pre-wrap; word-break: break-word;
+}
+.gh-p b{ color: var(--text, #253447); }
+.gh-p code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px; background: var(--seg-track, rgba(140,160,176,.14));
+  border-radius: 5px; padding: 1px 5px; word-break: break-all;
+}
+
+/* ── 授权块 ─────────────────────────────────────────────────────────── */
+.gh-lic{
+  margin: 12px 2px 0; padding: 11px 13px; border-radius: 12px;
+  background: var(--field-bg, rgba(247,250,252,.9));
+  border: 1px dashed var(--hairline, rgba(120,142,165,.30));
+  font-size: 11.5px; line-height: 1.75; color: var(--text-faint, #8A99A8);
+}
+.gh-lic b{ color: var(--text-soft, #5E7080); }
+.gh-lic a{ color: var(--accent, #4C6378); text-decoration: none; word-break: break-all; }
+
+/* ── 一条「别踩」的红线 ─────────────────────────────────────────────── */
+.gh-red{
+  margin: 8px 2px 0; padding: 9px 12px; border-radius: 12px;
+  background: rgba(176,106,111,.09);
+  border: 1px solid rgba(176,106,111,.30);
+  font-size: 12px; line-height: 1.75; color: var(--text, #253447);
+}
+.gh-red b{ color: var(--danger, #b06a6f); }

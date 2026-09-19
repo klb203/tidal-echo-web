@@ -192,7 +192,10 @@
              lineup: "男女", flavor: "light", identity_mode: "off", rounds: 20, limits: "", pair_code: "" },
     game: null,          // { game_id, player_token, board, status, ... }
     msgs: [],            // 荷官与玩家的对话（与扮演模式完全隔离）
-    setupMsgs: []        // 「开局」整页对话界面的聊天记录（关掉再回来还在）
+    setupMsgs: [],       // 「开局」整页对话界面的聊天记录（关掉再回来还在）
+    boardFolded: false,  // 牌桌上棋盘是否收起（屏幕小的时候要先看对话）
+    /* 谁在玩 + AI 代打。persona 留空 —— 内容归 config，代码里不写玩法。 */
+    ai: { p1: false, p2: true, persona: "", auto: 5 }
   };
 
   const state = {
@@ -206,6 +209,7 @@
     models: JSON.parse(JSON.stringify(MODELS_DEFAULT)),
     pools: JSON.parse(JSON.stringify(POOLS_DEFAULT)),
     running: false,
+    autoRunning: false,  // 是不是「自动跑」在跑（决定快捷条显示「自动跑」还是「停下」）
     abort: false,
     ctrl: null,
     lastUserText: "",    // 重发窗口用
@@ -243,6 +247,9 @@
     lsWrite(K_MONO, {
       endpoint: state.mono.endpoint, token: state.mono.token, rulesAck: state.mono.rulesAck,
       rules: state.mono.rules, ack: state.mono.ack, setup: state.mono.setup, game: state.mono.game,
+      /* ⚠️ 这里是**显式白名单**，加了字段忘了加进来就会"设置看着生效、刷新就没了"。
+         ai（谁在玩 / 风格 / 轮数）和 boardFolded 就是这么漏过一次 —— 截图才发现。 */
+      ai: state.mono.ai, boardFolded: state.mono.boardFolded,
       msgs: (state.mono.msgs || []).slice(-60),
       setupMsgs: (state.mono.setupMsgs || []).slice(-60)
     });
@@ -814,6 +821,14 @@
      ⚠️ 这里**不含任何内容** —— 规则与卡库都在你部署的那套引擎里。 */
   function monoSystem() {
     const g = state.mono.game || {};
+    const ai = state.mono.ai || {};
+    const p1 = state.mono.setup.p1_name || "玩家1";
+    const p2 = state.mono.setup.p2_name || "玩家2";
+    const anyAi = !!(ai.p1 || ai.p2);
+    const whoPlays = [
+      "· " + p1 + "：" + (ai.p1 ? "**AI（你自己）**" : "人类（你只能等他在聊天里说，不要替他决定）"),
+      "· " + p2 + "：" + (ai.p2 ? "**AI（你自己）**" : "人类（你只能等他在聊天里说，不要替他决定）")
+    ].join("\n");
     return [
       "你是这局大富翁的荷官，同时是玩家之一。用 spicy-monopoly MCP 工具驱动游戏，不要自己写玩法。",
       "",
@@ -827,6 +842,22 @@
       "· 任何人说 404 / 停 / 红线 / 不想做，立刻用 game_action 的 skip，或停止游戏。",
       "· 玩家已在设置面板确认过开局参数（setup_confirmed=true），不要再追问一遍。",
       "",
+      "【这一局谁在玩】",
+      whoPlays,
+      anyAi
+        ? [
+            "★ 标了「AI（你自己）」的那一席，**轮到他时你必须自己拍板**：该掷骰就调 roll，",
+            "  该选结算参数（done/skip、pay/serve、done/buyout、大/小）就自己选一个，",
+            "  **不要停下来问他、也不要说「该你了」** —— 他没在电脑前，问了就卡住。",
+            ai.persona ? "· 他的玩法风格：" + ai.persona : "· 玩法风格：没特别设定，按最省事、最不容易翻车的方式走。",
+            "· 你替 AI 那一席做的每个决定，都要用一句话说明理由，别默默调工具。",
+            "",
+            "【什么时候才停下来等人类】只有这三种，其余情况一律自己往下走：",
+            "1 人类玩家主动说话；2 牵涉到安全词 / 红线；3 工具返回的信息确实不足以判断该怎么选。",
+            "真要停下来时，回复的**最后单独一行**写：【等你】＋一句话说明在等什么。"
+          ].join("\n")
+        : "（两边都是人类，你只负责主持和贴棋盘。）",
+      "",
       state.mono.rulesAck ? "rules_ack：" + state.mono.rulesAck : "rules_ack：（还没取，先调 monopoly_help）",
       g.game_id ? "\n当前 game_id：" + g.game_id : "",
       g.board ? "\n【当前棋盘（原样贴给玩家，别重画）】\n" + g.board : ""
@@ -836,6 +867,21 @@
   /* 一回合的荷官循环：模型 → 工具 → 模型，直到它不再调工具为止。
      迭代上限是硬闸门，防止模型绕圈子。 */
   const MONO_MAX_STEPS = 6;
+  /* 工具轨迹是给人看的，别吐原始 JSON。
+     优先挑工具返回里本来就写给人看的字段；实在没有，就把 JSON 语法洗掉、只留一句话。
+     （之前直接把返回原文塞进界面，是一大坨带 \n 转义的乱码 —— 截图上一眼就看出来了。） */
+  function briefOf(r) {
+    const d = (r && r.data) || {};
+    const pick = d.step || d.note || d.message || d.summary || d.status
+      || (d.action_needed ? "需要选：" + d.action_needed : "")
+      || (d.board ? "棋盘已更新" : "");
+    if (pick && typeof pick === "string") return pick.replace(/\s+/g, " ").slice(0, 60);
+    return String((r && r.text) || "")
+      .replace(/\\[nrt]/g, " ")
+      .replace(/[{}\[\]"]/g, " ")
+      .replace(/\b[a-z_]+\s*:/g, " ")
+      .replace(/\s+/g, " ").trim().slice(0, 60);
+  }
   async function monoAgent(userText) {
     const tools = MONO_TOOLS.map((t) => ({ type: "function", function: t }));
     const msgs = [{ role: "system", content: monoSystem() }];
@@ -849,7 +895,15 @@
       if (state.abort) break;
       let out;
       try { out = await callJson("char", msgs, tools, state.ctrl && state.ctrl.signal); }
-      catch (e) { return { reply: "（荷官没回上话）" + ((e && e.message) || e), trace, err: true }; }
+      catch (e) {
+        /* ⚠️ 人手按的「停下」会让 fetch 抛 AbortError —— 那**不是故障**，
+           别在对话里留一行 "signal is aborted without reason" 吓人。
+           （这个坑是牌桌测试里按停之后，从截图上发现的。） */
+        if (state.abort || /abort/i.test(((e && e.name) || "") + ((e && e.message) || ""))) {
+          return { reply: "", aborted: true, trace };
+        }
+        return { reply: "（荷官没回上话）" + ((e && e.message) || e), trace, err: true };
+      }
       if (out.tool_calls && out.tool_calls.length) {
         msgs.push(out);
         for (const tc of out.tool_calls) {
@@ -861,8 +915,8 @@
           catch (e) { r = { text: "调用失败：" + ((e && e.message) || e), isError: true }; }
           monoAbsorb(r, tc.function.name);
           trace[trace.length - 1].ok = !r.isError;
-          trace[trace.length - 1].brief = String(r.text || "").slice(0, 120);
-          renderMono();                                     // 每步都把新棋盘画出来，看得见进展
+          trace[trace.length - 1].brief = briefOf(r);
+          renderMono(); renderTable();                      // 每步都把新棋盘画出来，看得见进展
           msgs.push({ role: "tool", tool_call_id: tc.id, content: String(r.text || "").slice(0, 4000) });
         }
         continue;
@@ -875,6 +929,9 @@
   /* ════════════════════════════ 渲染 ════════════════════════════ */
   const $ = (s, root) => (root || document).querySelector(s);
   let elPanel, elSlot, elScroll, elMsgs, elCfg, elComposer, elInput, elSend, elTitle, elSub, elBack, elMono, elSwitch;
+  /* 牌桌（对局整页）那一套 */
+  let elTable, elTableSub, elTableBoardbar, elTableSeats, elTableBoard, elTableParams,
+      elTableScroll, elTableMsgs, elTableInput, elTableSend, elTableQuick, elTableHint;
   const bubbleRefs = new Map();
 
   const WHO_COLOR = { char: "#3E7BE8", narr: "#8A93A6", npc: "#D9822B", human: "#7E93A4" };
@@ -937,6 +994,7 @@
     if (showScene) renderMsgs();
     if (showMono) renderMono();
     if (isCfg) renderCfg();
+    renderTable();          // 牌桌是独立一层，只要它开着就跟着刷新
   }
 
   /* ── 老虎机 ──────────────────────────────────────────────────────────── */
@@ -1262,45 +1320,86 @@
       return;
     }
 
-    /* 3 进行中 */
+    /* 3 进行中 → 这一层只留一个「牌桌」入口。
+       ★ 对局本身是**独立一整页的聊天界面**（棋盘钉在顶上），不再把棋盘和消息
+         挤成卡片堆在这一层 —— 手机上那样根本没法玩。 */
     const chips = [];
     if (g.game_id) chips.push(`<span class="rp-st">局号 ${esc(String(g.game_id).slice(0, 10))}</span>`);
     if (mo.setup.flavor) chips.push(`<span class="rp-st hot">${esc(mo.setup.flavor)}</span>`);
     if (mo.setup.rounds) chips.push(`<span class="rp-st">${esc(mo.setup.rounds)} 回合</span>`);
-    if (mo.setup.identity_mode && mo.setup.identity_mode !== "off") chips.push(`<span class="rp-st">身份 ${esc(mo.setup.identity_mode)}</span>`);
+    const ai = mo.ai || {};
+    const seats = [
+      mo.setup.p1_name ? `<span class="rpm-seat ${ai.p1 ? "ai" : "human"}">${esc(mo.setup.p1_name)} · ${ai.p1 ? "AI" : "你"}</span>` : "",
+      mo.setup.p2_name ? `<span class="rpm-seat ${ai.p2 ? "ai" : "human"}">${esc(mo.setup.p2_name)} · ${ai.p2 ? "AI" : "你"}</span>` : ""
+    ].filter(Boolean).join("");
 
-    /* ⚠️ 第一个三元必须**加括号**：`?:` 的优先级低于 `+`，不括起来会被解析成
-       `cond ? A : (B + C + D + …)` —— 于是 intensity_note 一旦有值，后面整段（含棋盘）
-       全被丢掉，而且只在"恰好有强度说明"时才复现。这个 bug 是冒烟测试抓出来的。 */
     elMono.innerHTML =
-      (g.intensity_note ? `<div class="rp-tier"><b>本局强度说明（服务端返回）</b>\n${esc(g.intensity_note)}</div>` : "")
-      + (g.history_note ? `<div class="rp-tier">${esc(g.history_note)}</div>` : "")
-      + (g.active_limits ? `<div class="rp-tier"><b>本局生效的限制</b>\n${esc(g.active_limits)}</div>` : "")
-      + `<div class="rp-mcard">
-          <div class="rp-mcard-t">棋盘</div>
-          <div class="rp-status">${chips.join("")}</div>
-          ${g.board ? `<div class="rp-board">${esc(g.board)}</div>`
-                    : `<div class="rp-note">还没有棋盘 —— 掷一次骰子就有了。</div>`}
-          ${g.status ? `<div class="rp-mcard-t" style="margin-top:2px">身份与本局状态</div>
-                        <div class="rp-rules">${esc(typeof g.status === "string" ? g.status : JSON.stringify(g.status, null, 1))}</div>` : ""}
-          <div class="rp-macts">
-            <button class="rp-btn" data-act="mono-roll"${state.running ? " disabled" : ""}>掷骰</button>
-            <button class="rp-btn ghost" data-act="mono-info">查状态</button>
-            <button class="rp-btn ghost" data-act="mono-skip">跳过（安全词）</button>
-            <button class="rp-btn danger" data-act="mono-end">结束这局</button>
-          </div>
-          <div class="rp-note">掷骰按钮是<b>不经过模型</b>的直连兜底 ——
-            万一这个模型不支持工具调用，光靠这几个按钮也能把一局玩完。</div>
-        </div>`
-      + renderMonoMsgs()
+      `<div class="rp-mcard">
+        <div class="rp-mcard-t">这一局在牌桌上</div>
+        <div class="rp-status">${chips.join("")}</div>
+        <div class="rp-status">${seats}</div>
+        <div class="rp-note" style="margin-top:0">对局是<b>一整页的聊天界面</b> ——
+          棋盘钉在顶上（可以收起），下面就是你和荷官的对话。
+          ${(ai.p1 || ai.p2) ? "标了 <b>AI</b> 的那一席会自己拍板，不用你替他点。" : "两边都是你在玩。"}</div>
+        <div class="rp-macts">
+          <button class="rp-btn" data-act="table-open">进入牌桌</button>
+          <button class="rp-btn ghost" data-act="mono-end">结束这局</button>
+        </div>
+      </div>`
       + endpointCard;
     renderComposer();
   }
 
-  function renderMonoMsgs() {
-    const list = (state.mono.msgs || []).slice(-8);
-    if (!list.length) return "";
-    return `<div class="rp-mcard"><div class="rp-mcard-t">荷官</div>` + list.map((m) => {
+  /* ════════════════ 对局：整页牌桌（棋盘 + 聊天）════════════════════════
+     和「开局」那一页同构：整页、盖在万花筒之上，只做一件事 —— 把这局玩下去。 */
+  const MONO_PANEL_HTML = `
+    <div class="rps-page">
+      <div class="rps-top">
+        <button data-mact="back" type="button" aria-label="返回">‹</button>
+        <div class="rps-title-wrap"><div class="rps-title">大富翁</div><div class="rps-sub rpm-sub"></div></div>
+        <button data-mact="params" type="button" aria-label="设置">⚙</button>
+        <button data-mact="close" type="button" aria-label="关闭">✕</button>
+      </div>
+      <div class="rpm-boardbar">
+        <div class="rpm-bhead">
+          <button class="rpm-btoggle" data-mact="board" type="button">棋盘 <span class="rpm-bchev">▾</span></button>
+          <div class="rpm-seats"></div>
+        </div>
+        <pre class="rp-board rpm-board"></pre>
+      </div>
+      <div class="rps-params rpm-params hidden"></div>
+      <div class="rps-scroll rpm-scroll"><div class="rps-msgs rpm-msgs"></div></div>
+      <div class="rps-composer rpm-composer">
+        <div class="rps-quick rpm-quick"></div>
+        <div class="rps-inputrow rpm-inputrow">
+          <textarea rows="1" placeholder="说点什么…（打 404 / 停 立刻停下并跳过）" autocomplete="off" spellcheck="false"></textarea>
+          <button class="rps-send rpm-send" type="button" aria-label="发送"></button>
+        </div>
+        <div class="rps-hint rpm-hint"></div>
+      </div>
+    </div>`;
+
+  /* 模型说「在等你」的标记 —— 出现了就停自动跑（和群聊包的【待确认】同一套路数） */
+  const MONO_WAIT = /【等你】|【待你决定】/;
+
+  function monoStage() {
+    const g = state.mono.game || {};
+    const ai = state.mono.ai || {};
+    const seats = [
+      state.mono.setup.p1_name ? { name: state.mono.setup.p1_name, ai: !!ai.p1 } : null,
+      state.mono.setup.p2_name ? { name: state.mono.setup.p2_name, ai: !!ai.p2 } : null
+    ].filter(Boolean);
+    return `<span class="rpm-seat ${g.game_id ? "" : "warn"}">${g.game_id ? "局号 " + esc(String(g.game_id).slice(0, 10)) : "还没开局"}</span>` +
+      (state.mono.setup.flavor ? `<span class="rpm-seat">${esc(state.mono.setup.flavor)}</span>` : "") +
+      seats.map((s) => `<span class="rpm-seat ${s.ai ? "ai" : "human"}">${esc(s.name)} · ${s.ai ? "AI" : "你"}</span>`).join("");
+  }
+
+  function monoMsgsHtml(limit) {
+    const list = (state.mono.msgs || []).slice(-(limit || 60));
+    if (!list.length) {
+      return `<div class="rp-sys">（还没有对话）先说一句，或者点下面的「掷骰」／「自动跑」。</div>`;
+    }
+    return list.map((m) => {
       if (m.who === "user") return `<div class="rp-msg human"><div class="rp-body"><div class="rp-bubble">${esc(m.text)}</div></div></div>`;
       if (m.who === "sys") return `<div class="rp-sys${m.edge ? " edge" : ""}">${esc(m.text)}</div>`;
       return `<div class="rp-msg ai" style="--mc:#3E7BE8">
@@ -1310,7 +1409,141 @@
           <div class="rp-bubble">${esc(m.text)}</div>
           ${m.trace ? `<div class="rp-tool"><b>这一轮调了</b> ${esc(m.trace)}</div>` : ""}
         </div></div>`;
-    }).join("") + `</div>`;
+    }).join("");
+  }
+
+  /* 牌桌上的设置区：谁在玩 / AI 玩法 / 自动跑轮数 / MCP 端点 */
+  function renderTableParams() {
+    if (!elTableParams || elTableParams.classList.contains("hidden")) return;
+    const a = state.mono.ai || (state.mono.ai = { p1: false, p2: true, persona: "", auto: 5 });
+    const seg = (k, v, label) =>
+      `<button type="button" data-mai="${k}" data-val="${v}" class="${(k === "p1" ? a.p1 : a.p2) === (v === "ai") ? "on" : ""}">${label}</button>`;
+    elTableParams.innerHTML =
+      `<div class="rpm-ai">
+        <div class="rpm-ai-row"><b>${esc(state.mono.setup.p1_name || "玩家1")}</b>
+          <span class="rpm-seg">${seg("p1", "human", "你来玩")}${seg("p1", "ai", "AI 来玩")}</span></div>
+        <div class="rpm-ai-row"><b>${esc(state.mono.setup.p2_name || "玩家2")}</b>
+          <span class="rpm-seg">${seg("p2", "human", "你来玩")}${seg("p2", "ai", "AI 来玩")}</span></div>
+        <label class="rp-lbl">AI 的玩法风格（留空就按最省事的方式走）</label>
+        <textarea class="rp-ta" data-mai="persona" rows="2" placeholder="比如：爱冒险、喜欢买断、不太在意代价">${esc(a.persona || "")}</textarea>
+        <label class="rp-lbl" style="margin-top:8px">一次「自动跑」最多几轮</label>
+        <input class="rp-in" type="number" min="1" max="20" data-mai="auto" value="${esc(a.auto || 5)}">
+        <div class="rpm-note" style="margin-top:8px">标了 <b>AI</b> 的那一席，轮到他时由模型自己拍板
+          （该掷骰就掷、该选结算参数就自己选），不会停下来问你；
+          只有你说话、牵涉安全词、或信息不足时它才会标【等你】停下。
+          <br>两边都设成「你来玩」也能正常打，只是没有 AI 代打。</div>
+      </div>
+      <div class="rpm-ai">
+        <label class="rp-lbl">MCP 端点（必须是 HTTPS，否则会被按混合内容拦掉）</label>
+        <input class="rp-in" data-mf="endpoint" value="${esc(state.mono.endpoint)}" placeholder="${esc(MCP_DEFAULT)}">
+        <label class="rp-lbl" style="margin-top:8px">访问 token（服务端设了才要填）</label>
+        <input class="rp-in" data-mf="token" value="${esc(state.mono.token)}" placeholder="留空">
+        <div class="rp-macts">
+          <button class="rp-btn ghost" data-act="mcp-hello">取荷官规则</button>
+          <button class="rp-btn ghost" data-act="mcp-reset">恢复默认端点</button>
+        </div>
+      </div>`;
+  }
+
+  function renderTable() {
+    if (!elTable || elTable.classList.contains("hidden")) return;
+    const g = state.mono.game || {};
+    const a = state.mono.ai || {};
+    const anyAi = !!(a.p1 || a.p2);
+
+    elTableSub.textContent = (g.game_id ? "局号 " + String(g.game_id).slice(0, 10) : "还没开局")
+      + (state.mono.setup.flavor ? " · " + state.mono.setup.flavor : "")
+      + (state.running ? (state.autoRunning ? " · 自动跑中…" : " · 正在忙…") : "");
+
+    elTableBoardbar.classList.toggle("folded", !!state.mono.boardFolded);
+    elTableSeats.innerHTML = monoStage();
+    elTableBoard.textContent = g.board || "（还没有棋盘 —— 掷一次骰子就有了）";
+    elTableMsgs.innerHTML = monoMsgsHtml();
+
+    elTableSend.classList.toggle("stop", state.running);
+    elTableSend.innerHTML = state.running
+      ? `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>`;
+    elTableSend.setAttribute("aria-label", state.running ? "停止" : "发送");
+
+    elTableQuick.innerHTML =
+      (state.running
+        ? `<button class="rp-qb stop" data-mact="stop">停下</button>`
+        : (anyAi ? `<button class="rp-qb" data-mact="auto">自动跑 ${clamp(+a.auto || 5, 1, 20)} 轮</button>` : "")) +
+      `<button class="rp-qb${state.running ? " disabled" : ""}" data-act="mono-roll">掷骰</button>` +
+      `<button class="rp-qb" data-act="mono-info">查状态</button>` +
+      `<button class="rp-qb stop" data-act="mono-skip">404 停下</button>` +
+      `<button class="rp-qb" data-mact="end">结束这局</button>`;
+
+    elTableHint.textContent = anyAi
+      ? "标了 AI 的那一席会自己拍板 · 你说「404 / 停」立刻跳过（不等模型）"
+      : "两边都是你在玩 · 打 404 / 停 立刻跳过（不等模型）";
+    renderTableParams();
+  }
+
+  function tableScroll() { if (elTableScroll) elTableScroll.scrollTop = elTableScroll.scrollHeight; }
+
+  function openTable() {
+    elTable = ensureTableDom();
+    load();
+    elTable.classList.remove("hidden");
+    requestAnimationFrame(() => elTable.classList.add("open"));
+    renderTable(); tableScroll();
+  }
+  function closeTable() {
+    if (!elTable) return;
+    elTable.classList.remove("open");
+    setTimeout(() => { if (elTable && !elTable.classList.contains("open")) elTable.classList.add("hidden"); }, 300);
+  }
+
+  /* 表内动作：棋盘折叠 / 参数区 / 自动跑 / 停下 / 结束 */
+  function tableAct(a) {
+    if (a === "board") { state.mono.boardFolded = !state.mono.boardFolded; save(); renderTable(); return; }
+    if (a === "params") { elTableParams.classList.toggle("hidden"); renderTableParams(); return; }
+    if (a === "back" || a === "close") { closeTable(); render(); return; }
+    if (a === "stop") { stopAll(); return; }
+    if (a === "auto") { monoAuto(); return; }
+    if (a === "end") { monoEnd(); return; }
+  }
+
+  /* 自动跑：把「AI 自己玩」跑起来。
+     一次调用就是一个安全边界 —— 中途按「停下」立刻 break。 */
+  async function monoAuto() {
+    if (state.running) { stopAll(); return; }        // 再点一次 = 停
+    const a = state.mono.ai || {};
+    if (!a.p1 && !a.p2) { toast("先在 ⚙ 里把某一席设成「AI 来玩」"); return; }
+    const g = state.mono.game;
+    if (!g || !g.game_id) { toast("先开一局"); return; }
+
+    state.running = true; state.autoRunning = true; state.abort = false;
+    state.ctrl = new AbortController();
+    const max = clamp(+a.auto || 5, 1, 20);
+    pushMono("sys", "（自动跑开始：最多 " + max + " 轮，随时可以按「停下」）");
+    save(); render(); renderTable(); tableScroll();
+
+    try {
+      for (let i = 0; i < max; i++) {
+        if (state.abort) { pushMono("sys", "（你叫停了）"); break; }
+        const out = await monoAgent(
+          "（自动）继续这一局。轮到标了「AI」的那一席就由你自己拍板，别停下来等人类。"
+          + (i === 0 ? "先从当前局面接着走。" : ""));
+        /* 叫停不是故障：留一句「你叫停了」就够，别写成一屏报错 */
+        if (out.aborted) { pushMono("sys", "（你叫停了）"); break; }
+        pushMono("host", out.reply || "（这一轮它没说话）", !!out.err, out.trace);
+        save(); renderTable(); tableScroll();
+        if (out.err) break;
+        if (MONO_WAIT.test(out.reply || "")) {
+          pushMono("sys", "（它标了【等你】，自动跑停在这儿 —— 你回一句话它就接着走）");
+          break;
+        }
+        if (i === max - 1) pushMono("sys", "（到设定的 " + max + " 轮了，先停在这儿；再点一次继续）");
+      }
+    } catch (e) {
+      pushMono("sys", "（自动跑出错）" + ((e && e.message) || e), true);
+    } finally {
+      state.running = false; state.autoRunning = false; state.ctrl = null;
+      save(); render(); renderTable(); tableScroll();
+    }
   }
 
   /* ════════════════════ 开局：整页对话界面 ════════════════════════════
@@ -1496,8 +1729,10 @@
               save(); renderSetup();
               setTimeout(() => {
                 closeSetup();
-                pushMono("sys", "开局了。服务端返回的强度说明和本局限制在上面，不满意可以结束这局换档重开。");
+                pushMono("sys", "开局了。棋盘钉在牌桌顶上（点「棋盘」可以收起）；"
+                  + "标了 AI 的那一席会自己拍板，也可以随时按「自动跑」。");
                 save(); render();
+                openTable();                       // 开局完直接进牌桌 —— 对局就是整页的
               }, 900);
               return;
             }
@@ -1542,7 +1777,7 @@
       return null;
     } finally {
       state.running = false; state.ctrl = null;
-      save(); render(); scrollMono();
+      save(); render(); scrollMono(); tableScroll();
     }
   }
 
@@ -1555,8 +1790,10 @@
       Object.assign({}, s, { setup_confirmed: true, rules_ack: state.mono.rulesAck }), "开局失败");
     if (r && state.mono.game && state.mono.game.game_id) {
       closeSetup();                                  // 「不聊了，直接开」时顺手关掉开局那页
-      pushMono("sys", "开局了。服务端返回的强度说明和本局限制在上面，不满意可以结束这局换档重开。");
+      pushMono("sys", "开局了。棋盘钉在牌桌顶上（点「棋盘」可以收起）；"
+        + "标了 AI 的那一席会自己拍板，也可以随时按「自动跑」。");
       save(); render();
+      openTable();                                   // 直接进牌桌
     }
   }
   async function monoRoll() {
@@ -1579,11 +1816,11 @@
   }
   async function monoEnd() {
     const g = state.mono.game;
-    if (!g || !g.game_id) { state.mono.game = null; state.mono.msgs = []; save(); render(); return; }
+    if (!g || !g.game_id) { state.mono.game = null; state.mono.msgs = []; save(); render(); closeTable(); return; }
     if (!confirm("结束这局？棋局会在服务端删掉，本地记录也清空。")) return;
     await monoRun("game_admin", { action: "delete_game", game_id: g.game_id, player_token: g.player_token || "" }, "删除失败");
     state.mono.game = null; state.mono.msgs = [];
-    save(); render();
+    save(); render(); closeTable();
   }
   async function monoHello() {
     const r = await monoRun("monopoly_help", {}, "取规则失败");
@@ -1612,7 +1849,8 @@
     render();
     try {
       const out = await monoAgent(t);
-      pushMono("host", out.reply || "（荷官这一轮没说话）", !!out.err, out.trace);
+      if (out.aborted) pushMono("sys", "（你叫停了）");
+      else pushMono("host", out.reply || "（荷官这一轮没说话）", !!out.err, out.trace);
     } catch (e) {
       pushMono("sys", "（荷官跑不动）" + ((e && e.message) || e), true);
     } finally {
@@ -1654,7 +1892,10 @@
       if (mm) {
         state.mode = mm.dataset.mode === "mono" ? "mono" : "rp";
         state.view = state.mode === "mono" ? "mono" : (state.scene ? "scene" : "slot");
-        save(); render(); return;
+        save(); render();
+        /* 已经有局了就直接进牌桌 —— 对局本来就是整页的，不该先在卡片堆里绕一圈 */
+        if (state.mode === "mono" && state.mono.game && state.mono.game.game_id) openTable();
+        return;
       }
 
       const roll = e.target.closest('[data-act="roll"]');
@@ -1912,6 +2153,79 @@
     return el;
   }
 
+  function ensureTableDom() {
+    let el = document.getElementById("rpMonoPanel");
+    if (!el) {
+      el = document.createElement("div");
+      /* 复用 .rps-panel 那一套（整页固定 / hidden / open 动画），只用 .rpm-panel 抬高一层 */
+      el.className = "rps-panel rpm-panel hidden"; el.id = "rpMonoPanel";
+      el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "大富翁");
+      document.body.appendChild(el);
+    }
+    if (!el.querySelector(".rps-page")) el.innerHTML = MONO_PANEL_HTML;
+    return el;
+  }
+
+  function bindTable() {
+    elTable.addEventListener("click", (e) => {
+      const q = e.target.closest("[data-mact]");
+      if (q) { tableAct(q.dataset.mact); return; }
+      /* ⚙ 里那两个「你来玩 / AI 来玩」的按钮（注意 persona/auto 也是 [data-mai]，但不是 button） */
+      const seat = e.target.closest("[data-mai]");
+      if (seat && seat.tagName === "BUTTON") {
+        const k = seat.dataset.mai;
+        if (k === "p1" || k === "p2") {
+          state.mono.ai[k] = seat.dataset.val === "ai";
+          save(); render(); renderTable();
+        }
+        return;
+      }
+      const act = e.target.closest("[data-act]");
+      if (act) {
+        const a = act.dataset.act;
+        if (a === "mono-roll") monoRoll();
+        else if (a === "mono-info") monoInfo();
+        else if (a === "mono-skip") monoSkip();
+        else if (a === "mono-end") monoEnd();
+        else if (a === "mcp-hello") monoHello();
+        else if (a === "mcp-reset") { state.mono.endpoint = MCP_DEFAULT; save(); renderTable(); toast("端点已恢复默认"); }
+      }
+    });
+    elTableSend.addEventListener("click", () => {
+      if (state.running) { stopAll(); return; }          // 跑的时候这个键就是「停」
+      monoSend(elTableInput.value);
+    });
+    elTableInput.addEventListener("input", tableGrow);
+    elTableInput.addEventListener("keydown", (e) => {
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !coarse) { e.preventDefault(); monoSend(elTableInput.value); }
+    });
+    /* 设置区：谁在玩 / AI 风格 / 自动跑轮数 / 端点 */
+    elTableParams.addEventListener("input", (e) => {
+      const t = e.target, k = t.dataset && t.dataset.mai;
+      if (k === "persona") { state.mono.ai.persona = t.value; save(); }
+      else if (k === "auto") { state.mono.ai.auto = clamp(+t.value || 5, 1, 20); save(); }
+      else if (t.dataset && t.dataset.mf === "endpoint") { state.mono.endpoint = t.value; save(); }
+      else if (t.dataset && t.dataset.mf === "token") { state.mono.token = t.value; save(); }
+    });
+    elTableParams.addEventListener("blur", (e) => {
+      const k = e.target.dataset && e.target.dataset.mai;
+      if (k === "auto" || k === "persona") { save(); renderTable(); }
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!elTable || elTable.classList.contains("hidden")) return;
+      if (elTableParams && !elTableParams.classList.contains("hidden")) { elTableParams.classList.add("hidden"); renderTable(); }
+      else closeTable();
+      e.stopPropagation();
+    }, true);
+  }
+  function tableGrow() {
+    if (!elTableInput) return;
+    elTableInput.style.height = "auto";
+    elTableInput.style.height = Math.min(elTableInput.scrollHeight, Math.round(window.innerHeight * 0.3)) + "px";
+  }
+
   function init() {
     elPanel = ensureDom();
     elSlot = $(".rp-slot", elPanel);
@@ -1933,6 +2247,19 @@
     elSetupInput = $(".rps-inputrow textarea", elSetup);
     elSetupSend = $(".rps-send", elSetup);
     elSetupSub = $(".rps-sub", elSetup);
+    elTable          = ensureTableDom();
+    elTableSub       = $(".rpm-sub", elTable);
+    elTableBoardbar  = $(".rpm-boardbar", elTable);
+    elTableSeats     = $(".rpm-seats", elTable);
+    elTableBoard     = $(".rpm-board", elTable);
+    elTableParams    = $(".rpm-params", elTable);
+    elTableScroll    = $(".rpm-scroll", elTable);
+    elTableMsgs      = $(".rpm-msgs", elTable);
+    elTableInput     = $(".rpm-inputrow textarea", elTable);
+    elTableSend      = $(".rpm-send", elTable);
+    elTableQuick     = $(".rpm-quick", elTable);
+    elTableHint      = $(".rpm-hint", elTable);
+    bindTable();
     bindSetup();
     load();
     bind();
@@ -1956,7 +2283,11 @@
     /* 给冒烟测试用的两个口子：open() 内部会 load() 覆盖内存，
        所以测试要"摆好状态 → 先落盘 → 再 open"，否则注入的场景会被 load 冲掉。 */
     _render: render,
-    _save: save
+    _save: save,
+    _openTable: () => openTable(),
+    _closeTable: () => closeTable(),
+    _auto: () => monoAuto(),
+    _tableEl: () => document.getElementById("rpMonoPanel")
   };
   window.openRp = open;
 })();

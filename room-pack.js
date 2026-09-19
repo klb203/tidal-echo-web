@@ -1258,8 +1258,8 @@
         <div class="rm-hint">这是 TA 长期记得的东西，住在记忆库里（「记忆」页也能看）。这里只读 —— 要改去记忆页，免得两处打架。</div>
         <div class="rm-row">${MEM_KINDS.map((m) => `<button class="rm-mini${state.memKind === m.k ? " pri" : ""}" data-act="mem-kind" data-k="${m.k}">${esc(m.n)}${state.memCounts[m.k] != null ? " " + state.memCounts[m.k] : ""}</button>`).join("")}</div>
         <div class="rm-row"><button class="rm-mini" data-act="mem-load">刷新</button></div>
-        <div class="rm-hint">下面那条小条是<b>清晰度</b>：不用它就会淡（约 30 天掉一半），
-          被它引用过就会变清楚。钉住（⌾）的不淡。这份权重存在本地的补充层，<b>不动 TA 的记忆库</b>。</div>
+        ${mem.length ? `<div class="rm-hint">下面那条小条是<b>清晰度</b>：不用它就会淡（约 30 天掉一半），
+          被它引用过就会变清楚。钉住（⌾）的不淡。这份权重存在本地的补充层，<b>不动 TA 的记忆库</b>。</div>` : ""}
         <div style="margin-top:10px">
         ${mem.length ? mem.slice(0, 40).map((m) => {
           const cl = clarityOf(m);

@@ -909,6 +909,21 @@
             "· 轮到人类那一席时：一句话提示就够，不要复述棋盘、不要催他。",
             "· 替 AI 那一席说话时，要用**它自己的名字**，不要用「荷官」自称 —— 那两个不是一个人。",
             "",
+            "【★ 活动剧情（这一局好不好玩，全看这一段）】",
+            "· 轮到 AI 那一席、或游戏派下任务／踩到格子时，**必须把这件事演出来**，不能只报结果。",
+            "· 用【" + (ai.p1 ? p1 : p2) + "】写 2~4 句**第一人称**：它看到任务时的反应（犹豫／嘴硬／跃跃欲试）、",
+            "  它具体做了什么、做完之后是什么状态。要有动作、有物件、有情绪 —— 让人看见画面。",
+            "· 反面例子（**不要这样写**）：【荷官】" + (ai.p1 ? p1 : p2) + " 完成了任务。← 这是战报，不是剧情。",
+            "· 正面例子：【" + (ai.p1 ? p1 : p2) + "】……（它自己开口，边做边说，做完留一句反应）",
+            "· 结算／掷骰的数字照实报（以工具返回为准），但要**嵌在它的反应里**，不要单列一行。",
+            "",
+            "【★ 跟人类互动（不要把人的话只当成推进信号）】",
+            "· 人类说了任何一句（不管是回答任务、调侃、还是扯别的），AI 那一席要**先接这句话**：",
+            "  听见了什么、被戳到没有、想回什么，然后再往下走。",
+            "· 人可以反过来给 AI 派活、改规则、加码 —— 你替 AI 接住，并按它的风格反应；",
+            "  涉及红线／安全词照旧立刻 skip，不要演。",
+            "· 只回「该你了」「轮到你了」这种提示是**不合格的** —— 那不算互动。",
+            "",
             "【什么时候才停下来等人类】只有这三种，其余情况一律自己往下走：",
             "1 人类玩家主动说话；2 牵涉到安全词 / 红线；3 工具返回的信息确实不足以判断该怎么选。",
             "真要停下来时，回复的**最后单独一行**写：【等你】＋一句话说明在等什么。"
@@ -942,9 +957,21 @@
   async function monoAgent(userText) {
     const tools = MONO_TOOLS.map((t) => ({ type: "function", function: t }));
     const msgs = [{ role: "system", content: monoSystem() }];
-    (state.mono.msgs || []).slice(-12).forEach((m) => {
-      if (m.who === "user") msgs.push({ role: "user", content: m.text });
-      else if (m.who === "host") msgs.push({ role: "assistant", content: m.text });
+    /* ★ 历史窗口从 12 提到 24，并且把「系统上一步做了什么」也带进去。
+       之前只喂 user/host 的**纯文本**：AI 那一席上一轮调了什么工具、工具回了什么，
+       下一轮完全看不到 —— 于是它每轮都像刚坐下，既不知道自己做过什么，
+       也没法把情节接下去（表现就是「看不到 AI 在做什么、剧情连不起来」）。 */
+    (state.mono.msgs || []).slice(-24).forEach((m) => {
+      if (m.who === "user") {
+        msgs.push({ role: "user", content: m.text });
+      } else if (m.who === "host") {
+        let tx = m.text;
+        if (m.trace) tx += "\n（这一步调了：" + m.trace.replace(/\n/g, "；") + "）";
+        msgs.push({ role: "assistant", content: tx });
+      } else if (m.who === "sys" && m.text) {
+        /* 系统说明（谁走了一步、等你、出错）也要喂回去，否则它会重复问同一件事 */
+        msgs.push({ role: "system", content: "（场上记录）" + m.text });
+      }
     });
     msgs.push({ role: "user", content: userText });
     const trace = [];
@@ -1909,6 +1936,37 @@
   const MONO_SILENT = /^[·.。，,\s]*$/;      // 「我不需要说话」
   let monoJoinLock = false;                 // 单飞：别和「自动跑」或手动重入叠在一起
 
+  /* ★ 把「它走了一步」变成「看得见的一幕」。
+     模型守规矩只回一个「·」（那是给机器看的"我不需要说话"），
+     人这边看到的就是一行干巴巴的系统提示 —— 这正是「看不到 AI 在做什么」的来源。
+     这里单独再叫它一次，明确**不许调工具**，只要它把刚才那一幕演出来。 */
+  async function monoPerform(stepText, trace) {
+    const a = state.mono.ai || {};
+    const nm = a.p1 ? (state.mono.setup.p1_name || "玩家1") : (state.mono.setup.p2_name || "玩家2");
+    const what = (trace || []).map((t) => (t.name || "") + (t.brief ? "（" + t.brief + "）" : "")).join("；");
+    const sys = monoSystem()
+      + "\n\n【现在只做一件事 —— 演出来，不许调工具】\n"
+      + "你刚刚替【" + nm + "】走了一步：" + (what || stepText || "推进了一步") + "。\n"
+      + "现在**不要调任何工具**，也不要报流水账，只用【" + nm + "】这一段把刚才那一幕演出来：\n"
+      + "· 2~4 句**第一人称**：它当时的反应（犹豫／嘴硬／得意／心疼…）、具体做了什么、做完什么状态；\n"
+      + "· 有动作、有物件、有画面；结算的数字照实嵌进去，不要单列一行；\n"
+      + "· 直接输出这一段正文，不要任何前缀，不要写「好的」。";
+    const msgs = [{ role: "system", content: sys }];
+    (state.mono.msgs || []).slice(-8).forEach((m) => {
+      if (m.who === "user") msgs.push({ role: "user", content: m.text });
+      else if (m.who === "host") msgs.push({ role: "assistant", content: m.text });
+    });
+    msgs.push({ role: "user", content: "（把刚才那一步演出来，只输出【" + nm + "】这一段）" });
+    try {
+      const out = await callJson("char", msgs, [], state.ctrl && state.ctrl.signal);
+      const tx = String((out && out.content) || "").trim();
+      if (!tx || MONO_SILENT.test(tx)) return "";
+      return tx;
+    } catch (_) {
+      return "";                            // 演不出来也不拖累牌桌
+    }
+  }
+
   async function monoContinue(trigger) {
     const a = state.mono.ai || {};
     if (!a.p1 && !a.p2) return null;               // 两边都是人类 → 没有可代打的席位
@@ -1938,7 +1996,16 @@
         /* 有工具的走法：正常留一条气泡；模型要是只回了「·」，补一条系统说明，
            免得界面上看着"什么都没发生" */
         if (MONO_SILENT.test(said)) {
-          pushMono("sys", "（轮到 AI 那一席，它自己走了一步：" + out.trace.map((t) => t.name).join(" → ") + "）");
+          /* ★ 它动了，但一句话没说 —— 界面上只剩一行「它自己走了一步」，
+             这正是「看不到 AI 在做什么」的来源。
+             这里再叫它一次：**不许调工具，只把刚才那一幕演出来**。 */
+          const stepText = out.trace.map((t) => t.name).join(" → ");
+          const perf = await monoPerform(stepText, out.trace);
+          if (perf) {
+            pushMono("host", perf, false, out.trace);
+          } else {
+            pushMono("sys", "（轮到 AI 那一席，它自己走了一步：" + stepText + "）");
+          }
         } else {
           pushMono("host", said, false, out.trace);
         }
@@ -2030,13 +2097,50 @@
     save(); render();
     if (r) await monoContinue("刚才跳过了这一步 → " + (briefOf(r) || "已跳过"));
   }
+  /* 借宿主的后端通道（memApi 自带鉴权）。宿主不在就静默返回 null ——
+     牌桌不该因为"记不住"而打不下去。 */
+  async function hostApiPost(path, payload) {
+    try {
+      const fn = (typeof window !== "undefined" && window.memApi)
+        || (typeof memApi === "function" ? memApi : null);
+      if (!fn) return null;
+      return await fn(path, { method: "POST", body: JSON.stringify(payload || {}) });
+    } catch (_) {
+      return null;
+    }
+  }
+
   async function monoEnd() {
     const g = state.mono.game;
     if (!g || !g.game_id) { state.mono.game = null; state.mono.msgs = []; save(); render(); closeTable(); return; }
-    if (!confirm("结束这局？棋局会在服务端删掉，本地记录也清空。")) return;
+    if (!confirm("结束这局？棋局会在服务端删掉，本地记录也清空。\n\n"
+      + "（会先把这一局写成一条记忆 —— 你在 Memory 的「待确认」里点头之后，它才真的记得）")) return;
+
+    /* ★ 先留档再删：这一局的对话一旦清空，就什么都没了。
+       写下来的是 TA **在牌桌上的经历**（不是战报），所以聊天里它才会记得。 */
+    let memoMsg = "";
+    const snapshot = {
+      msgs: (state.mono.msgs || []).slice(),
+      setup: state.mono.setup || {},
+      ai: state.mono.ai || {}
+    };
+    const worth = snapshot.msgs.filter((m) => m.who === "host" || m.who === "user").length >= 2;
+    if (worth) {
+      pushMono("sys", "（正在把这一局写成记忆…）"); save(); render();
+      const r = await hostApiPost("/app/mono/remember", snapshot);
+      if (r && r.ok) {
+        memoMsg = "这一局已写成一条记忆 —— 去 Memory 的「待确认」里看，你点头它才会记得。";
+        pushMono("sys", memoMsg);
+      } else {
+        memoMsg = "没能写成记忆：" + ((r && r.message) || "后端没接上");
+        pushMono("sys", memoMsg, true);
+      }
+    }
+
     await monoRun("game_admin", { action: "delete_game", game_id: g.game_id, player_token: g.player_token || "" }, "删除失败");
     state.mono.game = null; state.mono.msgs = [];
     save(); render(); closeTable();
+    if (memoMsg) toast(memoMsg);
   }
   async function monoHello() {
     const r = await monoRun("monopoly_help", {}, "取规则失败");
@@ -2491,12 +2595,25 @@
   function svgDice() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.4"/><circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>`; }
   function svgMask() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.2c3.2-1.6 14.8-1.6 18 0 0 5.4-3 9.2-6.6 11.3-1.5.9-3.3.9-4.8 0C6 15.4 3 11.6 3 6.2Z"/><path d="M8.4 10.6c.9 1.1 2.4 1.1 3.3 0"/><path d="M12.3 10.6c.9 1.1 2.4 1.1 3.3 0"/></svg>`; }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  /* ★ 不在脚本加载时就建三个整页面板。
+     老虎机 + 开局页 + 牌桌 = 三整套 DOM/样式，是首屏开销的大头；
+     白白让**每一次**打开都等它，表现就是「进去之前要空白一会儿」。
+     改成：真的要用了才建（点菜单那一刻多几十毫秒，之后完全一样）。 */
+  let _inited = false;
+  function ensureInit() { if (_inited) return; _inited = true; init(); }
+  function idleInit() {
+    if (window.requestIdleCallback) requestIdleCallback(() => ensureInit(), { timeout: 2500 });
+    else setTimeout(() => ensureInit(), 1200);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", idleInit);
+  else idleInit();
 
   /* ── 对外接口 ─────────────────────────────────────────────────────── */
   window.RpChannel = {
-    open, close, toggle, init,
+    /* 对外入口一律先 ensureInit()：面板是懒建的（见上面 idleInit） */
+    open: () => { ensureInit(); open(); },
+    toggle: () => { ensureInit(); toggle(); },
+    close, init,
     state,
     menuName: () => state.cfg.menuName || "万花筒",
     send,                       // 暴露给冒烟测试：可以直接验 run 级锁（不走按钮，按钮在跑的时候是"停止"）
@@ -2505,8 +2622,8 @@
        所以测试要"摆好状态 → 先落盘 → 再 open"，否则注入的场景会被 load 冲掉。 */
     _render: render,
     _save: save,
-    _openTable: () => openTable(),
-    _closeTable: () => closeTable(),
+    _openTable: () => { ensureInit(); openTable(); },
+    _closeTable: () => { ensureInit(); closeTable(); },
     _auto: () => monoAuto(),
     _continue: (t) => monoContinue(t),
     _split: (t) => monoSplit(t),

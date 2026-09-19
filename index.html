@@ -2158,6 +2158,26 @@
     background-size: cover;
     background-position: center;
   }
+  /* ── 启动层：一进页面就有东西可看，别让人对着空壁纸等 ── */
+  .boot-veil{
+    position: fixed; inset:0; z-index: 40;   /* 比 .login(50) 低：真要用登录页时它不该挡路 */
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 14px; padding: 28px;
+    background-color: var(--bg);
+    background-image: var(--wall-stack);
+    background-size: cover; background-position: center;
+    transition: opacity .45s ease;
+  }
+  .boot-veil.gone{ opacity: 0; pointer-events: none; }
+  .boot-veil .bv-orb{
+    width: 52px; height: 52px; border-radius: 50%;
+    background-image: var(--avatar-stack);
+    background-size: cover; background-position: center;
+    box-shadow: 0 16px 34px rgba(24,46,67,0.2);
+    animation: breathe 3.6s ease-in-out infinite;
+  }
+  .boot-veil .bv-text{ font-size: 13.5px; letter-spacing: .06em; color: var(--text-soft, var(--text)); }
+  .boot-veil .bv-sub{ font-size: 11.5px; color: var(--text-faint); }
   .login .orb{
     width:72px; height:72px; border-radius:50%;
     background-image: var(--avatar-stack);
@@ -4030,6 +4050,17 @@
 </head>
 <body>
 
+<!-- ── 启动层：纯 CSS，跟着 HTML 一起渲染 ──────────────────────────────
+     为什么需要它：#app 初始是 hidden 的（要等 JS 填完才揭示），而这份 index.html
+     965KB、外加十来个 pack 脚本要下载解析 —— 那几秒里屏幕上**什么都没有**，
+     只有壁纸，看起来就像"打不开"。这一层不需要任何 JS 就能显示，
+     首屏一亮就有东西可看；startChat 揭示界面时再把它淡出。 -->
+<div class="boot-veil" id="bootVeil" aria-hidden="true">
+  <div class="bv-orb"></div>
+  <div class="bv-text">正在接上…</div>
+  <div class="bv-sub">第一次打开要等一会儿，之后就快了</div>
+</div>
+
 <!-- ── Login（开屏那道「连接密钥」门 · 已取消，见 init()）── -->
 <!-- 保留 DOM 只是为了万一以后要恢复：去掉下面的 hidden 即可。启动时不会再显示它。 -->
 <div class="login hidden" id="login">
@@ -4836,6 +4867,7 @@
               <option value="cloud:siliconflow">云端 · 硅基流动（SiliconFlow）</option>
               <option value="cloud:zhipu">云端 · 智谱 GLM（Zhipu）</option>
               <option value="cloud:moonshot">云端 · Kimi（Moonshot）</option>
+              <option value="cloud:kimicode">云端 · Kimi Code（订阅额度 · 包月）</option>
               <option value="cloud:openai">云端 · OpenAI</option>
               <option value="cloud:openrouter">云端 · OpenRouter</option>
               <option value="cloud:qwen">云端 · 阿里百炼（Qwen）</option>
@@ -5683,6 +5715,31 @@
            聊天 / 朋友圈 / 房间 / 自由活动 / 大富翁 / 主动联系 都把「刚干了什么」记在同一本账上，
            而且**任何场景开口前都会先看一眼这本账** —— 这就是「它们是同一个它」的机制。
            ⚠️ 这里不另起存储：只读后端 /app/scene/*；与档案室、银河（memories 表）没有数据交集。 -->
+      <!-- ★ 待确认：机器自己写的记忆先落在这儿，你点头它才作数（accept / rollback） -->
+      <div class="mem-page hidden" data-mp="pending">
+      <section class="mg-card" id="pdCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">待确认 · 机器写的</div>
+            <div class="mg-sub" id="pdLead">宫殿提取 · 近景日更 · 片段组装 · 牌桌回顾 —— 等你过目</div>
+          </div>
+          <span class="mg-tag" id="pdTag">—</span>
+        </div>
+        <div class="conn-sub" id="pdHint" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.6"></div>
+        <div class="nf-actions">
+          <button id="pdRefresh" type="button">刷新</button>
+          <button id="pdAll" type="button">全部放行</button>
+        </div>
+        <div class="br-list" id="pdList"></div>
+        <div class="br-foot" id="pdFoot">—</div>
+        <div class="settings-tip">这些都是<b>它自己写下来的</b>：宫殿从聊天里提取的片段、近景的日更、
+        自动组装的小记忆、一局牌桌的回顾。<br>
+        <b>没放行之前，它们不参与它说话</b>（不进召回、也不进档案室和银河）——
+        所以你在这儿看到的，是「它打算记住什么」，而不是「它已经记住了什么」。<br>
+        觉得写得对 → 放行；写得不对或者你不认这段 → 撤回（直接删掉）。</div>
+      </section>
+      </div><!-- /待确认页 -->
+
       <div class="mem-page hidden" data-mp="timeline">
       <section class="mg-card" id="tlCard">
         <div class="mg-head">
@@ -6187,6 +6244,13 @@ const PROVIDERS = {
                 models: ["glm-4-plus", "glm-4-air", "glm-4-flash", "glm-4-long", "glm-4v-plus"] },
   "cloud:moonshot":    { name: "☁ 云端 · Kimi",        ver: "v1", cloud: true, get root(){ return cloudRoot("moonshot"); },
                 models: ["kimi-k2-0711-preview", "moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"] },
+  /* ★ Kimi Code 是**订阅额度**（包月，按请求计数），和上面按量付费的 Kimi 是两条路：
+     端点不同（api.kimi.com/coding/v1）、模型 id 不同（kimi-for-coding）、
+     **Key 也不通用** —— Kimi Code 的 Key 发到 moonshot 只会 401。
+     Key 在 kimi.com/code → 订阅管理里生成，填到后端的 KIMICODE_API_KEY。 */
+  "cloud:kimicode":    { name: "☁ 云端 · Kimi Code（订阅额度）", ver: "v1", cloud: true,
+                get root(){ return cloudRoot("kimicode"); },
+                models: ["kimi-for-coding", "kimi-for-coding-highspeed"] },
   "cloud:openai":      { name: "☁ 云端 · OpenAI",      ver: "v1", cloud: true, get root(){ return cloudRoot("openai"); },
                 models: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "o3-mini"] },
   "cloud:openrouter":  { name: "☁ 云端 · OpenRouter",  ver: "v1", cloud: true, get root(){ return cloudRoot("openrouter"); },
@@ -10686,7 +10750,7 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   const callBtn     = $("#callBtn");
   if (!overlay || !callBtn) return;
   const scrim       = $("#callScrim");
-  const hangup      = $("#callHangup");
+  const hangup      = $("#callHangup");
   const timerEl     = $("#callTimer");
   const transcript  = $("#callTranscript");
   const captionText = $("#callCaptionText");
@@ -14325,8 +14389,102 @@ if ($("#tlList")){
   });
 }
 
+/* ════════════ 待确认 · 机器写的记忆（放行 / 撤回）════════════
+   Nocturne 那套：自动记住的东西**不静默生效**，先落进队列，人看过才作数。
+   为什么需要它：宫殿提取、近景日更、片段组装、牌桌回顾这四处都是机器自己写的，
+   以前一律闷头写库、立刻参与注入 —— 写错了（比如状态游标读失败导致重复提取）
+   没有任何地方看得见，也没有撤回入口，只能等它冒出重复记忆才被察觉。
+   现在它们先落 status=pending：不进召回、不进档案室与银河，在这里过目后才生效。 */
+let pdData = null;
+const PD_SRC = { palace: "宫殿提取", scenes: "片段组装", mono: "牌桌回顾",
+                 nearfield: "近景日更", fragment: "片段组装" };
+const PD_KIND = { event: "事件", ref: "参考资料", working: "工作记忆", summary: "摘要",
+                  story: "故事", room: "我的房间", letter: "留给西西的话",
+                  fragment: "片段", palace_node: "宫殿" };
+function pdStatus(msg, kind){
+  const el = $("#pdHint"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = kind === "err" ? "var(--danger, #e06c75)"
+                 : (kind === "ok" ? "var(--ok, #7ec699)" : "var(--text-faint)");
+}
+function pdRowHtml(it){
+  const src = PD_SRC[it.source] || it.source || "机器";
+  const kind = PD_KIND[it.kind] || it.kind || "";
+  const body = String(it.content || "");
+  return '<div class="br-row" style="cursor:default" data-pdrow="' + escapeHtml(String(it.id)) + '">'
+    + '<div class="br-row-top">'
+      + '<span class="br-ico">' + (it.kind === "palace_node" ? "🏛" : "⧗") + "</span>"
+      + '<span class="br-name">' + escapeHtml(it.title || kind || "一条待确认") + "</span>"
+      + '<span class="br-meta">' + escapeHtml(src + (kind ? " · " + kind : "")) + "</span>"
+    + "</div>"
+    + (body ? '<div class="br-body">' + escapeHtml(body) + "</div>" : "")
+    + '<div class="nf-actions" style="margin-top:8px">'
+      + '<button type="button" class="btn ghost" data-pd-pass="' + escapeHtml(String(it.id)) + '">放行</button>'
+      + '<button type="button" class="btn ghost" data-pd-drop="' + escapeHtml(String(it.id)) + '">撤回</button>'
+    + "</div></div>";
+}
+function pdRender(){
+  const host = $("#pdList"); if (!host) return;
+  const items = pdData || [];
+  if (!items.length){
+    host.innerHTML = '<div class="br-empty">队列是空的 —— 没有等你过目的东西。'
+      + "<br>机器每写一笔都会先落这儿：宫殿从聊天里提取的片段、近景日更、"
+      + "自动组装的小记忆、一局牌桌的回顾。觉得它写得不对，就在这儿撤回。</div>";
+    return;
+  }
+  host.innerHTML = items.map(pdRowHtml).join("");
+}
+async function pdLoad(verbose){
+  if (verbose) pdStatus("读待确认…");
+  try{
+    const r = await memApi("/app/memory/pending?limit=200");
+    pdData = r.items || [];
+    const tag = $("#pdTag"); if (tag) tag.textContent = pdData.length + " 条";
+    const foot = $("#pdFoot");
+    if (foot) foot.textContent = pdData.length
+      ? "共 " + pdData.length + " 条待你过目 · 没放行之前它们不进召回、也不进档案室和银河"
+      : "共 0 条 · 机器写新东西时会自动出现在这里";
+    if (verbose) pdStatus(pdData.length ? ("读到 " + pdData.length + " 条") : "没有待确认的", "ok");
+    pdRender();
+  }catch(err){
+    pdStatus("读失败 —— " + ((err && err.message) || err), "err");
+    const host = $("#pdList");
+    if (host && !pdData) host.innerHTML = '<div class="br-empty">读不到待确认队列：'
+      + escapeHtml(String((err && err.message) || err)) + "</div>";
+  }
+}
+async function pdAct(ids, act){
+  if (!ids || !ids.length) return;
+  if (act === "rollback" && !confirm("撤回这 " + ids.length
+      + " 条？它们会被**直接删掉** —— 等于「这段我不认」。")) return;
+  pdStatus(act === "confirm" ? "正在放行…" : "正在撤回…");
+  try{
+    const r = await memApi(act === "confirm" ? "/app/memory/confirm" : "/app/memory/rollback",
+      { method: "POST", body: JSON.stringify(act === "confirm" ? { ids: ids } : { ids: ids }) });
+    pdStatus((r && r.message) || (act === "confirm" ? "已放行" : "已撤回"), "ok");
+    await pdLoad(false);
+    try { memLoad(false); } catch (_) { }        // 让各分区的计数跟着变
+  }catch(err){
+    pdStatus((act === "confirm" ? "放行失败 —— " : "撤回失败 —— ") + ((err && err.message) || err), "err");
+  }
+}
+if ($("#pdList")){
+  if ($("#pdRefresh")) $("#pdRefresh").addEventListener("click", () => pdLoad(true));
+  if ($("#pdAll")) $("#pdAll").addEventListener("click", () => {
+    const ids = (pdData || []).map((x) => x.id);
+    pdAct(ids, "confirm");
+  });
+  $("#pdList").addEventListener("click", (e) => {
+    const p = e.target.closest("[data-pd-pass]");
+    const d = e.target.closest("[data-pd-drop]");
+    if (p) pdAct([p.dataset.pdPass], "confirm");
+    else if (d) pdAct([d.dataset.pdDrop], "rollback");
+  });
+}
+
 const MEM_BAR_FIXED = [
   { key: "overview", ico: "◍", name: "总览",        sub: "银河 · 日历 · 档案室" },
+  { key: "pending",  ico: "⧗", name: "待确认",      sub: "机器写的" },
   { key: "timeline", ico: "◷", name: "时间线",      sub: "别处 · 聊天 合一" },
   { key: "near",     ico: "✦", name: "近景 · 七天", sub: "" },
   { key: "haven",    ico: "☁", name: "Haven",       sub: "长期记忆 · 只读" },
@@ -14369,6 +14527,8 @@ function memShowPage(key){
   if (target.dataset.mp === "haven") { try { brLoad(false); } catch (_) { } }
   /* 时间线同理：它的内容也全靠异步拉（/app/scene/recent），不在首屏就没有别的时机补 */
   if (target.dataset.mp === "timeline") { try { tlLoad(false); } catch (_) { } }
+  /* 待确认队列同理：机器写的东西随时在长，切过来时补一次 */
+  if (target.dataset.mp === "pending") { try { pdLoad(false); } catch (_) { } }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }
@@ -14378,6 +14538,7 @@ function memBarSync(){
   const counts = memData.counts || {};
   const put = (k, v) => { const el = $("#mbSub-" + k); if (el) el.textContent = v; };
   put("overview", "银河 · 日历 · 档案室");
+  put("pending", pdData && pdData.length ? (pdData.length + " 条待看") : "机器写的");
   put("timeline", tlData ? (tlData.length + " 条") : "别处 · 聊天 合一");
   put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
   put("haven", "长期记忆 · 只读");
@@ -17916,9 +18077,19 @@ function startRealtime(){
     setConn(ok ? "reconnecting" : "offline");
   }, 25000);
 }
+/* 启动层退场。它只做一件事：别让人对着空壁纸等。
+   ★ 挂了两道保险 —— startChat（正常路径）+ init 的 finally（异常路径），
+     所以不管是后端起不来还是脚本报错，这一层都不会赖着不走挡住界面。 */
+function hideBoot(){
+  const el = $("#bootVeil");
+  if (!el || el.classList.contains("gone")) return;
+  el.classList.add("gone");
+  setTimeout(() => { try { el.remove(); } catch (_) { } }, 600);
+}
 function startChat(initialMsgs, { connect = true, fromCache = false } = {}){
   loginEl.classList.add("hidden");
   appEl.classList.remove("hidden");
+  hideBoot();
   setConn("offline");
   resetChatState();
 
@@ -18079,6 +18250,8 @@ if ($("#wipeLocal")) $("#wipeLocal").addEventListener("click", wipeLocalChat);
 
 init().then(() => {
   if (pendingFakeNotice) showToast("已清理 " + pendingFakeNotice + " 条演示模式留下的假消息");
+  /* 兜底：init 里任何一条支路提前 return，启动层也不会赖着不走 */
+  hideBoot();
   /* ?open=album —— album.html 那个老入口现在只是个跳转壳，指到这里来。
      开完就把参数擦掉，免得刷新一次又被弹进相册。 */
   try {
@@ -18087,6 +18260,11 @@ init().then(() => {
       setTimeout(() => { if (window.openAlbum) window.openAlbum(); }, 120);
     }
   } catch (_) { }
+}).catch(() => {
+  /* init 本身炸了也别把人关在启动层里 —— 界面能进就先让人进去，
+     后面的连接问题交给既有的离线提示去说。 */
+  try { loginEl.classList.add("hidden"); appEl.classList.remove("hidden"); } catch (_) { }
+  hideBoot();
 });
 </script>
 

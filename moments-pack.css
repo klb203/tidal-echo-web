@@ -1,0 +1,214 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   moments-pack.css · 朋友圈（整页）
+   复用宿主已有的 .rps-* 整页骨架（顶栏 / 消息流 / 输入区），只写卡片与互动部分。
+   全部走宿主 CSS 变量 → 四套主题自动跟随。
+   ══════════════════════════════════════════════════════════════════════════ */
+.mms-panel{ z-index: 202; }                 /* 比牌桌(201)再高一层 */
+.mms-panel .rps-page{ background: var(--bg, #F7FAFC); }
+
+/* 顶栏右侧那个「写一条」 */
+.mms-write{ color: var(--text, #253447); }
+
+/* 日期小标题 */
+.mms-day{
+  font-family: var(--font-en, inherit); font-size: 11.5px; letter-spacing: .14em;
+  color: var(--text-faint, #8A99A8); margin: 6px 2px 10px;
+}
+
+
+/* ── 整页骨架：这一层必须**自带**，不能指望 rp-channel-pack.css ──────────────
+   一开始我复用了万花筒那边的 .rps-*，结果预览页（没引那个 CSS）里面板直接变成
+   一个 static div —— 预览页当场把这个问题照出来了。
+   更要紧的是：靠别的 pack 提供基础样式太脆（万花筒被撤掉，朋友圈就塌）。
+   所以这里把用得到的那几条**收在自己名下**（都挂在 .mms-panel 下，特异性更高，
+   也不会跟别人的 .rps-* 打架）。 */
+.mms-panel.rps-panel{
+  position: fixed; inset: 0; z-index: 202;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--bg, #F7FAFC);
+}
+.mms-panel.hidden{ display: none; }
+.mms-panel .hidden{ display: none !important; }
+.mms-panel.open .rps-page{ transform: translateY(0); opacity: 1; }
+.mms-panel .rps-page{
+  position: relative; width: min(100vw, var(--ref-width, 941px)); height: 100%;
+  margin: 0 auto; background: var(--bg, #F7FAFC);
+  display: flex; flex-direction: column; min-height: 0;
+  transform: translateY(2.5%); opacity: 0;
+  transition: transform .34s var(--ease-soft, cubic-bezier(.22,1,.36,1)), opacity .28s ease;
+}
+.mms-panel .rps-top{
+  display: flex; align-items: center; gap: 2px; flex: 0 0 auto;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 2px;
+}
+.mms-panel .rps-top button{
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  color: var(--text, #253447); font-size: 19px; cursor: pointer;
+  padding: 4px 8px; opacity: .72; font-family: var(--font-cn, inherit);
+}
+.mms-panel .rps-top button:hover{ opacity: 1; }
+.mms-panel .rps-title-wrap{ text-align: center; flex: 1 1 auto; min-width: 0; }
+.mms-panel .rps-title{ font-size: 19px; font-weight: 600; color: var(--text, #253447); letter-spacing: .04em; }
+.mms-panel .rps-sub{
+  color: var(--text-faint, #8A99A8); font-size: 11.5px; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mms-panel .mms-scroll{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 14px 6px;
+}
+.mms-panel .mms-feed{ display: flex; flex-direction: column; }
+
+/* ── 一条动态 ─────────────────────────────────────────────────────────── */
+.mms-card{
+  display: flex; gap: 10px; padding: 13px 2px 5px;
+  border-bottom: 1px solid var(--hairline, rgba(120,142,165,.18));
+  animation: mmsIn .38s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes mmsIn{ from{ opacity:0; transform: translateY(9px); } }
+.mms-av{
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 14px; color: #fff;
+  background: var(--accent, #4C6378); box-shadow: 0 2px 8px rgba(40,60,80,.16);
+  font-family: var(--font-cn, inherit);
+}
+.mms-av.me{ background: #7E93A4; }
+.mms-main{ flex: 1 1 auto; min-width: 0; }
+.mms-head{ display: flex; align-items: baseline; gap: 7px; }
+.mms-name{ font-family: var(--font-cn, inherit); font-size: 14px; font-weight: 600; color: var(--text, #253447); }
+.mms-time{ font-family: var(--font-en, inherit); font-size: 11px; letter-spacing: .03em; color: var(--text-faint, #8A99A8); }
+.mms-body{
+  font-family: var(--font-cn, inherit); font-size: 14px; line-height: 1.75;
+  color: var(--text, #253447); margin: 4px 0 0; white-space: pre-wrap; word-break: break-word;
+}
+.mms-img{
+  width: 100%; max-height: 42vh; object-fit: cover; border-radius: 12px;
+  margin-top: 8px; background: var(--hairline, rgba(120,142,165,.18)); display: block;
+}
+.mms-imgcap{
+  font-family: var(--font-cn, inherit); font-size: 11px; color: var(--text-faint, #8A99A8);
+  margin-top: 5px; line-height: 1.6;
+}
+.mms-acts{ display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.mms-act{
+  appearance: none; border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-cn, inherit); font-size: 12.5px; color: var(--text-faint, #8A99A8);
+  padding: 3px 0; display: inline-flex; align-items: center; gap: 4px; transition: color .18s, transform .12s;
+}
+.mms-act:active{ transform: scale(.95); }
+.mms-act.on{ color: #C2566A; }
+.mms-act svg{ width: 14px; height: 14px; }
+.mms-than{ font-size: 10.5px; color: var(--text-faint, #8A99A8); margin-left: 2px; }
+
+/* ── 评论链 ───────────────────────────────────────────────────────────── */
+.mms-cmts{
+  margin-top: 9px; padding: 9px 11px; border-radius: 12px;
+  background: var(--seg-track, rgba(140,160,176,.10));
+}
+.mms-cmt{ font-family: var(--font-cn, inherit); font-size: 13px; line-height: 1.7; color: var(--text, #253447); }
+.mms-cmt + .mms-cmt{ margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--hairline, rgba(120,142,165,.22)); }
+.mms-cmt b{ color: var(--accent, #4C6378); font-weight: 600; margin-right: 5px; }
+.mms-cmt.pending b{ color: var(--text-faint, #8A99A8); }
+.mms-wait{
+  font-size: 11px; color: #B36A1A; margin-top: 7px;
+  font-family: var(--font-cn, inherit);
+}
+.mms-wait.done{ color: var(--text-faint, #8A99A8); }
+
+/* 评论输入 */
+.mms-crow{ display: flex; gap: 7px; margin-top: 9px; align-items: center; }
+.mms-crow input{
+  flex: 1 1 auto; min-width: 0; padding: 8px 11px; border-radius: 999px;
+  border: 1px solid var(--field-line, rgba(255,255,255,.7));
+  background: var(--field-bg, rgba(255,255,255,.55)); color: var(--text, #253447);
+  font: inherit; font-size: 13px; outline: none;
+}
+.mms-crow button{
+  flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  background: var(--accent-deep, #2C4056); color: #fff; border: none;
+  font-family: var(--font-cn, inherit); font-size: 12.5px;
+}
+.mms-crow button:disabled{ opacity: .45; }
+
+/* ── 发一条 ───────────────────────────────────────────────────────────── */
+.mms-new{
+  border-top: 1px solid var(--hairline, rgba(120,142,165,.2));
+  background: var(--composer-bg, var(--bg, #F7FAFC));
+  padding: 8px 12px calc(env(safe-area-inset-bottom) + 9px); flex: 0 0 auto;
+}
+.mms-newrow{ display: flex; align-items: flex-end; gap: 8px; }
+.mms-new textarea{
+  flex: 1 1 auto; min-width: 0; resize: none; max-height: 26vh;
+  padding: 10px 13px; border-radius: 14px; line-height: 1.6;
+  border: 1px solid var(--field-line, rgba(255,255,255,.7));
+  background: var(--field-bg, rgba(255,255,255,.55)); color: var(--text, #253447);
+  font-family: var(--font-cn, inherit); font-size: 14px; outline: none;
+}
+.mms-new textarea:focus{ border-color: var(--accent, #4C6378); }
+.mms-ibtn{
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--seg-track, rgba(140,160,176,.14)); color: var(--text-soft, #5E7080);
+  display: grid; place-items: center;
+}
+.mms-ibtn svg{ width: 18px; height: 18px; }
+.mms-send{
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent-deep, #2C4056); color: #fff; display: grid; place-items: center;
+}
+.mms-send svg{ width: 18px; height: 18px; }
+.mms-send[disabled]{ opacity: .4; }
+.mms-thumb{
+  position: relative; display: inline-block; margin-top: 8px;
+}
+.mms-thumb img{ height: 64px; border-radius: 10px; display: block; }
+.mms-thumb button{
+  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: rgba(30,45,60,.82); color: #fff; font-size: 12px; line-height: 1; cursor: pointer;
+}
+.mms-hint{ font-size: 10.5px; color: var(--text-faint, #8A99A8); padding: 7px 2px 0; line-height: 1.6; }
+
+/* ── 设置区 ───────────────────────────────────────────────────────────── */
+.mms-cfg{ padding: 10px 14px 12px; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.2)); flex: 0 0 auto; max-height: 46vh; overflow-y: auto; }
+.mms-cfg.hidden{ display: none; }
+.mms-f{ display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.mms-f > label{ flex: 0 0 96px; font-family: var(--font-cn, inherit); font-size: 12px; color: var(--text-soft, #5E7080); }
+.mms-f input, .mms-f select{
+  flex: 1 1 auto; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--field-line, rgba(255,255,255,.7));
+  background: var(--field-bg, rgba(255,255,255,.55)); color: var(--text, #253447);
+  font: inherit; font-size: 13px; outline: none;
+}
+.mms-note{ font-family: var(--font-cn, inherit); font-size: 11px; line-height: 1.7; color: var(--text-faint, #8A99A8); margin: 4px 0 0; }
+.mms-btn{
+  padding: 8px 14px; border-radius: 11px; border: 1px solid var(--field-line, rgba(255,255,255,.7));
+  background: var(--field-bg, rgba(255,255,255,.55)); color: var(--text-soft, #5E7080);
+  font-family: var(--font-cn, inherit); font-size: 12.5px; cursor: pointer;
+}
+.mms-btn.primary{ background: var(--accent-deep, #2C4056); color: #fff; border-color: transparent; }
+.mms-btn:active{ transform: scale(.97); }
+
+/* 空态 / 提示条 */
+.mms-empty{ text-align: center; padding: 46px 22px; color: var(--text-soft, #5E7080); }
+.mms-empty .en{ font-family: var(--font-en, inherit); font-style: italic; font-size: 18px; color: var(--text-faint, #8A99A8); }
+.mms-empty p{ font-family: var(--font-cn, inherit); font-size: 13.5px; margin: 9px 0 0; line-height: 1.8; }
+.mms-tip{
+  font-family: var(--font-cn, inherit); font-size: 11.5px; line-height: 1.7;
+  color: #B36A1A; background: rgba(217,130,43,.09); border-radius: 10px;
+  padding: 8px 11px; margin: 4px 2px 10px;
+}
+.mms-tip.hidden{ display: none; }
+
+/* 正在生成时的呼吸提示 */
+.mms-gen{
+  font-family: var(--font-cn, inherit); font-size: 11.5px; color: var(--text-faint, #8A99A8);
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 7px;
+}
+.mms-gen i{ width: 5px; height: 5px; border-radius: 50%; background: currentColor; display: inline-block; animation: mmsBlink 1.1s infinite; }
+.mms-gen i:nth-child(2){ animation-delay: .18s; }
+.mms-gen i:nth-child(3){ animation-delay: .36s; }
+@keyframes mmsBlink{ 0%,100%{ opacity:.25 } 50%{ opacity:1 } }
+
+@media (max-width: 380px){
+  .mms-body{ font-size: 13.5px; }
+  .mms-f > label{ flex-basis: 78px; }
+}

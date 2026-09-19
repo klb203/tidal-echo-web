@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>朋友圈 · 预览（Tidal Echo）</title>
+
+<!-- 本体（与 index.html 引用的是同一份） -->
+<link rel="stylesheet" href="moments-pack.css">
+
+<style>
+:root{
+  --ref-width: 941px;
+  --font-cn: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-en: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg: #F7FAFC; --header-bg: #F7FAFC;
+  --hairline: rgba(120,142,165,.24);
+  --text: #253447; --text-soft: #5E7080; --text-faint: #8A99A8;
+  --bubble-ai-bg: #ECEEF3; --bubble-ai-fg: #253447;
+  --bubble-human-bg: #DFE5EE; --bubble-human-fg: #253447;
+  --accent: #4C6378; --send-bg: #2C4056; --tick: #7E93A4; --accent-fg: #ffffff;
+  --composer-bg: #EEF4FA;
+  --field-bg: rgba(247,250,252,.92); --field-line: rgba(151,169,181,.18);
+  --shadow: 0 18px 46px rgba(74,93,108,.10);
+  --card-bg: rgba(244,248,250,.42); --card-line: rgba(150,168,182,.12);
+  --seg-track: rgba(140,160,176,.11); --seg-thumb: rgba(255,255,255,.68);
+  --seg-thumb-shadow: 0 2px 8px rgba(40,60,78,.08);
+  --row-press: rgba(140,160,176,.09);
+}
+:root[data-theme="harbor"]{
+  --bg:#F4F2EF; --header-bg:#F4F2EF;
+  --hairline:rgba(74,93,108,.20);
+  --text:#36404B; --text-soft:#5E6B78; --text-faint:#9197A0;
+  --bubble-ai-bg:#EAE6E4; --bubble-human-bg:#E1E0E3;
+  --accent:#4A5D6C; --send-bg:#4A5D6C;
+  --composer-bg:#EFEBE8; --field-bg:rgba(244,242,239,.92);
+}
+:root[data-theme="pink"]{
+  --bg:#FFF4F8; --header-bg:#FFF4F8;
+  --hairline:rgba(212,120,158,.22);
+  --text:#4A2B39; --text-soft:#8A5A6E; --text-faint:#B08D9C;
+  --bubble-human-bg:#E8558F; --bubble-human-fg:#FFFFFF;
+  --bubble-ai-bg:#FFFFFF; --bubble-ai-fg:#6B3348;
+  --accent:#E8558F; --send-bg:#E8558F;
+  --composer-bg:#FDE9F1; --field-bg:rgba(255,255,255,.86);
+  --field-line:rgba(212,120,158,.20);
+  --card-bg:rgba(255,255,255,.60); --card-line:rgba(212,120,158,.14);
+  --seg-track:rgba(224,150,182,.18); --seg-thumb:rgba(255,255,255,.86);
+  --row-press:rgba(224,150,182,.14);
+}
+:root[data-theme="dark"]{
+  --bg:#0F0F12; --header-bg:#0F0F12;
+  --hairline:rgba(255,255,255,.10);
+  --text:#EDEDF2; --text-soft:#A8A8B4; --text-faint:#75757F;
+  --bubble-human-bg:#E7E3EC; --bubble-human-fg:#1A1A1F;
+  --bubble-ai-bg:#26262E; --bubble-ai-fg:#E8E8EE;
+  --accent:#C9A9E0; --send-bg:#C9A9E0; --accent-fg:#17171C;
+  --composer-bg:#17171C; --field-bg:rgba(255,255,255,.06);
+  --field-line:rgba(255,255,255,.10);
+  --card-bg:rgba(255,255,255,.05); --card-line:rgba(255,255,255,.09);
+  --seg-track:rgba(255,255,255,.08); --seg-thumb:rgba(255,255,255,.18);
+  --row-press:rgba(255,255,255,.07);
+}
+
+/* ── 预览外壳 ───────────────────────────────────────────────────────── */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-cn); -webkit-font-smoothing:antialiased; }
+.pv-wrap{ max-width:640px; margin:0 auto; padding:26px 18px 40px; }
+.pv-h1{ font-size:21px; font-weight:600; letter-spacing:.03em; margin:0 0 4px; }
+.pv-sub{ font-size:12.5px; color:var(--text-faint); line-height:1.8; margin:0 0 20px; }
+.pv-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.pv-lab{ font-size:11.5px; color:var(--text-faint); margin-right:2px; }
+.pv-btn{
+  appearance:none; border:1px solid var(--card-line); background:var(--card-bg);
+  color:var(--text); border-radius:10px; padding:7px 13px; font-size:12.5px;
+  cursor:pointer; font-family:var(--font-cn);
+  transition:border-color .2s ease, transform .16s var(--ease-soft);
+}
+.pv-btn:hover{ border-color:var(--accent); }
+.pv-btn:active{ transform:scale(.97); }
+.pv-btn.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv-btn.primary{ background:var(--accent); color:var(--accent-fg); border-color:transparent; padding:11px 22px; font-size:13.5px; font-weight:600; }
+.pv-card{
+  border:1px solid var(--card-line); background:var(--card-bg);
+  border-radius:14px; padding:15px 16px; margin-bottom:14px;
+}
+.pv-card h3{ font-size:13.5px; margin:0 0 8px; font-weight:600; }
+.pv-card p, .pv-card li{ font-size:12px; line-height:1.85; color:var(--text-soft); margin:0; }
+.pv-card ul{ margin:6px 0 0; padding-left:19px; }
+.pv-card code{ font-family:var(--font-en); font-size:11.5px; background:var(--seg-track); border-radius:5px; padding:1px 5px; }
+.pv-k{ color:var(--text); font-weight:600; }
+.pv-note{
+  font-size:11.5px; line-height:1.8; color:var(--text-faint);
+  border-left:2.5px solid var(--accent); padding-left:11px; margin-top:14px;
+}
+
+/* ── 预览外壳 ── */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-cn);
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.pv{ max-width:760px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 22px) 20px 60px; }
+.pv h1{ font-size:26px; margin:0 0 4px; letter-spacing:.02em; }
+.pv .sub{ color:var(--text-faint); font-size:13px; margin:0 0 18px; }
+.pv .row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.pv button{
+  font:inherit; font-size:13px; padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--hairline); background:var(--field-bg); color:var(--text-soft);
+}
+.pv button.on{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
+.pv .go{ background:var(--send-bg); color:var(--accent-fg); border-color:transparent; font-size:14px; padding:11px 22px; }
+.pv ul{ margin:0 0 16px 18px; padding:0; font-size:13.5px; line-height:1.9; color:var(--text-soft); }
+.pv li b{ color:var(--text); }
+.pv .box{
+  border:1px solid var(--card-line); background:var(--card-bg); border-radius:16px;
+  padding:14px 16px; margin-bottom:14px; font-size:13px; line-height:1.85; color:var(--text-soft);
+}
+.pv .box b{ color:var(--text); }
+.pv code{ background:var(--seg-track); border-radius:5px; padding:1px 6px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="pv">
+  <h1>朋友圈</h1>
+  <div class="sub">各自经过同一面墙，在上面留痕迹。</div>
+
+  <div class="row">
+    <button data-theme="light" class="on">Pearl</button>
+    <button data-theme="harbor">Harbor</button>
+    <button data-theme="pink">Pink</button>
+    <button data-theme="dark">Dark</button>
+  </div>
+  <div class="row">
+    <button class="go" data-open>打开朋友圈</button>
+    <button data-seed>塞几条示例</button>
+    <button data-due>把「到点」提前（立刻能看生成）</button>
+  </div>
+
+  <ul>
+    <li><b>惰性回复</b>：你发完，TA 不会马上回 —— <code>reply_due_at</code> 随机 10–20 分钟后才该回。
+      没到时间<b>一个 token 都不花</b>；到点才生成。评论是 3–8 分钟。</li>
+    <li><b>TA 也会自己发</b>：⚙ 里有「让 TA 发一条」；正式页面里它在聊天中有感而发时自己发
+      （<code>post_moment</code> 工具）。</li>
+    <li><b>图片只看一次</b>：第一次回复时顺便让它写一段 <code>[image_desc]</code> 存下来，
+      之后评论链不再传图，只用那段文字。</li>
+    <li><b>点赞与评论链</b>：你赞 TA 的，TA 也会赞你的；评论可以来回多轮。</li>
+    <li><b>模型</b>：走你自己后端的中转（前端不放 Key），可在 ⚙ 里换。</li>
+  </ul>
+
+  <div class="box">
+    <b>这个预览页需要真后端</b>：它读的是 <code>/app/fav</code>（你部署的那个中转后端）。
+    没配「云端后端地址」时，会退到本机 localStorage 那份（能看、能写，但不跨设备）。<br>
+    想快速看生成效果：先<b>塞几条示例</b> → <b>把「到点」提前</b> → 打开朋友圈，它会当场生成。
+  </div>
+</div>
+
+<script src="media-store.js"></script>
+<script src="moments-pack.js"></script>
+<script>
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button[data-theme]");
+  if (t) {
+    document.documentElement.setAttribute("data-theme", t.dataset.theme);
+    document.querySelectorAll("button[data-theme]").forEach((b) => b.classList.toggle("on", b === t));
+    return;
+  }
+  if (e.target.closest("[data-open]")) { if (window.openMoments) window.openMoments(); return; }
+  if (e.target.closest("[data-seed]")) {
+    const now = Date.now();
+    const M = [
+      { key: "demo1", author: "ai", content: "今天路过那家店，橱窗换了。你上次说想进去看看。",
+        created_at: new Date(now - 3 * 3600e3).toISOString(), reply_status: "done", liked: false, user_liked: false },
+      { key: "demo2", author: "me", content: "楼下那只橘猫又在同一个位置睡着了。",
+        created_at: new Date(now - 40 * 60e3).toISOString(),
+        reply_due_at: new Date(now + 8 * 60e3).toISOString(), reply_status: "pending", liked: false, user_liked: false },
+    ];
+    const arr = M.map((d, i) => ({ id: 800 + i, at: d.created_at, url: "", mime: "", data: d }));
+    localStorage.setItem("companion_media_moment", JSON.stringify(arr));
+    if (window.openMoments) window.openMoments();
+    return;
+  }
+  if (e.target.closest("[data-due]")) {
+    /* 把 pending 的那条 due 时间改成"刚刚" —— 用来立刻看生成效果 */
+    try {
+      const arr = JSON.parse(localStorage.getItem("companion_media_moment") || "[]");
+      arr.forEach((x) => { if (x.data && x.data.reply_status === "pending") x.data.reply_due_at = new Date(Date.now() - 1000).toISOString(); });
+      localStorage.setItem("companion_media_moment", JSON.stringify(arr));
+      if (window.Moments) window.Moments.reload().then(() => window.Moments.tick());
+    } catch (_) { }
+    return;
+  }
+});
+</script>
+</body>
+</html>

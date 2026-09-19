@@ -40,6 +40,8 @@
 <link rel="stylesheet" href="rp-channel-pack.css">
 <!-- 自由活动（让 TA 自己用 MCP 出门逛）· 面板样式 -->
 <link rel="stylesheet" href="activity-pack.css">
+<!-- 朋友圈 · 整页（各自经过同一面墙留痕迹）样式 -->
+<link rel="stylesheet" href="moments-pack.css">
 
 <script>
   /* Theme: two presets (light=Pearl / harbor). Persisted in localStorage companion_theme. Set data-theme early to avoid a first-paint flash. */
@@ -4412,6 +4414,12 @@
           <span class="menu-copy"><span class="menu-name">自由活动</span><span class="menu-sub">让 TA 自己出门逛逛。</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="moments">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="4.6"/><path d="M8 9.6h8M8 13h5.4"/><circle cx="16.2" cy="15.4" r="1.5"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">朋友圈</span><span class="menu-sub">TA 自言自语的地方。</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="toolkit">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.4a3.6 3.6 0 0 1 4.9 4.9l-1.5-1.5-1.2 1.2-1.7-1.7-1.2 1.2-1.7-1.7 1.2-1.2-1.7-1.7 1.2-1.2-1.5-1.5Z"/><path d="M12.6 9.8 4.4 18a1.7 1.7 0 0 0 2.4 2.4l8.2-8.2"/></svg></span>
           <span class="menu-dot"></span>
@@ -6256,7 +6264,8 @@ if (menuPanel){
     else if (item.dataset.menu === "toolkit") kitOpen();          // 工具与能力（天气/闹钟/Bot/权限…）
     else if (item.dataset.menu === "groupchat") { closeMenu(); if (window.openGroupChat) window.openGroupChat(); }   // 群聊（三个 AI + 你，派活/进度/收结果）
     else if (item.dataset.menu === "rp") { closeMenu(); if (window.openRp) window.openRp(); }
-    else if (item.dataset.menu === "activity") { closeMenu(); if (window.openActivity) window.openActivity(); }                          // 万花筒（角色扮演渠道：摇世界 / 召唤制旁白与 NPC）
+    else if (item.dataset.menu === "activity") { closeMenu(); if (window.openActivity) window.openActivity(); }
+    else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈                          // 万花筒（角色扮演渠道：摇世界 / 召唤制旁白与 NPC）
     else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     else if (item.dataset.menu === "album") location.assign("album.html");  // album shell (wire your own backend)
@@ -17405,6 +17414,9 @@ init().then(() => {
 <script defer src="rp-channel-pack.js"></script>
 
 <!-- 自由活动 · 面板逻辑。同样 defer，复用宿主连接层与记忆接口（memApi /app/memory/save）。 -->
+<!-- 共享存储层：图片本体走 /app/upload，元数据走 /app/fav。必须先于用它的包加载。 -->
+<script defer src="media-store.js"></script>
+<script defer src="moments-pack.js"></script>
 <script defer src="activity-pack.js"></script>
 
 </body>

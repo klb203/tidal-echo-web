@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>相册 · Album Archive</title>
+<title>图片记忆 · Picture Memory</title>
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- 字体 CSS 非阻塞化（同 index.html）：cdn.jsdelivr.net 在大陆手机常慢，阻塞会白屏等它。 -->
@@ -268,8 +268,35 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   .album:hover{ transform:translateY(-2px); }
 }
 @media(min-width:600px){ .rgrid{ grid-template-columns:repeat(3,1fr); } }
+
+/* ───────── 图片记忆新增：描述卡 / 第一印象卡 / 元信息 / 复用提示 / 模型小卡 ───────── */
+.gm-stats{ font-family:var(--font-cn); font-size:12.5px; color:var(--text-soft); margin:0 2px 10px; }
+.gm-stats b{ color:var(--text); font-weight:600; }
+.gm-card{ background:var(--field-bg); border:1px solid var(--field-line); border-radius:16px;
+  padding:13px 16px; margin:14px 0 0; box-shadow:var(--soft-shadow), inset 0 1px 0 var(--sheet-hi);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+.gm-card > span{ display:block; font-family:var(--font-cn); font-size:11.5px; letter-spacing:.08em;
+  color:var(--text-faint); margin-bottom:6px; }
+.gm-card > p{ font-family:var(--font-cn); font-size:13.5px; line-height:1.75; color:var(--text);
+  margin:0; white-space:pre-wrap; }
+.gm-desc{ margin-top:16px; }
+.gm-imp{ background:rgba(198,168,188,.14); border-color:rgba(186,156,178,.32); }
+.gm-meta{ font-family:var(--font-en); font-size:11.5px; letter-spacing:.04em; color:var(--text-faint); margin:12px 3px 0; }
+.gm-reuse{ font-family:var(--font-cn); font-size:12px; line-height:1.75; color:var(--text-soft);
+  margin:11px 0 0; padding:10px 13px; border-left:2px solid var(--accent);
+  background:rgba(120,142,165,.07); border-radius:0 10px 10px 0; }
+.gm-reuse b{ color:var(--text); }
+.gm-row{ display:flex; gap:8px; align-items:center; margin-top:9px; }
+.gm-row select,.gm-row input[type=text]{ flex:1; min-width:0; padding:9px 11px; border-radius:11px;
+  border:1px solid var(--field-line); background:var(--field-bg); color:var(--text);
+  font:inherit; font-size:13px; outline:none; }
+.gm-note{ font-family:var(--font-cn); font-size:11.5px; line-height:1.65; color:var(--text-faint); margin:8px 2px 0; }
+.gm-mini{ font-family:var(--font-cn); font-size:12px; padding:6px 13px; border-radius:20px;
+  background:var(--field-bg); border:1px solid var(--field-line); color:var(--text-soft);
+  transition:transform .15s; }
+.gm-mini:active{ transform:scale(.96); }
+@media(hover:hover){ .gm-mini:hover{ color:var(--text); } }
 </style>
-</head>
 <body>
 <div class="wall"></div>
 
@@ -279,26 +306,53 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
   </button>
   <span class="grow"></span>
-  <div class="top-label" id="topLabel">PHOTO<br>ALBUM<span class="rule"></span></div>
+  <button class="icon" id="gearBtn" title="模型">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.6v2.2M12 18.2v2.2M4.9 7.9l1.9 1.1M17.2 15l1.9 1.1M4.9 16.1l1.9-1.1M17.2 9l1.9-1.1"/></svg>
+  </button>
+  <div class="top-label" id="topLabel">PICTURE<br>MEMORY<span class="rule"></span></div>
+</div>
+
+<!-- ⚙ 模型：谁来看图、谁来写印象 -->
+<div class="wrap hidden" id="cfgBox" style="padding-bottom:6px">
+  <div class="gm-card">
+    <span>看图与写字用的模型</span>
+    <div class="gm-row">
+      <select id="cfgProvider">
+        <option value="zhipu">云端 · 智谱 GLM（可看图：glm-4v-plus）</option>
+        <option value="openai">云端 · OpenAI（gpt-4o）</option>
+        <option value="openrouter">云端 · OpenRouter</option>
+        <option value="moonshot">云端 · Kimi</option>
+        <option value="qwen">云端 · 阿里百炼</option>
+        <option value="deepseek">云端 · DeepSeek（⚠️ 看不了图）</option>
+      </select>
+      <input type="text" id="cfgModel" placeholder="模型名，如 glm-4v-plus">
+    </div>
+    <p class="gm-note" id="cfgNote">描述图片需要**能看图**的模型。DeepSeek 只能读文字，选它描述会失败（图照收不误，只是描述待补）。</p>
+    <div class="gm-row">
+      <button class="glass" id="cfgSave" style="flex:1;padding:10px;border-radius:12px">保存</button>
+    </div>
+  </div>
 </div>
 
 <!-- ════════ 列表 ════════ -->
 <div class="wrap" id="listView">
   <div class="hero">
-    <h1>Album Archive</h1>
-    <div class="sub">light, quietly collected.</div>
+    <h1>Picture Memory</h1>
+    <div class="sub">看过一次，就不会忘。</div>
   </div>
 
   <div class="tools">
     <div class="search glass">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-      <input id="searchInput" type="search" placeholder="Search memories…" autocomplete="off">
+      <input id="searchInput" type="search" placeholder="找一张…（标题 / 描述）" autocomplete="off">
     </div>
     <button class="up-btn glass" id="upBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Upload Photo
+      收一张
     </button>
   </div>
+
+  <div class="gm-stats" id="stats"></div>
 
   <!-- board 照片墙：照片在底层，al-board.png 当上层压边 -->
   <div class="board-zone" id="boardZone">
@@ -308,28 +362,25 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
     </div>
   </div>
 
-  <!-- Recent Uploads -->
   <div id="recentSec">
-    <div class="sec-head"><h2>Recent Uploads</h2><button class="more" id="recentAll">see all ›</button></div>
+    <div class="sec-head"><h2>最近收的</h2><button class="more" id="recentAll">see all ›</button></div>
     <div class="rail" id="recent"></div>
     <div class="dots" id="recentDots"></div>
   </div>
 
-  <!-- My Albums -->
   <div id="albumsSec" class="hidden">
     <div class="sec-head"><h2>My Albums</h2><button class="more" id="albumsAll">see all ›</button></div>
     <div class="albums" id="albums"></div>
   </div>
 
-  <!-- 全部 / 搜索结果 -->
   <div id="gridSec" class="hidden">
-    <div class="sec-head"><h2 id="gridHead">All Photos</h2><button class="more" id="gridBack">‹ back</button></div>
+    <div class="sec-head"><h2 id="gridHead">全部</h2><button class="more" id="gridBack">‹ back</button></div>
     <div class="rgrid" id="grid"></div>
   </div>
 
   <div class="empty hidden" id="listEmpty">
-    <div class="en">the album is still empty</div>
-    <p>点「Upload Photo」，放第一张进来。</p>
+    <div class="en">no pictures yet</div>
+    <p>点「收一张」，放第一张进来。TA 会写下一段客观描述，和一句只写给你看的第一印象。</p>
   </div>
   <div class="msg hidden" id="listMsg"></div>
 </div>
@@ -339,39 +390,60 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   <img class="photo" id="detailImg" alt="">
   <div class="author">
     <div class="av"></div>
-    <div class="nm"><b id="peerName">DeepSeek<small></small></b><span id="detailTime"></span></div>
+    <div class="nm"><b id="peerName">TA<small></small></b><span id="detailTime"></span></div>
   </div>
-  <h1 id="detailCap"></h1>
-  <div class="tags" id="detailTags"></div>
-  <div class="views" id="detailViews"></div>
 
-  <div class="notes">
-    <div class="nh" id="notesTitle">DeepSeek的评语</div>
-    <div id="notesBox"></div>
+  <h1 id="detailCap"></h1>
+  <div class="gm-row" style="margin:2px 2px 0">
+    <button class="gm-mini" id="renameBtn">改标题</button>
+    <button class="gm-mini" id="reorderBtn" style="display:none">降序</button>
   </div>
+  <div class="tags" id="detailTags"></div>
+
+  <div class="gm-card gm-desc">
+    <span>TA 第一次看见的（客观描述）</span>
+    <p id="detailDesc"></p>
+  </div>
+  <div class="gm-card gm-imp hidden" id="impCard">
+    <span>当时留下的第一印象</span>
+    <p id="detailImp"></p>
+  </div>
+
+  <div class="gm-meta" id="detailMeta"></div>
+  <div class="gm-reuse" id="detailReuse"></div>
 
   <div class="act">
     <button class="glass" id="actZoom">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4M11 8v6M8 11h6"/></svg>
       查看大图
     </button>
-    <button class="glass" id="actRand">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-      随机抽取
+    <button class="glass" id="actChat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+      带去 Chat
+    </button>
+  </div>
+  <div class="act">
+    <button class="glass" id="actRetry">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
+      补描述
+    </button>
+    <button class="glass" id="actDel" style="color:var(--danger)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5.2h5V7M6.5 7l.9 12.2h9.2L17.5 7"/></svg>
+      删除
     </button>
   </div>
 
   <div class="footer">
-    <h3>Album Archive</h3>
-    <p>every photograph keeps a tale</p>
+    <h3>Picture Memory</h3>
+    <p>every picture keeps a word from the first time</p>
   </div>
 </div>
 
-<!-- ════════ token 门 ════════ -->
+<!-- ════════ 密钥门（只在后端要求鉴权时出现） ════════ -->
 <div class="wrap gate hidden" id="gateView">
-  <div class="hero" style="padding-top:40px"><h1>Album Archive</h1><div class="sub">a private little gallery</div></div>
+  <div class="hero" style="padding-top:40px"><h1>Picture Memory</h1><div class="sub">a private little gallery</div></div>
   <div class="gatebox">
-    <p>没读到访问密钥——先在主页登录，或在此粘贴密钥（与 PWA 同一个）。</p>
+    <p>后端要访问密钥。先在主页登录，或在此粘贴（与 PWA 同一个）。</p>
     <input type="text" id="gateInput" placeholder="访问密钥">
     <div class="row">
       <button class="ghost" id="gateHome">去主页</button>
@@ -380,322 +452,510 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   </div>
 </div>
 
-<!-- ════════ 上传悬浮窗（叠在主页上） ════════ -->
+<!-- ════════ 收一张（悬浮窗） ════════ -->
 <div class="modal hidden" id="uploadModal">
   <div class="sheet" id="uploadSheet">
     <button class="sheet-x" id="uploadClose" aria-label="关闭">✕</button>
-    <div class="fh">收一张进相册</div>
-    <div class="fsub">a memory for the archive</div>
-    <label>选一张照片（手机可直接拍 / 从相册选）</label>
+    <div class="fh">收一张进记忆</div>
+    <div class="fsub">TA 会先看一遍，然后写两句</div>
+    <label>选一张（可直接拍）</label>
     <input type="file" id="fileInput" accept="image/*">
     <img class="preview hidden" id="preview" alt="预览">
-    <label>说明（留空就用文件名）</label>
-    <input type="text" id="capInput" placeholder="这张是…">
-    <label>时间（可空，如 2026-06-25）</label>
-    <input type="text" id="timeInput" placeholder="2026-06-25" inputmode="numeric">
     <label>分组（可空，如 出游 / 日常）</label>
     <input type="text" id="groupInput" placeholder="出游 / 日常 …">
     <div class="row">
       <button class="ghost" id="uploadCancel">取消</button>
-      <button class="send" id="uploadSend">上传到相册</button>
+      <button class="send" id="uploadSend">收进记忆</button>
     </div>
     <div class="status" id="uploadStatus"></div>
   </div>
 </div>
 
+<script src="media-store.js"></script>
 <script>
-/* ─────────────────────────────────────────────────────────────
-   Album — a reusable photo-gallery SHELL.
-   The relay backend in this repo does NOT implement album endpoints.
-   To use it, wire these on your own backend (all Bearer-authed like the rest):
-     GET  /app/album/list             → { photos: [{id, img, caption, time, group, views, ...}] }
-     GET  /app/album/photo/{id}       → one photo (+ notes_list)
-     GET  /app/album/random           → one random photo
-     POST /app/album/upload?name=&caption=&time=&group=  (raw image body)
-     POST /app/trace                  → optional analytics (safe to ignore)
-   Until then the gallery shows the key gate / empty state.
-   ───────────────────────────────────────────────────────────── */
-/* ★ 这里原来写死 "/relay"，于是拼出来是 /relay/app/album/list —— **必 404**。
-   index.html 的 appBase() 注释里早就记着这个坑：/app/* 必须打后端的**根**，
-   "/relay" 只是给 "/relay/<供应商>/v1" 那套上游代理用的前缀。
-   按同样的优先级解析：设置里填的云端地址 → 代码默认值 → 同源根。 */
-const CLOUD_HOST_KEY="companion_cloud_relay";
-const CLOUD_RELAY_DEFAULT="https://tidal-echo-relay-1-vudb.onrender.com";
-function appBase(){
-  let h="";
-  try{ h=localStorage.getItem(CLOUD_HOST_KEY)||""; }catch(_){}
-  return (h||CLOUD_RELAY_DEFAULT).replace(/\/+$/,"");
-}
-const API_BASE=appBase();          // 仅用于展示；真正请求一律走 appBase()
-const LS_KEY="companion_secret";
-let secret=localStorage.getItem(LS_KEY)||"";
+/* ══════════════════════════════════════════════════════════════════════════
+   Gallery · 图片记忆
+   机制照 vellwarren/bunnyhome-gallery-tutorial 落地，存储换成你后端现成的那两个接口：
+     · 图片本体 → POST /app/upload  →  /app/file/<id>
+     · 元数据   → /app/fav（tag = "gallery"）
+   三件事是这份实现的核心，缺一条就不成立：
+     ① 每张图只描述一次 —— 之后复用只给文字，不再传像素（几千 token → 几十字）
+     ② 客观描述与第一印象**分开生成**：前者由不带人格的中性工人写，后者由人格写
+     ③ SHA-256 去重只算图片二进制、不含元数据 —— 所以改了标题也不会被下次上传覆盖
+   ══════════════════════════════════════════════════════════════════════════ */
+const G = window.MediaStore;
+const NS = "gallery";
+const AI_NAME = "TA";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* sync the AI avatar + remark name from the PWA (same localStorage keys) */
-const peerAvatar=localStorage.getItem("companion_avatar");
-const AI_NAME="DeepSeek";  // keep in sync with the PWA's CONFIG.AI_NAME
-const peerName=(localStorage.getItem("companion_profile_remark")||"").trim()||AI_NAME;
-document.documentElement.style.setProperty("--peer-avatar", peerAvatar?`url("${peerAvatar}")`:'url("avatar-sea.png")');
+const peerAvatar = localStorage.getItem("companion_avatar");
+const peerName = (localStorage.getItem("companion_profile_remark") || "").trim() || AI_NAME;
+document.documentElement.style.setProperty("--peer-avatar", peerAvatar ? `url("${peerAvatar}")` : 'url("avatar-sea.png")');
 
-/* board 8 个相框：相对 al-board.png(1046×917) 的孔洞包围盒百分比（无需旋转，照片在底层被 PNG 压边） */
-const FRAMES=[
-  {l:33.75,t:1.74,w:29.45,h:28.14},
-  {l:66.44,t:6.00,w:27.15,h:23.88},
-  {l:4.68, t:12.10,w:25.53,h:30.64},
-  {l:37.09,t:33.15,w:24.09,h:28.57},
-  {l:63.48,t:33.59,w:27.34,h:27.37},
-  {l:35.66,t:64.89,w:25.62,h:26.72},
-  {l:62.05,t:67.28,w:18.07,h:27.81},
-  {l:76.96,t:65.21,w:20.94,h:25.95},
+/* board 8 个相框（相对 al-board.png 1046×917 的孔洞包围盒，照片在底层被 PNG 压边） */
+const FRAMES = [
+  { l: 33.75, t: 1.74, w: 29.45, h: 28.14 }, { l: 66.44, t: 6.00, w: 27.15, h: 23.88 },
+  { l: 4.68, t: 12.10, w: 25.53, h: 30.64 }, { l: 37.09, t: 33.15, w: 24.09, h: 28.57 },
+  { l: 63.48, t: 33.59, w: 27.34, h: 27.37 }, { l: 35.66, t: 64.89, w: 25.62, h: 26.72 },
+  { l: 62.05, t: 67.28, w: 18.07, h: 27.81 }, { l: 76.96, t: 65.21, w: 20.94, h: 25.95 }
 ];
 
-const $=(id)=>document.getElementById(id);
-const views={ list:$("listView"), detail:$("detailView"), gate:$("gateView") };
-function show(name){
-  for(const k in views) views[k].classList.toggle("hidden", k!==name);
-  $("topLabel").style.visibility = (name==="list") ? "visible" : "hidden";
-  window.scrollTo(0,0);
+const views = { list: $("listView"), detail: $("detailView"), gate: $("gateView") };
+function show(name) {
+  for (const k in views) views[k].classList.toggle("hidden", k !== name);
+  $("topLabel").style.visibility = (name === "list") ? "visible" : "hidden";
+  $("cfgBox").classList.add("hidden");
+  window.scrollTo(0, 0);
 }
 
-let ALL=[];
-let hasGroups=false;
-let filterGroup="", filterText="";
+let ALL = [];              // 记录（最新的在前）
+let hasGroups = false, filterGroup = "", filterText = "", curRec = null, cloudOn = true;
 
-function imgUrl(p){
-  const u=(p&&p.img)?p.img:""; if(!u) return "";
-  return u+(u.indexOf("?")>=0?"&":"?")+"token="+encodeURIComponent(secret);
+function imgUrl(r) { return G.fileUrl(r.url); }
+function fmtAt(s) {
+  if (!s) return "";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  const p = (x) => String(x).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
-function authHeaders(extra){ return Object.assign({"Authorization":"Bearer "+secret}, extra||{}); }
-function trace(kind, fields){
-  try{
-    fetch(appBase()+"/app/trace",{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),
-      body:JSON.stringify({surface:"album",kind:kind,fields:fields||{}}),keepalive:true}).catch(function(){});
-  }catch(_){}
-}
-function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-
-async function api(path,opts){
-  const r=await fetch(appBase()+path, opts||{headers:authHeaders()});
-  if(r.status===401){ secret=""; localStorage.removeItem(LS_KEY); show("gate"); throw new Error("401"); }
-  if(!r.ok){ let d=""; try{ d=(await r.json()).detail; }catch(_){} throw new Error(d||("HTTP "+r.status)); }
-  return r;
+function rec(item) {
+  const d = item.data || {};
+  return {
+    id: item.id, at: item.at || "", url: item.url || d.url || "", hash: d.hash || "",
+    title: d.title || "", desc: d.desc || "", impression: d.impression || "",
+    desc_state: d.desc_state || (d.desc ? "ok" : "pending"),
+    first_sent_at: d.first_sent_at || "", send_count: d.send_count || 0,
+    group: d.group || "", w: d.w || 0, h: d.h || 0, mime: item.mime || d.mime || ""
+  };
 }
 
-/* ── 列表 ── */
-async function loadList(){
+/* ── 读列表：云端优先，断网退本地镜像 ── */
+async function loadList() {
   show("list");
   $("listMsg").classList.add("hidden");
-  try{
-    const d=await (await api("/app/album/list")).json();
-    $("topLabel").innerHTML="PHOTO<br>ALBUM<span class='rule'></span>";
-    ALL=(d.photos||[]).slice();
-    hasGroups=ALL.some(p=>(p.group||"").trim());
-    $("listEmpty").classList.toggle("hidden", ALL.length>0);
-    $("boardZone").classList.toggle("hidden", ALL.length===0);
-    $("recentSec").classList.toggle("hidden", ALL.length===0);
-    exitGrid();
-    renderBoard();
-    renderRecent();
-    renderAlbums();
-  }catch(e){
-    if(e.message!=="401"){
-      const m=String(e.message||"");
-      /* 这个 relay **确实还没有**相册接口（本文件顶部就写着 "SHELL"）。
-         与其甩一句 "未知的 /app 路由"，不如直接说清缺什么。 */
-      $("listMsg").textContent = /未知的\s*\/app|404|HTTP 404/.test(m)
-        ? "相册接口还没接上（这个后端没有 /app/album/*）· 需要先实现：GET /app/album/list · GET /app/album/photo/{id} · GET /app/album/random · POST /app/album/upload"
-        : ("加载失败："+m);
-      $("listMsg").classList.remove("hidden");
-    }
+  const r = await G.listSynced(NS);
+  cloudOn = r.cloud;
+  ALL = r.items.map(rec).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  hasGroups = ALL.some((p) => (p.group || "").trim());
+
+  $("listEmpty").classList.toggle("hidden", ALL.length > 0);
+  $("boardZone").classList.toggle("hidden", ALL.length === 0);
+  $("recentSec").classList.toggle("hidden", ALL.length === 0);
+  exitGrid();
+  paintStats();
+  renderBoard(); renderRecent(); renderAlbums();
+
+  if (!r.cloud) {
+    $("listMsg").textContent = "连不上后端，现在显示的是本机存的那份（" + (r.error || "") + "）";
+    $("listMsg").classList.remove("hidden");
   }
 }
+function paintStats() {
+  const n = ALL.length, done = ALL.filter((x) => x.desc).length;
+  const used = ALL.reduce((a, x) => a + (x.send_count || 0), 0);
+  $("stats").innerHTML = "共 <b>" + n + "</b> 张 · 有描述 <b>" + done + "</b> 张 · 复用 <b>" + used + "</b> 次"
+    + (n && done < n ? " · <span style='color:#B36A1A'>" + (n - done) + " 张待补描述</span>" : "");
+}
 
-/* board 照片墙：照片插到底层（z1），al-board.png(z2) 压住边，孔洞露出照片，不露白边 */
-function renderBoard(){
-  const board=$("board");
-  board.querySelectorAll(".pw-frame").forEach(n=>n.remove());
-  const recent=ALL.slice(0, FRAMES.length);
-  FRAMES.forEach((f,i)=>{
-    const p=recent[i]; if(!p) return;          // 空框跳过，露出 PNG 透明孔洞
-    const el=document.createElement("button"); el.className="pw-frame";
-    el.style.cssText=`left:${f.l}%;top:${f.t}%;width:${f.w}%;height:${f.h}%;animation-delay:${i*55}ms`;
-    el.innerHTML=`<img loading="lazy" src="${imgUrl(p)}" alt="">`;
-    el.onclick=()=>openDetail(p.id);
+function renderBoard() {
+  const board = $("board");
+  board.querySelectorAll(".pw-frame").forEach((n) => n.remove());
+  const recent = ALL.slice(0, FRAMES.length);
+  FRAMES.forEach((f, i) => {
+    const p = recent[i]; if (!p) return;
+    const el = document.createElement("button"); el.className = "pw-frame";
+    el.style.cssText = `left:${f.l}%;top:${f.t}%;width:${f.w}%;height:${f.h}%;animation-delay:${i * 55}ms`;
+    el.innerHTML = `<img loading="lazy" src="${imgUrl(p)}" alt="">`;
+    el.onclick = () => openDetail(p.id);
     board.appendChild(el);
   });
 }
-
-/* Recent Uploads：横排小正方圆角图（最新 12） */
-function renderRecent(){
-  const box=$("recent"); box.innerHTML="";
-  const recent=ALL.slice(0,12);
-  recent.forEach((p,i)=>{
-    const b=document.createElement("button"); b.className="r-item"; b.style.animationDelay=(i*40)+"ms";
-    b.innerHTML=`<img loading="lazy" src="${imgUrl(p)}" alt="">`;
-    b.onclick=()=>openDetail(p.id); box.appendChild(b);
+function renderRecent() {
+  const box = $("recent"); box.innerHTML = "";
+  ALL.slice(0, 12).forEach((p, i) => {
+    const b = document.createElement("button"); b.className = "r-item"; b.style.animationDelay = (i * 40) + "ms";
+    b.innerHTML = `<img loading="lazy" src="${imgUrl(p)}" alt="">`;
+    b.onclick = () => openDetail(p.id); box.appendChild(b);
   });
-  const dots=$("recentDots");
-  const pages=Math.max(1, Math.min(5, Math.ceil(recent.length/4)));
-  dots.innerHTML=""; for(let i=0;i<pages;i++){ const d=document.createElement("span"); d.className="dot"+(i===0?" on":""); dots.appendChild(d); }
+  const dots = $("recentDots");
+  const pages = Math.max(1, Math.min(5, Math.ceil(Math.min(ALL.length, 12) / 4)));
+  dots.innerHTML = ""; for (let i = 0; i < pages; i++) { const d = document.createElement("span"); d.className = "dot" + (i === 0 ? " on" : ""); dots.appendChild(d); }
 }
-$("recent").addEventListener("scroll", ()=>{
-  const box=$("recent"); const dots=$("recentDots").children; if(!dots.length) return;
-  const max=box.scrollWidth-box.clientWidth;
-  const idx=max>0 ? Math.round((box.scrollLeft/max)*(dots.length-1)) : 0;
-  for(let i=0;i<dots.length;i++) dots[i].classList.toggle("on", i===idx);
+$("recent").addEventListener("scroll", () => {
+  const box = $("recent"), dots = $("recentDots").children; if (!dots.length) return;
+  const max = box.scrollWidth - box.clientWidth;
+  const idx = max > 0 ? Math.round((box.scrollLeft / max) * (dots.length - 1)) : 0;
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle("on", i === idx);
 });
-
-/* My Albums */
-function renderAlbums(){
-  const map=new Map();
-  for(const p of ALL){ const g=(p.group||"").trim(); if(!g) continue;
-    if(!map.has(g)) map.set(g,{name:g,count:0,cover:p}); map.get(g).count++; }
-  const list=[...map.values()];
-  $("albumsSec").classList.toggle("hidden", list.length===0);
-  const box=$("albums"); box.innerHTML="";
-  for(const a of list){
-    const b=document.createElement("button"); b.className="album glass";
-    b.innerHTML=`<div class="cov"><img loading="lazy" src="${imgUrl(a.cover)}" alt=""></div>
-      <div class="txt"><b>${esc(a.name)}</b><span>${a.count} photos</span></div>`;
-    b.onclick=()=>enterGrid({group:a.name, title:a.name}); box.appendChild(b);
+function renderAlbums() {
+  const map = new Map();
+  for (const p of ALL) { const g = (p.group || "").trim(); if (!g) continue;
+    if (!map.has(g)) map.set(g, { name: g, count: 0, cover: p }); map.get(g).count++; }
+  const list = [...map.values()];
+  $("albumsSec").classList.toggle("hidden", list.length === 0);
+  const box = $("albums"); box.innerHTML = "";
+  for (const a of list) {
+    const b = document.createElement("button"); b.className = "album glass";
+    b.innerHTML = `<div class="cov"><img loading="lazy" src="${imgUrl(a.cover)}" alt=""></div>
+      <div class="txt"><b>${esc(a.name)}</b><span>${a.count} 张</span></div>`;
+    b.onclick = () => enterGrid({ group: a.name, title: a.name }); box.appendChild(b);
   }
 }
 
-/* 全部 / 搜索 / 分组 → 圆角网格 */
-function enterGrid(opt){
-  filterGroup=opt.group||""; if(opt.text!==undefined) filterText=opt.text;
-  if(opt.group) trace("album",{name:opt.group}); else if(opt.text) trace("search",{q:opt.text});
-  $("recentSec").classList.add("hidden");
-  $("albumsSec").classList.add("hidden");
-  $("boardZone").classList.add("hidden");
-  $("gridSec").classList.remove("hidden");
-  $("gridHead").textContent=opt.title || "All Photos";
+function enterGrid(opt) {
+  filterGroup = opt.group || ""; if (opt.text !== undefined) filterText = opt.text;
+  $("recentSec").classList.add("hidden"); $("albumsSec").classList.add("hidden");
+  $("boardZone").classList.add("hidden"); $("gridSec").classList.remove("hidden");
+  $("gridHead").textContent = opt.title || "全部";
   renderGrid();
-  if(!opt.noScroll) $("gridSec").scrollIntoView({behavior:"smooth",block:"start"});
+  if (!opt.noScroll) $("gridSec").scrollIntoView({ behavior: "smooth", block: "start" });
 }
-function exitGrid(){
-  filterGroup=""; filterText=""; if($("searchInput")) $("searchInput").value="";
+function exitGrid() {
+  filterGroup = ""; filterText = ""; if ($("searchInput")) $("searchInput").value = "";
   $("gridSec").classList.add("hidden");
-  if(ALL.length){ $("recentSec").classList.remove("hidden"); $("boardZone").classList.remove("hidden"); }
+  if (ALL.length) { $("recentSec").classList.remove("hidden"); $("boardZone").classList.remove("hidden"); }
   $("albumsSec").classList.toggle("hidden", !hasGroups);
 }
-function renderGrid(){
-  const grid=$("grid");
-  let items=ALL.slice();
-  if(filterGroup) items=items.filter(p=>(p.group||"")===filterGroup);
-  if(filterText){ const q=filterText.toLowerCase();
-    items=items.filter(p=>((p.caption||"")+" "+(p.group||"")+" "+(p.time||"")).toLowerCase().includes(q)); }
-  grid.innerHTML="";
-  if(!items.length){ grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="en">nothing here</div><p>换个词，或返回看看。</p></div>`; return; }
-  items.forEach((p,i)=>{
-    const card=document.createElement("button"); card.className="rcard"; card.style.animationDelay=(i*35)+"ms";
-    const meta=[]; meta.push(p.views>0?`seen ${p.views}`:"unseen"); if(p.time) meta.push(esc(p.time));
-    card.innerHTML=`<img class="img" loading="lazy" src="${imgUrl(p)}" alt="">
-      <div class="cap">${esc(p.caption||"（无说明）")}</div>
-      <div class="meta">${meta.map(m=>`<span>${m}</span>`).join("")}</div>`;
-    card.onclick=()=>openDetail(p.id); grid.appendChild(card);
+function renderGrid() {
+  const grid = $("grid");
+  let items = ALL.slice();
+  if (filterGroup) items = items.filter((p) => (p.group || "") === filterGroup);
+  if (filterText) {
+    const q = filterText.toLowerCase();
+    items = items.filter((p) => ((p.title || "") + " " + (p.desc || "") + " " + (p.group || "")).toLowerCase().includes(q));
+  }
+  grid.innerHTML = "";
+  if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="en">nothing here</div><p>换个词，或返回看看。</p></div>`; return; }
+  items.forEach((p, i) => {
+    const card = document.createElement("button"); card.className = "rcard"; card.style.animationDelay = (i * 35) + "ms";
+    card.innerHTML = `<img class="img" loading="lazy" src="${imgUrl(p)}" alt="">
+      <div class="cap">${esc(p.title || "（还没起名）")}</div>
+      <div class="meta"><span>${p.send_count ? "发过 " + p.send_count + " 次" : "还没在聊天里用过"}</span>
+        ${p.desc ? "" : "<span style='color:#B36A1A'>待补描述</span>"}</div>`;
+    card.onclick = () => openDetail(p.id); grid.appendChild(card);
   });
 }
 
 /* ── 详情 ── */
-let curImg="";
-function renderDetail(p){
+function renderDetail(r) {
   show("detail");
-  curImg=imgUrl(p);
-  $("detailImg").src=curImg;
-  $("peerName").innerHTML=esc(peerName);
-  $("detailCap").textContent=p.caption||"（无说明）";
-  $("detailTime").textContent=p.time||"";
-  const tags=$("detailTags"); tags.innerHTML="";
-  if(p.group){ const t=document.createElement("span"); t.className="tag"; t.textContent="# "+p.group; tags.appendChild(t); }
-  $("detailViews").textContent=peerName+"看过 "+(p.views||0)+" 次";
-  const box=$("notesBox"); box.innerHTML="";
-  const notes=p.notes_list||[];
-  if(!notes.length){ box.innerHTML=`<div class="none">${esc(peerName)}还没在这张下写评语。</div>`; }
-  else for(const n of notes){
-    const el=document.createElement("div"); el.className="note";
-    el.innerHTML=`<div class="at">${esc(n.at||"")}</div><div class="tx">${esc(n.text||"")}</div>`;
-    box.appendChild(el);
-  }
-  $("notesTitle").textContent=peerName+"的评语";
+  curRec = r;
+  $("detailImg").src = imgUrl(r);
+  $("peerName").innerHTML = esc(peerName);
+  $("detailCap").textContent = r.title || "（还没起名）";
+  $("detailTime").textContent = r.first_sent_at ? ("第一次发来 · " + fmtAt(r.first_sent_at)) : ("收进来的时间 · " + fmtAt(r.at));
+  $("detailDesc").textContent = r.desc || "（还没写）—— 点下面的「补描述」，让模型看一眼。";
+  $("impCard").classList.toggle("hidden", !r.impression);
+  $("detailImp").textContent = r.impression || "";
+
+  const tags = $("detailTags"); tags.innerHTML = "";
+  if (r.group) { const t = document.createElement("span"); t.className = "tag"; t.textContent = "# " + r.group; tags.appendChild(t); }
+  if (r.hash) { const t = document.createElement("span"); t.className = "tag"; t.textContent = "指纹 " + r.hash.slice(0, 8); tags.appendChild(t); }
+
+  const meta = [];
+  meta.push("发过 " + (r.send_count || 0) + " 次");
+  if (r.w && r.h) meta.push(r.w + "×" + r.h);
+  $("detailMeta").textContent = meta.join(" · ");
+
+  $("detailReuse").innerHTML = r.first_sent_at
+    ? "这张 <b>已经被看过</b>了 —— 以后在 Chat 里再发同一张，<b>不会再传图片像素</b>，只用上面那段文字，成本是第一次的零头。"
+    : "这张还没在 Chat 里用过。第一次发的时候会传一次原图给 TA 看，之后就一直只用文字了。";
+  $("actRetry").textContent = r.desc ? "重写描述" : "补描述";
 }
-async function openDetail(id){
-  try{ const p=await (await api("/app/album/photo/"+encodeURIComponent(id))).json(); renderDetail(p);
-    trace("photo",{id:String(id),caption:(p.caption||""),group:(p.group||"")}); }
-  catch(e){ if(e.message!=="401") alert("打不开："+e.message); }
+async function openDetail(id) {
+  const r = ALL.find((x) => String(x.id) === String(id));
+  if (!r) return;
+  if (!r.desc && !r._tried && cloudOn) { r._tried = true; }
+  renderDetail(r);
 }
-async function randomOne(){
-  closeUpload();
-  try{ const p=await (await api("/app/album/random")).json(); renderDetail(p);
-    trace("random",{id:String(p.id||""),caption:(p.caption||"")}); }
-  catch(e){ if(e.message!=="401") alert("抽不到："+e.message); }
-}
-function openLightbox(){
-  if(!curImg) return;
-  const lb=document.createElement("div"); lb.className="lightbox";
-  lb.innerHTML=`<img src="${curImg}" alt="">`; lb.onclick=()=>lb.remove();
+function openLightbox() {
+  const u = curRec ? imgUrl(curRec) : ""; if (!u) return;
+  const lb = document.createElement("div"); lb.className = "lightbox";
+  lb.innerHTML = `<img src="${u}" alt="">`; lb.onclick = () => lb.remove();
   document.body.appendChild(lb);
 }
+function randomOne() {
+  if (!ALL.length) { alert("还没有图。"); return; }
+  openDetail(ALL[Math.floor(Math.random() * ALL.length)].id);
+}
 
-/* ── 上传 modal ── */
-function openUpload(){
-  $("fileInput").value=""; $("capInput").value=""; $("timeInput").value=""; $("groupInput").value="";
-  $("preview").classList.add("hidden"); $("uploadStatus").textContent="";
+/* ── 两条并行线：客观描述（中性工人） + 第一印象（人格）────────────────────
+   教程「坑二」：这两样必须**分开生成**，否则客观描述里会混进"她又来了"，
+   第一印象里会混进"白色窗台灰蓝色天空"。两条各跑各的，谁先完成谁先落库。 */
+const VISUAL_WORKER = [
+  "你是一个私有的中性图片索引工人，不是任何人的角色，也不参与对话。",
+  "返回一段 100-200 个中文字符的段落，只包含直接可见的事实。",
+  "覆盖主体、构图、颜色、光线和清晰可读的文字。",
+  "不要使用第一或第二人称的关系性语言。",
+  "不要推测身份、心理、情绪、意图、关系、背景故事或含义。"
+].join(" ");
+
+let personaCache = null;
+async function loadPersona() {
+  if (personaCache != null) return personaCache;
+  try {
+    const r = await fetch(G.base() + "/app/settings", { headers: G.headers() });
+    const d = await r.json();
+    personaCache = ((d && d.settings && d.settings.system_prompt) || "").slice(0, 4000);
+  } catch (_) { personaCache = ""; }
+  return personaCache;
+}
+async function describeImage(dataUrl, note) {
+  return await G.chat({
+    messages: [
+      { role: "system", content: VISUAL_WORKER },
+      { role: "user", content: [
+        { type: "text", text: note || "描述这张图。" },
+        { type: "image_url", image_url: { url: dataUrl } }
+      ] }
+    ],
+    temperature: 0.2, maxTokens: 400
+  });
+}
+async function impressionOf(dataUrl) {
+  const persona = await loadPersona();
+  const sys = (persona ? persona + "\n\n" : "")
+    + "现在不是聊天。你刚看到对方发来的一张图，要写一条**只有你自己能看到**的隐藏备注："
+    + "这张图此刻对你意味着什么。用你自己的语气，1-2 句，不超过 60 字，不要像目录条目、"
+    + "不要复述画面细节（客观描述由别人写）。只输出这段话本身。";
+  return await G.chat({
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content: [
+        { type: "text", text: "（这张图）" },
+        { type: "image_url", image_url: { url: dataUrl } }
+      ] }
+    ],
+    temperature: 0.95, maxTokens: 200
+  });
+}
+
+/* ── 收一张 ── */
+let pendingFile = null;
+function openUpload() {
+  pendingFile = null;
+  $("fileInput").value = ""; $("groupInput").value = "";
+  $("preview").classList.add("hidden"); $("uploadStatus").textContent = "";
   $("uploadModal").classList.remove("hidden");
 }
-function closeUpload(){ $("uploadModal").classList.add("hidden"); }
-$("fileInput").addEventListener("change",()=>{
-  const f=$("fileInput").files[0]; const pv=$("preview");
-  if(f){ pv.src=URL.createObjectURL(f); pv.classList.remove("hidden"); } else pv.classList.add("hidden");
+function closeUpload() { $("uploadModal").classList.add("hidden"); }
+$("fileInput").addEventListener("change", () => {
+  pendingFile = $("fileInput").files[0] || null;
+  const pv = $("preview");
+  if (pendingFile) { pv.src = URL.createObjectURL(pendingFile); pv.classList.remove("hidden"); }
+  else pv.classList.add("hidden");
 });
-async function doUpload(){
-  const f=$("fileInput").files[0];
-  if(!f){ $("uploadStatus").textContent="先选一张照片"; return; }
-  const qs=new URLSearchParams({ name:f.name||"photo.jpg", caption:$("capInput").value.trim(),
-    time:$("timeInput").value.trim(), group:$("groupInput").value.trim() }).toString();
-  $("uploadSend").disabled=true; $("uploadStatus").textContent="上传中…（大图会自动压成看图版）";
-  try{
-    const d=await (await api("/app/album/upload?"+qs,{ method:"POST",
-      headers:authHeaders({"Content-Type":f.type||"application/octet-stream"}), body:f })).json();
-    $("uploadStatus").textContent="已收进相册："+d.id;
-    closeUpload(); await loadList(); openDetail(d.id);
-  }catch(e){
-    $("uploadStatus").textContent=e.message==="401"?"":("上传失败："+e.message+(/413|large/.test(e.message)?"（图太大，>10MB）":""));
-  }finally{ $("uploadSend").disabled=false; }
+
+async function doUpload() {
+  const f = pendingFile;
+  if (!f) { $("uploadStatus").textContent = "先选一张"; return; }
+  const st = (t) => { $("uploadStatus").innerHTML = t; };
+  $("uploadSend").disabled = true;
+  try {
+    st("算指纹…（同一张图只收一次）");
+    const { hash } = await G.hashFile(f);
+    const dup = ALL.find((x) => x.hash === hash);
+    if (dup) {
+      st("这张已经在记忆里了 —— 不重复收，直接打开它。");
+      closeUpload(); openDetail(dup.id); return;
+    }
+    st("上传…（大图会压成看图版）");
+    const sh = await G.shrink(f);
+    const up = await G.uploadImage((sh && sh.blob) || f, f.name || "image.jpg", (sh && sh.mime) || f.type);
+    const dataUrl = await G.dataUrl((sh && sh.blob) || f);
+
+    /* 两条线并行跑，互不阻塞；收藏失败不影响图本身入库 */
+    st("让 TA 看一眼…（一段客观描述 + 一句第一印象，两条线同时跑）");
+    const [desc, imp] = await Promise.all([
+      describeImage(dataUrl).catch(() => ""),
+      impressionOf(dataUrl).catch(() => "")
+    ]);
+    const now = new Date().toISOString();
+    const recData = {
+      hash: hash, url: up.url, title: "", desc: String(desc || "").trim(),
+      impression: String(imp || "").trim(), desc_state: desc ? "ok" : "pending",
+      first_sent_at: "", send_count: 0, group: $("groupInput").value.trim(),
+      created_at: now, w: (sh && sh.w) || 0, h: (sh && sh.h) || 0, mime: up.mime || f.type || ""
+    };
+    const saved = await G.kvSave(NS, recData, { type: "image", url: up.url, name: f.name || "image.jpg", mime: recData.mime });
+    const local = rec({ id: saved.id, at: saved.at || now, url: up.url, mime: recData.mime, data: recData });
+    G.mirrorUpsert(NS, local);
+    ALL.unshift(local);
+
+    st(desc ? "收好了。" : "图收好了，但描述没写出来（多半是模型看不了图 —— 去右上 ⚙ 换个能看图的）。");
+    closeUpload();
+    paintStats(); renderBoard(); renderRecent(); renderAlbums();
+    openDetail(saved.id);
+  } catch (e) {
+    const m = String((e && e.message) || e);
+    $("uploadStatus").innerHTML = "没收成：" + esc(m)
+      + (/Failed to fetch|NetworkError/i.test(m) ? "（后端连不上：检查「云端后端地址」，以及 CORS）" : "");
+  } finally { $("uploadSend").disabled = false; }
 }
 
+/* ── 改标题 / 补描述 / 删除 ── */
+async function saveRecord(r, extra, ttl) {
+  const data = Object.assign({}, {
+    hash: r.hash, url: r.url, title: r.title, desc: r.desc, impression: r.impression,
+    desc_state: r.desc_state, first_sent_at: r.first_sent_at, send_count: r.send_count,
+    group: r.group, created_at: r.at, w: r.w, h: r.h, mime: r.mime
+  }, extra || {});
+  const saved = await G.kvReplace(r.id, NS, data, { type: "image", url: r.url, name: "image", mime: r.mime || "image/jpeg" });
+  Object.assign(r, extra || {});
+  r.id = saved.id;                       // 改一条 = 删旧存新，id 会变
+  if (saved.at) r.at = saved.at;
+  G.mirrorRemove(NS, r.id); G.mirrorUpsert(NS, r);
+  const i = ALL.indexOf(r); if (i >= 0) ALL[i] = r;
+  return saved;
+}
+async function rename() {
+  if (!curRec) return;
+  const v = prompt("给这张起个名字（最多 18 字）", curRec.title || "");
+  if (v == null) return;
+  const t = v.trim().slice(0, 18);
+  try { await saveRecord(curRec, { title: t }); renderDetail(curRec); renderGrid(); renderBoard(); showToast("改好了"); }
+  catch (e) { alert("改不动：" + ((e && e.message) || e)); }
+}
+async function retryDesc() {
+  if (!curRec || !curRec.url) return;
+  const btn = $("actRetry"); btn.disabled = true; btn.textContent = "正在看…";
+  try {
+    const blob = await (await fetch(imgUrl(curRec))).blob();
+    const dataUrl = await G.dataUrl(blob);
+    const [desc, imp] = await Promise.all([
+      describeImage(dataUrl).catch(() => ""),
+      curRec.impression ? Promise.resolve("") : impressionOf(dataUrl).catch(() => "")
+    ]);
+    if (!desc) throw new Error("模型没能描述这张图（可能看不了图，去右上 ⚙ 换一个）");
+    await saveRecord(curRec, { desc: desc.trim(), desc_state: "ok", impression: (curRec.impression || imp || "").trim() });
+    renderDetail(curRec); paintStats(); renderGrid();
+  } catch (e) { alert("补描述失败：" + ((e && e.message) || e)); }
+  finally { btn.disabled = false; btn.textContent = curRec && curRec.desc ? "重写描述" : "补描述"; }
+}
+async function delOne() {
+  if (!curRec) return;
+  if (!confirm("从记忆里删掉这张？图本身也会从后端删掉，不可恢复。")) return;
+  try {
+    try { await G.kvDel(curRec.id); } catch (_) { }
+    G.mirrorRemove(NS, curRec.id);
+    /* 图本体也清掉（后端没提供删除接口的话，这一步会被跳过 —— 如实说，不假装） */
+    let bodyDel = false;
+    try {
+      const r = await fetch(G.base() + "/app/file/" + encodeURIComponent(String(curRec.url).split("/").pop()),
+        { method: "DELETE", headers: G.headers() });
+      bodyDel = r.ok;
+    } catch (_) { }
+    ALL = ALL.filter((x) => String(x.id) !== String(curRec.id));
+    curRec = null;
+    showToast(bodyDel ? "已删除" : "记录已删（图本体后端不支持删除，留在服务器上）");
+    await loadList();
+  } catch (e) { alert("删不掉：" + ((e && e.message) || e)); }
+}
+async function takeToChat() {
+  if (!curRec) return;
+  try { localStorage.setItem("companion_gallery_pick", JSON.stringify({ id: curRec.id, url: curRec.url, title: curRec.title, hash: curRec.hash })); } catch (_) { }
+  location.assign("index.html");
+}
+function showToast(m) {
+  const el = $("listMsg");
+  if (!el) return;
+  el.textContent = m;
+  el.classList.remove("hidden");
+  setTimeout(() => { if (el.textContent === m) el.classList.add("hidden"); }, 2400);
+}
+
+/* ── ⚙ 模型 ── */
+function paintCfg() {
+  const cfg = G.modelCfg();
+  $("cfgProvider").value = cfg.provider || "zhipu";
+  $("cfgModel").value = cfg.model || "";
+  const visionless = ["deepseek", "moonshot"].indexOf(cfg.provider) >= 0;
+  $("cfgNote").innerHTML = visionless
+    ? "⚠️ <b>" + esc(cfg.provider) + "</b> 这个位置的模型多半<b>看不了图</b>，描述会失败（图照收不误，只是「待补描述」）。看图建议用 <b>zhipu / glm-4v-plus</b> 或 <b>openai / gpt-4o</b>。"
+    : "描述图片需要<b>能看图</b>的模型。当前走的是你自己的中转后端，前端不放 Key。";
+}
+$("gearBtn").onclick = () => { const b = $("cfgBox"); b.classList.toggle("hidden"); if (!b.classList.contains("hidden")) paintCfg(); };
+$("cfgSave").onclick = () => {
+  G.setModelCfg($("cfgProvider").value, $("cfgModel").value.trim() || "glm-4v-plus");
+  showToast("模型已保存");
+  $("cfgBox").classList.add("hidden");
+};
+
 /* ── 接线 ── */
-let searchTimer=0;
-$("searchInput").addEventListener("input",e=>{
+let searchTimer = 0;
+$("searchInput").addEventListener("input", (e) => {
   clearTimeout(searchTimer);
-  searchTimer=setTimeout(()=>{
-    const v=e.target.value.trim();
-    if(v) enterGrid({text:v, title:"搜索结果", noScroll:true});
-    else exitGrid();
-  },180);
+  searchTimer = setTimeout(() => {
+    const v = e.target.value.trim();
+    if (v) enterGrid({ text: v, title: "搜索结果", noScroll: true }); else exitGrid();
+  }, 180);
 });
-$("recentAll").onclick=()=>enterGrid({title:"All Photos"});
-$("albumsAll").onclick=()=>enterGrid({title:"All Photos"});
-$("gridBack").onclick=exitGrid;
-$("drawBtn").onclick=randomOne;
-$("upBtn").onclick=openUpload;
-$("uploadClose").onclick=closeUpload;
-$("uploadCancel").onclick=closeUpload;
-$("uploadSend").onclick=doUpload;
-$("uploadModal").addEventListener("click",e=>{ if(e.target===$("uploadModal")) closeUpload(); });
-$("topBack").onclick=()=>{
-  if(!$("uploadModal").classList.contains("hidden")){ closeUpload(); return; }
-  if(!views.list.classList.contains("hidden")){
-    if(!$("gridSec").classList.contains("hidden")) exitGrid(); else location.assign("index.html");
+$("recentAll").onclick = () => enterGrid({ title: "全部" });
+$("albumsAll").onclick = () => enterGrid({ title: "全部" });
+$("gridBack").onclick = exitGrid;
+$("drawBtn").onclick = randomOne;
+$("upBtn").onclick = openUpload;
+$("uploadClose").onclick = closeUpload;
+$("uploadCancel").onclick = closeUpload;
+$("uploadSend").onclick = doUpload;
+$("uploadModal").addEventListener("click", (e) => { if (e.target === $("uploadModal")) closeUpload(); });
+$("renameBtn").onclick = rename;
+$("actZoom").onclick = openLightbox;
+$("detailImg").onclick = openLightbox;
+$("actRetry").onclick = retryDesc;
+$("actDel").onclick = delOne;
+$("actChat").onclick = takeToChat;
+$("topBack").onclick = () => {
+  if (!$("uploadModal").classList.contains("hidden")) { closeUpload(); return; }
+  if (!views.list.classList.contains("hidden")) {
+    if (!$("gridSec").classList.contains("hidden")) exitGrid(); else location.assign("index.html");
   } else loadList();
 };
-$("actZoom").onclick=openLightbox;
-$("detailImg").onclick=openLightbox;
-$("actRand").onclick=randomOne;
-$("gateHome").onclick=()=>location.assign("index.html");
-$("gateSave").onclick=()=>{ const v=$("gateInput").value.trim(); if(v){ secret=v; localStorage.setItem(LS_KEY,v); loadList(); } };
+$("gateHome").onclick = () => location.assign("index.html");
+$("gateSave").onclick = () => {
+  const v = $("gateInput").value.trim();
+  if (v) { localStorage.setItem("companion_secret", v); loadList(); }
+};
 
-/* 启动 */
-if(!secret) show("gate"); else loadList();
+/* 启动：直接读，不再一进来就拦密钥门（后端开关鉴权时才发现） */
+loadList();
+
+/* 给聊天页/测试用的口子 */
+window.Gallery = {
+  state: () => ({ items: ALL, cloud: cloudOn }),
+  reload: loadList,
+  saveFile: async (file, opt) => {           // 聊天里「存进相册」走这个
+    opt = opt || {};
+    const { hash } = await G.hashFile(file);
+    const dup = ALL.find((x) => x.hash === hash);
+    if (dup) return { dup: true, rec: dup };
+    const sh = await G.shrink(file);
+    const up = await G.uploadImage((sh && sh.blob) || file, file.name || "image.jpg", (sh && sh.mime) || file.type);
+    const dataUrl = await G.dataUrl((sh && sh.blob) || file);
+    const [desc, imp] = await Promise.all([
+      describeImage(dataUrl).catch(() => ""),
+      opt.impression ? Promise.resolve(opt.impression) : impressionOf(dataUrl).catch(() => "")
+    ]);
+    const data = {
+      hash: hash, url: up.url, title: (opt.title || "").slice(0, 18), desc: String(desc || "").trim(),
+      impression: String(imp || "").trim(), desc_state: desc ? "ok" : "pending",
+      first_sent_at: new Date().toISOString(), send_count: 1, group: "",
+      created_at: new Date().toISOString(), w: (sh && sh.w) || 0, h: (sh && sh.h) || 0, mime: up.mime || file.type
+    };
+    const saved = await G.kvSave(NS, data, { type: "image", url: up.url, name: file.name || "image.jpg", mime: data.mime });
+    const l = rec({ id: saved.id, at: saved.at, url: up.url, mime: data.mime, data: data });
+    G.mirrorUpsert(NS, l); ALL.unshift(l);
+    return { dup: false, rec: l };
+  },
+  textFor: (hash) => {                       // 复用：只给文字，不传像素
+    const r = ALL.find((x) => x.hash === hash && x.desc);
+    return r ? { title: r.title, desc: r.desc } : null;
+  },
+  _open: (id) => openDetail(id),                 // 给测试/截图用
+  _internal: { describeImage, impressionOf, VISUAL_WORKER }
+};
 </script>
 </body>
 </html>

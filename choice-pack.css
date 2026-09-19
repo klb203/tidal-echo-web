@@ -78,25 +78,30 @@
   /* 小屏 + 长选项时不许把卡片顶出屏幕。**只让选项区内部滚** ——
      题干、自由输入、关闭键任何时候都得留在视野里。
      ⚠️ 不能在 .ch-card 上写 overflow，吉祥物是 top:-46px 探出去的，会被裁掉。 */
-  /* 顶部要给它留出「上半身」露出来的高度：118px 宽的浣熊约 98px 高，压在卡面上 34px，
-     上面还有 ~64px 探出去 —— 卡片的 max-height 得把这段扣掉，不然小屏上脑袋会被切。 */
-  max-height: calc(100vh - 78px);
-  max-height: calc(100dvh - 78px);
+  /* 顶部要给它留出「上半身」露出来的高度：116px 宽的浣熊约 96px 高，压在卡沿上 11px，
+     上面还有 ~85px 探出去 —— 卡片的 max-height 得把这段扣掉，不然小屏上脑袋会被切。 */
+  max-height: calc(100vh - 102px);
+  max-height: calc(100dvh - 102px);
 }
 .ch-opts{ max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .ch-pop.on .ch-card{ transform: translateY(0) scale(1); opacity: 1; }
 
-/* 吉祥物：**趴在卡片上沿**，两只手搭在卡面里
-   ── 参考图里那只猫的核心不是「浮在上方」，是「上半身在上边、爪子按在卡上」。
-   所以位置用 **bottom 锚定**（底边落在卡片里 34px），而不是 top 负值：
-   top 负值会让「露出多少」随图片宽高比变，换一张图就跑位；
-   bottom: calc(100% - 34px) 无论多高，都是**正好 34px 压在卡面上**。 */
+/* 吉祥物：**趴在卡片上沿**，爪子只压住一点点边缘
+   ── 位置是**量出来的**，不是估的。参考图（757×734）里量到：
+        卡片上沿 y=141、左沿 x=28、卡宽 729
+        猫的包围盒 x[43,247] → 猫宽/卡宽 = 0.281、猫左距卡左 = 15px（2.1%）
+        猫的深色像素最深只探进卡片 20px → **下沉 / 卡宽 = 2.7%**
+     所以三个比例照抄：宽 0.28×卡宽、左 2%、**下沉 2.7%**。
+     我第一版写 34–35px 下沉（相当于 8.5%），深了三倍 —— 结果浣熊的脖圈、爪子、
+     整个胸口都埋进卡片里，参考图里那些是在卡**上方**的粉底上露着的。
+   位置用 **bottom 锚定**而不是 top 负值：top 负值会让「露出多少」随图片宽高比变，
+   换一张图就跑位；bottom: calc(100% - Npx) 是无论多高都只压 N px。 */
 .ch-mascot{
   position: absolute; left: 8px;
-  bottom: calc(100% - 34px);
-  width: 118px; height: auto;
+  bottom: calc(100% - 11px);          /* 11px ≈ 410px 卡宽 × 2.7%（参考图的比例） */
+  width: 116px; height: auto;         /* 116 ≈ 410 × 0.281 */
   pointer-events: none; user-select: none;
-  /* 两层阴影：贴地的那层紧而深（爪子压在卡面上的接触感），外面一层散得开 */
+  /* 两层阴影：贴地那层紧而深（爪子压在边缘上的接触感），外面一层散得开 */
   filter: drop-shadow(0 2px 2px rgba(30,44,60,.20)) drop-shadow(0 8px 14px rgba(30,44,60,.22));
   transform-origin: 50% 100%;
   animation: ch-peek .42s var(--ease-soft, cubic-bezier(.22,1,.36,1)) both;
@@ -106,8 +111,10 @@
   to  { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* 左边留出吉祥物压进来的位置，标题从它右边起 —— 参考图里「NOX 在问」就是这么摆在猫右边的 */
-.ch-head{ display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-left: 106px; min-height: 30px; }
+/* 标题**不做缩进** —— 参考图里「NOX 在问」就是卡片自己的左边距（约卡宽 4%），
+   猫只压住上沿，根本不挡标题。上一版给它 padding-left:106px 是我自己加的，
+   结果标题被推得离左边缘老远，和参考图对不上。 */
+.ch-head{ display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
 .ch-who{
   font-size: 11px; letter-spacing: .10em; font-weight: 700;
   color: var(--accent, #4C6378); opacity: .9;
@@ -190,8 +197,8 @@
 }
 
 @media (max-width: 380px){
-  .ch-mascot{ width: 96px; bottom: calc(100% - 28px); left: 6px; }
-  .ch-head{ padding-left: 88px; }
+  /* 同样照比例缩：340 卡宽 × 0.281 ≈ 96px；下沉 340 × 2.7% ≈ 9px */
+  .ch-mascot{ width: 96px; bottom: calc(100% - 9px); left: 7px; }
   .ch-q{ font-size: 16px; }
   .ch-opt{ font-size: 14px; padding: 11px 10px; }
 }

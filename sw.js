@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v70-jiwen";        // v70：影子推送加「相关项目」地址（积温 jiwen · 可复制给 AI）  // v69：时间锚 —— 给 TA 一只表（余光 / 抬手看表 / 时间皮层）
+const CACHE = "companion-v71-tidefall";        // v71：相关项目加 Tidefall（接入 tides 的地址 + 只存本机的 Supabase key）  // v70：影子推送加「相关项目」地址（积温 jiwen）
 const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",

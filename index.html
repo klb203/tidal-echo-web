@@ -5569,8 +5569,10 @@
       <label class="fld"><span>主模型</span><input id="apModel" type="text" placeholder="deepseek-chat / claude-3-5-sonnet-latest …" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>压缩用辅助模型</span><input id="apHelper" type="text" placeholder="deepseek-chat" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>温度（0–2）</span><input id="apTemp" type="number" step="0.1" min="0" max="2" placeholder="0.7"></label>
-      <label class="fld"><span>最大 Token</span><input id="apMax" type="number" step="64" min="64" max="32768" placeholder="1024"></label>
-      <label class="fld"><span>触发压缩的 Token 阈值</span><input id="apTrig" type="number" step="500" min="0" max="200000" placeholder="6000"></label>
+      <label class="fld"><span>最大 Token</span><input id="apMax" type="number" step="64" min="64" max="8192" placeholder="1024"></label>
+      <label class="fld"><span>触发压缩的 Token 阈值</span><input id="apTrig" type="number" step="500" min="0" max="50000" placeholder="6000"></label>
+      <div class="settings-tip" style="margin-top:-2px">超过「最近轮数装满能到的量」就等于永远不会触发压缩 ——
+        聊久了它会「忘记前面」，而且不会报错。默认 6000 就够；<b>0 = 关闭自动压缩</b>。</div>
       <label class="fld"><span>每次保留的近期轮数</span><input id="apKeep" type="number" step="1" min="1" max="50" placeholder="8"></label>
       <div class="conn-sub" id="apStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
       <div class="editor-actions" style="margin-bottom:16px">
@@ -10614,17 +10616,39 @@ async function loadAppSettings(verbose){
     return null;
   }
 }
+/* ★ 与后端 SETTING_LIMITS **对齐**的钳制表。
+   为什么要在这儿再来一次：HTML 的 max 属性**不强制** —— 粘贴一个大数照样能提交，
+   线上真出现过 max_tokens = 3000000（那会让所有直接用它的调用被上游 400 掉）、
+   compress_trigger_tokens = 300000（大于窗口能装满的量 → 自动压缩永远不触发，
+   表现是「聊久了它就忘了前面」，而且一声不吭）。浏览器拦不住的，这里拦。 */
+const AP_LIMITS = {
+  max_tokens: [64, 8192],
+  compress_trigger_tokens: [0, 50000],
+  compress_keep_turns: [0, 100],
+  temperature: [0, 2]
+};
 async function saveAppSettings(){
   const base = appBase();
   if (!base){ apStatus("还没设「云端后端地址」。", "err"); return; }
-  const body = {};
+  const body = {}, clamped = [];
   Object.keys(AP_FIELDS).forEach((k) => {
     const el = $("#" + AP_FIELDS[k]); if (!el) return;
     let v = el.value.trim(); if (v === "") return;
     if (k === "temperature") v = parseFloat(v);
     else if (k === "max_tokens" || k === "compress_trigger_tokens" || k === "compress_keep_turns") v = parseInt(v, 10);
-    if (v !== "" && !Number.isNaN(v)) body[k] = v;
+    if (v === "" || Number.isNaN(v)) return;
+    const lim = AP_LIMITS[k];
+    if (lim){
+      const fixed = Math.min(lim[1], Math.max(lim[0], v));
+      if (fixed !== v){
+        clamped.push(k + " " + v + " → " + fixed);
+        v = fixed;
+        try { el.value = fixed; } catch (_) { }      // 顺手把框里的值也改对，别让人以为没生效
+      }
+    }
+    body[k] = v;
   });
+  if (clamped.length) showToast("已按合理范围收敛：" + clamped.join("、"));
   try{
     const r = await fetch(base + "/app/settings", {
       method: "PUT",

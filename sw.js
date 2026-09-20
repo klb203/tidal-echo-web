@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v87-setguard";        // v85：记忆待确认队列（机器写的不再静默生效）+ 大富翁 AI 剧情 + 牌桌记忆 + 启动层防白屏 + Kimi Code 订阅额度
+const CACHE = "companion-v88-statefind";        // v85：记忆待确认队列（机器写的不再静默生效）+ 大富翁 AI 剧情 + 牌桌记忆 + 启动层防白屏 + Kimi Code 订阅额度
                                                // v84：修「状态行无限增生 + hwm 读失败归零」（宫殿重复提取、注入稿一天一行）
 const PRECACHE = [
   "./index.html",

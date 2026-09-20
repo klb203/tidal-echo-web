@@ -12095,6 +12095,21 @@ async function appChatStream(text, streamId, conn, onMeta, resend){
         out.sessionId = ev.session_id || "";
         out.model = ev.model || out.model;
         if (ev.compressed) showToast("上下文超阈值，早期消息会在后台折叠进记忆");
+        /* ★ 后端把准备阶段的分段耗时放在 meta 里（见 app_api 的 _timing_snapshot）。
+           慢到肉眼可感时**说出来**：以前只能感觉到「今天好慢」，却不知道是谁慢 ——
+           线上跑在 0.1 CPU 的免费档上，这个字段是唯一能用的证据。
+           平时只留在 window 上（控制台可查），不打扰。 */
+        if (ev.timing && ev.timing.total_ms){
+          window.__tidalTiming = ev.timing;
+          const tm = ev.timing, nowT = Date.now();
+          if (tm.total_ms >= 10000 && nowT - (window.__tidalSlowToastAt || 0) > 120000){
+            window.__tidalSlowToastAt = nowT;
+            const slow = (tm.slow || []).slice(0, 2)
+              .map((x) => x[0] + " " + (Math.round(x[1] / 100) / 10) + "s").join("、");
+            showToast("这轮准备花了 " + (tm.total_ms / 1000).toFixed(1) + " 秒"
+                      + (slow ? "（最慢：" + slow + "）" : ""));
+          }
+        }
         if (onMeta) onMeta(ev);
       }else if (type === "text"){
         acc += streamEventText(ev);

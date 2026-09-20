@@ -3049,6 +3049,53 @@
     padding: 44px 8px; text-align: center;
     font-family: var(--font-cn); font-size: 13px; line-height: 1.7; color: var(--text-soft);
   }
+  /* ── 免打扰开关（一个开关，不是一个菜单）──────────────────────────────── */
+  .call-dnd{
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px; margin-bottom: 11px;
+    border: 1px solid var(--card-line); border-radius: 14px;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .call-dnd-label{
+    font-family: var(--font-cn); font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .call-dnd em{
+    font-family: var(--font-cn); font-style: normal; font-size: 11.5px;
+    color: var(--text-soft); opacity: .9;
+    margin-left: auto; text-align: right;
+  }
+  .call-dnd-switch{ position: relative; display: inline-block; width: 42px; height: 24px; flex: 0 0 auto; }
+  .call-dnd-switch input{ position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .call-dnd-switch i{
+    position: absolute; inset: 0; border-radius: 999px;
+    border: 1px solid var(--card-line); background: var(--bg);
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .call-dnd-switch i::after{
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--text-soft); opacity: .7;
+    transition: transform .18s ease, background .18s ease, opacity .18s ease;
+  }
+  .call-dnd-switch input:checked + i{ background: var(--accent, #6ea8fe); border-color: transparent; }
+  .call-dnd-switch input:checked + i::after{ transform: translateX(18px); background: #fff; opacity: 1; }
+  /* ── 带理由拒接（来电卡片里的那几句现成理由）────────────────────────── */
+  .incoming-decline-list{
+    display: flex; flex-direction: column; gap: 8px;
+    width: 100%; max-width: 320px; margin: 4px auto 0;
+  }
+  .incoming-decline-list button{
+    -webkit-appearance: none; appearance: none;
+    font-family: var(--font-cn); font-size: 13.5px; color: var(--text);
+    padding: 11px 14px; border-radius: 13px;
+    border: 1px solid var(--card-line); background: var(--card-bg);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .12s ease;
+  }
+  .incoming-decline-list button:active{ transform: scale(.98); }
+  .incoming-decline-list button.back{ color: var(--text-soft); border-style: dashed; }
   .call-hist-detail{ padding-top: 4px; }
   .call-hist-detail-meta{
     display: flex; flex-wrap: wrap; gap: 8px 14px;
@@ -6150,6 +6197,16 @@
         </button>
       </div>
       <div class="call-hist-body">
+        <!-- 免打扰：**一个开关，不是一个菜单**（参考实现的原话）。
+             开着 = 它不再主动打来；你自己打过去不受影响。 -->
+        <div class="call-dnd">
+          <span class="call-dnd-label">免打扰</span>
+          <label class="call-dnd-switch">
+            <input type="checkbox" id="callDndToggle">
+            <i aria-hidden="true"></i>
+          </label>
+          <em id="callDndHint">开着时它不会主动打来</em>
+        </div>
         <div class="call-hist-list" id="callHistList"></div>
         <div class="call-hist-detail hidden" id="callHistDetail"></div>
       </div>
@@ -6211,7 +6268,16 @@
     <div class="incoming-call-avatar" role="img" aria-label="DeepSeek"></div>
     <div class="incoming-call-title">DeepSeek来电</div>
     <div class="incoming-call-text" id="incomingCallText">DeepSeek想和你语音通话。</div>
-    <div class="incoming-call-actions">
+    <!-- 带理由拒接：点「拒绝」不直接挂掉，先给几句现成理由（也可以返回去接听）。
+         参考 donutbunelli/ringdonut：拒接要说得清"为什么没接"，而不是无声拒绝 ——
+         选完的理由会作为一条消息进会话，它下一次说话时看得见。 -->
+    <div class="incoming-decline-list hidden" id="incomingDeclineList">
+      <button type="button" data-note="现在有点忙">现在有点忙</button>
+      <button type="button" data-note="我在外面">我在外面</button>
+      <button type="button" data-note="我们先打字聊">我们先打字聊</button>
+      <button type="button" class="back" data-note="">返回</button>
+    </div>
+    <div class="incoming-call-actions" id="incomingCallActions">
       <div class="incoming-call-slot">
         <button class="incoming-call-btn decline" id="incomingCallDecline" type="button" aria-label="拒绝">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.996.996 0 0 0-1.01.24l-1.57 1.97a15.045 15.045 0 0 1-6.59-6.59l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
@@ -10936,6 +11002,24 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   let histOpenDetail = null;   // 当前展开的是哪一条（null = 在列表页）
   let histPollTimer = 0;       // 「整理中…」时的轮询定时器
 
+  /* ── 通话生命周期（来电 / 带理由拒接 / 温柔挂断 / 免打扰）─────────────────
+     参考 donutbunelli/ringdonut 的 IncomingCallCard + callLifecycle：
+     它必须**由服务端**建一条「来电邀请」才响铃 —— 模型嘴上说"我给你打电话了"
+     不算数（那句话是能编的），所以这里是轮询出来的。 */
+  const incomingActions = $("#incomingCallActions");
+  const incomingNotes   = $("#incomingDeclineList");
+  const dndToggle = $("#callDndToggle");
+  const dndHint   = $("#callDndHint");
+  let dndOn = false;           // 免打扰（一个开关）
+  let inviteId = null;         // 正在响的这通来电 id
+  let inviteTimer = 0;         // 来电轮询
+  let invitePrimed = false;    // 进页面后先查一次
+  let lingerTimer = 0;         // 温柔挂断的宽限计时
+  let lingering = false;       // 正在"多留一会儿"
+  let turnQueue = [];          // 待处理的通话轮次
+  let turnBusy = false;
+  const spokeIds = new Set();  // 通话里已经念过的消息 id（别念第二遍）
+
   const VU_BARS = 16;   // 每侧声纹竖条数
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -11046,10 +11130,15 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     transcript.appendChild(caret);
   }
 
-  function showIncomingCall(text){
+  /* ── 来电 ────────────────────────────────────────────────────────────────
+     `reason` 是它想说话的理由（服务端那条邀请里带的）：直接显示在卡片上，
+     而不是干巴巴的"想和你语音通话" —— 参考实现里那张卡片就是靠理由才有分量。 */
+  function showIncomingCall(text, id){
     if (open || !incomingOverlay) return;
+    inviteId = (id != null && id !== "") ? id : null;
     pendingIncomingText = String(text || (AI_NAME + "想和你语音通话。")).trim() || (AI_NAME + "想和你语音通话。");
     if (incomingTextEl) incomingTextEl.textContent = pendingIncomingText;
+    showDeclineNotes(false);
     incomingOpen = true;
     incomingOverlay.classList.remove("hidden");
     incomingOverlay.setAttribute("aria-hidden", "false");
@@ -11059,6 +11148,8 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   function hideIncomingCall(){
     if (!incomingOverlay || !incomingOpen) return;
     incomingOpen = false;
+    inviteId = null;
+    showDeclineNotes(false);
     incomingOverlay.classList.remove("open");
     incomingOverlay.setAttribute("aria-hidden", "true");
     setTimeout(() => {
@@ -11066,11 +11157,104 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     }, 380);
   }
 
+  /* 「否 → 为什么没接」那一步：不是直接挂掉，而是给几句现成理由。
+     选中的理由会作为一条消息进会话（它下一次说话时看得见）。 */
+  function showDeclineNotes(on){
+    if (incomingNotes) incomingNotes.classList.toggle("hidden", !on);
+    if (incomingActions) incomingActions.classList.toggle("hidden", !!on);
+  }
+
   async function acceptIncomingCall(){
     const firstLine = pendingIncomingText;
+    const id = inviteId;
     hideIncomingCall();
+    if (id != null) apiCallAnswer("accept", { id }).catch(() => {});
     await openCall();
     if (firstLine) speak(firstLine);
+  }
+
+  function declineIncomingCall(note){
+    const id = inviteId;
+    if (id != null) apiCallAnswer("decline", { id, note: note || "" }).catch(() => {});
+    hideIncomingCall();
+  }
+
+  /* ── 免打扰：一个开关（参考实现的原话：「不是菜单」）────────────────────── */
+  function applyDnd(on){
+    dndOn = !!on;
+    if (dndToggle) dndToggle.checked = dndOn;
+    if (dndHint) dndHint.textContent = dndOn ? "开着 · 它不会主动打来" : "开着时它不会主动打来";
+  }
+
+  /* ── 来电轮询 ────────────────────────────────────────────────────────────
+     它想打电话给你 → 服务端建一条「来电邀请」→ 这里拉到就响铃。
+     ★ 为什么必须这么绕：模型是能写出"我给你打电话了"这几句的，但**铃不会响** ——
+       只有服务端真的建了邀请，前端才会看见。所以"打电话"这件事不能被文本伪造。 */
+  async function pollInvite(){
+    if (isMock() || open) return;                    // 通话中不查（正在通话还响什么铃）
+    try{
+      const d = await apiCallInvite();
+      if (!d || !d.ok) return;
+      if (typeof d.dnd === "boolean") applyDnd(d.dnd);
+      if (d.invite && !d.dnd){
+        if (!incomingOpen) showIncomingCall(d.invite.reason, d.invite.id);
+      }else if (incomingOpen && inviteId != null){
+        hideIncomingCall();                          // 过期了 / 已经在别处处理掉了
+      }
+    }catch(_){ }
+  }
+
+  function startInviteWatch(){
+    if (inviteTimer) clearInterval(inviteTimer);
+    inviteTimer = setInterval(() => {
+      if (document.hidden) return;
+      pollInvite();
+    }, 20000);
+    if (!invitePrimed){ invitePrimed = true; setTimeout(() => { if (!document.hidden) pollInvite(); }, 5000); }
+  }
+
+  /* ── 温柔挂断 ────────────────────────────────────────────────────────────
+     它说"聊完了"（回复里带 ⟪挂断⟫）时**不立刻挂**：先留 18 秒。
+     你开口 → 取消；你不说话 → 它自己轻轻挂掉。
+     （参考实现：说完再见之后电话会多留 15–18 秒。） */
+  const LINGER_MS = 18000;
+  function startLinger(){
+    if (!open || lingering) return;
+    lingering = true;
+    setCaption("still here");
+    setQuote("说完了。再留一会儿 —— 你开口我就还在。", { hint: true });
+    if (!muted) resumeListeningSoon(200);            // 还留着耳朵：你一说话就取消
+    clearTimeout(lingerTimer);
+    lingerTimer = setTimeout(() => {
+      lingerTimer = 0;
+      if (!open) return;
+      lingering = false;
+      closeCall();                                   // 轻轻挂掉
+    }, LINGER_MS);
+  }
+  function cancelLinger(){
+    if (!lingering) return;
+    lingering = false;
+    clearTimeout(lingerTimer);
+    lingerTimer = 0;
+    setCaption("listening");
+    setQuote(HINT_LISTENING, { hint: true });
+  }
+
+  /* 界面上落了一条 AI 消息 → 通话里念出来（并看它是不是说了"挂断"）。
+     ★ 通话里这一条往往**已经是我们刚拿到的那条**（turn 直接返回过，id 记在 spokeIds 里），
+       那就别再念第二遍。 */
+  function onAssistant(m){
+    if (!open || !m) return;
+    const id = (m.id != null) ? String(m.id) : "";
+    const call = (m.meta && m.meta.call) || {};
+    if (id && spokeIds.has(id)){
+      if (call.hangup) startLinger();
+      return;
+    }
+    if (id) spokeIds.add(id);
+    speak(m.text || "");
+    if (call.hangup) startLinger();
   }
 
   function setWaveLevel(level){
@@ -11189,14 +11373,61 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     }, delay);
   }
 
+  /* 通话里说了一句 → 交给「通话里的一轮」。
+     ★ 以前这里只把话落库（POST /app/voice），**没有任何人回话** ——
+       线上实测：说完等 40 秒，会话里仍然只有那一条 user。整通电话其实是单向的。
+       现在走 /app/call/turn：存你的话 → 它在通话上下文里回一句 → 这里念出来。 */
   function sendVoiceText(text, source){
     const clean = String(text || "").trim();
     if (!clean) return;
+    cancelLinger();                       // 你开口了 → 温柔挂断取消
     const sense = privateMode ? flushAudioSense() : "";
-    apiVoiceText(clean + sense, { source: source || "browser_speech", call_id: callId })
-      .catch(() => {
-        setTranscript("没送出去,等下网络好了再说一次。", false);
-      });
+    setTranscript("你: " + clean, true);
+    enqueueTurn(clean + sense, source || "browser_speech");
+  }
+
+  /* 一轮一轮来：上一轮还没回来就不并发（免费档上并发只会让两边都慢）。 */
+  function enqueueTurn(text, source){
+    turnQueue.push({ text, source });
+    if (turnBusy) return;
+    turnBusy = true;
+    runTurnQueue();
+  }
+
+  async function runTurnQueue(){
+    try{
+      while (turnQueue.length && open){
+        const job = turnQueue.shift();
+        await runTurn(job.text, job.source);
+      }
+    }finally{
+      turnBusy = false;
+      if (open && !mediaRecorder && !speakBusy && !lingering){
+        setCaption("listening");
+        resumeListeningSoon(250);
+      }
+    }
+  }
+
+  async function runTurn(text, source){
+    if (callQuoteText && !speakBusy){
+      setCaption("thinking");
+      setQuote(HINT_THINKING, { hint: true });
+    }
+    try{
+      const r = await apiCallTurn(text, { call_id: callId, source });
+      if (!open) return;
+      if (!r || !r.ok){
+        setTranscript((r && r.error) ? ("它没接上这句：" + r.error) : "这一句没送出去。", false);
+        return;
+      }
+      if (r.message_id != null) spokeIds.add(String(r.message_id));   // 别让 backfill 再念一遍
+      setTranscript("", false);
+      speak(r.reply || "");
+      if (r.hangup) startLinger();
+    }catch(e){
+      setTranscript("没送出去,等下网络好了再说一次。", false);
+    }
   }
 
   function startRecognition(){
@@ -11337,6 +11568,13 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     }
     histOpenDetail = null;
     if (histBtn) histBtn.classList.remove("on");
+    /* 新一通电话：把上一通留下的状态清干净 ——
+       宽限计时、没跑完的轮次、以及"这条已经念过了"的名单。 */
+    lingering = false;
+    clearTimeout(lingerTimer); lingerTimer = 0;
+    turnQueue.length = 0;
+    turnBusy = false;
+    spokeIds.clear();
     ensureTtsCtx();
     callId = "call-" + Date.now().toString(36);
     buildVu();
@@ -11393,6 +11631,11 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     }
     histOpenDetail = null;
     if (histBtn) histBtn.classList.remove("on");
+    /* 挂断：宽限计时、排队里没跑完的轮次，一起停掉 ——
+       否则挂断之后还会冒出一句"它说的话"（用户已经不在通话里了）。 */
+    lingering = false;
+    clearTimeout(lingerTimer); lingerTimer = 0;
+    turnQueue.length = 0;
     apiCallEvent("end", { call_id: closingCallId }).catch(() => {});
     clearTimeout(hideId);
     hideId = setTimeout(() => overlay.classList.add("hidden"), 380);
@@ -11564,6 +11807,9 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
       histList.innerHTML = '<div class="call-hist-empty">正在读通话记录…</div>';
     }
     histShowList();
+    /* 顺手把免打扰的状态同步过来（同一个后端，一次请求两件事）。
+       以前这个开关只在通话记录面板里能看到状态，从别处改了不会同步。 */
+    apiCallInvite().then((d) => { if (d && typeof d.dnd === "boolean") applyDnd(d.dnd); }).catch(() => {});
     let items = [];
     try{
       const sid = (typeof effectiveApiSession === "function") ? effectiveApiSession() : "";
@@ -11628,17 +11874,36 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     else chistClose();                              // 已在列表 → 关掉面板
   }
 
-  window.VoiceCall = { speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall, history: histOpen, isOpen: () => open, isMinimized: () => minimized };
+  window.VoiceCall = {
+    speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall,
+    history: histOpen, isOpen: () => open, isMinimized: () => minimized,
+    onAssistant,                       // 界面上落了 AI 消息 → 通话里念出来（并看它是不是要挂断）
+    pollInvite,                        // 它想打电话给你（轮询来的）
+    watch: startInviteWatch,           // 开始盯着「来电邀请」
+  };
 
   /* 通话记录：悬浮按钮 + 面板事件 */
   if (histBtn) histBtn.addEventListener("click", (e) => { e.stopPropagation(); histOpen(); });
-  if (chistClose) chistClose.addEventListener("click", (e) => { e.stopPropagation(); chistClose(); });
-  if (chistBack) chistBack.addEventListener("click", (e) => { e.stopPropagation(); chistBack(); });
+  /* ★ 这里以前写的是 `if (chistClose) chistClose.addEventListener(...)` ——
+     chistClose / chistBack 是**函数**（面板的关闭与返回），不是元素。
+     函数身上没有 addEventListener → 这一行会在加载时抛 TypeError，
+     而它下面那些接线（包括通话记录点开、免打扰开关）**全部不会被执行**。
+     元素是 histClose / histBack。 */
+  if (histClose) histClose.addEventListener("click", (e) => { e.stopPropagation(); chistClose(); });
+  if (histBack) histBack.addEventListener("click", (e) => { e.stopPropagation(); chistBack(); });
   if (histList) histList.addEventListener("click", (e) => {
     const el = e.target && e.target.closest ? e.target.closest("[data-hist]") : null;
     if (!el) return;
     e.stopPropagation();
     histShowDetail(parseInt(el.getAttribute("data-hist"), 10));
+  });
+  /* 免打扰：一个开关。开着 = 它不再主动打来（你自己打过去不受影响）。 */
+  if (dndToggle) dndToggle.addEventListener("change", () => {
+    const want = !!dndToggle.checked;
+    applyDnd(want);
+    apiCallDnd(want).then((r) => {
+      if (r && typeof r.dnd === "boolean") applyDnd(r.dnd);
+    }).catch(() => { applyDnd(!want); showToast && showToast("免打扰没改成，等下再试"); });
   });
 
   if (minimizeBtn) minimizeBtn.addEventListener("click", (e) => { e.stopPropagation(); minimizeCall(); });
@@ -11659,7 +11924,14 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   callBtn.addEventListener("click", () => { open ? closeCall() : void openCall(); });
   hangup.addEventListener("click", closeCall);
   if (incomingAccept) incomingAccept.addEventListener("click", () => { void acceptIncomingCall(); });
-  if (incomingDecline) incomingDecline.addEventListener("click", hideIncomingCall);
+  if (incomingDecline) incomingDecline.addEventListener("click", () => { showDeclineNotes(true); });
+  if (incomingNotes) incomingNotes.addEventListener("click", (e) => {
+    const b = e.target && e.target.closest ? e.target.closest("button") : null;
+    if (!b) return;
+    const note = b.getAttribute("data-note") || "";
+    if (!note){ showDeclineNotes(false); return; }        // 「返回」→ 回到接听/拒绝
+    declineIncomingCall(note);
+  });
   if (incomingScrim) incomingScrim.addEventListener("click", hideIncomingCall);
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -16126,6 +16398,61 @@ async function apiCallEvent(action, meta = {}){
   return await r.json();
 }
 
+/* ── 通话生命周期（借 donutbunelli/ringdonut 的 /call/* 那一组）──────────────
+   四个接口各管一件事：
+     /app/call/turn   通话里的一轮（你说的那句 → 它的回复）★ 以前没有，通话是单向的
+     /app/call/invite 它想打电话给你（轮询这个，看到就响铃）
+     /app/call/answer 接听 / 带理由拒接
+     /app/call/dnd    免打扰开关                                                      */
+function callSessionId(){
+  try{ return (typeof effectiveApiSession === "function" ? effectiveApiSession() : "") || ""; }catch(_){ return ""; }
+}
+
+async function apiCallTurn(text, meta = {}){
+  if (isMock()) return { ok:true, reply: "（演示模式）", hangup:false };
+  const r = await fetch(appUrl("/app/call/turn"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ text, session_id: callSessionId() || undefined, ...meta })
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  if (!r.ok) throw new Error("call/turn " + r.status);
+  return await r.json();
+}
+
+async function apiCallInvite(){
+  if (isMock()) return { ok:true, invite:null };
+  const qs = callSessionId() ? ("?session_id=" + encodeURIComponent(callSessionId())) : "";
+  const r = await fetch(appUrl("/app/call/invite") + qs, { headers: authHeaders() });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  if (!r.ok) throw new Error("call/invite " + r.status);
+  return await r.json();
+}
+
+async function apiCallAnswer(action, meta = {}){
+  if (isMock()) return { ok:true };
+  const r = await fetch(appUrl("/app/call/answer"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ action, session_id: callSessionId() || undefined, ...meta })
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  if (!r.ok) throw new Error("call/answer " + r.status);
+  return await r.json();
+}
+
+async function apiCallDnd(on){
+  if (isMock()) return { ok:true, dnd: !!on };
+  const r = await fetch(appUrl("/app/call/dnd"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ dnd: !!on, session_id: callSessionId() || undefined })
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  if (!r.ok) throw new Error("call/dnd " + r.status);
+  return await r.json();
+}
+
 async function apiTts(text){
   if (!text || isMock()) return null;
   const r = await fetch(`${apiBase()}/app/tts`, {
@@ -17761,7 +18088,12 @@ function onMessage(m){
   if (stick && m.kind !== "thinking" && m.kind !== "act") freshKeys.add(key);          // 在底部时新消息弹入
   if (m.from === "ai" && m.kind !== "thinking" && m.kind !== "act"){               // act 是环境信息:不响铃、不在通话里朗读
     playReceiveSound();
-    if (window.VoiceCall && window.VoiceCall.isOpen()) window.VoiceCall.speak(m.text || "");
+    /* 通话里要念出来（并看这条是不是说了"挂断"→ 温柔收线）。
+       交给 onAssistant 统一处理：它认得"这条我们已经念过了"，不会念第二遍。 */
+    if (window.VoiceCall && window.VoiceCall.isOpen()){
+      if (window.VoiceCall.onAssistant) window.VoiceCall.onAssistant(m);
+      else window.VoiceCall.speak(m.text || "");
+    }
   }
   setMessage({ ...m, status:"sent" }, { render:false });
   scheduleRender({ stickToBottom: stick });
@@ -18399,6 +18731,11 @@ $("#loginForm").addEventListener("submit", async (e) => {
 /* ════════════ 启动 ════════════ */
 function startRealtime(){
   openStream();
+
+  /* 它想打电话给你 —— 盯着「来电邀请」。
+     ★ 为什么要轮询：模型能在聊天里写 ⟪拨号:理由⟫，但**铃响不响由服务端决定** ——
+       只有真的建了一条邀请，这里才看得到。所以"打电话"这件事没办法靠嘴编出来。 */
+  if (window.VoiceCall && window.VoiceCall.watch){ try{ window.VoiceCall.watch(); }catch(_){ } }
 
   if (streamWatchTimer) clearInterval(streamWatchTimer);
   streamWatchTimer = setInterval(() => {

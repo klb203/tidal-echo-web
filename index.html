@@ -12062,7 +12062,12 @@ async function appChatStream(text, streamId, conn, onMeta, resend){
       if (!raw || raw === "[DONE]") continue;
       let ev; try{ ev = JSON.parse(raw); }catch(_){ continue; }
       const type = streamEventType(ev);
-      if (type === "meta"){
+      if (type === "warming"){
+        /* 后端已收到、正在准备上下文（记忆 / 宫殿 / 时间线都在这一阶段读）。
+           它可能要几秒 —— 先给个反馈，免得人以为消息没发出去、反复重发。 */
+        try{ setStatusNote("正在翻记忆…"); }catch(_){ }
+      }else if (type === "meta"){
+        try{ setStatusNote(""); }catch(_){ }
         out.sessionId = ev.session_id || "";
         out.model = ev.model || out.model;
         if (ev.compressed) showToast("上下文超阈值，早期消息会在后台折叠进记忆");

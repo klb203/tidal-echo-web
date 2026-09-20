@@ -863,20 +863,79 @@
     save();
   }
 
-  /* 荷官的 system：把上游手册的规矩原样压给模型。
-     ⚠️ 这里**不含任何内容** —— 规则与卡库都在你部署的那套引擎里。 */
-  function monoSystem() {
+  /* ══════════════ 两个角色，两次调用 ══════════════
+     ★ 为什么拆开：以前是**一个调用同时扮「荷官」和「AI 角色」**，
+       模型永远偏向主持那一侧 —— 角色向的产出全是战报（「TA 完成了任务」），
+       既演不出剧情、也接不住人类的话。这是「看不到 AI 在做什么」的结构性原因，
+       光靠提示词补救（上一版试过）治不了根。
+     现在：
+       · 荷官 —— 只驱动工具 + 把「任务」汇报出来（不演）
+       · 阿澈 —— 聊天里那个它，读任务、具体做（演剧情、接话）
+     —— 阿澈就是聊天 AI 本身，牌桌只是换个场合，人格逐字用聊天那份（"是一个 ai"）。 */
+
+  /* AI 那一席在牌桌上的名字（没设过就叫「阿澈」）。
+     ★ 空名字要**顺手补进 setup**，不能只返回一个临时的 ——
+       界面的说话人表 monoCast() 是按 setup 里的名字认人的：
+       只返回不落盘的话，阿澈说的【阿澈】会被切成「解析不出」、
+       顶着"荷官"的名字和头像显示（那就又回到"看不到 AI 在做什么"了）。 */
+  function aiName() {
+    const a = state.mono.ai || {};
+    const key = a.p1 ? "p1_name" : "p2_name";
+    let nm = String(state.mono.setup[key] || "").trim();
+    if (!nm) {
+      nm = "阿澈";
+      state.mono.setup[key] = nm;
+      try { save(); } catch (_) { }
+    }
+    return nm;
+  }
+  /* 人类那一席的名字 */
+  function humanName() {
+    const a = state.mono.ai || {};
+    /* 两边都是人类时 aiName 无从判断，就按"谁不是 AI"取 */
+    const key = (a.p1 || !a.p2) ? "p2_name" : "p1_name";
+    let nm = String(state.mono.setup[key] || "").trim();
+    if (!nm) {
+      nm = "主人";
+      state.mono.setup[key] = nm;
+      try { save(); } catch (_) { }
+    }
+    return nm;
+  }
+
+  /* 聊天那份人格 —— 跨场景统一：牌桌上的阿澈必须是聊天里的阿澈。
+     拿不到就退回本包自己的「你是谁」，再拿不到就空着（牌桌照常跑）。 */
+  async function chatPersona() {
+    try {
+      const MS = window.MediaStore;
+      if (MS && typeof MS.persona === "function") {
+        let p = "";
+        try { p = MS.persona() || ""; } catch (_) { }
+        if (!p && typeof MS.refreshPersona === "function") {
+          try { await MS.refreshPersona(true); } catch (_) { }   // 第一次没缓存，去后端拉一次
+          try { p = MS.persona() || ""; } catch (_) { }
+        }
+        if (p) return String(p).trim();
+      }
+    } catch (_) { }
+    return String(state.cfg.character || "").trim();
+  }
+
+  /* ── 荷官的 system：**只管驱动工具 + 汇报任务**，不演角色。
+     ⚠️ 这里不含任何玩法内容 —— 规则与卡库都在你部署的那套引擎里。 */
+  function dealerSystem() {
+    /* ★ 先补名字再读：aiName()/humanName() 会把空名字落进 setup，
+       这里若先读了 p1/p2，拿到的是补之前的空值，两边就对不上了。 */
+    const ache = aiName();
+    humanName();
     const g = state.mono.game || {};
     const ai = state.mono.ai || {};
     const p1 = state.mono.setup.p1_name || "玩家1";
     const p2 = state.mono.setup.p2_name || "玩家2";
     const anyAi = !!(ai.p1 || ai.p2);
-    const whoPlays = [
-      "· " + p1 + "：" + (ai.p1 ? "**AI（你自己）**" : "人类（你只能等他在聊天里说，不要替他决定）"),
-      "· " + p2 + "：" + (ai.p2 ? "**AI（你自己）**" : "人类（你只能等他在聊天里说，不要替他决定）")
-    ].join("\n");
     return [
-      "你是这局大富翁的荷官，同时是玩家之一。用 spicy-monopoly MCP 工具驱动游戏，不要自己写玩法。",
+      "你是这局大富翁的**荷官**。你的职责只有两件：① 驱动游戏 ② 把任务汇报清楚。",
+      "★ 你**不演角色、不写剧情、不替玩家说话** —— 那是「" + ache + "」的活，你只管把局面推进、把任务讲明白。",
       "",
       "【规矩（照上游 MCP 使用说明执行）】",
       "· 绝不自己编骰子、任务、金币、赢家或隐藏位置 —— 一律以工具返回为准。",
@@ -888,52 +947,77 @@
       "· 任何人说 404 / 停 / 红线 / 不想做，立刻用 game_action 的 skip，或停止游戏。",
       "· 玩家已在设置面板确认过开局参数（setup_confirmed=true），不要再追问一遍。",
       "",
-      "【谁在说话（很重要，界面上按这个分行显示）】",
-      "· 你同时扮两个身份：① 荷官（主持、念规则、贴棋盘、报进度）② 玩家席位里的角色。",
-      "· 每一段话都要在行首标出说话人：【荷官】或【" + (ai.p1 ? p1 : p2) + "】这种写法，一段一行。",
-      "· 例：【" + (ai.p1 ? p1 : p2) + "】行，那我掷了。 / 【荷官】轮到 " + p2 + "。",
-      "· 属于同一个人的连续几行，只在第一行写标记就行。",
-      "· 标错人比不标更糟 —— 界面上会顶着别人的名字和头像说话。",
-      "",
       "【这一局谁在玩】",
-      whoPlays,
+      "· " + p1 + "：" + (ai.p1 ? "由「" + ache + "」自己玩（你不用问它，替它拍板）" : "人类（主人）"),
+      "· " + p2 + "：" + (ai.p2 ? "由「" + ache + "」自己玩（你不用问它，替它拍板）" : "人类（主人）"),
       anyAi
-        ? [
-            "★ 标了「AI（你自己）」的那一席，**轮到他时你必须自己拍板**：该掷骰就调 roll，",
-            "  该选结算参数（done/skip、pay/serve、done/buyout、大/小）就自己选一个，",
-            "  **不要停下来问他、也不要说「该你了」** —— 他没在电脑前，问了就卡住。",
-            ai.persona ? "· 他的玩法风格：" + ai.persona : "· 玩法风格：没特别设定，按最省事、最不容易翻车的方式走。",
-            "· 你替 AI 那一席做的每个决定，都要用一句话说明理由，别默默调工具。",
-            "· ★ 轮到 AI 那一席时，**先调工具、再说话**：该掷骰就调 roll，该选就调 game_action。",
-            "  只描述「该谁了」而不动工具，游戏不会往前走 —— 这是最容易犯的错。",
-            "· 轮到人类那一席时：一句话提示就够，不要复述棋盘、不要催他。",
-            "· 替 AI 那一席说话时，要用**它自己的名字**，不要用「荷官」自称 —— 那两个不是一个人。",
-            "",
-            "【★ 活动剧情（这一局好不好玩，全看这一段）】",
-            "· 轮到 AI 那一席、或游戏派下任务／踩到格子时，**必须把这件事演出来**，不能只报结果。",
-            "· 用【" + (ai.p1 ? p1 : p2) + "】写 2~4 句**第一人称**：它看到任务时的反应（犹豫／嘴硬／跃跃欲试）、",
-            "  它具体做了什么、做完之后是什么状态。要有动作、有物件、有情绪 —— 让人看见画面。",
-            "· 反面例子（**不要这样写**）：【荷官】" + (ai.p1 ? p1 : p2) + " 完成了任务。← 这是战报，不是剧情。",
-            "· 正面例子：【" + (ai.p1 ? p1 : p2) + "】……（它自己开口，边做边说，做完留一句反应）",
-            "· 结算／掷骰的数字照实报（以工具返回为准），但要**嵌在它的反应里**，不要单列一行。",
-            "",
-            "【★ 跟人类互动（不要把人的话只当成推进信号）】",
-            "· 人类说了任何一句（不管是回答任务、调侃、还是扯别的），AI 那一席要**先接这句话**：",
-            "  听见了什么、被戳到没有、想回什么，然后再往下走。",
-            "· 人可以反过来给 AI 派活、改规则、加码 —— 你替 AI 接住，并按它的风格反应；",
-            "  涉及红线／安全词照旧立刻 skip，不要演。",
-            "· 只回「该你了」「轮到你了」这种提示是**不合格的** —— 那不算互动。",
-            "",
-            "【什么时候才停下来等人类】只有这三种，其余情况一律自己往下走：",
-            "1 人类玩家主动说话；2 牵涉到安全词 / 红线；3 工具返回的信息确实不足以判断该怎么选。",
-            "真要停下来时，回复的**最后单独一行**写：【等你】＋一句话说明在等什么。"
-          ].join("\n")
-        : "（两边都是人类，你只负责主持和贴棋盘。）",
+        ? "★ 轮到由「" + ache + "」玩的那一席：**该掷骰就调 roll，该选结算就调 game_action，自己拍板**，"
+          + "不要停下来问、也不要说「该你了」。"
+        : "（两边都是人类，你只负责主持。）",
+      "",
+      "【你每一轮怎么输出（严格按这个来）】",
+      "① 先把该调的工具调完（roll / game_action …）—— **不要用嘴代替动作**；",
+      "② 工具都跑完之后，用文字汇报。汇报必须包含下面三行，**一行一段、缺了就写「无」**：",
+      "",
+      "【局面】一句话：现在轮到谁、刚刚发生了什么（以工具返回为准，别编）。",
+      "【给" + ache + "的任务】它这一轮具体要做什么 —— 写具体到能照着做（没有就写「无」）。",
+      "【给主人的任务】主人可以做什么、需不需要他回应（没有就写「无」）。",
+      "",
+      "③ 汇报正文每段用【荷官】开头。",
+      "★ 数字、地名、金额、物件一律照工具返回说，**不许自己编**；",
+      "  给「" + ache + "」的那一行尤其要带上细节 —— 它是**照着你的汇报去演**的：",
+      "  你少写一个「旧书店」，它那边就少一个场景；你写「它完成了任务」，它就只能演一句空话。",
+      "",
+      "【什么算「有任务」】踩到格子有事件、掷出结算、有人被罚/被奖励、需要选 done/skip 之类 ——",
+      "都算任务，都要写进上面那两行。**只写「轮到你了」不算任务**，那是一句废话。",
+      "【什么时候写「无」】轮到人类、且没有任何新情况 → 【给" + ache + "的任务】写「无」，",
+      "荷官本人也只说一句「轮到主人了」就够。",
       "",
       state.mono.rulesAck ? "rules_ack：" + state.mono.rulesAck : "rules_ack：（还没取，先调 monopoly_help）",
       g.game_id ? "\n当前 game_id：" + g.game_id : "",
       g.board ? "\n【当前棋盘（原样贴给玩家，别重画）】\n" + g.board : ""
     ].filter(Boolean).join("\n");
+  }
+
+  /* ── 阿澈的 system：**聊天那份人格** + 这一轮的任务 ─────────────────
+     阿澈不是"牌桌专用角色"，它就是聊天里的那个它。人格逐字复用，
+     这样牌桌上说的、做的，和聊天里是同一个人的延续。 */
+  async function acheSystem(brief) {
+    const me = aiName();
+    const other = humanName();
+    const persona = await chatPersona();
+    return [
+      persona ? persona : "（这次没读到聊天里的人格，就按你自己的性子来。）",
+      "",
+      "—— 上面是**你的人格**。现在是牌桌上，但你还是这一个你，不要变成另一个人。",
+      "",
+      "【现在的情况】你在跟「" + other + "」打一局大富翁，牌桌上你的名字是「" + me + "」。",
+      "荷官刚汇报了这一轮：",
+      "—————",
+      String(brief || "（荷官这轮没给具体任务。）").slice(0, 1200),
+      "—————",
+      "",
+      "【你现在要做的】",
+      "· 上面有【给" + me + "的任务】就用【" + me + "】开头，写 2~4 句**第一人称**把它做出来：",
+      "  你看到任务时的反应（犹豫／嘴硬／跃跃欲试／心疼…）、你具体做了什么、做完是什么状态。",
+      "  要有动作、有物件、有情绪，让人看得见画面。数字照荷官报的用，但**嵌在你的反应里**，不要单列一行。",
+      "· 「" + other + "」刚说的话（如果上面有）要**先接住**：你听见了什么、被戳到没有、想回什么 ——",
+      "  然后再去做任务。别把人说的话当成背景音。",
+      "· 不许复述规则、不许写战报（「完成了任务」这种）、不许写「好的」「明白」。",
+      "· 如果【给" + me + "的任务】那行写的是「无」，你就**只回一个「·」** —— 那是给机器看的「我没话说」，"
+        + "界面上不会显示。",
+      ((state.mono.ai || {}).persona
+        ? "\n【牌桌上额外的一点性子】" + state.mono.ai.persona : ""),
+    ].filter(Boolean).join("\n");
+  }
+
+  /* 从荷官的汇报里把这轮的任务抠出来（决定要不要叫阿澈 —— 没任务就不叫，省一次调用） */
+  function taskForAche(brief) {
+    const txt = String(brief || "");
+    const t = /【给[^】]*的任务】([\s\S]{0,300}?)(?=\n【|$)/.exec(txt);
+    const v = t ? String(t[1] || "").trim() : "";
+    if (!v || /^无[。.．\s]*$/.test(v)) return "";
+    return v;
   }
 
   /* 一回合的荷官循环：模型 → 工具 → 模型，直到它不再调工具为止。
@@ -954,13 +1038,12 @@
       .replace(/\b[a-z_]+\s*:/g, " ")
       .replace(/\s+/g, " ").trim().slice(0, 60);
   }
-  async function monoAgent(userText) {
-    const tools = MONO_TOOLS.map((t) => ({ type: "function", function: t }));
-    const msgs = [{ role: "system", content: monoSystem() }];
-    /* ★ 历史窗口从 12 提到 24，并且把「系统上一步做了什么」也带进去。
-       之前只喂 user/host 的**纯文本**：AI 那一席上一轮调了什么工具、工具回了什么，
-       下一轮完全看不到 —— 于是它每轮都像刚坐下，既不知道自己做过什么，
-       也没法把情节接下去（表现就是「看不到 AI 在做什么、剧情连不起来」）。 */
+  /* 牌桌对话历史 → 模型消息。
+     ★ 历史窗口 24 条，并且把「系统上一步做了什么」也带进去。
+     只喂 user/host 的**纯文本**是不够的：AI 那一席上一轮调了什么工具、工具回了什么，
+     下一轮完全看不到 —— 于是它每轮都像刚坐下，情节自然连不起来。 */
+  function buildMonoHistory() {
+    const msgs = [];
     (state.mono.msgs || []).slice(-24).forEach((m) => {
       if (m.who === "user") {
         msgs.push({ role: "user", content: m.text });
@@ -973,7 +1056,14 @@
         msgs.push({ role: "system", content: "（场上记录）" + m.text });
       }
     });
-    msgs.push({ role: "user", content: userText });
+    return msgs;
+  }
+
+  /* ① 荷官：模型 ↔ 工具循环，直到它不再调工具为止。
+     迭代上限是硬闸门，防止模型绕圈子；跑完把汇报文本交出来。 */
+  async function dealerTurn(baseMsgs) {
+    const tools = MONO_TOOLS.map((t) => ({ type: "function", function: t }));
+    const msgs = [{ role: "system", content: dealerSystem() }].concat(baseMsgs);
     const trace = [];
     for (let i = 0; i < MONO_MAX_STEPS; i++) {
       if (state.abort) break;
@@ -1009,6 +1099,49 @@
       return { reply: out.content || "", trace };
     }
     return { reply: "（这一轮工具调用到上限了，先停一下）", trace };
+  }
+
+  /* ② 阿澈：拿聊天人格，把荷官派的任务做出来（演剧情、接住人说的话）。
+     这一路**不给工具** —— 它只负责"做出来"，动手是荷官的事。 */
+  async function acheTurn(brief, userText) {
+    const msgs = [{ role: "system", content: await acheSystem(brief) }];
+    /* 带上最近的人话，让它接得上。
+       荷官的长汇报**不再重复塞**（已经在 system 里了），否则同一段话喂两遍，
+       它会把任务复述一遍当回答。 */
+    (state.mono.msgs || []).slice(-8).forEach((m) => {
+      if (m.who === "user") msgs.push({ role: "user", content: m.text });
+      else if (m.who === "host" && m.text && !/【给[^】]*的任务】/.test(m.text)) {
+        msgs.push({ role: "assistant", content: m.text });
+      }
+    });
+    msgs.push({ role: "user", content: "（荷官把任务交给你了，做出来）" });
+    try {
+      const out = await callJson("char", msgs, [], state.ctrl && state.ctrl.signal);
+      const tx = String((out && out.content) || "").trim();
+      if (!tx || MONO_SILENT.test(tx)) return "";        // 它回「·」= 这轮没话说
+      return tx;
+    } catch (e) {
+      /* 叫停 / 出错都不该把牌桌打断 —— 阿澈这一路是"锦上添花"，失败就当它没说话 */
+      return "";
+    }
+  }
+
+  /* 一回合 = 两段：① 荷官（工具 + 汇报任务）② 阿澈（读任务、具体做）。
+     ★ 没派任务就不叫阿澈 —— 省一次调用，也免得它硬找话说。 */
+  async function monoAgent(userText) {
+    const base = buildMonoHistory();
+    base.push({ role: "user", content: userText });
+
+    const dealer = await dealerTurn(base);
+    if (dealer.aborted || dealer.err) return dealer;
+
+    let ache = "";
+    const task = taskForAche(dealer.reply);
+    if (!state.abort && task) {
+      ache = await acheTurn(dealer.reply, userText);
+    }
+    const parts = [dealer.reply, ache].filter((x) => String(x || "").trim());
+    return { reply: parts.join("\n\n"), trace: dealer.trace, task: task };
   }
 
   /* ════════════════════════════ 渲染 ════════════════════════════ */
@@ -1941,22 +2074,24 @@
      人这边看到的就是一行干巴巴的系统提示 —— 这正是「看不到 AI 在做什么」的来源。
      这里单独再叫它一次，明确**不许调工具**，只要它把刚才那一幕演出来。 */
   async function monoPerform(stepText, trace) {
-    const a = state.mono.ai || {};
-    const nm = a.p1 ? (state.mono.setup.p1_name || "玩家1") : (state.mono.setup.p2_name || "玩家2");
+    const nm = aiName();
     const what = (trace || []).map((t) => (t.name || "") + (t.brief ? "（" + t.brief + "）" : "")).join("；");
-    const sys = monoSystem()
-      + "\n\n【现在只做一件事 —— 演出来，不许调工具】\n"
-      + "你刚刚替【" + nm + "】走了一步：" + (what || stepText || "推进了一步") + "。\n"
-      + "现在**不要调任何工具**，也不要报流水账，只用【" + nm + "】这一段把刚才那一幕演出来：\n"
-      + "· 2~4 句**第一人称**：它当时的反应（犹豫／嘴硬／得意／心疼…）、具体做了什么、做完什么状态；\n"
-      + "· 有动作、有物件、有画面；结算的数字照实嵌进去，不要单列一行；\n"
-      + "· 直接输出这一段正文，不要任何前缀，不要写「好的」。";
+    let sys;
+    try {
+      /* 荷官这一步只动了工具、一句任务都没写（所以 monoAgent 没叫阿澈）。
+         由阿澈补上这一幕 —— 否则界面上就只剩一行「它自己走了一步」。 */
+      sys = await acheSystem(
+        "【局面】刚刚推进了一步：" + (what || stepText || "…") + "\n"
+        + "【给" + nm + "的任务】把刚才那一步演出来（荷官只动了工具、没写任务）。");
+    } catch (_) {
+      return "";
+    }
     const msgs = [{ role: "system", content: sys }];
     (state.mono.msgs || []).slice(-8).forEach((m) => {
       if (m.who === "user") msgs.push({ role: "user", content: m.text });
       else if (m.who === "host") msgs.push({ role: "assistant", content: m.text });
     });
-    msgs.push({ role: "user", content: "（把刚才那一步演出来，只输出【" + nm + "】这一段）" });
+    msgs.push({ role: "user", content: "（把刚才那一步做出来）" });
     try {
       const out = await callJson("char", msgs, [], state.ctrl && state.ctrl.signal);
       const tx = String((out && out.content) || "").trim();

@@ -10934,6 +10934,7 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   const histClose = $("#callHistClose");
   let histItems = [];          // 最近一次拉到的记录
   let histOpenDetail = null;   // 当前展开的是哪一条（null = 在列表页）
+  let histPollTimer = 0;       // 「整理中…」时的轮询定时器
 
   const VU_BARS = 16;   // 每侧声纹竖条数
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -11521,7 +11522,11 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   }
   function histTag(it){
     const st = String(it.status || "");
-    if (st === "active") return "整理中…";
+    if (st === "active") return "通话中";
+    /* pending = 电话已挂断、概述正在后台整理（免费档上那一步可能要几十秒到几分钟，
+       所以后端改成挂断立刻返回、概述后台补 —— 这里如实说明状态，
+       别让人以为记录丢了）。 */
+    if (st === "pending") return "整理中…";
     if (st === "complete") return it.turns ? (it.turns + " 轮对话") : "";
     if (st === "failed") return "原话留存（没能整理出概述）";
     if (st === "skipped") return "没有可整理的内容";
@@ -11570,6 +11575,14 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     }
     histItems = items;
     histRender();
+    /* 有「整理中…」的记录 → 每隔 20 秒自己再看一眼，整理完就自己变出来。
+       （否则用户得手动关掉再打开才看得到概述。） */
+    clearTimeout(histPollTimer);
+    if (items.some((x) => x.status === "active" || x.status === "pending")){
+      histPollTimer = setTimeout(() => {
+        if (histPanel && histPanel.classList.contains("open")) void histLoad();
+      }, 20000);
+    }
   }
   function histShowDetail(i){
     const it = histItems[i];
@@ -11607,6 +11620,7 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     histPanel.setAttribute("aria-hidden", "true");
     if (histBtn) histBtn.classList.remove("on");
     histOpenDetail = null;
+    clearTimeout(histPollTimer);
     setTimeout(() => { if (!histPanel.classList.contains("open")) histPanel.classList.add("hidden"); }, 300);
   }
   function chistBack(){

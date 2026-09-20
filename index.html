@@ -1665,6 +1665,24 @@
   }
   .kit-btn[disabled]{ opacity:.5; cursor:default; }
   .kit-note{ font-size:11px; color: var(--text-faint); line-height:1.7; margin-top:7px; }
+  /* 天气卡：提醒胶囊 / 逐小时条 / 地名候选（参考 Open-Meteo 能给的东西，别浪费） */
+  .kit-adv{ display:flex; flex-wrap:wrap; gap:6px; }
+  .kit-adv-c{
+    font-size:11.5px; line-height:1.5; color: var(--text);
+    border:1px solid var(--card-line); border-radius:999px;
+    padding:5px 9px; background: var(--card-bg);
+  }
+  .kit-hours{ display:flex; gap:9px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:3px; }
+  .kit-hour{ flex:0 0 auto; text-align:center; min-width:46px; }
+  .kit-hour-t{ font-size:10.5px; color: var(--text-faint); }
+  .kit-hour-v{ font-size:12.5px; color: var(--text); font-weight:600; margin-top:2px; }
+  .kit-hour-r{ font-size:10px; color: var(--text-faint); margin-top:2px; }
+  .kit-cand{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .kit-cand-b{
+    font-size:11.5px; color: var(--text); cursor:pointer;
+    border:1px dashed var(--card-line); border-radius:999px;
+    padding:5px 9px; background: transparent;
+  }
   .kit-warn{
     font-size:11.5px; line-height:1.7; color:#A8565F;
     border:1px solid rgba(168,86,95,.3); background: rgba(168,86,95,.06);
@@ -7519,25 +7537,78 @@ const KIT_TOOLS = [
                      80:"阵雨",81:"强阵雨",82:"暴阵雨",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
       const code = (n) => CODES[n] || (n == null || n === "" ? "—" : ("代码 " + n));
       const C = (v, suffix) => (v == null || v === "" ? "—" : (v + (suffix || "")));
+      /* 渲染整张卡。后端现在给全了 Open-Meteo 的东西（逐小时 / 日出日落 / UV /
+         降水总量 / 空气质量 / 确定性提醒），这里都摆出来 —— 只显示四个数太浪费。 */
       const paint = (d, via) => {
-        const cur = d.current || {};
+        const cur = d.current || {}, t = d.today || {}, air = d.air || {}, adv = d.advice || [];
         let h = '<div class="kit-sec" style="margin-top:10px"><div class="kit-sec-t">' +
-          escapeHtml(d.place || "当前") + (via ? '　<span class="kit-li-s" style="display:inline">' + via + "</span>" : "") +
-          "</div>" +
-          kitRow("天气", cur.text || code(cur.code)) +
-          kitRow("气温", C(cur.temp, "°C")) +
-          kitRow("体感", C(cur.feels, "°C")) +
-          kitRow("湿度", C(cur.humidity, "%")) +
-          kitRow("风速", C(cur.wind, " km/h")) + "</div>";
+          escapeHtml(d.place || "当前") +
+          (via ? '　<span class="kit-li-s" style="display:inline">' + via + "</span>" : "") +
+          "</div>";
+        if (d.summary) h += '<div class="kit-note" style="margin:0 0 8px">' + escapeHtml(d.summary) + "</div>";
+        h += kitRow("现在", (cur.text || code(cur.code)) + "　" + C(cur.temp, "°C")) +
+             kitRow("体感", C(cur.feels, "°C")) +
+             kitRow("湿度", C(cur.humidity, "%")) +
+             kitRow("风", (cur.wind_dir ? cur.wind_dir + " " : "") + C(cur.wind, " km/h") +
+                          (cur.wind_gust == null ? "" : "（阵风 " + cur.wind_gust + "）")) +
+             kitRow("云量", C(cur.cloud, "%")) +
+             kitRow("气压", C(cur.pressure, " hPa")) +
+             kitRow("更新", String(d.updated_at || "").replace("T", " ").slice(5)) + "</div>";
+
+        if (adv.length){
+          h += '<div class="kit-sec"><div class="kit-sec-t">提醒</div><div class="kit-adv">' +
+            adv.map((a) => '<span class="kit-adv-c">' + escapeHtml((a.ico || "") + " " + (a.text || "")) +
+                           "</span>").join("") + "</div></div>";
+        }
+
+        if (air && air.level != null && air.level !== ""){
+          h += '<div class="kit-sec"><div class="kit-sec-t">空气　' +
+            escapeHtml(String(air.level)) + "（EAQI " + C(air.eaqi) + "）</div>" +
+            kitRow("PM2.5 / PM10", C(air.pm2_5) + " / " + C(air.pm10) + " μg/m³") +
+            kitRow("O₃ / NO₂", C(air.o3) + " / " + C(air.no2) + " μg/m³") +
+            kitRow("SO₂ / CO", C(air.so2) + " / " + C(air.co) + " μg/m³") +
+            (air.tip ? '<div class="kit-note" style="margin-top:6px">' + escapeHtml(air.tip) + "</div>" : "") +
+            "</div>";
+        }
+
+        const hrs = (d.hourly || []).slice(0, 14);
+        if (hrs.length){
+          h += '<div class="kit-sec"><div class="kit-sec-t">接下来</div><div class="kit-hours">' +
+            hrs.map((x) => '<div class="kit-hour">' +
+              '<div class="kit-hour-t">' + escapeHtml(String(x.hm || "")) + "</div>" +
+              '<div class="kit-hour-v">' + C(Math.round(x.temp), "°") + "</div>" +
+              '<div class="kit-hour-r">' +
+                ((x.rain_prob != null && x.rain_prob > 0) ? ("☂" + x.rain_prob + "%") : escapeHtml(x.text || "")) +
+              "</div></div>").join("") + "</div></div>";
+        }
+
         const days = d.daily || [];
         if (days.length){
-          h += '<div class="kit-sec"><div class="kit-sec-t">未来</div>';
-          days.forEach((x) => {
-            h += kitRow(String(x.date || "").slice(5),
-              (x.text || code(x.code)) + "　" + C(x.min) + "~" + C(x.max) + "°C" +
-              (x.rain == null || x.rain === "" ? "" : "　雨 " + x.rain + "%"));
+          h += '<div class="kit-sec"><div class="kit-sec-t">未来 ' + days.length + ' 天</div>';
+          days.forEach((x, i) => {
+            const bits = [];
+            bits.push((x.text || code(x.code)) + "　" + C(x.min) + "~" + C(x.max) + "°C");
+            if (x.rain_prob != null && x.rain_prob !== "") bits.push("雨 " + x.rain_prob + "%");
+            if (x.precip_sum) bits.push(x.precip_sum + "mm");
+            if (x.uv != null) bits.push("UV " + Math.round(x.uv));
+            h += kitRow((x.label || String(x.date || "").slice(5)), bits.join("　"));
+            if (i === 0 && (x.sunrise || x.sunset)){
+              h += kitRow("日照", escapeHtml(String(x.sunrise || "")) + " → " +
+                                  escapeHtml(String(x.sunset || "")) +
+                                  (x.daylight_h ? "　" + x.daylight_h + "h" : ""));
+            }
           });
           h += "</div>";
+        }
+
+        /* 重名的地方太多（查「朝阳」第一条是重庆那个）→ 把别的候选摆出来，点一下就换。
+           这比让用户自己猜"该怎么写地名"友好得多。 */
+        const cand = d.candidates || [];
+        if (cand.length){
+          h += '<div class="kit-sec"><div class="kit-sec-t">不是这里？</div><div class="kit-cand">' +
+            cand.map((c) => '<button class="kit-cand-b" data-kit-lat="' + c.lat + '" data-kit-lon="' + c.lon +
+                            '" data-kit-place="' + escapeHtml(c.label || c.name) + '">' +
+                            escapeHtml(c.label || c.name) + "</button>").join("") + "</div></div>";
         }
         set(h);
       };
@@ -7600,6 +7671,17 @@ const KIT_TOOLS = [
         if (!q){ showToast("先填个城市名"); return; }
         return run("q=" + encodeURIComponent(q), [null, null, q]);
       };
+      /* 候选地名点了就换（用坐标查，不再走地名 —— 免得又被解析成第一条） */
+      if (out){
+        out.addEventListener("click", (e) => {
+          const b = e.target && e.target.closest ? e.target.closest("[data-kit-lat]") : null;
+          if (!b) return;
+          const la = b.getAttribute("data-kit-lat"), lo = b.getAttribute("data-kit-lon");
+          const nm = b.getAttribute("data-kit-place") || "";
+          if (out.querySelector("#kitCity")) out.querySelector("#kitCity").value = nm;
+          run("lat=" + la + "&lon=" + lo + "&place=" + encodeURIComponent(nm), [la, lo, nm]);
+        });
+      }
       const btnGo = $("#kitWxGo"), btnGeo = $("#kitWxGeo");
       if (btnGo) btnGo.addEventListener("click", byName);
       if (btnGeo) btnGeo.addEventListener("click", () => {

@@ -11191,7 +11191,9 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
      ★ 为什么必须这么绕：模型是能写出"我给你打电话了"这几句的，但**铃不会响** ——
        只有服务端真的建了邀请，前端才会看见。所以"打电话"这件事不能被文本伪造。 */
   async function pollInvite(){
-    if (isMock() || open) return;                    // 通话中不查（正在通话还响什么铃）
+    /* 通话中不查（正在通话还响什么铃）；还没登录/演示模式也不查 ——
+       没 secret 就去打接口会撞 401，那会把登录流程搅进来（跟 streamWatch 一个道理）。 */
+    if (isMock() || open || !secret) return;
     try{
       const d = await apiCallInvite();
       if (!d || !d.ok) return;

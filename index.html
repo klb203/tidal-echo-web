@@ -1573,6 +1573,48 @@
   .pk-res b{ color: var(--pk-on-fg, #8E4A5E); }
 
   /* ══════════ 收藏馆（整页 · 三 Tab）══════════ */
+  /* ── MCP 设置卡（服务器 / 传输 / 自定义头 / 工具开关 / 状态常驻）──────────
+     状态点是**常驻**的，不是弹一下就没了：握手成功之后"它一直是好的"这件事本身
+     就该看得见（否则下次打开只看到"还没测"，分不清是没测过还是上次失败了）。 */
+  .kit-mcp-card{
+    border:1px solid rgba(120,140,165,.22); border-radius:14px;
+    padding:10px 11px; margin:8px 0; background:rgba(255,255,255,.55);
+  }
+  .kit-mcp-card.off{ opacity:.6; }
+  .kit-mcp-h{ display:flex; align-items:center; gap:6px; }
+  .kit-mcp-h b{ font-size:13px; }
+  .kit-mcp-d{ width:8px; height:8px; border-radius:50%; background:#c9ccd1; flex:0 0 auto; }
+  .kit-mcp-d.connected{ background:#4CAF7D; }
+  .kit-mcp-d.error{ background:#D9707A; }
+  .kit-mcp-d.connecting{ background:#E0B060; }
+  .kit-mcp-tp{
+    font-size:10px; padding:1px 6px; border-radius:999px;
+    background:rgba(120,140,165,.14); color:#5C6A78; flex:0 0 auto;
+  }
+  .kit-mcp-lb{ font-size:10.5px; color:var(--text-faint,#98A2AE); min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .kit-mcp-sub{
+    font-size:11px; color:var(--text-faint,#98A2AE); word-break:break-all;
+    margin-top:3px; line-height:1.55;
+  }
+  .kit-mcp-body{ margin-top:9px; display:flex; flex-direction:column; gap:6px; }
+  .kit-mcp-two{ display:flex; gap:6px; }
+  .kit-mcp-two > *{ flex:1 1 0; min-width:0; }
+  .kit-mcp-hdr{ display:flex; gap:5px; }
+  .kit-mcp-hdr input{ flex:1 1 0; min-width:0; }
+  .kit-mcp-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  .kit-mcp-btns .kit-btn{ margin:0; }
+  .kit-mcp-tool{
+    display:flex; align-items:flex-start; gap:7px; padding:5px 0;
+    border-top:1px dashed rgba(120,140,165,.18); font-size:11.5px;
+  }
+  .kit-mcp-tool .k{ flex:1; min-width:0; }
+  .kit-mcp-tool .k b{ display:block; font-size:11.5px; word-break:break-all; }
+  .kit-mcp-tool .k span{ color:var(--text-faint,#98A2AE); font-size:10.5px; }
+  .kit-mcp-tool.deny{ opacity:.55; }
+  .kit-mcp-tool.deny .k b{ text-decoration:line-through; }
+  .kit-mcp-cut{ font-size:11px; color:var(--text-faint,#98A2AE); margin-top:2px; }
+
   /* ── 工具与能力：菜单里的一项，整页层（与设置/记忆/网关同级）───────────── */
   .kit-panel{
     position: fixed; inset: 0; z-index: 196;
@@ -3404,6 +3446,33 @@
     color: var(--text-soft); margin: 4px 2px 0;
   }
 
+  /* ── 能力总览卡（设置页第一张）───────────────────────────────────────────
+     三态点：绿=开着 / 粉=关着 / 灰=还没配（"还没用过"和"你关掉了"是两件事，
+     混成一种颜色的话，你会以为是自己关的）。 */
+  .caps-g{ margin: 2px 0 10px; }
+  .caps-g-h{ display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; margin: 9px 0 3px; }
+  .caps-g-h b{ font-size: 12.5px; }
+  .caps-g-h i{ font-style: normal; font-size: 10.5px; color: var(--text-faint, #98A2AE); line-height: 1.6; }
+  .caps-it{
+    display: flex; align-items: flex-start; gap: 8px; padding: 6px 0;
+    border-top: 1px dashed rgba(120,140,165,.16);
+  }
+  .caps-it:first-of-type{ border-top: none; }
+  .caps-d{ width: 8px; height: 8px; border-radius: 50%; background: #c9ccd1; margin-top: 5px; flex: 0 0 auto; }
+  .caps-d.on{ background: #4CAF7D; }
+  .caps-d.off{ background: #C99AA0; }
+  .caps-it .t{ flex: 1 1 auto; min-width: 0; }
+  .caps-it .t b{ display: block; font-size: 12.5px; font-weight: 500; }
+  .caps-it .t span{ display: block; font-size: 11px; color: var(--text-faint, #98A2AE); line-height: 1.6; margin-top: 1px; }
+  /* ⚠️ 必须带 .glass-scope：设置页里那条 `.glass-scope button`（0,1,1）比单类选择器更"重"，
+     只写 .caps-go 的话宽度/内边距会被它盖掉（上一版就这么被顶歪的）。 */
+  .caps-go, .glass-scope .caps-go{
+    flex: 0 0 auto; font-size: 11px; padding: 3px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(140,160,180,.28); background: transparent; color: var(--text-soft, #5E7080);
+    width: auto; min-width: 0;
+  }
+  .caps-err{ font-size: 11px; color: var(--danger, #b06a6f); line-height: 1.7; }
+
   /* ── 设置页：折叠卡片 ──────────────────────────────────────────────────
      每一块设置 = 一张卡：卡头（图标 + 标题 + 一行摘要 + 箭头）可点开合，
      状态记在 localStorage（companion_set_cards），下次打开保持原样。 */
@@ -4971,6 +5040,17 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
+
+      <section class="set-card" data-card="caps">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 6.4h4.2v3.6H4.6z"/><path d="M15.2 6.4h4.2v3.6h-4.2z"/><path d="M4.6 14h4.2v3.6H4.6z"/><path d="M15.2 14h4.2v3.6h-4.2z"/><path d="M8.8 8.2h6.4"/><path d="M6.7 10v4"/><path d="M17.3 10v4"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">能力总览</span><span class="set-card-sub" id="cardSubCaps">展开看看它现在能干什么</span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div id="capsBody"><div class="settings-tip">展开这张卡就会去问一次后端（冷启动时要等一会儿）。</div></div>
+        </div>
+      </section>
 
       <section class="set-card" data-card="cloud">
         <button class="set-card-head" type="button" aria-expanded="false">
@@ -7436,6 +7516,7 @@ function kitIcon(name){
     bell:'<path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 4 1.6 5.6 1.6 5.6H5s1.6-1.6 1.6-5.6Z"/><path d="M10.2 19a2 2 0 0 0 3.6 0"/>',
     alarm:'<circle cx="12" cy="13" r="7.4"/><path d="M12 9.4V13l2.6 1.8"/><path d="M4.6 5 6.8 3M19.4 5 17.2 3"/>',
     pay:'<rect x="3" y="6" width="18" height="12" rx="2.6"/><path d="M3 10.4h18"/><path d="M7 14.6h3"/>',
+    mcp:'<path d="M8.2 3.6v6.2a3.8 3.8 0 0 1-3.8 3.8H3.2"/><path d="M15.8 3.6v6.2a3.8 3.8 0 0 0 3.8 3.8h1.2"/><rect x="5.6" y="13.6" width="12.8" height="6.8" rx="2.2"/>',
     shield:'<path d="M12 3.4l7 2.6v5.6c0 4.2-2.9 7.3-7 8.6-4.1-1.3-7-4.4-7-8.6V6l7-2.6Z"/><path d="M9.4 12l1.9 1.9 3.4-3.6"/>',
   };
   return '<i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
@@ -7512,6 +7593,360 @@ function kitTri(v){
 }
 /* 通用 MCP 的本地缓存（查手机那块的地址与 has_token 渲染要用，避免每次都打后端） */
 const KIT_MCP = { cfg: {} };
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MCP 设置（通用 MCP 服务器：传输类型 / 自定义头 / 每工具开关 / 状态常驻）
+   ── 参照 LastChat 的 McpServerConfig（sse | streamable_http）、
+      McpAuthMode（none | custom_headers | oauth）、McpStatus（Idle/Connecting/
+      Connected/Error）把这几样补齐；区别是**配置与探针都在后端**：
+      握手要自定义头 + 读 SSE 回包 + 对方还得开 CORS，浏览器三样都做不到，
+      而且地址与密钥不该散在本机 localStorage 里。
+   ── 一条硬规矩：这里改的配置，聊天侧的动作层（mcp-pack.js）读的是**同一份**。
+      注入端与执行端不同源，就会出现「清单里有、一调就报错」。
+   ══════════════════════════════════════════════════════════════════════════ */
+const KIT_MSRV = {
+  list: null,        // 服务器摘要（/app/mcp/list）
+  presets: null,     // 连接预设
+  transports: null,  // 传输类型选项
+  open: {},          // 哪些服务器展开着
+  tools: {},         // 服务名 -> [{name,description,off}]（握手/点开时才拉）
+  edit: {},          // 服务名 -> {url, transport, auth_mode, headers:[{k,v}]}（未保存的编辑态）
+  add: { on:false, preset:"", name:"", url:"" },
+  note: {},          // 服务名 -> 一句人话反馈
+  busy: "",
+};
+const KIT_MSRV_AUTH = [
+  { v:"token",  t:"令牌（自动按 Bearer / X-Nowhere-Key 发）" },
+  { v:"custom", t:"只用自定义头（下面写的那些）" },
+  { v:"none",   t:"不要鉴权" },
+];
+const KIT_MSRV_ST = { idle:"还没握手过", connecting:"连接中…", connected:"已连接", error:"连不上" };
+
+function kitMcpClone(o){ try{ return JSON.parse(JSON.stringify(o)); }catch(_){ return {}; } }
+function kitMcpEdit(sv){
+  const nm = sv.name;
+  if (!KIT_MSRV.edit[nm]){
+    KIT_MSRV.edit[nm] = {
+      url: sv.url || "",
+      transport: sv.transport || "http",
+      auth_mode: sv.auth_mode || "token",
+      headers: ((sv.header_names || []).map((k) => ({ k: k, v: "" }))),
+      token: "",
+    };
+  }
+  return KIT_MSRV.edit[nm];
+}
+async function kitMcpLoad(force){
+  const d = await memApi("/app/mcp/list");
+  KIT_MSRV.list = d.servers || [];
+  if (!KIT_MSRV.presets || force){
+    try{
+      const p = await memApi("/app/mcp/presets");
+      KIT_MSRV.presets = p.presets || [];
+      KIT_MSRV.transports = p.transports || [];
+    }catch(_){ KIT_MSRV.presets = KIT_MSRV.presets || []; }
+  }
+  return KIT_MSRV.list;
+}
+function kitMcpDot(sv){
+  const s = ((sv || {}).state || {});
+  const k = s.s || "idle";
+  return '<em class="kit-mcp-d ' + k + '" title="' + escapeHtml(KIT_MSRV_ST[k] || "") + '"></em>';
+}
+function kitMcpHint(name, cls){
+  const t = KIT_MSRV.note[name];
+  return t ? '<div class="' + (cls || "kit-lv") + '">' + t + "</div>" : "";
+}
+function kitMcpCard(sv){
+  const nm = sv.name;
+  const st = (sv.state || {});
+  const op = !!KIT_MSRV.open[nm];
+  const e = kitMcpEdit(sv);
+  const tp = sv.transport === "sse" ? "SSE" : "HTTP";
+  let h = '<div class="kit-mcp-card' + (sv.enable ? "" : " off") + '" data-mcp-card="' + escapeHtml(nm) + '">';
+  h += '<div class="kit-mcp-h">' + kitMcpDot(sv) + "<b>" + escapeHtml(nm) + "</b>" +
+       '<span class="kit-mcp-tp">' + tp + "</span>" +
+       '<span class="kit-mcp-lb">' + escapeHtml(st.label || "—") +
+         (st.ms ? " · " + st.ms + "ms" : "") + "</span>" +
+       '<button class="kit-x" data-mcp-tog="' + escapeHtml(nm) + '" title="展开/收起">' +
+         (op ? "▴" : "▾") + "</button></div>";
+  h += '<div class="kit-mcp-sub">' + escapeHtml(sv.url || "（还没填地址）") +
+       (sv.tools ? " · 工具 " + sv.tool_on + "/" + sv.tools : "") +
+       ((sv.header_names && sv.header_names.length) ? " · 头 " + escapeHtml(sv.header_names.join(" / ")) : "") +
+       (sv.has_token ? " · 令牌已存" : "") +
+       (sv.enable ? "" : " · <b>已停用</b>") + "</div>";
+  h += kitMcpHint(nm, /失败|连不上|错误|✕/.test(KIT_MSRV.note[nm] || "") ? "kit-warn" : "kit-ok");
+  if (!op) return h + "</div>";
+
+  h += '<div class="kit-mcp-body">';
+  h += '<input class="kit-in" data-mcp-f="url" data-mcp-n="' + escapeHtml(nm) +
+       '" placeholder="https://你的域名/mcp" value="' + escapeHtml(e.url || "") + '">';
+  h += '<input class="kit-in" type="password" data-mcp-f="token" data-mcp-n="' + escapeHtml(nm) +
+       '" placeholder="' + (sv.has_token ? "令牌已存好（留空 = 不改动）" : "令牌（可留空）") + '" value="">';
+  h += '<div class="kit-mcp-two">';
+  h += '<select class="kit-in" data-mcp-f="transport" data-mcp-n="' + escapeHtml(nm) + '">' +
+    (KIT_MSRV.transports || [{ id: "http", label: "Streamable HTTP" }, { id: "sse", label: "SSE" }])
+      .map((t) => "<option value=\"" + t.id + "\"" + (e.transport === t.id ? " selected" : "") + ">" +
+        escapeHtml(t.label) + "</option>").join("") + "</select>";
+  h += '<select class="kit-in" data-mcp-f="auth_mode" data-mcp-n="' + escapeHtml(nm) + '">' +
+    KIT_MSRV_AUTH.map((t) => "<option value=\"" + t.v + "\"" + (e.auth_mode === t.v ? " selected" : "") +
+      ">" + escapeHtml(t.t) + "</option>").join("") + "</select>";
+  h += "</div>";
+  h += '<div class="kit-sec-t" style="margin-top:4px">自定义头</div>';
+  h += (e.headers.length ? e.headers.map((x, i) =>
+      '<div class="kit-mcp-hdr">' +
+      '<input class="kit-in" data-mcp-hk="' + i + '" data-mcp-n="' + escapeHtml(nm) +
+        '" placeholder="头名，例如 X-Nowhere-Key" value="' + escapeHtml(x.k || "") + '">' +
+      '<input class="kit-in" type="password" data-mcp-hv="' + i + '" data-mcp-n="' + escapeHtml(nm) +
+        '" placeholder="值（回显时留空 = 不改）" value="' + escapeHtml(x.v || "") + '">' +
+      '<button class="kit-x" data-mcp-hdel="' + i + '" data-mcp-n="' + escapeHtml(nm) + '">✕</button>' +
+      "</div>").join("") : '<div class="kit-cut">没写自定义头（上面选了「令牌」的话会自动发 Bearer / X-Nowhere-Key）。</div>');
+  h += '<button class="kit-btn ghost" data-mcp-hadd="' + escapeHtml(nm) + '">＋ 加一条头</button>';
+  h += '<div class="kit-mcp-btns">' +
+       '<button class="kit-btn" data-mcp-save="' + escapeHtml(nm) + '">保存</button>' +
+       '<button class="kit-btn ghost" data-mcp-ping="' + escapeHtml(nm) + '">握手 + 列工具</button>' +
+       '<button class="kit-btn ghost" data-mcp-tools="' + escapeHtml(nm) + '">工具开关</button>' +
+       '<button class="kit-btn ghost" data-mcp-on="' + escapeHtml(nm) + '">' + (sv.enable ? "停用" : "启用") + "</button>" +
+       '<button class="kit-btn ghost" data-mcp-del="' + escapeHtml(nm) + '">删除</button>' +
+       "</div>";
+  h += kitMcpToolsHtml(nm, sv);
+  return h + "</div></div>";
+}
+function kitMcpToolsHtml(nm, sv){
+  const tl = KIT_MSRV.tools[nm];
+  if (!tl) return '<div class="kit-mcp-cut">点「工具开关」看它有哪些工具（清单是握过手之后存下来的）。</div>';
+  if (!tl.length) return '<div class="kit-cut">这个服务没列出工具（有些要在握手时先回 initialized）。</div>';
+  const deny = (n) => /(^|[_\-/])(delete|del|remove|rm|drop|purge|forget|erase|wipe|clear|reset|destroy|kill|uninstall|exec|eval|shell|run_command|write_file|upload|post|publish|send)([_\-/]|$)/i.test(String(n || ""));
+  return '<div class="kit-sec-t" style="margin-top:8px">它的工具（' + tl.length + '）</div>' +
+    tl.map((t) => {
+      const d = deny(t.name);
+      return '<div class="kit-mcp-tool' + (d ? " deny" : "") + '">' +
+        '<div class="k"><b>' + escapeHtml(t.name) + '</b><span>' +
+        escapeHtml(d ? "收起来了：删 / 清 / 执行这类，后果不该由它单方面决定" : (t.description || "（没有描述）")) +
+        "</span></div>" +
+        (d ? "" : '<button class="kit-ck' + (t.off ? "" : " on") + '" data-mcp-tool="' + escapeHtml(t.name) +
+              '" data-mcp-n="' + escapeHtml(nm) + '" title="' + (t.off ? "关着" : "开着") + '"></button>') +
+        "</div>";
+    }).join("");
+}
+function kitMcpPaint(){
+  const box = document.getElementById("kitMcpWrap");
+  if (!box) return;
+  const list = KIT_MSRV.list;
+  if (!list){
+    box.innerHTML = '<div class="kit-lv">读取中…</div>';
+    return;
+  }
+  let h = "";
+  h += '<div class="kit-note">这些是<b>你自己那台机器上</b>的 MCP 服务。地址与密钥只写进你后端的配置，' +
+       "不进代码仓库；令牌与头的值都不回显。握手由后端做 —— 浏览器被自定义头 / SSE / CORS 三样卡死。</div>";
+  h += '<div class="kit-mcp-btns" style="margin:2px 0 8px">' +
+       '<button class="kit-btn" data-mcp-add="1">＋ 加一个服务</button>' +
+       '<button class="kit-btn ghost" data-mcp-refresh="1">刷新状态</button></div>';
+  if (KIT_MSRV.add.on){
+    h += '<div class="kit-mcp-card"><div class="kit-mcp-h"><b>新服务</b></div>' +
+      '<div class="kit-mcp-body">' +
+      '<select class="kit-in" data-mcp-preset="1">' +
+        '<option value="">不套预设（自己填）</option>' +
+        (KIT_MSRV.presets || []).map((p) => "<option value=\"" + escapeHtml(p.id) + "\">" +
+          escapeHtml(p.name) + "</option>").join("") + "</select>" +
+      '<input class="kit-in" data-mcp-new="name" placeholder="名字（字母数字与 _ -，1~24 位），例如 nowhere" value="' +
+        escapeHtml(KIT_MSRV.add.name || "") + '">' +
+      '<input class="kit-in" data-mcp-new="url" placeholder="https://你的域名/mcp" value="' +
+        escapeHtml(KIT_MSRV.add.url || "") + '">' +
+      '<div class="kit-mcp-cut" id="kitMcpPresetNote">' +
+        escapeHtml((KIT_MSRV.presets || []).map((p) => p.name + "：" + p.note).join("　|　")) + "</div>" +
+      '<div class="kit-mcp-btns">' +
+      '<button class="kit-btn" data-mcp-create="1">建好并握手</button>' +
+      '<button class="kit-btn ghost" data-mcp-cancel="1">取消</button></div>' +
+      '<div class="kit-mcp-cut">建好之后在下面那张卡上补令牌 / 自定义头，再点一次「握手」。</div>' +
+      "</div></div>";
+  }
+  h += list.length ? list.map(kitMcpCard).join("")
+    : '<div class="kit-lv">还没有服务。点「加一个服务」—— 上面选个预设，地址填你自己的域名就行。</div>';
+  h += '<div class="kit-cut" style="margin-top:10px">为什么要有"每工具开关"：接上一个服务就顺手拿到十几个工具，' +
+       "里面总有一两个你不希望它乱动的。只有服务级总开关的话，你只能要么全给、要么全不给。" +
+       "<br>划掉的那些是<b>硬拦</b>的（删 / 清 / 执行 / 外发）—— 要清要改，让它直接跟你说，由你来点。</div>";
+  box.innerHTML = h;
+}
+async function kitMcpPull(name){
+  const d = await memApi("/app/mcp/tools?name=" + encodeURIComponent(name));
+  KIT_MSRV.tools[name] = d.tools || [];
+  return KIT_MSRV.tools[name];
+}
+function kitMcpCollect(name){
+  const e = kitMcpEdit({ name: name });
+  const root = document.getElementById("kitMcpWrap");
+  if (!root) return e;
+  const val = (sel) => { const el = root.querySelector(sel); return el ? String(el.value || "") : ""; };
+  const urlEl = root.querySelector('[data-mcp-f="url"][data-mcp-n="' + name + '"]');
+  if (urlEl) e.url = urlEl.value.trim();
+  const tkEl = root.querySelector('[data-mcp-f="token"][data-mcp-n="' + name + '"]');
+  if (tkEl) e.token = tkEl.value.trim();
+  const tpEl = root.querySelector('[data-mcp-f="transport"][data-mcp-n="' + name + '"]');
+  if (tpEl) e.transport = tpEl.value;
+  const amEl = root.querySelector('[data-mcp-f="auth_mode"][data-mcp-n="' + name + '"]');
+  if (amEl) e.auth_mode = amEl.value;
+  root.querySelectorAll('[data-mcp-hk][data-mcp-n="' + name + '"]').forEach((el) => {
+    const i = Number(el.dataset.mcpHk);
+    const vEl = root.querySelector('[data-mcp-hv="' + i + '"][data-mcp-n="' + name + '"]');
+    if (e.headers[i]){ e.headers[i].k = el.value.trim(); e.headers[i].v = vEl ? String(vEl.value || "") : ""; }
+  });
+  return e;
+}
+async function kitMcpSave(name){
+  const e = kitMcpCollect(name);
+  const body = { name: name, url: e.url, transport: e.transport, auth_mode: e.auth_mode,
+                 headers: e.headers.filter((x) => x.k) };
+  if (e.token) body.token = e.token;
+  KIT_MSRV.note[name] = "保存中…";
+  kitMcpPaint();
+  try{
+    const d = await memApi("/app/mcp/config", { method:"POST", body: JSON.stringify(body) });
+    delete KIT_MSRV.edit[name];
+    if (d.config){ KIT_MSRV.tools[name] = KIT_MSRV.tools[name]; }
+    KIT_MSRV.note[name] = '<b>已保存</b>（令牌与头的值留空 = 没改）。';
+    await kitMcpLoad(true);
+    kitRender();
+  }catch(err){
+    KIT_MSRV.note[name] = "保存失败：" + escapeHtml((err && err.message) || String(err));
+    kitMcpPaint();
+  }
+}
+async function kitMcpPing(name){
+  if (KIT_MSRV.busy) return;
+  KIT_MSRV.busy = name;
+  kitMcpCollect(name);
+  const sv0 = (KIT_MSRV.list || []).filter((x) => x.name === name)[0] || {};
+  KIT_MSRV.note[name] = "握手与列工具都由后端在做…（连不上时最多等 20 秒）";
+  const lst = KIT_MSRV.list || [];
+  const i0 = lst.map((x) => x.name).indexOf(name);
+  if (i0 >= 0) lst[i0] = Object.assign({}, lst[i0], { state: { s:"connecting", label:"连接中…" } });
+  kitMcpPaint();
+  try{
+    const d = await memApi("/app/mcp/ping", { method:"POST", body: JSON.stringify({ name: name }) });
+    const tl = d.tool_list || [];
+    KIT_MSRV.tools[name] = tl.map((t) => ({ name: t.name, description: t.description || "", off: false }));
+    KIT_MSRV.note[name] = d.ok
+      ? ("<b>握手成功</b> ✅ HTTP " + escapeHtml(String(d.status || "—")) + " · " + escapeHtml(String(d.ms || 0)) +
+         "ms" + (d.server ? " · 服务端自称 " + escapeHtml(d.server) : "") +
+         (d.session ? " · 带会话" : "") +
+         (tl.length ? " · 列出 " + tl.length + " 个工具" : " · 没列出工具（不影响用）") +
+         (d.tools_error ? "<br>列工具没成功：" + escapeHtml(d.tools_error) : ""))
+      : ("<b>握手失败</b> ✕ " + escapeHtml(String(d.status || "—")) +
+         (d.error ? "<br>" + escapeHtml(d.error) : "") +
+         (d.tools_error ? "<br>" + escapeHtml(d.tools_error) : "") +
+         (d.hint ? "<br>" + escapeHtml(d.hint) : ""));
+    await kitMcpLoad(true);
+  }catch(err){
+    KIT_MSRV.note[name] = "探针请求失败：" + escapeHtml((err && err.message) || String(err)) +
+      "（后端可能正在冷启动，等 30–60 秒再试）";
+  }finally{
+    KIT_MSRV.busy = "";
+    delete KIT_MSRV.edit[name];
+    kitRender();
+  }
+}
+async function kitMcpToggleTool(name, tool, on){
+  try{
+    const d = await memApi("/app/mcp/tool", { method:"POST",
+      body: JSON.stringify({ name: name, tool: tool, on: !!on }) });
+    const tl = KIT_MSRV.tools[name] || [];
+    tl.forEach((t) => { if (t.name === tool) t.off = !on; });
+    const lst = KIT_MSRV.list || [];
+    const i = lst.map((x) => x.name).indexOf(name);
+    if (i >= 0) lst[i] = Object.assign({}, lst[i], { tools: d.tool_count, tool_on: d.tool_on_count });
+    kitRender();
+  }catch(err){
+    KIT_MSRV.note[name] = "改工具开关失败：" + escapeHtml((err && err.message) || String(err));
+    kitRender();
+  }
+}
+async function kitMcpCreate(){
+  const nm = String(KIT_MSRV.add.name || "").trim();
+  const url = String(KIT_MSRV.add.url || "").trim();
+  if (!/^[A-Za-z0-9_\-]{1,24}$/.test(nm)){
+    KIT_MSRV.add.err = "名字只能用字母数字与 _ -（1~24 位）—— 它同时是存储键，写别的后端不收。";
+    kitRender(); return;
+  }
+  const p = (KIT_MSRV.presets || []).filter((x) => x.id === KIT_MSRV.add.preset)[0] || {};
+  const body = { name: nm, url: url, transport: p.transport || "http", auth_mode: p.auth_mode || "token" };
+  if (p.headers && p.headers.length) body.headers = p.headers;
+  try{
+    await memApi("/app/mcp/config", { method:"POST", body: JSON.stringify(body) });
+    KIT_MSRV.add = { on:false, preset:"", name:"", url:"" };
+    KIT_MSRV.open[nm] = true;
+    await kitMcpLoad(true);
+    kitRender();
+    kitMcpPing(nm);
+  }catch(err){
+    KIT_MSRV.add.err = "建失败：" + ((err && err.message) || String(err));
+    kitRender();
+  }
+}
+async function kitMcpDel(name){
+  if (!confirm("删掉 " + name + " ？配置（含地址与令牌）会一起删掉，聊天侧就不能再调它了。")) return;
+  try{
+    await memApi("/app/mcp/config?name=" + encodeURIComponent(name), { method:"DELETE" });
+    delete KIT_MSRV.open[name]; delete KIT_MSRV.edit[name]; delete KIT_MSRV.tools[name]; delete KIT_MSRV.note[name];
+    await kitMcpLoad(true);
+    kitRender();
+  }catch(err){
+    KIT_MSRV.note[name] = "删除失败：" + escapeHtml((err && err.message) || String(err));
+    kitRender();
+  }
+}
+async function kitMcpSetEnable(name, on){
+  try{
+    await memApi("/app/mcp/config", { method:"POST", body: JSON.stringify({ name: name, enable: !!on }) });
+    await kitMcpLoad(true);
+  }catch(err){ KIT_MSRV.note[name] = "改开关失败：" + escapeHtml((err && err.message) || String(err)); }
+  kitRender();
+}
+function kitMcpMount(root){
+  const box = root || document.getElementById("kitMcpWrap");
+  if (!box) return;
+  if (box.dataset.bound) { kitMcpPaint(); return; }
+  box.dataset.bound = "1";
+  box.addEventListener("click", async (ev) => {
+    const g = (sel) => ev.target.closest(sel);
+    let el;
+    if ((el = g("[data-mcp-refresh]"))){ KIT_MSRV.list = null; kitMcpPaint(); await kitMcpLoad(true).catch(() => {}); box.innerHTML = box.innerHTML; kitMcpPaint(); kitRender(); return; }
+    if ((el = g("[data-mcp-add]"))){ KIT_MSRV.add.on = true; kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-cancel]"))){ KIT_MSRV.add = { on:false, preset:"", name:"", url:"" }; kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-create]"))){ return kitMcpCreate(); }
+    if ((el = g("[data-mcp-tog]"))){ const n = el.dataset.mcpTog; KIT_MSRV.open[n] = !KIT_MSRV.open[n]; kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-hadd]"))){ const e = kitMcpEdit({ name: el.dataset.mcpHadd }); kitMcpCollect(el.dataset.mcpHadd); e.headers.push({ k:"", v:"" }); kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-hdel]"))){ const n = el.dataset.mcpN, i = Number(el.dataset.mcpHdel); const e = kitMcpCollect(n); e.headers.splice(i, 1); kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-save]"))){ return kitMcpSave(el.dataset.mcpSave); }
+    if ((el = g("[data-mcp-ping]"))){ return kitMcpPing(el.dataset.mcpPing); }
+    if ((el = g("[data-mcp-tools]"))){ const n = el.dataset.mcpTools; kitMcpCollect(n); await kitMcpPull(n).catch(() => {}); KIT_MSRV.open[n] = true; kitMcpPaint(); return; }
+    if ((el = g("[data-mcp-on]"))){ const n = el.dataset.mcpOn; const sv = (KIT_MSRV.list || []).filter((x) => x.name === n)[0] || {}; return kitMcpSetEnable(n, !sv.enable); }
+    if ((el = g("[data-mcp-del]"))){ return kitMcpDel(el.dataset.mcpDel); }
+    if ((el = g("[data-mcp-tool]"))){ const on = !el.classList.contains("on"); return kitMcpToggleTool(el.dataset.mcpN, el.dataset.mcpTool, on); }
+  });
+  box.addEventListener("input", (ev) => {
+    const t = ev.target;
+    if (!t || !t.dataset) return;
+    if (t.dataset.mcpNew === "name") KIT_MSRV.add.name = t.value;
+    else if (t.dataset.mcpNew === "url") KIT_MSRV.add.url = t.value;
+    else if (t.dataset.mcpPreset !== undefined) KIT_MSRV.add.preset = t.value;
+    else if (t.dataset.mcpN) kitMcpCollect(t.dataset.mcpN);
+  });
+  box.addEventListener("change", (ev) => {
+    const t = ev.target;
+    if (t && t.dataset && t.dataset.mcpPreset !== undefined) KIT_MSRV.add.preset = t.value;
+    if (t && t.dataset && t.dataset.mcpPreset !== undefined){
+      const p = (KIT_MSRV.presets || []).filter((x) => x.id === t.value)[0];
+      if (p && p.url_hint && !KIT_MSRV.add.url){ KIT_MSRV.add.url = p.url_hint; kitMcpPaint(); }
+    }
+  });
+  kitMcpPaint();
+  kitMcpLoad().then(() => kitMcpPaint()).catch((e) => {
+    box.innerHTML = '<div class="kit-warn">读 MCP 列表失败：' +
+      escapeHtml((e && e.message) || String(e)) + "（后端可能正在冷启动，等 30–60 秒再点刷新）</div>";
+  });
+}
 
 const KIT_TOOLS = [
   /* ── 1. 天气 ─────────────────────────────────────────────────────────── */
@@ -8340,6 +8775,21 @@ const KIT_TOOLS = [
       });
       loadCfg().then(loadSt);
     } },
+
+  /* ── 7.5 MCP 设置（通用服务器：传输 / 自定义头 / 每工具开关 / 状态常驻）── */
+  { id:"mcp", name:"MCP 设置", sub:"服务器 · 传输类型 · 鉴权头 · 工具开关", icon:"mcp",
+    tag:() => {
+      const s = KIT_MSRV.list;
+      if (!s) return ["未读取", null];
+      if (!s.length) return ["还没接服务", null];
+      const on = s.filter((x) => x.enable).length;
+      const ok = s.filter((x) => x.enable && ((x.state || {}).s === "connected")).length;
+      return [on + " 个 · " + ok + " 连通", ok ? "ok" : "warn"];
+    },
+    body(){
+      return '<div id="kitMcpWrap"><div class="kit-lv">读取中…</div></div>';
+    },
+    onOpen(root){ kitMcpMount(document.getElementById("kitMcpWrap")); } },
 
   /* ── 8. 小红书（★ 用户要的「MCP 远程地址」在这里）────────────────────── */
   { id:"xhs", name:"小红书", sub:"MCP 远程地址 · 跳转 · 记笔记", icon:"xhs",
@@ -10835,6 +11285,96 @@ function applySetCards(){
   });
 }
 /* 折叠状态下也要有信息量：卡头第二行是各卡当前状态摘要 */
+/* ══ 能力总览（设置页第一张卡）════════════════════════════════════════════
+   为什么要有它：这些能力**早就都在了**，但它们是分批长出来的 —— 记忆在记忆页、
+   通话在通话浮层、动作层在「工具 · 动作」、MCP 又在「工具与能力」里。
+   想问一句「它现在到底能干什么」，得挨个翻七八处。
+   这张卡只做一件事：一次全列出来，每项一句人话 + 真实状态 + 一个「去调」。
+   数据全来自后端 /app/caps（那一层每一组都独立容错），前端不做二次判断。 */
+let capsLoaded = false, capsBusy = false;
+const CAPS_GO_TEXT = { actions:"工具 · 动作", styles:"工具 · 动作", memory:"近景 · 七天",
+                       reach:"影子推送", call:"影子推送", scene:"哨兵", mcp:"MCP 设置" };
+function capsDot(on){
+  return '<em class="caps-d ' + (on === true ? "on" : (on === false ? "off" : "")) + '"></em>';
+}
+function capsGo(go){
+  if (go === "mcp"){
+    try{ if ($("#settingsClose")) $("#settingsClose").click(); }catch(_){}
+    setTimeout(() => { try{ if (typeof kitOpen === "function") kitOpen("mcp"); }catch(_){} }, 280);
+    return;
+  }
+  const M = { actions:"actions", styles:"actions", memory:"nearfield",
+              reach:"shadow", call:"shadow", scene:"sentinel" };
+  const name = M[go];
+  if (!name) return;
+  try{
+    const card = expandSetCard(name);
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }catch(_){}
+}
+function renderCaps(d){
+  const box = document.getElementById("capsBody");
+  if (!box) return;
+  const L = [];
+  (d.groups || []).forEach((g) => {
+    L.push('<div class="caps-g"><div class="caps-g-h"><b>' + escapeHtml(g.title) + "</b>" +
+      (g.note ? "<i>" + escapeHtml(g.note) + "</i>" : "") + "</div>");
+    if (g.err) L.push('<div class="caps-err">这一组读不到：' + escapeHtml(g.err) + "</div>");
+    (g.items || []).forEach((it) => {
+      L.push('<div class="caps-it">' + capsDot(it.on) +
+        '<div class="t"><b>' + escapeHtml(it.name) + "</b><span>" + escapeHtml(it.sub || "") + "</span></div>" +
+        (it.go && CAPS_GO_TEXT[it.go]
+          ? '<button class="caps-go" data-caps-go="' + escapeHtml(it.go) + '">去调 ›</button>' : "") +
+        "</div>");
+    });
+    L.push("</div>");
+  });
+  L.push('<div class="settings-tip">点右边的「去调」直接跳到对应的那张卡。' +
+    "<br>绿点 = 开着，粉点 = 关着，灰点 = <b>还没配</b>（「还没用过」和「你关掉了」是两件事，混成一种颜色会让人以为是自己关的）。" +
+    "</div>");
+  box.innerHTML = L.join("");
+}
+async function loadCaps(force){
+  if (capsBusy) return;
+  capsBusy = true;
+  const box = document.getElementById("capsBody");
+  if (box && !capsLoaded) box.innerHTML = '<div class="settings-tip">正在问后端…（Render 免费档冷启动有时要几十秒）</div>';
+  try{
+    const d = await memApi("/app/caps" + (force ? "?fresh=1" : ""));
+    capsLoaded = true;
+    renderCaps(d);
+    const sub = $("#cardSubCaps");
+    if (sub) sub.textContent = d.on + " 项开着 · " + d.off + " 项关着 · " + (d.ms || 0) + "ms";
+  }catch(e){
+    const msg = (e && e.message) || String(e);
+    if (box) box.innerHTML = '<div class="caps-err">读不到能力总览：' + escapeHtml(msg) +
+      '<br>后端可能正在冷启动（Render 免费档会睡），等 30–60 秒再展开一次。</div>' +
+      '<button class="conn-add" id="capsRefresh" style="margin-top:8px">重读一次</button>';
+    const sub = $("#cardSubCaps");
+    if (sub) sub.textContent = "读取失败（后端没醒？）";
+  }finally{
+    capsBusy = false;
+  }
+}
+function capsMount(){
+  const box = document.getElementById("capsBody");
+  if (!box || box.dataset.bound) return;
+  box.dataset.bound = "1";
+  box.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-caps-go]");
+    if (b) { capsGo(b.dataset.capsGo); return; }
+    if (e.target.closest("#capsRefresh")) loadCaps(true);
+  });
+}
+/* 只在卡**展开**且还没读过时去拉 —— 折叠状态下也去拉的话，每次进设置页都白打一次后端 */
+function capsSubRefresh(){
+  const card = document.querySelector('.set-card[data-card="caps"]');
+  if (!card) return;
+  if (!card.classList.contains("open")) return;
+  capsMount();
+  if (!capsLoaded) loadCaps();
+}
+
 function refreshSetCardSubs(){
   const put = (id, v) => { const el = $("#" + id); if (el) el.textContent = v || ""; };
   const host = (typeof cloudHost === "function") ? (cloudHost() || "") : "";
@@ -10865,6 +11405,7 @@ function refreshSetCardSubs(){
     : (ig.base ? "已填地址，未启用" : "未配置（填中转站地址 + Key + 模型）"));
 
   omRender();
+  capsSubRefresh();      /* 能力总览的摘要（只有展开时才真去打后端）*/
 
   const model = ($("#apModel") && $("#apModel").value.trim()) || (a && a.model) || "deepseek-chat";
   put("cardSubAI", (hasBackendChat() ? "记忆存后端 · 自动压缩" : "仅本机历史") + " · " + model);

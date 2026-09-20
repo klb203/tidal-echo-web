@@ -96,8 +96,17 @@
 }
 .mp-sv:first-of-type{ border-top: none; }
 .mp-sv .mp-sv-t{ flex: 1 1 auto; min-width: 0; }
-.mp-sv .mp-sv-t b{ display: block; font-size: 13px; font-weight: 600; }
+.mp-sv .mp-sv-t b{ display: inline-block; vertical-align: middle; font-size: 13px; font-weight: 600; }
 .mp-sv .mp-sv-t span{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin-top: 2px; word-break: break-all; }
+/* 状态点**常驻**（不是弹一下就没了）：握手成功之后「它一直是好的」这件事本身也该看得见。
+   否则下次打开只看到"还没测"，分不清是没测过还是上次失败了。 */
+.mp-dot2{
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #c9ccd1; margin-right: 6px; vertical-align: middle;
+}
+.mp-dot2.connected{ background: #4CAF7D; }
+.mp-dot2.error{ background: #D9707A; }
+.mp-dot2.connecting{ background: #E0B060; }
 .mp-ck{
   flex: 0 0 auto; width: 40px; height: 23px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--field-line, rgba(151,169,181,.2));
@@ -113,11 +122,21 @@
 .mp-ck.on::after{ transform: translateX(17px); }
 
 /* 工具清单 */
-.mp-tool{ padding: 7px 0; border-top: 1px dashed var(--hairline, rgba(120,142,165,.22)); }
+/* 一行一个工具：左边名字+描述，右边单独开关（关掉的不进提示词、也不执行）。
+   用 grid 而不是 flex，是为了让开关能跨两行居中 —— 描述长到换行时不会把它挤歪。 */
+.mp-tool{
+  display: grid; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 2px;
+  align-items: center; padding: 8px 0;
+  border-top: 1px dashed var(--hairline, rgba(120,142,165,.22));
+}
 .mp-tool:first-of-type{ border-top: none; }
-.mp-tool b{ font-size: 12.5px; font-weight: 600; word-break: break-all; }
-.mp-tool span{ display: block; font-size: 11px; color: var(--text-faint, #8A99A8); margin-top: 2px; }
+.mp-tool b{ grid-column: 1; grid-row: 1; font-size: 12.5px; font-weight: 600; word-break: break-all; }
+.mp-tool span{ grid-column: 1; grid-row: 2; display: block; font-size: 11px;
+  color: var(--text-faint, #8A99A8); margin-top: 2px; }
+.mp-tool .mp-ck{ grid-column: 2; grid-row: 1 / span 2; }
 .mp-tool.deny b{ color: var(--danger, #b06a6f); text-decoration: line-through; }
+.mp-tool.off b{ opacity: .55; }
+.mp-tool.off span{ opacity: .7; }
 .mp-lv{
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;

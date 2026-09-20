@@ -38,6 +38,7 @@
   const LS_ALLOW = "companion_mcp_allow";
   const LS_TOOLS = "companion_mcp_tools";
   const LS_FRESH = "companion_mcp_fresh";
+  const LS_SRV = "companion_mcp_srv";      /* 后端服务器摘要的本地缓存（先画出来再刷新） */
   const PERSONA_CACHE_KEY = "companion_persona_cache";
 
   const MAX_ACTIONS = 2;        /* 一条回复最多认几个动作 */
@@ -75,6 +76,7 @@
     on: lsGet(LS_ON) === "1",
     tools: lsJson(LS_TOOLS, {}),     /* { "服务/工具": "描述" } —— 已握手过的真实清单 */
     allow: lsJson(LS_ALLOW, null),   /* { 服务名: true } —— 允不允许在聊天里被调；null = 全允许 */
+    srv: lsJson(LS_SRV, []),         /* 后端 /app/mcp/list 的摘要（含状态、传输、工具开关） */
     busy: false,
     lastRun: null,
     fresh: lsGet(LS_FRESH) === "1"
@@ -82,15 +84,27 @@
   let liveTide = false;
 
   /* ══════════════ 服务与工具清单 ═════════════════════════════════════
-     服务列表直接读「自由活动」里已经配好的那份 —— 不另造一套 MCP 配置界面。
-     （那个包已经做了：加服务、测连通、发现工具。这里只是再挑一次「哪些允许聊天时调」。） */
+     ★ 配置来源只有一个：**后端**（/app/mcp/*，也就是「工具与能力 → MCP 设置」那张卡）。
+       以前这里读的是「自由活动」里那份**本地**列表 —— 两套配置、两处维护，
+       于是必然出现"设置里改了、聊天里没变"，而且改的到底是哪一处都说不清。
+       现在一处配置、两处生效（聊天动作层 + 自由活动都用后端这份）。
+     ★ 真正的调用也在后端（/app/mcp/call）：自定义鉴权头、读 SSE 回包、对方还得开 CORS，
+       浏览器三样都做不到；令牌还存在后端、不回显，前端手里根本没有凭据。
+       ——「注入端与执行端同源」是这一层唯一不能破的规矩。 */
   function servers() {
-    try {
-      const s = window.ActivityPanel && window.ActivityPanel.state && window.ActivityPanel.state.servers;
-      return (s || []).filter((x) => x && x.url);
-    } catch (_) { return []; }
+    return (state.srv || []).filter((x) => x && x.url);
+  }
+  async function loadServers() {
+    const d = await memApi("/app/mcp/list");
+    state.srv = d.servers || [];
+    lsSet(LS_SRV, JSON.stringify(state.srv));
+    return state.srv;
+  }
+  function toolOffOf(sv, name) {
+    return ((sv && sv.tool_off) || []).indexOf(name) >= 0;
   }
   function allowOf(sv) {
+    if (!sv || sv.enable === false) return false;
     if (!state.allow) return true;
     return state.allow[sv.name || sv.id] !== false;
   }
@@ -103,8 +117,10 @@
   /* 「注入端」和「执行端」都走这一个函数 —— 两边同源，才不会出现"清单里有、一调就报错" */
   function toolAllowed(sv, toolName) {
     if (!sv || !toolName) return false;
-    if (!allowOf(sv)) return false;
-    if (isDanger(toolName)) return false;
+    if (sv.enable === false) return false;                 /* 后端停用了 */
+    if (!allowOf(sv)) return false;                        /* 聊天这一侧关掉了 */
+    if (isDanger(toolName)) return false;                  /* 硬拦：删 / 清 / 执行 / 外发 */
+    if (toolOffOf(sv, toolName)) return false;             /* 这一个工具被单独关掉了 */
     const key = (sv.name || sv.id) + "/" + toolName;
     if (Object.keys(state.tools).length && !state.tools[key]) return false;   /* 有清单就按清单来 */
     return true;
@@ -112,65 +128,46 @@
   function toolKeyOf(sv, name) { return (sv.name || sv.id) + "/" + name; }
   function findServer(name) {
     const list = servers();
-    let hit = list.filter((x) => x.name === name || x.id === name)[0];
+    const hit = list.filter((x) => x.name === name || x.id === name)[0];
     if (hit) return hit;
     /* 名字写歪了也救一下：唯一前缀匹配 */
     const byPrefix = list.filter((x) => String(x.name || "").indexOf(name) === 0);
     return byPrefix.length === 1 ? byPrefix[0] : null;
   }
+  function stateOf(sv) {
+    const s = (sv && sv.state) || {};
+    return { s: s.s || "idle", label: s.label || "还没握手过", msg: s.msg || "",
+             at: s.at || "", ms: s.ms || 0 };
+  }
 
-  /* ── 极简 MCP 客户端：initialize → tools/list → tools/call（Streamable HTTP，JSON 或 SSE）── */
-  const rpcSession = {};    /* url → Mcp-Session-Id */
-  async function rpc(sv, method, params, notify) {
-    const headers = { "Content-Type": "application/json", "Accept": "application/json, text/event-stream" };
-    if (sv.token) headers["Authorization"] = "Bearer " + sv.token;
-    const sid = rpcSession[sv.url];
-    if (sid) headers["Mcp-Session-Id"] = sid;
-    const body = { jsonrpc: "2.0", method: method, params: params || {} };
-    if (!notify) body.id = (rpc.id = (rpc.id || 0) + 1);
-    const res = await fetch(sv.url, { method: "POST", headers: headers, body: JSON.stringify(body) });
-    const s = res.headers.get("mcp-session-id");
-    if (s) rpcSession[sv.url] = s;
-    if (!res.ok) throw new Error("MCP HTTP " + res.status);
-    const txt = await res.text();
-    if (!txt) return null;
-    /* 有的服务端回 JSON，有的回 SSE（event: message / data: {...}）—— 两种都要认 */
-    let payload = txt;
-    if (/^\s*event:|^\s*data:/m.test(txt)) {
-      const line = txt.split(/\r?\n/).filter((l) => /^data:\s*/.test(l)).pop();
-      payload = line ? line.replace(/^data:\s*/, "") : "";
-    }
-    if (!payload) return null;
-    let j = null;
-    try { j = JSON.parse(payload); } catch (_) { throw new Error("MCP 回的东西读不出来"); }
-    if (j && j.error) throw new Error((j.error && j.error.message) || "MCP 报错");
-    return j ? j.result : null;
-  }
-  async function ensureInit(sv) {
-    if (rpcSession[sv.url]) return;
-    try {
-      await rpc(sv, "initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "tidal-echo", version: "1" } });
-      await rpc(sv, "notifications/initialized", {}, true).catch(() => { });
-    } catch (_) { /* 有的服务端不要求握手，直接调也行 */ }
-  }
+  /* ══════════════ 清单与调用（都走后端）═══════════════════════════════ */
+  /* 真去握手一次并刷新清单。verbose 时会逐个报结果 —— 静默失败最难查。 */
   async function handshake(verbose) {
-    const list = servers().filter(allowOf);
-    if (!list.length) { if (verbose) toast("还没配 MCP 服务 —— 去「自由活动 → 接服务」加一个"); return {}; }
-    const out = {};
+    try { await loadServers(); } catch (_) { }
+    const list = servers().filter((x) => x.enable !== false);
+    if (!list.length) {
+      if (verbose) toast((state.srv || []).length
+        ? "服务都被停用了 —— 去「工具与能力 → MCP 设置」打开一个"
+        : "还没配 MCP 服务 —— 去「工具与能力 → MCP 设置」加一个");
+      return state.tools;
+    }
+    const out = Object.assign({}, state.tools);
     for (const sv of list) {
+      const nm = sv.name || sv.id;
       try {
-        await ensureInit(sv);
-        const r = await rpc(sv, "tools/list", {});
-        const tools = (r && r.tools) || [];
-        tools.forEach((t) => {
+        const d = await memApi("/app/mcp/ping", { method: "POST", body: JSON.stringify({ name: nm }) });
+        (d.tool_list || []).forEach((t) => {
           if (!t || !t.name) return;
-          /* schema 里那份 description 就是要给模型看的那句话 */
-          out[toolKeyOf(sv, t.name)] = String(t.description || t.title || "").slice(0, 160);
+          out[toolKeyOf(sv, t.name)] = String(t.description || t.name || "").slice(0, 160);
         });
+        if (d.tools_error) delete out[nm + "/" + "（列不出工具）"];
+        if (verbose) toast(nm + (d.ok ? " 握手成功（" + ((d.tool_list || []).length) + " 个工具）"
+                                     : " 握手失败：" + (d.error || ("HTTP " + d.status))));
       } catch (e) {
-        if (verbose) toast((sv.name || sv.id) + " 握手失败：" + ((e && e.message) || e));
+        if (verbose) toast(nm + " 握手失败：" + ((e && e.message) || e));
       }
     }
+    try { await loadServers(); } catch (_) { }
     if (Object.keys(out).length) {
       /* 按名字排序存下来 —— 清单要逐字节稳定，才进得了提示词的稳定段（前缀缓存） */
       state.tools = {};
@@ -178,23 +175,47 @@
       lsSet(LS_TOOLS, JSON.stringify(state.tools));
       state.fresh = false; lsSet(LS_FRESH, "");
     }
+    renderTile(); renderPanel();
     return state.tools;
   }
-  async function callTool(sv, name, args) {
-    await ensureInit(sv);
-    const r = await rpc(sv, "tools/call", { name: name, arguments: args || {} });
-    /* 统一信封（照 agent_tools_lib 的形状）：不管成功失败都读得出来 */
-    if (!r) return { status: "error", message: "服务端没返回内容" };
-    if (r.isError) return { status: "error", message: textOf(r) || "工具报错" };
-    return { status: "success", message: textOf(r), raw: r };
+  /* 只读「已经存下来的清单」，不重新握手 —— 打开面板时用这个，别让几个服务串起来等十几秒 */
+  async function pullTools() {
+    try { await loadServers(); } catch (_) { }
+    const out = {};
+    for (const sv of servers()) {
+      try {
+        const d = await memApi("/app/mcp/tools?name=" + encodeURIComponent(sv.name || sv.id));
+        (d.tools || []).forEach((t) => {
+          if (t && t.name) out[toolKeyOf(sv, t.name)] = String(t.description || t.name || "").slice(0, 160);
+        });
+      } catch (_) { }
+    }
+    if (Object.keys(out).length) {
+      state.tools = {};
+      Object.keys(out).sort().forEach((k) => { state.tools[k] = out[k]; });
+      lsSet(LS_TOOLS, JSON.stringify(state.tools));
+    }
+    return state.tools;
   }
-  function textOf(r) {
-    if (!r) return "";
-    if (typeof r === "string") return r;
-    const c = r.content;
-    if (typeof c === "string") return c;
-    if (Array.isArray(c)) return c.map((x) => (typeof x === "string" ? x : (x && (x.text || "")) || "")).join("\n");
-    return JSON.stringify(r).slice(0, 2000);
+  /* 真的调一个工具 —— 后端替我们调（浏览器拿不到凭据，也过不去 CORS/SSE） */
+  async function callTool(sv, name, args) {
+    try {
+      const d = await memApi("/app/mcp/call", { method: "POST",
+        body: JSON.stringify({ name: sv.name || sv.id, tool: name, arguments: args || {} }) });
+      if (d && d.ok) return { status: "success", message: String(d.text || "") };
+      return { status: "error", message: String((d && d.error) || "没调成") };
+    } catch (e) {
+      return { status: "error", message: ((e && e.message) || String(e)) };
+    }
+  }
+  /* 单个工具的开关（写在后端，聊天与自由活动都跟着变） */
+  async function toggleTool(sv, name, on) {
+    await memApi("/app/mcp/tool", { method: "POST",
+      body: JSON.stringify({ name: sv.name || sv.id, tool: name, on: !!on }) });
+    sv.tool_off = (sv.tool_off || []).filter((x) => x !== name);
+    if (!on) sv.tool_off.push(name);
+    try { await loadServers(); } catch (_) { }
+    renderPanel();
   }
 
   /* ══════════════ 教学段落 ═══════════════════════════════════════════ */
@@ -634,6 +655,13 @@
         if (sv) { setAllow(sv, !ck.classList.contains("on")); renderPanel(); }
         return;
       }
+      const tk = e.target.closest("[data-mp-tool]");
+      if (tk) {
+        const nm = tk.dataset.mpSrv;
+        const sv = servers().filter((x) => (x.name || x.id) === nm)[0];
+        if (sv) toggleTool(sv, tk.dataset.mpTool, !tk.classList.contains("on")).catch((er) => toast("改不了：" + ((er && er.message) || er)));
+        return;
+      }
       const a = e.target.closest("[data-mp-act]");
       if (!a) return;
       const what = a.dataset.mpAct;
@@ -641,6 +669,8 @@
       else if (what === "on") setOn(!state.on);
       else if (what === "test") testNow();
       else if (what === "clear") { state.lastRun = null; state.fresh = false; lsSet(LS_FRESH, ""); renderTile(); renderPanel(); }
+      else if (what === "pull") pullTools().then(() => { toast("已按存下来的清单刷新"); renderPanel(); })
+                                        .catch((er) => toast("读清单失败：" + ((er && er.message) || er)));
     });
     return elPanel;
   }
@@ -648,7 +678,8 @@
     ensurePanel();
     elPanel.classList.remove("hidden");
     requestAnimationFrame(() => elPanel.classList.add("open"));
-    renderPanel();
+    renderPanel();                                   /* 先用缓存画出来，别让面板空着等网络 */
+    loadServers().then(() => renderPanel()).catch(() => { });
   }
   let closeTimer = 0;
   function close() {
@@ -677,22 +708,38 @@
       + '<span class="mp-hint">' + list.length + ' 个</span></div>'
       + (list.length ? list.map((sv) => {
           const nm = sv.name || sv.id;
-          return '<div class="mp-sv"><div class="mp-sv-t"><b>' + esc(nm) + '</b>'
-            + '<span>' + esc(String(sv.url || "").slice(0, 60)) + '</span></div>'
+          const st = stateOf(sv);
+          const tp = sv.transport === "sse" ? "SSE" : "HTTP";
+          return '<div class="mp-sv"><div class="mp-sv-t">'
+            + '<em class="mp-dot2 ' + esc(st.s) + '" title="' + esc(st.label) + '"></em>'
+            + '<b>' + esc(nm) + '</b>'
+            + '<span>' + esc(tp) + (sv.tools ? " · 工具 " + sv.tool_on + "/" + sv.tools : "")
+            + (st.ms ? " · " + st.ms + "ms" : "") + " · " + esc(st.label) + '</span></div>'
             + '<button class="mp-ck' + (allowOf(sv) ? " on" : "") + '" type="button" data-mp-allow="' + esc(nm) + '" aria-label="允许"></button></div>';
         }).join("")
-        : '<div class="mp-empty"><b>还没有 MCP 服务</b>服务是在「自由活动 → 接服务」里配的 —— '
-          + '这边不另做一套，加一次两处都能用。</div>')
-      + '<div class="mp-hint">这里挑的是「<b>聊天时</b>允许它自己调」的服务；'
-      + '自由活动那趟出门用哪些，是那边自己管的，互不影响。</div></div>');
+        : '<div class="mp-empty"><b>还没有 MCP 服务</b>在「工具与能力 → MCP 设置」里加一个 —— '
+          + '这边不另做一套，<b>一处配置两处生效</b>（聊天动作层和自由活动读的是同一份）。</div>')
+      + '<div class="mp-hint">点右边那个圆点是「<b>聊天时</b>允许它自己调」的开关；'
+      + '传输类型、鉴权头、单个工具的开关都在「工具与能力 → MCP 设置」里改。</div></div>');
 
     L.push('<div class="mp-card"><div class="mp-h"><span>它能调的工具</span>'
       + '<span class="mp-hint">' + keys.length + ' 个</span></div>'
-      + '<div class="mp-row"><button class="mp-mini pri" data-mp-act="handshake">握手并刷新清单</button></div>'
+      + '<div class="mp-row"><button class="mp-mini pri" data-mp-act="handshake">握手并刷新清单</button>'
+      + '<button class="mp-mini" data-mp-act="pull">按存下来的清单刷新</button></div>'
       + '<div class="mp-hint">清单是<b>真的问服务器要来的</b>，不是照文档抄的 —— 抄的清单一定和真实部署对不上'
-      + '（上过这个当：照源码写的工具名，线上根本没有）。问完存下来，注入永远用存下来的那份。</div>'
-      + (keys.length ? keys.map((k) => '<div class="mp-tool' + (isDanger(k.split("/")[1]) ? " deny" : "") + '">'
-          + '<b>' + esc(k) + '</b><span>' + esc(state.tools[k] || "（没有描述）") + '</span></div>').join("")
+      + '（上过这个当：照源码写的工具名，线上根本没有）。问完存下来，注入永远用存下来的那份。'
+      + '<br>右边那个开关是<b>单独关掉某个工具</b>；关掉的不会写进提示词，也不会被执行。</div>'
+      + (keys.length ? keys.map((k) => {
+          const srvName = k.split("/")[0], toolName = k.split("/").slice(1).join("/");
+          const sv = findServer(srvName);
+          const deny = isDanger(toolName);
+          const off = sv ? toolOffOf(sv, toolName) : false;
+          return '<div class="mp-tool' + (deny ? " deny" : "") + (off ? " off" : "") + '">'
+            + '<b>' + esc(k) + '</b><span>' + esc(state.tools[k] || "（没有描述）") + '</span>'
+            + (deny ? "" : '<button class="mp-ck' + (off ? "" : " on") + '" type="button" data-mp-tool="'
+                + esc(toolName) + '" data-mp-srv="' + esc(srvName) + '" aria-label="开关"></button>')
+            + '</div>';
+        }).join("")
         : '<div class="mp-empty"><b>还没握手过</b>点上面那个按钮问一次。</div>')
       + (keys.some((k) => isDanger(k.split("/")[1]))
         ? '<div class="mp-red" style="margin-top:8px;font-size:11.5px;color:var(--danger,#b06a6f);line-height:1.7">'
@@ -750,6 +797,8 @@
   function init() {
     ensurePanel();
     injectTile();
+    /* 打开就顺手把后端那份服务器摘要拉回来（失败也不吵 —— 面板会显示"没有服务"） */
+    loadServers().catch(() => { });
     hookRenderText();
     hookSetMessage();
     hookMakeMessage();
@@ -767,6 +816,7 @@
     open: open, close: close,
     on: () => state.on, setOn: setOn,
     handshake: handshake, sync: syncNow,
+    loadServers: loadServers, pullTools: pullTools, toggleTool: toggleTool,
     servers: servers, tools: () => state.tools,
     state: () => ({ on: state.on, tools: state.tools, allow: state.allow, lastRun: state.lastRun }),
     _init: init,

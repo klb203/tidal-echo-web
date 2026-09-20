@@ -2956,6 +2956,115 @@
   .call-minimize-top:active{ transform: scale(.9); }
   .call-minimize-top svg{ width: 18px; height: 18px; display: block; }
 
+  /* ── 通话记录：顶部悬浮按钮 + 面板 ──────────────────────────────────── */
+  .call-hist-fab{
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + clamp(10px, 2vw, 16px));
+    right: clamp(10px, 2vw, 16px);
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 12px 0 10px;
+    border: 1px solid var(--card-line);
+    border-radius: 999px; cursor: pointer;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: var(--text-soft);
+    font-family: var(--font-cn); font-size: 12.5px; line-height: 1;
+    z-index: 3;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .15s ease, transform .12s ease, color .15s ease;
+  }
+  .call-hist-fab:active{ transform: scale(.94); }
+  .call-hist-fab svg{ width: 15px; height: 15px; display: block; }
+  .call-hist-fab.on{ color: var(--text); }
+
+  .call-hist{
+    position: absolute; inset: 0;
+    z-index: 4;
+    display: flex; flex-direction: column;
+    background-color: var(--bg);
+    background-image: var(--wall-stack);
+    background-size: cover; background-position: center;
+    opacity: 0; pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity .28s var(--ease-soft), transform .28s var(--ease-soft);
+  }
+  .call-hist.open{ opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .call-hist-head{
+    display: flex; align-items: center; gap: 10px;
+    padding: calc(env(safe-area-inset-top) + clamp(12px, 2.4vw, 18px)) var(--side-pad) 10px;
+  }
+  .call-hist-iconbtn{
+    width: 32px; height: 32px; flex: 0 0 32px;
+    border: 1px solid var(--card-line); border-radius: 50%;
+    background: var(--card-bg); color: var(--text-soft);
+    display: grid; place-items: center; padding: 0; cursor: pointer;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .call-hist-iconbtn:active{ transform: scale(.92); }
+  .call-hist-iconbtn svg{ width: 16px; height: 16px; display: block; }
+  .call-hist-title{
+    flex: 1; min-width: 0;
+    font-family: var(--font-cn); font-size: 14.5px; font-weight: 600;
+    color: var(--text); text-align: left;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .call-hist-body{
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 2px var(--side-pad) calc(env(safe-area-inset-bottom) + 22px);
+    -webkit-overflow-scrolling: touch;
+  }
+  .call-hist-item{
+    display: block; width: 100%; text-align: left;
+    border: 1px solid var(--card-line); border-radius: 14px;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    padding: 11px 13px; margin-bottom: 9px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .12s ease;
+  }
+  .call-hist-item:active{ transform: scale(.985); }
+  .call-hist-row1{ display: flex; align-items: baseline; gap: 8px; }
+  .call-hist-when{
+    font-family: var(--font-cn); font-size: 13.5px; font-weight: 600; color: var(--text);
+  }
+  .call-hist-dur{
+    margin-left: auto; font-family: var(--font-cn); font-size: 12px; color: var(--text-soft);
+  }
+  .call-hist-abs{
+    margin-top: 5px;
+    font-family: var(--font-cn); font-size: 12.5px; line-height: 1.55;
+    color: var(--text-soft);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .call-hist-tag{
+    display: inline-block; margin-top: 7px;
+    font-family: var(--font-cn); font-size: 11px; line-height: 1;
+    padding: 4px 7px; border-radius: 999px;
+    border: 1px solid var(--card-line); color: var(--text-soft);
+    opacity: .85;
+  }
+  .call-hist-empty{
+    padding: 44px 8px; text-align: center;
+    font-family: var(--font-cn); font-size: 13px; line-height: 1.7; color: var(--text-soft);
+  }
+  .call-hist-detail{ padding-top: 4px; }
+  .call-hist-detail-meta{
+    display: flex; flex-wrap: wrap; gap: 8px 14px;
+    font-family: var(--font-cn); font-size: 12px; color: var(--text-soft);
+    margin-bottom: 12px;
+  }
+  .call-hist-detail-text{
+    font-family: var(--font-cn); font-size: 15px; line-height: 1.85;
+    color: var(--text); white-space: pre-wrap; word-break: break-word;
+  }
+  .call-hist-detail-note{
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--card-line);
+    font-family: var(--font-cn); font-size: 11.5px; line-height: 1.7; color: var(--text-soft);
+  }
+
   /* ── Hide old wave (no longer visible) ── */
   .call-wave{ display: none; }
 
@@ -6023,6 +6132,28 @@
     <button class="call-minimize-top" id="callMinimize" type="button" aria-label="收起">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
+    <!-- ── 通话记录（顶部悬浮按钮）─────────────────────────────────────────
+         借 donutbunelli/ringdonut 的思路：一通电话要留下**能回看的东西**，
+         每通带时间，点开是一段「只引用原文」的文字概述。 -->
+    <button class="call-hist-fab" id="callHistBtn" type="button" aria-label="通话记录" title="通话记录">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><polyline points="12 7.4 12 12 15.2 13.9"/></svg>
+      <span>通话记录</span>
+    </button>
+    <div class="call-hist hidden" id="callHist" aria-hidden="true">
+      <div class="call-hist-head">
+        <button class="call-hist-iconbtn" id="callHistBack" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="14.5 5.5 8 12 14.5 18.5"/></svg>
+        </button>
+        <div class="call-hist-title" id="callHistTitle">通话记录</div>
+        <button class="call-hist-iconbtn" id="callHistClose" type="button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6.5" y1="6.5" x2="17.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="6.5" y2="17.5"/></svg>
+        </button>
+      </div>
+      <div class="call-hist-body">
+        <div class="call-hist-list" id="callHistList"></div>
+        <div class="call-hist-detail hidden" id="callHistDetail"></div>
+      </div>
+    </div>
     <div class="call-avatar-stage">
       <div class="call-vu call-vu-left" id="callVuLeft" aria-hidden="true"></div>
       <div class="call-avatar-ring" id="callAvatarRing">
@@ -10793,6 +10924,16 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   const callMuteBtn  = $("#callMuteBtn");
   const callPrivateBtn = $("#callPrivateBtn");
   const callSpeakerBtn = $("#callSpeakerBtn");
+  /* 通话记录（借 donutbunelli/ringdonut 的思路：一通电话要留下能回看的东西） */
+  const histBtn   = $("#callHistBtn");
+  const histPanel = $("#callHist");
+  const histList  = $("#callHistList");
+  const histDetail = $("#callHistDetail");
+  const histTitle = $("#callHistTitle");
+  const histBack  = $("#callHistBack");
+  const histClose = $("#callHistClose");
+  let histItems = [];          // 最近一次拉到的记录
+  let histOpenDetail = null;   // 当前展开的是哪一条（null = 在列表页）
 
   const VU_BARS = 16;   // 每侧声纹竖条数
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -11187,6 +11328,14 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     if (open) return;
     open = true;
     hideIncomingCall();
+    /* 上一通留下的通话记录面板要收起来 —— 否则新通话一打开就顶着旧记录 */
+    if (histPanel){
+      histPanel.classList.remove("open");
+      histPanel.classList.add("hidden");
+      histPanel.setAttribute("aria-hidden", "true");
+    }
+    histOpenDetail = null;
+    if (histBtn) histBtn.classList.remove("on");
     ensureTtsCtx();
     callId = "call-" + Date.now().toString(36);
     buildVu();
@@ -11234,6 +11383,15 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     speakQueue.length = 0;
     speakBusy = false;
     if (ttsCtx){ try{ ttsCtx.close(); }catch(e){} ttsCtx = null; }
+    /* 通话记录面板跟着通话一起收（后端已经开始整理这通的概述了，
+       下次打开记录就能看到）。 */
+    if (histPanel){
+      histPanel.classList.remove("open");
+      histPanel.classList.add("hidden");
+      histPanel.setAttribute("aria-hidden", "true");
+    }
+    histOpenDetail = null;
+    if (histBtn) histBtn.classList.remove("on");
     apiCallEvent("end", { call_id: closingCallId }).catch(() => {});
     clearTimeout(hideId);
     hideId = setTimeout(() => overlay.classList.add("hidden"), 380);
@@ -11341,7 +11499,133 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
     showIncomingCall(text);
   }
 
-  window.VoiceCall = { speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall, isOpen: () => open, isMinimized: () => minimized };
+  /* ── 通话记录 ─────────────────────────────────────────────────────────
+     一通电话结束后，后端会留下一条记录：开始时间、时长、轮数，
+     以及一段**只引用原话**的概述（模型只能按编号挑证据，挑完还要校验，
+     详见后端 calllog 模块）。这里只负责把它列出来、点开看。 */
+  function histWhen(iso){
+    const d = new Date(iso);
+    if (!iso || isNaN(d.getTime())) return "时间未知";
+    const now = new Date();
+    const hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    if (d.toDateString() === now.toDateString()) return "今天 " + hm;
+    const y = new Date(now.getTime() - 86400000);
+    if (d.toDateString() === y.toDateString()) return "昨天 " + hm;
+    return (d.getMonth() + 1) + "月" + d.getDate() + "日 " + hm;
+  }
+  function histDur(sec){
+    const s = Math.max(0, parseInt(sec, 10) || 0);
+    const m = Math.floor(s / 60);
+    if (m) return m + " 分 " + (s % 60) + " 秒";
+    return s + " 秒";
+  }
+  function histTag(it){
+    const st = String(it.status || "");
+    if (st === "active") return "整理中…";
+    if (st === "complete") return it.turns ? (it.turns + " 轮对话") : "";
+    if (st === "failed") return "原话留存（没能整理出概述）";
+    if (st === "skipped") return "没有可整理的内容";
+    if (st === "unfinished") return "未整理（这通没正常结束）";
+    return "";
+  }
+  function histShowList(){
+    histOpenDetail = null;
+    if (histDetail) histDetail.classList.add("hidden");
+    if (histList) histList.classList.remove("hidden");
+    if (histTitle) histTitle.textContent = "通话记录";
+  }
+  function histRender(){
+    if (!histList) return;
+    if (!histItems.length){
+      histList.innerHTML = '<div class="call-hist-empty">还没有通话记录。<br>打完一通电话，这里会留下时间和一段概述。</div>';
+      return;
+    }
+    histList.innerHTML = histItems.map((it, i) => {
+      const tag = histTag(it);
+      const abs = String(it.summary || "").trim();
+      return '<button class="call-hist-item" type="button" data-hist="' + i + '">' +
+        '<span class="call-hist-row1">' +
+          '<span class="call-hist-when">' + escapeHtml(histWhen(it.started_at)) + "</span>" +
+          '<span class="call-hist-dur">' + escapeHtml(histDur(it.seconds)) + "</span>" +
+        "</span>" +
+        '<span class="call-hist-abs">' + (abs ? escapeHtml(abs) : "（这通电话还没整理出概述）") + "</span>" +
+        (tag ? '<span class="call-hist-tag">' + escapeHtml(tag) + "</span>" : "") +
+      "</button>";
+    }).join("");
+  }
+  async function histLoad(){
+    if (histList){
+      histList.classList.remove("hidden");
+      histList.innerHTML = '<div class="call-hist-empty">正在读通话记录…</div>';
+    }
+    histShowList();
+    let items = [];
+    try{
+      const sid = (typeof effectiveApiSession === "function") ? effectiveApiSession() : "";
+      const d = await memApi("/app/call/history?limit=30" + (sid ? ("&session_id=" + encodeURIComponent(sid)) : ""));
+      items = (d && d.items) || [];
+    }catch(e){
+      if (histList) histList.innerHTML = '<div class="call-hist-empty">读不到通话记录。<br>（检查一下网络，或后端是否已更新）</div>';
+      return;
+    }
+    histItems = items;
+    histRender();
+  }
+  function histShowDetail(i){
+    const it = histItems[i];
+    if (!it || !histDetail || !histList) return;
+    histOpenDetail = i;
+    const abs = String(it.summary || "").trim();
+    const meta = [
+      "开始：" + histWhen(it.started_at),
+      "时长：" + histDur(it.seconds),
+      it.turns ? (it.turns + " 轮对话") : "",
+      it.ended_at ? ("结束：" + histWhen(it.ended_at)) : "",
+    ].filter(Boolean).map((x) => "<span>" + escapeHtml(x) + "</span>").join("");
+    histDetail.innerHTML =
+      '<div class="call-hist-detail-meta">' + meta + "</div>" +
+      '<div class="call-hist-detail-text">' +
+        (abs ? escapeHtml(abs) : "（这通电话还没整理出概述。等一会儿再点进来看看。）") +
+      "</div>" +
+      '<div class="call-hist-detail-note">这段概述是照着你们当天的原话整理的 —— ' +
+        "整理时它只能从通话记录里挑句子，不能自己编。所以它会比日记土一点，但不会瞎说。</div>";
+    histList.classList.add("hidden");
+    histDetail.classList.remove("hidden");
+    if (histTitle) histTitle.textContent = histWhen(it.started_at);
+  }
+  function histOpen(){
+    if (!histPanel) return;
+    histPanel.classList.remove("hidden");
+    histPanel.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => requestAnimationFrame(() => histPanel.classList.add("open")));
+    if (histBtn) histBtn.classList.add("on");
+    void histLoad();
+  }
+  function chistClose(){
+    if (!histPanel) return;
+    histPanel.classList.remove("open");
+    histPanel.setAttribute("aria-hidden", "true");
+    if (histBtn) histBtn.classList.remove("on");
+    histOpenDetail = null;
+    setTimeout(() => { if (!histPanel.classList.contains("open")) histPanel.classList.add("hidden"); }, 300);
+  }
+  function chistBack(){
+    if (histOpenDetail !== null) histShowList();   // 先退回列表
+    else chistClose();                              // 已在列表 → 关掉面板
+  }
+
+  window.VoiceCall = { speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall, history: histOpen, isOpen: () => open, isMinimized: () => minimized };
+
+  /* 通话记录：悬浮按钮 + 面板事件 */
+  if (histBtn) histBtn.addEventListener("click", (e) => { e.stopPropagation(); histOpen(); });
+  if (chistClose) chistClose.addEventListener("click", (e) => { e.stopPropagation(); chistClose(); });
+  if (chistBack) chistBack.addEventListener("click", (e) => { e.stopPropagation(); chistBack(); });
+  if (histList) histList.addEventListener("click", (e) => {
+    const el = e.target && e.target.closest ? e.target.closest("[data-hist]") : null;
+    if (!el) return;
+    e.stopPropagation();
+    histShowDetail(parseInt(el.getAttribute("data-hist"), 10));
+  });
 
   if (minimizeBtn) minimizeBtn.addEventListener("click", (e) => { e.stopPropagation(); minimizeCall(); });
   if (miniBar) miniBar.addEventListener("click", expandCall);
@@ -15814,10 +16098,14 @@ async function apiVoiceBlob(blob, mime, meta = {}){
 
 async function apiCallEvent(action, meta = {}){
   if (isMock()) return { ok:true };
+  /* ★ 带上 session_id：后端要靠它把「这通电话期间的消息」切出来做概述。
+     不带的话通话记录会找不到对应的会话（记录还在，但切不出逐句记录）。 */
+  let sid = "";
+  try{ sid = (typeof effectiveApiSession === "function" ? effectiveApiSession() : "") || ""; }catch(_){ }
   const r = await fetch(appUrl("/app/call"), {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({ action, ...meta })
+    body: JSON.stringify({ action, session_id: sid || undefined, ...meta })
   });
   if (r.status === 401){ handle401(); throw new Error("401"); }
   if (!r.ok) throw new Error("call " + r.status);

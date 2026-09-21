@@ -15514,21 +15514,53 @@ async function memOpenDay(date){
     memStatus(d.exists ? ("已读 " + date + "（" + (d.content || "").length + " 字）") : (date + " 还没有日更"), d.exists ? "ok" : "");
   }catch(err){ memStatus("读这天的日更失败：" + ((err && err.message) || err), "err"); }
 }
-async function memRun(){
+/* ★ force 要从外面传进来，别靠事件对象 ——
+   直接 addEventListener("click", memRun) 的话，第一个参数会是 PointerEvent，
+   而它永远是 truthy → 等于每次都强制覆盖（看着像"它自己把日更改了"）。
+   所以监听里写成 () => memRun(false)。 */
+async function memRun(force){
   const tgt = ($("#nfTarget") && $("#nfTarget").value) || "";
+  const label = (tgt === "today") ? "今天" : "昨天";
   const btn = $("#nfRun"); const old = btn.textContent;
   btn.disabled = true; btn.textContent = "脱水ing…";
-  memStatus("正在把 " + (tgt === "today" ? "今天" : "昨天") + " 的账本交给小模型脱水…");
+  const t0 = Date.now();
+  /* 秒表：这一轮是**真的同步调一次模型**（20~60 秒），冷启动时更久。
+     原来界面上只有一个静止的「脱水ing…」，等一分钟看着就像卡死了 ——
+     用户于是以为"这个功能不能用"。把已等秒数和预期时长摆出来。 */
+  const tick = setInterval(() => {
+    const s2 = Math.round((Date.now() - t0) / 1000);
+    memStatus("正在把 " + label + " 的账本交给小模型脱水… 已等 " + s2 +
+              " 秒（通常 20~60 秒，期间别关页面）");
+  }, 1000);
+  memStatus("正在把 " + label + " 的账本交给小模型脱水…");
   try{
     const body = tgt === "today" ? { mode: "today" } : {};
+    if (force) body.force = true;
     const d = await memApi("/app/nearfield/run", { method: "POST", body: JSON.stringify(body) });
-    memStatus(d.ok ? ("已生成 " + d.date + " 的日更（" + d.chars + " 字）· 注入稿 " + d.current_chars + " 字")
+    if (!d.ok && d.exists && !force){
+      /* ★ 这里原来是个死路：memRun 从不带 force，所以「已有日更」的日子
+         永远只回一句「已有日更（force 才覆盖）」—— 界面上就是"按钮坏了"。
+         后端其实一直能覆盖，只是没人告诉它。 */
+      clearInterval(tick);
+      const head = String(d.diary || "").slice(0, 180);
+      if (confirm("「" + d.date + "」已经有日更了：\n\n" + head + "…\n\n要覆盖它吗？（覆盖走一次模型，会花钱）")){
+        return await memRun(true);
+      }
+      memStatus(label + "那天的日更保持原样，没有覆盖。", "ok");
+      return;
+    }
+    const used = Math.round((Date.now() - t0) / 1000);
+    memStatus(d.ok ? ("已生成 " + d.date + " 的日更（" + d.chars + " 字 · 用了 " + used +
+                      " 秒）· 注入稿 " + d.current_chars + " 字")
                    : ("没生成：" + d.reason), d.ok ? "ok" : "err");
     if (d.ok && d.diary){ memSelectedDay = d.date; $("#nfDay").value = d.diary; }
     await memLoad();
-    if (d.ok) showToast("日更生成好了");
-  }catch(err){ memStatus("脱水失败：" + ((err && err.message) || err), "err"); }
-  finally{ btn.disabled = false; btn.textContent = old; }
+    if (d.ok) showToast("日更生成好了（" + used + " 秒）");
+  }catch(err){
+    memStatus("脱水失败：" + ((err && err.message) || err) +
+              "（如果等了很久才失败，多半是这一轮模型调用超时了）", "err");
+  }
+  finally{ clearInterval(tick); btn.disabled = false; btn.textContent = old; }
 }
 async function memSaveDay(){
   if (!memSelectedDay){ memStatus("先在上面选一天（或先脱水生成）", "err"); return; }
@@ -16273,7 +16305,7 @@ function renderLibs(){
 }
 if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
 if ($("#memoryClose")) $("#memoryClose").addEventListener("click", closeMemory);
-if ($("#nfRun")) $("#nfRun").addEventListener("click", memRun);
+if ($("#nfRun")) $("#nfRun").addEventListener("click", () => memRun(false));   // 见 memRun 顶部：别把事件对象当 force
 if ($("#nfAssemble")) $("#nfAssemble").addEventListener("click", memAssemble);
 if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
 if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));

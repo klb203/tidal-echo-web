@@ -2,7 +2,8 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v95-usage";          // v95：MiniMax 默认音色（留空即用内置）+ 用量预算卡 + 外部工具卡（麦当劳/瑞幸）
+const CACHE = "companion-v96-nearfield";     // v96：近景日更能覆盖了（原来从不带 force，永远只回「已有日更」）+ 秒表与预期时长
+                                               // v95：MiniMax 默认音色（留空即用内置）+ 用量预算卡 + 外部工具卡（麦当劳/瑞幸）
                                                // v94：MCP 设置（传输 / 自定义头 / 每工具开关 / 状态常驻）+ 能力总览卡
                                                // v85：记忆待确认队列（机器写的不再静默生效）+ 大富翁 AI 剧情 + 牌桌记忆 + 启动层防白屏 + Kimi Code 订阅额度
                                                // v84：修「状态行无限增生 + hwm 读失败归零」（宫殿重复提取、注入稿一天一行）

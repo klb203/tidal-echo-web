@@ -2,7 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v110-keys";           // v110：网关卡那 5 张外部服务的能力卡**点开直接填令牌**
+const CACHE = "companion-v111-ear";            // v111：Movie 里多了「一起听」——唱片页（黑胶转着、
+                                               //       歌词跟着走）+ 听歌时你们俩的留言；
+                                               //       歌曲来自云服务器那两套音乐服务
+                                               // v110：网关卡那 5 张外部服务的能力卡**点开直接填令牌**
                                                //       （麦当劳 / 瑞幸 / 高德 / 小红书 / 查手机）——
                                                //       原来只有一句 toast 把人送去「MCP 设置」找那张卡
                                                // v109：网关「它自己能用的」改成**能力卡**——卡片上写的是
@@ -67,6 +70,7 @@ const PRECACHE = [
   "./clock-pack.css", "./clock-pack.js",
   "./memory-pack.css", "./memory-pack.js",
   "./day-pack.css", "./day-pack.js",
+  "./music-pack.css", "./music-pack.js",
   "./tides.html",
 ];
 

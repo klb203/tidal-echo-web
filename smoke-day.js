@@ -79,6 +79,19 @@ ok(/<link rel="stylesheet" href="day-pack\.css">/.test(html), 'index.html 引入
 ok(/<script defer src="day-pack\.js"><\/script>/.test(html), 'index.html 引入了 day-pack.js');
 ok(/\.\/day-pack\.css", "\.\/day-pack\.js"/.test(sw), '★ sw 的 PRECACHE 里有这两个文件（否则离线打开是空的）');
 
+/* ★ 这四个原来在侧边栏各占一个入口（大富翁 / 自由活动 / 群聊 / 朋友圈），
+   现在搬到这一页了 —— **两边一起验**才是完整的一句话：
+     少了前半条 = 入口重复（同一件事两个地方点，迟早走偏）；
+     少了后半条 = 用户点不到（入口没了、卡片也没有）。 */
+const menuKeys = [...html.matchAll(/class="menu-item"[^>]*data-menu="([^"]+)"/g)].map((m) => m[1]);
+for (const k of ['rp', 'activity', 'groupchat', 'moments']) {
+  ok(!menuKeys.includes(k), '★ 侧边栏不再有 "' + k + '" 这个入口（已经从那儿搬走）');
+}
+for (const k of ['mono', 'activity', 'group', 'moments']) {
+  ok(uiKeys.includes(k), '★ 这一页有对应的卡片：' + k);
+}
+ok(menuKeys.includes('movie'), 'Movie 这个入口本身还在（不然这一页就打不开了）');
+
 console.log('\n=== 4. 三个抬头 + 两组卡片都在 ===');
 for (const id of ['dpClock', 'dpDate', 'dpTogether', 'dpClose', 'dpToast']) {
   ok(js.includes('id="' + id + '"'), '有 #' + id);

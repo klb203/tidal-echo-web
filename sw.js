@@ -2,7 +2,9 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v107-day";            // v107：侧边栏 Movie 打开「今天」——时钟 / 日期 /
+const CACHE = "companion-v108-menucut";        // v108：侧边栏收掉四个入口（大富翁 / 自由活动 / 群聊 / 朋友圈）
+                                               //       —— 它们已经是「今天」页里的卡片，从那进就行
+                                               // v107：侧边栏 Movie 打开「今天」——时钟 / 日期 /
                                                //       在一起多少天（随日子涨）/ 常用入口 / 一起做 · 生活记录；
                                                //       大富翁与自由活动在这里有了卡片（原来是侧边栏的项）
                                                // v106：记忆面板导航改版——底部横滑栏 → 顶部两个 tab

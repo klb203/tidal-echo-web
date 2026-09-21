@@ -4926,30 +4926,6 @@
           <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet place.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
-        <button class="menu-item" type="button" data-menu="groupchat">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.4" r="3.1"/><path d="M3.6 19.4c0-3 2.4-5.1 5.4-5.1s5.4 2.1 5.4 5.1"/><path d="M15.9 6.5a3 3 0 0 1 0 5.8"/><path d="M17.5 14.5c1.8.6 2.9 2.1 2.9 4.1"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">群聊</span><span class="menu-sub">派活 · 看进度 · 收结果。</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
-        <button class="menu-item" type="button" data-menu="rp">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.4"/><path d="M8.6 15.4l6.8-6.8M15.4 15.4L8.6 8.6"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name" id="rpMenuName">大富翁</span><span class="menu-sub">开局打一局，荷官主持。</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
-        <button class="menu-item" type="button" data-menu="activity">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M15.4 8.6l-1.9 4.9-4.9 1.9 1.9-4.9z"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">自由活动</span><span class="menu-sub">让 TA 自己出门逛逛。</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
-        <button class="menu-item" type="button" data-menu="moments">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="4.6"/><path d="M8 9.6h8M8 13h5.4"/><circle cx="16.2" cy="15.4" r="1.5"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">朋友圈</span><span class="menu-sub">TA 自言自语的地方。</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
         <button class="menu-item" type="button" data-menu="theme">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/><circle cx="8.4" cy="10.4" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.6" cy="10.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
           <span class="menu-dot"></span>
@@ -7360,10 +7336,6 @@ if (menuPanel){
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
     else if (item.dataset.menu === "toolkit") hubOpen("tools");      // 兼容老写法：直达工具页
     else if (item.dataset.menu === "gateway") hubOpen("gateway");    // 兼容老写法：直达网关页
-    else if (item.dataset.menu === "groupchat") { closeMenu(); if (window.openGroupChat) window.openGroupChat(); }   // 群聊（三个 AI + 你，派活/进度/收结果）
-    else if (item.dataset.menu === "rp") { closeMenu(); if (window.openRp) window.openRp(); }
-    else if (item.dataset.menu === "activity") { closeMenu(); if (window.openActivity) window.openActivity(); }
-    else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈
     /* 「今天」：时钟 / 日期 / 在一起多少天 / 常用入口 / 一起做 · 生活记录。
        整页在 day-pack.js 里（和房间、相册一样是独立包）。 */
     else if (item.dataset.menu === "movie") { closeMenu(); if (window.openDay) window.openDay(); }

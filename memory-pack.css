@@ -1,0 +1,113 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Tidal Echo · 记忆分层面板（世界书 / 档案馆）—— 样式
+   ──────────────────────────────────────────────────────────────────────────
+   复用记忆面板已有的视觉语言（mg-card / mg-head / mg-sub / arc-*），
+   这里只补**编辑器**专属的部分：表单行、子视图切换、事件盒卡、节点行。
+   变量全部取自 index.html 的 :root（--mg-* / --text* / --hairline），
+   所以主题切换（Pearl / Harbor）自动跟着走，不要在这里写死颜色。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 子视图切换（事件盒 / 时间线）──────────────────────────────────────── */
+.mp-seg{ display: flex; gap: 6px; margin-top: 12px; }
+.mp-seg button{
+  flex: 1 1 0; padding: 9px 8px; border-radius: 12px; font-size: 12.5px;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text-soft);
+  cursor: pointer; transform: none !important;
+}
+.mp-seg button.on{
+  background: var(--mg-surface); border-color: rgba(var(--mg-heat), .42);
+  color: var(--text); font-weight: 600;
+}
+
+/* ── 表单 ─────────────────────────────────────────────────────────────── */
+.mp-form{ display: flex; flex-direction: column; gap: 11px; margin-top: 12px; }
+.mp-form2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mp-row{ display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.mp-row > label{ font-size: 11.5px; color: var(--mg-dim); letter-spacing: .02em; }
+.mp-row input[type="text"], .mp-row input[type="number"], .mp-row select, .mp-row textarea{
+  width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 12px;
+  font-size: 13px; font-family: inherit; color: var(--text);
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+}
+.mp-row textarea{ min-height: 104px; resize: vertical; line-height: 1.68; }
+.mp-row input:focus, .mp-row select:focus, .mp-row textarea:focus{
+  outline: none; border-color: rgba(var(--mg-heat), .46);
+}
+.mp-check{ display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-soft); }
+.mp-check input{ width: 16px; height: 16px; flex: 0 0 auto; }
+.mp-hint{ font-size: 11px; color: var(--mg-dim); line-height: 1.62; }
+.mp-note{
+  font-size: 11.5px; line-height: 1.68; color: var(--text-soft);
+  padding: 9px 11px; border-radius: 12px;
+  background: rgba(var(--mg-heat), .07); border: 1px solid var(--mg-edge);
+}
+
+/* ── 按钮 ─────────────────────────────────────────────────────────────── */
+.mp-acts{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mp-btn{
+  padding: 8px 13px; border-radius: 12px; font-size: 12.5px; cursor: pointer;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text);
+  transform: none !important;
+}
+.mp-btn.primary{
+  background: rgba(var(--mg-heat), .15); border-color: rgba(var(--mg-heat), .38); font-weight: 600;
+}
+.mp-btn.danger{ color: #c2566b; }
+.mp-btn:disabled{ opacity: .5; cursor: default; }
+.mp-mini{
+  padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer;
+  background: var(--mg-surface); border: 1px solid var(--mg-edge); color: var(--text-soft);
+  transform: none !important;
+}
+
+/* ── 条目卡 ───────────────────────────────────────────────────────────── */
+.mp-item{ cursor: pointer; }
+.mp-item.on{ border-color: rgba(var(--mg-heat), .45); }
+.mp-item-t{ font-size: 13.5px; font-weight: 600; color: var(--text); }
+.mp-item-s{
+  font-size: 12px; line-height: 1.68; color: var(--text-soft); margin-top: 7px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mp-chips{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.mp-chip{
+  font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge); color: var(--text-soft);
+}
+.mp-chip.hot{ background: rgba(var(--mg-heat), .15); border-color: rgba(var(--mg-heat), .34); color: var(--text); }
+.mp-chip.off{ opacity: .5; }
+
+/* ── 统计格 ───────────────────────────────────────────────────────────── */
+.mp-kv{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 13px; }
+.mp-kv > div{
+  padding: 10px 6px; border-radius: 14px; text-align: center;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+}
+.mp-kv b{ display: block; font-size: 16px; font-weight: 600; color: var(--text); }
+.mp-kv span{ display: block; font-size: 10.5px; color: var(--mg-dim); margin-top: 3px; }
+
+/* ── 事件盒 ───────────────────────────────────────────────────────────── */
+.mp-box{ cursor: pointer; }
+.mp-box.sealed{ opacity: .78; }
+.mp-box-t{ font-size: 13.5px; font-weight: 600; color: var(--text); }
+.mp-box-s{ font-size: 11.5px; color: var(--mg-dim); margin-top: 5px; }
+
+.mp-node{
+  margin-top: 8px; padding: 10px 12px; border-radius: 14px;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+}
+.mp-node-h{ display: flex; align-items: center; gap: 9px; }
+.mp-node-t{ flex: 1 1 auto; font-size: 12.5px; line-height: 1.6; color: var(--text); min-width: 0; }
+.mp-node-b{ font-size: 12px; line-height: 1.68; color: var(--text-soft); margin-top: 6px; white-space: pre-wrap; word-break: break-word; }
+/* 灰节点：已经压进总结、不参与召回 —— 视觉上"淡出但没有消失"，因为它可以复活 */
+.mp-node.gone{ opacity: .6; }
+.mp-node.gone .mp-node-t{ text-decoration: line-through; text-decoration-color: var(--mg-dim); }
+
+/* ── 预览（世界书命中）───────────────────────────────────────────────── */
+.mp-pre{
+  margin-top: 10px; padding: 11px 12px; border-radius: 14px;
+  background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
+  font-size: 11.5px; line-height: 1.72; color: var(--text-soft);
+  white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow: auto;
+}
+.mp-sec{ margin-top: 10px; }
+.mp-sec-h{ font-size: 11.5px; font-weight: 600; color: var(--text); margin-bottom: 5px; }

@@ -32,7 +32,13 @@
   color: var(--text, #253447); font-family: inherit; font-size: 19px;
   width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   opacity: .72; transition: background .2s, transform .15s;
+  position: relative;                    /* 给下面那个透明热区做定位 */
+  -webkit-tap-highlight-color: transparent;
 }
+/* ★ 视觉还是 34px，点按区外扩到 48px —— 手机上手指点不准，
+   "按钮不灵敏"有一半来自热区太小。这层是按钮自己的 ::after，
+   不新增元素、不挡别的东西。 */
+.rm-top .rm-btn::after{ content: ""; position: absolute; inset: -7px; border-radius: 50%; }
 .rm-top .rm-btn:active{ transform: scale(.92); background: var(--hairline, rgba(120,142,165,.2)); }
 .rm-top .rm-t{ flex: 1 1 auto; min-width: 0; }
 .rm-top .rm-t b{ display: block; font-size: 17px; font-weight: 600; letter-spacing: .02em; }

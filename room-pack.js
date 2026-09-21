@@ -1508,6 +1508,11 @@
     const id = el && el.dataset ? el.dataset.id : "";
     try {
       switch (a) {
+        /* ☆ 返回键（顶栏那个 ‹）。★ 原来这里**根本没有这个分支** ——
+           按钮写着 data-act="back"，但 act() 里没人接，
+           于是点上去一点反应都没有（用户报的"返回去的按键不灵敏"就是它）。
+           顺手扫了一遍：54 个静态 data-act，只有这一个漏网。 */
+        case "back": close(); break;
         case "save-core": {
           const cur = one("core");
           await save("core", { who: val("who"), voice: val("voice"), principles: val("principles"),

@@ -2,7 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v106-memnav";         // v106：记忆面板导航改版——底部横滑栏 → 顶部两个 tab
+const CACHE = "companion-v107-day";            // v107：侧边栏 Movie 打开「今天」——时钟 / 日期 /
+                                               //       在一起多少天（随日子涨）/ 常用入口 / 一起做 · 生活记录；
+                                               //       大富翁与自由活动在这里有了卡片（原来是侧边栏的项）
+                                               // v106：记忆面板导航改版——底部横滑栏 → 顶部两个 tab
                                                //       （总览 / 全部）+ 卡片网格（沿用工具能力页那套排版）；
                                                //       侧边栏的「记忆宫殿」入口并了进来
                                                // v105：修「房间」返回键点了没反应——按钮写着 data-act="back"
@@ -55,6 +58,7 @@ const PRECACHE = [
   "./mcp-pack.css", "./mcp-pack.js",
   "./clock-pack.css", "./clock-pack.js",
   "./memory-pack.css", "./memory-pack.js",
+  "./day-pack.css", "./day-pack.js",
   "./tides.html",
 ];
 

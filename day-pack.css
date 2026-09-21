@@ -1,0 +1,151 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   day-pack.css · 「今天」（侧边栏 Movie 打开的那一页）
+
+   一屏：大时钟 · 日期 · 在一起多少天 · 五个常用入口 · 一起做 / 生活记录。
+   颜色全部走宿主变量（切主题跟着变），只有图标的**色相**是写死的 ——
+   衬底是低透明度的彩色，深色主题下另给一档更亮的图标色，两边都看得清。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.dp-panel{
+  position: fixed; inset: 0; z-index: 205;
+  display: flex; flex-direction: column;
+  background-color: var(--bg, #F7FAFC);
+  background-image: var(--wall-stack, none);
+  background-size: cover; background-position: center;
+  color: var(--text, #253447);
+  font-family: var(--font-cn, inherit); font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  opacity: 0; transition: opacity .26s ease;
+}
+.dp-panel.hidden{ display: none !important; }
+.dp-panel.open{ opacity: 1; }
+
+.dp-scroll{
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  width: 100%; max-width: 620px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 30px) clamp(16px, 5vw, 22px)
+           calc(30px + env(safe-area-inset-bottom));
+}
+
+.dp-close{
+  position: absolute; top: calc(env(safe-area-inset-top) + 12px); right: 14px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--card-bg, rgba(244,248,250,.5));
+  color: var(--text-soft, #5E7080); font-size: 15px;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.dp-close:hover{ color: var(--text); }
+
+/* ── 抬头：时钟 / 日期 / 在一起多少天 ─────────────────────────────────── */
+.dp-head{ margin-bottom: clamp(20px, 5.5vw, 28px); }
+.dp-clock{
+  font-family: Georgia, "Times New Roman", var(--font-en, serif), serif;
+  font-size: clamp(52px, 17vw, 76px); font-weight: 400; line-height: 1;
+  letter-spacing: -.01em; color: var(--text);
+}
+.dp-date{
+  margin-top: 10px;
+  font-size: clamp(13.5px, 3.7vw, 15px); color: var(--text-soft);
+}
+.dp-together{
+  margin-top: 6px; font-size: clamp(12.5px, 3.4vw, 14px);
+  color: var(--text-faint); letter-spacing: .01em;
+}
+.dp-together .dp-since{ margin-left: 7px; opacity: .8; }
+
+/* ── 五个常用入口 ─────────────────────────────────────────────────────── */
+.dp-quick{
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 6px; margin-bottom: clamp(22px, 6vw, 30px);
+}
+.dp-q{
+  flex: 1 1 0; min-width: 0;
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  cursor: pointer; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 7px;
+}
+.dp-qi{
+  width: clamp(40px, 11.5vw, 48px); height: clamp(40px, 11.5vw, 48px);
+  border-radius: 50%; display: grid; place-items: center;
+  font-size: clamp(17px, 4.8vw, 20px); line-height: 1;
+  background: hsl(var(--h, 220) 62% 55% / .16);
+  color: hsl(var(--h, 220) 46% 44%);
+  transition: transform .16s var(--ease-soft, cubic-bezier(.22,1,.36,1));
+}
+.dp-q:active .dp-qi{ transform: scale(.93); }
+.dp-qt{
+  font-size: clamp(11px, 3vw, 12.5px); color: var(--text-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+
+/* ── 分组标题 + 列表 ──────────────────────────────────────────────────── */
+.dp-sec{
+  margin: 0 2px 9px;
+  font-size: clamp(11px, 3vw, 12.5px); color: var(--text-faint);
+  letter-spacing: .04em;
+}
+.dp-list{
+  margin: 0 0 clamp(20px, 5.5vw, 26px);
+  border-radius: 18px; overflow: hidden;
+  border: 1px solid var(--card-line, rgba(150,168,182,.16));
+  background: var(--field-bg, rgba(247,250,252,.9));
+  box-shadow: var(--card-shadow, 0 10px 28px rgba(70,92,108,.05));
+}
+.dp-row{
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  padding: 13px 14px; cursor: pointer; text-align: left;
+  color: var(--text); font-family: inherit; font-size: 15px;
+  border-top: 1px solid var(--card-line, rgba(150,168,182,.16));
+  transition: background .18s ease;
+}
+.dp-row:first-child{ border-top: none; }
+.dp-row:hover{ background: var(--row-press, rgba(140,160,176,.09)); }
+.dp-row:active{ background: var(--row-press, rgba(140,160,176,.09)); }
+.dp-ri{
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 15px; line-height: 1;
+  background: hsl(var(--h, 220) 62% 55% / .16);
+  color: hsl(var(--h, 220) 46% 44%);
+}
+.dp-rn{ flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-rchev{ flex: 0 0 auto; color: var(--text-faint); font-size: 18px; line-height: 1; }
+
+/* ── 图标色相（只有这一层是"写死"的；衬底与文字都按主题变量算）───────── */
+[data-day="memory"]{   --h: 218; }
+[data-day="mood"]{     --h: 22;  }
+[data-day="diary"]{    --h: 44;  }
+[data-day="dream"]{    --h: 262; }
+[data-day="play"]{     --h: 174; }
+[data-day="mono"]{     --h: 200; }
+[data-day="activity"]{ --h: 282; }
+[data-day="group"]{    --h: 152; }
+[data-day="album"]{    --h: 332; }
+[data-day="palace"]{   --h: 226; }
+[data-day="room"]{     --h: 250; }
+[data-day="moments"]{  --h: 8;   }
+
+/* 深色主题：衬底那点彩色在深背景上会糊掉，图标色往上提一档 */
+:root[data-theme="dark"] .dp-qi,
+:root[data-theme="dark"] .dp-ri{
+  background: hsl(var(--h, 220) 55% 62% / .20);
+  color: hsl(var(--h, 220) 62% 76%);
+}
+:root[data-theme="dark"] .dp-list{
+  background: var(--field-bg, rgba(255,255,255,.05));
+}
+
+/* ── 一句提示（点不动的时候说话，不静默）────────────────────────────── */
+.dp-toast{
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 26px);
+  transform: translateX(-50%) translateY(8px);
+  max-width: min(84vw, 420px);
+  padding: 9px 15px; border-radius: 999px;
+  background: var(--text, #253447); color: var(--bg, #fff);
+  font-size: 12.5px; line-height: 1.5; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+}
+.dp-toast.on{ opacity: .95; transform: translateX(-50%) translateY(0); }

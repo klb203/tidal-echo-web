@@ -2,7 +2,9 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v112-earfix";         // v112：一起听 —— 没填 eryu 令牌时先给一句明确引导
+const CACHE = "companion-v113-letter";         // v113：Movie 里多了「信箱」——它写的信 / 你写的信，
+                                               //       能留着，也能真的寄到你的 QQ 邮箱
+                                               // v112：一起听 —— 没填 eryu 令牌时先给一句明确引导
                                                //       （线上实测：不带令牌 eryu 回 403，
                                                //        填不填它决定这一页能不能出声）
                                                // v111：Movie 里多了「一起听」——唱片页（黑胶转着、
@@ -74,6 +76,7 @@ const PRECACHE = [
   "./memory-pack.css", "./memory-pack.js",
   "./day-pack.css", "./day-pack.js",
   "./music-pack.css", "./music-pack.js",
+  "./letter-pack.css", "./letter-pack.js",
   "./tides.html",
 ];
 

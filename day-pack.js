@@ -76,6 +76,7 @@
     group:    { label: "群聊",       fn: "openGroupChat" },
     album:    { label: "一起看",     fn: "openAlbum" },
     ear:      { label: "一起听",     fn: "openEar" },
+    letter:   { label: "信箱",       fn: "openLetter" },
     palace:   { label: "记忆宫殿",   fn: "palace",   local: true },
     room:     { label: "我们的房间", fn: "openRoom" },
     moments:  { label: "朋友圈",     fn: "openMoments" },
@@ -109,6 +110,7 @@
       { k: "palace",  ic: "⌂", n: "记忆宫殿" },
       { k: "room",    ic: "⌘", n: "我们的房间" },
       { k: "moments", ic: "◍", n: "朋友圈" },
+      { k: "letter",  ic: "✉", n: "信箱" },
     ] },
   ];
   const PANEL_HTML =

@@ -2,7 +2,9 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v102-archive";        // v102：档案馆只收"AI 第一人称的总结性记忆"——
+const CACHE = "companion-v103-hub";            // v103：工具能力 / 网关 / 设置 三合一（侧边栏一个入口，
+                                               //       顶部栏 tab 切换）—— 原来三个整页层、三个入口
+                                               // v102：档案馆只收"AI 第一人称的总结性记忆"——
                                                //       片段（工具/活动跑出来的原始素材）不再入档 / 进银河 / 归盒
                                                // v101：事件/故事/片段/工作记忆/我的房间/留给西西的话
                                                //       这六类**从界面去掉**（用户点名），内容走「从记忆库导入」

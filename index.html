@@ -1617,14 +1617,21 @@
   .kit-mcp-cut{ font-size:11px; color:var(--text-faint,#98A2AE); margin-top:2px; }
 
   /* ── 工具与能力：菜单里的一项，整页层（与设置/记忆/网关同级）───────────── */
-  .kit-panel{
+  /* ── 设置与能力：工具能力 / 网关 / 设置 —— 一个入口，顶部栏切换 ─────────
+     原来是三个各自独立的整页层（三套 fixed 壳、三条进入动画、侧边栏三个入口），
+     来回对照要关三次再开三次。现在收成一个壳：一条顶栏 + 一行 tab + 三个视图。
+     ★ 三个视图的 DOM 就是原来那三块内容（id 一个没改）—— 所以
+       kitTool / capRender / openSettings 里那些 $("#kitBody") 之类的引用全都照旧。
+     ★ 一个名字只能指一个东西：当前在哪个 tab 由 JS 的 hubTab 唯一持有，
+       别的地方（Esc / 菜单 / capsGo / capAct）一律走 hubOpen / hubSwitch，
+       不许自己去 classList 上翻。 */
+  .hub-panel{
     position: fixed; inset: 0; z-index: 196;
     display:flex; flex-direction: column; justify-content: center;
     background: var(--bg);
   }
-  .kit-panel.hidden{ display:none; }
-  .kit-panel.open .kit-page{ transform: translateY(0); opacity: 1; }
-  .kit-page{
+  .hub-panel.hidden{ display:none; }
+  .hub-page{
     position: relative;
     width: min(100vw, var(--ref-width)); height: 100%;
     margin: 0 auto; background: var(--bg);
@@ -1632,19 +1639,67 @@
     transform: translateY(2.5%); opacity: 0;
     transition: transform .34s var(--ease-soft), opacity .28s ease;
   }
-  .kit-top{
-    display:flex; align-items:center; justify-content:space-between;
+  .hub-panel.open .hub-page{ transform: translateY(0); opacity: 1; }
+  .hub-top{
+    display:flex; align-items:center; gap:10px;
     padding: calc(env(safe-area-inset-top) + 14px) 16px 2px;
   }
-  .kit-top button{
-    appearance:none; -webkit-appearance:none; border:none; background:transparent;
-    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px; opacity:.72;
+  .hub-back, .hub-close{
+    width:38px; height:38px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    appearance:none; -webkit-appearance:none; border:none; border-radius:50%;
+    background: transparent; color: var(--text);
+    font-size:19px; line-height:1; cursor:pointer; opacity:.72;
+    transition: opacity .2s ease, background .2s ease;
   }
-  .kit-top button:hover{ opacity:1; }
-  .kit-top button svg{ width:19px; height:19px; }
-  .kit-title-wrap{ text-align:center; flex:1 1 auto; min-width:0; }
-  .kit-title{ font-size: 19px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
-  .kit-sub{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  .hub-back:hover, .hub-close:hover{ opacity:1; background: var(--card-bg, transparent); }
+  .hub-back.hidden{ display:none; }
+  .hub-close{ margin-left:auto; }
+  .hub-title-wrap{ text-align:center; flex:1 1 auto; min-width:0; }
+  .hub-title{ font-size:19px; font-weight:600; color: var(--text); letter-spacing:.04em; }
+  .hub-sub{
+    text-align:center; color: var(--text-faint); font-size:11.5px; margin-top:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  /* tab 行：三格等分。选中态是「主色文字 + 一条主色底线」——
+     刻意不写"深色底 + 白字"，四套主题（蓝白 / 粉黛 / 墨夜 / 港湾）都不会翻车，
+     --accent 在每一套里都是跟背景对比得过的那一支。 */
+  .hub-tabs{
+    display:flex; align-items:stretch; gap:4px;
+    margin: 12px 16px 0; padding: 4px;
+    border: 1px solid var(--card-line); border-radius: 12px;
+    background: var(--card-bg, transparent);
+  }
+  .hub-tab{
+    flex:1 1 0; min-width:0;
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text-faint); font-family: var(--font-cn); font-size:13.5px;
+    padding: 7px 4px; border-radius: 9px; cursor:pointer;
+    transition: color .2s ease, background .2s ease, box-shadow .2s ease;
+  }
+  .hub-tab:hover{ color: var(--text); }
+  .hub-tab.on{ color: var(--accent); font-weight:600; box-shadow: inset 0 -2px 0 0 var(--accent); }
+  .hub-body{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  /* 视图：默认不显示，选中的那个铺满 body。
+     ★ .hub-view 必须 position:relative —— 设置页那份 .settings-page 是
+       position:absolute; inset:0，它就是靠这个祖先定尺寸的（memoryPanel 共用同一个类，
+       那边 .settings-panel 仍是 fixed，所以两条 CSS 都不能动）。 */
+  .hub-view{ display:none; position:relative; flex:1 1 auto; min-height:0; flex-direction:column; }
+  .hub-view.on{ display:flex; }
+  /* 网关视图顶上那一条：原来的 .cap-top 只留下这一个刷新按钮和一行状态 */
+  .hub-subbar{ display:flex; align-items:center; gap:10px; padding: 8px 16px 0; }
+  .hub-subbar-t{
+    flex:1 1 auto; min-width:0; color: var(--text-faint); font-size:11.5px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .hub-refresh{
+    appearance:none; -webkit-appearance:none; border:none; background:transparent;
+    color: var(--text); cursor:pointer; padding:4px 8px; opacity:.72;
+    transition: opacity .2s ease;
+  }
+  .hub-refresh:hover{ opacity:1; }
+  .hub-refresh svg{ width:19px; height:19px; }
+
   .kit-body{
     flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding: 10px 14px calc(env(safe-area-inset-bottom) + 26px);
@@ -1757,36 +1812,7 @@
   /* ── 网关：把「它会的」和「你能开的」全摊成按钮 ───────────────────────
      沿用设置页/收藏页那套「整页层」约定（z-index 195 > 菜单的 190）。
      视觉全部走现有 CSS 变量，所以四套主题（蓝白/粉黛/墨夜/港湾）自动跟随。 */
-  .cap-panel{
-    position: fixed; inset: 0; z-index: 195;
-    display:flex; flex-direction: column; justify-content: center;
-    background: var(--bg);
-  }
-  .cap-panel.hidden{ display:none; }
-  .cap-panel.open .cap-page{ transform: translateY(0); opacity: 1; }
-  .cap-page{
-    position: relative;
-    width: min(100vw, var(--ref-width)); height: 100%;
-    margin: 0 auto;
-    background: var(--bg);
-    display:flex; flex-direction: column;
-    transform: translateY(2.5%); opacity: 0;
-    transition: transform .34s var(--ease-soft), opacity .28s ease;
-  }
-  .cap-top{
-    display:flex; align-items:center; justify-content:space-between;
-    padding: calc(env(safe-area-inset-top) + 14px) 16px 2px;
-  }
-  .cap-top button{
-    appearance:none; -webkit-appearance:none; border:none; background:transparent;
-    color: var(--text); font-size: 19px; cursor:pointer; padding: 4px 8px;
-    opacity:.72; transition: opacity .2s ease;
-  }
-  .cap-top button:hover{ opacity:1; }
-  .cap-top button svg{ width: 19px; height: 19px; }
-  .cap-title-wrap{ text-align:center; flex: 1 1 auto; min-width:0; }
-  .cap-title{ font-size: 19px; font-weight: 600; color: var(--text); letter-spacing:.04em; }
-  .cap-sub{ text-align:center; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  /* 网关的整页层 CSS 已并入 .hub-*（见上方「设置与能力」那一节）*/
   .cap-body{
     flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding: 10px 14px calc(env(safe-area-inset-bottom) + 26px);
@@ -4802,18 +4828,6 @@
           <span class="menu-copy"><span class="menu-name">朋友圈</span><span class="menu-sub">TA 自言自语的地方。</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
-        <button class="menu-item" type="button" data-menu="toolkit">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.6 6.4a3.6 3.6 0 0 1 4.9 4.9l-1.5-1.5-1.2 1.2-1.7-1.7-1.2 1.2-1.7-1.7 1.2-1.2-1.7-1.7 1.2-1.2-1.5-1.5Z"/><path d="M12.6 9.8 4.4 18a1.7 1.7 0 0 0 2.4 2.4l8.2-8.2"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">Tools</span><span class="menu-sub">Weather, alarms, bots.</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
-        <button class="menu-item" type="button" data-menu="gateway">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l7.6 4.4v8.8L12 20.8l-7.6-4.4V7.6L12 3.2Z"/><path d="M12 8.4l3.4 2v4l-3.4 2-3.4-2v-4l3.4-2Z"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">Gateway</span><span class="menu-sub">Everything it can do.</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
         <button class="menu-item" type="button" data-menu="theme">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/><circle cx="8.4" cy="10.4" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.6" cy="10.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
           <span class="menu-dot"></span>
@@ -4823,7 +4837,7 @@
         <button class="menu-item" type="button" data-menu="settings">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9.5 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9.5a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9.5A1.7 1.7 0 0 0 11 3.09V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V11a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.47Z"/></svg></span>
           <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">设置</span><span class="menu-sub">连接与模型。</span></span>
+          <span class="menu-copy"><span class="menu-name">设置与能力</span><span class="menu-sub">工具 · 网关 · 连接与模型。</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
       </nav>
@@ -4892,156 +4906,45 @@
   </div>
 </div>
 
-<!-- ── 工具与能力（左侧菜单「Tools」打开）── -->
-<div class="kit-panel hidden" id="kitPanel" role="dialog" aria-modal="true" aria-label="工具与能力">
-  <div class="kit-page">
-    <div class="kit-top">
-      <button id="kitBack" type="button" aria-label="返回" class="hidden">‹</button>
-      <div class="kit-title-wrap">
-        <div class="kit-title" id="kitTitle">工具与能力</div>
-        <div class="kit-sub" id="kitSub">它和这台手机能做的事</div>
+<!-- ── 设置与能力：工具能力 / 网关 / 设置 —— 一个入口，顶部栏切换 ── -->
+<div class="hub-panel hidden" id="hubPanel" role="dialog" aria-modal="true" aria-label="设置与能力">
+  <div class="hub-page">
+    <div class="hub-top">
+      <button class="hub-back hidden" id="kitBack" type="button" aria-label="返回">‹</button>
+      <div class="hub-title-wrap">
+        <div class="hub-title" id="kitTitle">工具与能力</div>
+        <div class="hub-sub" id="kitSub">它和这台手机能做的事</div>
       </div>
-      <button id="kitClose" type="button" aria-label="关闭">✕</button>
+      <button class="hub-close" id="hubClose" type="button" aria-label="关闭">✕</button>
     </div>
-    <div class="kit-body">
-      <div id="kitGrid" class="kit-grid"></div>
-      <div id="kitDetail" class="hidden"></div>
+    <div class="hub-tabs" id="hubTabs" role="tablist" aria-label="工具能力 / 网关 / 设置">
+      <button class="hub-tab on" type="button" role="tab" data-hub="tools" aria-selected="true">工具能力</button>
+      <button class="hub-tab" type="button" role="tab" data-hub="gateway" aria-selected="false">网关</button>
+      <button class="hub-tab" type="button" role="tab" data-hub="settings" aria-selected="false">设置</button>
     </div>
-  </div>
-</div>
+    <div class="hub-body">
 
-<!-- ── 网关：全部能力，一个能力一个按钮 ── -->
-<div class="cap-panel hidden" id="capPanel" role="dialog" aria-modal="true" aria-label="网关能力">
-  <div class="cap-page">
-    <div class="cap-top">
-      <button id="capClose" type="button" aria-label="关闭">✕</button>
-      <div class="cap-title-wrap">
-        <div class="cap-title">网关</div>
-        <div class="cap-sub" id="capSub">它会的每一件事，都是一个按钮</div>
-      </div>
-      <button id="capRefresh" type="button" aria-label="刷新"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 11.6a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.4 4.4v5.1h-5.1"/></svg></button>
-    </div>
-    <div class="cap-body" id="capBody"></div>
-  </div>
-</div>
-
-<!-- ── 主题美化（头像 / 名字 / 背景 / 语音条）── -->
-<div class="th-panel hidden" id="themePanel" role="dialog" aria-modal="true" aria-label="主题美化">
-  <div class="th-page">
-    <div class="th-top">
-      <button id="thClose" type="button" aria-label="返回">‹</button>
-      <h2>主题美化</h2>
-    </div>
-    <div class="th-scroll">
-      <div class="th-sec">
-        <div class="th-sec-t"><b>头像与名字</b></div>
-        <div class="th-ids">
-          <div class="th-id">
-            <button class="th-av ai" id="thAvAi" type="button" aria-label="换 TA 的头像"></button>
-            <div class="th-id-txt">
-              <label>TA 的名字</label>
-              <input id="thNameAi" type="text" maxlength="16" placeholder="DeepSeek" autocomplete="off" spellcheck="false">
-              <div class="th-follow">头像与名字<b>跟随全局</b> —— 这里改的就是「个人信息」里那一份。</div>
-            </div>
-          </div>
-          <div class="th-id" style="align-items:flex-start">
-            <div class="th-id-txt" style="width:100%">
-              <label>系统人格提示词</label>
-              <textarea class="nf-box" id="thSysPrompt" rows="5"
-                        placeholder="例如：你是一个温柔、细腻、懂我的伴侣。记得我们聊过的事，回答自然、简洁、有温度。"></textarea>
-              <div class="th-follow">这就是<b>「设置 → AI 与记忆」里那份系统提示词</b>，全局同一份；
-                保存时<b>会同时写进当前连接</b>（连接编辑器里那个「人格 / 系统提示」是连接级覆盖，
-                填过就会盖住全局 —— 以前在这里改了「不生效」，就是被它挡的）。
-                占位符里的例子是默认值。</div>
-              <div class="fld-row" style="margin-top:8px">
-                <button class="btn ghost" id="thSysBtn" type="button">保存人格提示词</button>
-                <button class="btn ghost" id="thSysReload" type="button">重新读取</button>
-              </div>
-            </div>
-          </div>
-          <label class="fld switch-row" style="margin-top:10px"><span>显示输入框上方的小形象
-            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">输入框左上角那个小动物。纯装饰，不挡任何点击；不想要就关掉。</span></span>
-            <input type="checkbox" id="thMascot">
-          </label>
-          <div class="th-id">
-            <button class="th-av" id="thAvMe" type="button" aria-label="换我的头像"></button>
-            <div class="th-id-txt">
-              <label>我的名字</label>
-              <input id="thNameMe" type="text" maxlength="16" placeholder="我" autocomplete="off" spellcheck="false">
-              <div class="th-follow">你的头像与名字只存在本机，用来标出「谁在说话」。</div>
-            </div>
-          </div>
+      <!-- ① 工具能力（天气 / 闹钟 / Bot / 权限 / MCP …）-->
+      <div class="hub-view on" id="kitPanel" data-hub-view="tools">
+        <div class="kit-body">
+          <div id="kitGrid" class="kit-grid"></div>
+          <div id="kitDetail" class="hidden"></div>
         </div>
       </div>
 
-      <div class="th-sec">
-        <div class="th-sec-t"><b>主题</b><span>换聊天界面的底子</span></div>
-        <div class="th-grid">
-          <button class="th-card" type="button" data-theme="light">
-            <span class="th-prev pearl"></span>
-            <b>珍珠潮汐</b><small>浅白 · 冷调</small>
-          </button>
-          <button class="th-card" type="button" data-theme="harbor">
-            <span class="th-prev harbor"></span>
-            <b>海港暮色</b><small>暖灰 · 安静</small>
-          </button>
-          <button class="th-card" type="button" data-theme="pink">
-            <span class="th-prev pink"></span>
-            <b>粉黛</b><small>粉调 · 你粉 TA 白</small>
-          </button>
-          <button class="th-card" type="button" data-theme="dark">
-            <span class="th-prev dark"></span>
-            <b>墨夜</b><small>暗色 · 夜里不刺眼</small>
-          </button>
+      <!-- ② 网关（它会的每一件事，一个按钮）-->
+      <div class="hub-view" id="capPanel" data-hub-view="gateway">
+        <div class="hub-subbar">
+          <span class="hub-subbar-t" id="capSub">它会的每一件事，都是一个按钮</span>
+          <button class="hub-refresh" id="capRefresh" type="button" aria-label="刷新"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 11.6a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.4 4.4v5.1h-5.1"/></svg></button>
         </div>
-        <div class="th-sec-t" style="margin-top:14px"><b>聊天背景</b><span>可以用手机里的照片</span></div>
-        <div class="th-grid">
-          <button class="th-card" type="button" id="thWallPhoto">
-            <span class="th-prev photo" id="thWallPrev"></span>
-            <b>从手机相册选照片</b><small id="thWallNote">还没选</small>
-          </button>
-          <button class="th-card" type="button" id="thWallReset">
-            <span class="th-prev" id="thWallBuiltin"></span>
-            <b>用回默认壁纸</b><small>内置那张</small>
-          </button>
-        </div>
-        <input type="file" id="thWallFile" accept="image/*" class="hidden" aria-hidden="true">
+        <div class="cap-body" id="capBody"></div>
       </div>
 
-      <div class="th-sec">
-        <div class="th-sec-t"><b>语音条美化</b><span>颜色参考 · 只是语音条的渲染</span></div>
-        <div class="th-sw-grid" id="thVoiceGrid"></div>
-        <div class="vb-prev-box" id="thVoicePrev">
-          <div class="vb-prev-row"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="12"></span><span class="vb-dur">0:12</span></div></div>
-          <div class="vb-prev-row me"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="7"></span><span class="vb-dur">0:07</span></div></div>
-        </div>
-        <div class="th-follow" style="margin-top:8px">选中的配色会同时用在聊天里的语音条上（波形条、播放键、时长都跟着变色）。</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 长按消息 → 收藏 -->
-<div class="collect-bar hidden" id="collectBar">
-  <span id="collectHint">这条消息</span>
-  <button type="button" class="primary" id="collectDo">收进收藏馆</button>
-  <button type="button" id="collectCancel">取消</button>
-</div>
-
-<!-- ── Settings (连接与模型 · 左滑面板,从 hub 菜单「设置」进入) ── -->
-<div class="settings-panel hidden" id="settingsPanel" role="dialog" aria-modal="true" aria-label="设置">
+      <!-- ③ 设置（连接 · 模型 · 记忆 · 预算 · 备份 …）—— 内容原样搬进来 -->
+      <div class="hub-view" id="settingsPanel" data-hub-view="settings">
   <div class="settings-page">
     <div class="settings-scroll">
-      <div class="settings-head">
-        <button class="settings-back" id="settingsBack" type="button" aria-label="返回">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-        </button>
-        <div class="settings-title">设置</div>
-        <button class="settings-close" id="settingsClose" type="button" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
-
       <section class="set-card" data-card="caps">
         <button class="set-card-head" type="button" aria-expanded="false">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 6.4h4.2v3.6H4.6z"/><path d="M15.2 6.4h4.2v3.6h-4.2z"/><path d="M4.6 14h4.2v3.6H4.6z"/><path d="M15.2 14h4.2v3.6h-4.2z"/><path d="M8.8 8.2h6.4"/><path d="M6.7 10v4"/><path d="M17.3 10v4"/></svg></span>
@@ -5869,7 +5772,117 @@
       </section>
     </div>
   </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ── 网关已并进 #hubPanel 的「网关」页 ── -->
+
+<!-- ── 主题美化（头像 / 名字 / 背景 / 语音条）── -->
+<div class="th-panel hidden" id="themePanel" role="dialog" aria-modal="true" aria-label="主题美化">
+  <div class="th-page">
+    <div class="th-top">
+      <button id="thClose" type="button" aria-label="返回">‹</button>
+      <h2>主题美化</h2>
+    </div>
+    <div class="th-scroll">
+      <div class="th-sec">
+        <div class="th-sec-t"><b>头像与名字</b></div>
+        <div class="th-ids">
+          <div class="th-id">
+            <button class="th-av ai" id="thAvAi" type="button" aria-label="换 TA 的头像"></button>
+            <div class="th-id-txt">
+              <label>TA 的名字</label>
+              <input id="thNameAi" type="text" maxlength="16" placeholder="DeepSeek" autocomplete="off" spellcheck="false">
+              <div class="th-follow">头像与名字<b>跟随全局</b> —— 这里改的就是「个人信息」里那一份。</div>
+            </div>
+          </div>
+          <div class="th-id" style="align-items:flex-start">
+            <div class="th-id-txt" style="width:100%">
+              <label>系统人格提示词</label>
+              <textarea class="nf-box" id="thSysPrompt" rows="5"
+                        placeholder="例如：你是一个温柔、细腻、懂我的伴侣。记得我们聊过的事，回答自然、简洁、有温度。"></textarea>
+              <div class="th-follow">这就是<b>「设置 → AI 与记忆」里那份系统提示词</b>，全局同一份；
+                保存时<b>会同时写进当前连接</b>（连接编辑器里那个「人格 / 系统提示」是连接级覆盖，
+                填过就会盖住全局 —— 以前在这里改了「不生效」，就是被它挡的）。
+                占位符里的例子是默认值。</div>
+              <div class="fld-row" style="margin-top:8px">
+                <button class="btn ghost" id="thSysBtn" type="button">保存人格提示词</button>
+                <button class="btn ghost" id="thSysReload" type="button">重新读取</button>
+              </div>
+            </div>
+          </div>
+          <label class="fld switch-row" style="margin-top:10px"><span>显示输入框上方的小形象
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">输入框左上角那个小动物。纯装饰，不挡任何点击；不想要就关掉。</span></span>
+            <input type="checkbox" id="thMascot">
+          </label>
+          <div class="th-id">
+            <button class="th-av" id="thAvMe" type="button" aria-label="换我的头像"></button>
+            <div class="th-id-txt">
+              <label>我的名字</label>
+              <input id="thNameMe" type="text" maxlength="16" placeholder="我" autocomplete="off" spellcheck="false">
+              <div class="th-follow">你的头像与名字只存在本机，用来标出「谁在说话」。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="th-sec">
+        <div class="th-sec-t"><b>主题</b><span>换聊天界面的底子</span></div>
+        <div class="th-grid">
+          <button class="th-card" type="button" data-theme="light">
+            <span class="th-prev pearl"></span>
+            <b>珍珠潮汐</b><small>浅白 · 冷调</small>
+          </button>
+          <button class="th-card" type="button" data-theme="harbor">
+            <span class="th-prev harbor"></span>
+            <b>海港暮色</b><small>暖灰 · 安静</small>
+          </button>
+          <button class="th-card" type="button" data-theme="pink">
+            <span class="th-prev pink"></span>
+            <b>粉黛</b><small>粉调 · 你粉 TA 白</small>
+          </button>
+          <button class="th-card" type="button" data-theme="dark">
+            <span class="th-prev dark"></span>
+            <b>墨夜</b><small>暗色 · 夜里不刺眼</small>
+          </button>
+        </div>
+        <div class="th-sec-t" style="margin-top:14px"><b>聊天背景</b><span>可以用手机里的照片</span></div>
+        <div class="th-grid">
+          <button class="th-card" type="button" id="thWallPhoto">
+            <span class="th-prev photo" id="thWallPrev"></span>
+            <b>从手机相册选照片</b><small id="thWallNote">还没选</small>
+          </button>
+          <button class="th-card" type="button" id="thWallReset">
+            <span class="th-prev" id="thWallBuiltin"></span>
+            <b>用回默认壁纸</b><small>内置那张</small>
+          </button>
+        </div>
+        <input type="file" id="thWallFile" accept="image/*" class="hidden" aria-hidden="true">
+      </div>
+
+      <div class="th-sec">
+        <div class="th-sec-t"><b>语音条美化</b><span>颜色参考 · 只是语音条的渲染</span></div>
+        <div class="th-sw-grid" id="thVoiceGrid"></div>
+        <div class="vb-prev-box" id="thVoicePrev">
+          <div class="vb-prev-row"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="12"></span><span class="vb-dur">0:12</span></div></div>
+          <div class="vb-prev-row me"><div class="vb"><span class="vb-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="vb-wave" data-wave="7"></span><span class="vb-dur">0:07</span></div></div>
+        </div>
+        <div class="th-follow" style="margin-top:8px">选中的配色会同时用在聊天里的语音条上（波形条、播放键、时长都跟着变色）。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 长按消息 → 收藏 -->
+<div class="collect-bar hidden" id="collectBar">
+  <span id="collectHint">这条消息</span>
+  <button type="button" class="primary" id="collectDo">收进收藏馆</button>
+  <button type="button" id="collectCancel">取消</button>
+</div>
+
+<!-- ── 设置（连接与模型）已并进 #hubPanel 的「设置」页 ── -->
 
 <!-- ── Memory（记忆）· 从 hub 菜单「Memory」进入 ── -->
 <div class="settings-panel hidden glass-scope" id="memoryPanel" role="dialog" aria-modal="true" aria-label="记忆">
@@ -7012,14 +7025,14 @@ if (menuPanel){
     if (!item) return;
     if (item.dataset.menu === "chat") closeMenu();       // back to chat
     else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
-    else if (item.dataset.menu === "settings") openSettings();   // 连接与模型
+    else if (item.dataset.menu === "settings") hubOpen("settings");  // 设置与能力（工具 / 网关 / 设置）
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
-    else if (item.dataset.menu === "toolkit") kitOpen();          // 工具与能力（天气/闹钟/Bot/权限…）
+    else if (item.dataset.menu === "toolkit") hubOpen("tools");      // 兼容老写法：直达工具页
+    else if (item.dataset.menu === "gateway") hubOpen("gateway");    // 兼容老写法：直达网关页
     else if (item.dataset.menu === "groupchat") { closeMenu(); if (window.openGroupChat) window.openGroupChat(); }   // 群聊（三个 AI + 你，派活/进度/收结果）
     else if (item.dataset.menu === "rp") { closeMenu(); if (window.openRp) window.openRp(); }
     else if (item.dataset.menu === "activity") { closeMenu(); if (window.openActivity) window.openActivity(); }
     else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈
-    else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     /* 图片记忆 = App 内的整页面板。原来是 location.assign("album.html")，
        那是整页跳走 —— 返回时又要把 index.html 整个重载一遍，会再走一次开屏。 */
@@ -7083,15 +7096,16 @@ if ($("#tidesBack")) $("#tidesBack").addEventListener("click", closeTides);
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape"){
-    if ($("#kitPanel") && $("#kitPanel").classList.contains("open")){
-      if ($("#kitDetail") && !$("#kitDetail").classList.contains("hidden")) kitBack(); else kitClose();
+    /* 工具 / 网关 / 设置 现在是同一个壳 —— 三层分支收成一条。
+       工具详情里 Esc 先退到网格，再按一次才关壳。 */
+    if (hubIsOpen()){
+      if (hubTabNow() === "tools" && $("#kitDetail") && !$("#kitDetail").classList.contains("hidden")) kitBack();
+      else hubClose();
     }
-    else if ($("#capPanel") && $("#capPanel").classList.contains("open")) capClose();
     else if (palacePanel && palacePanel.classList.contains("open")) closePalace();
     else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
     else if ($("#themePanel") && $("#themePanel").classList.contains("open")) themeClose();
     else if ($("#favPanel") && $("#favPanel").classList.contains("open")) favClose();
-    else if (settingsPanel && settingsPanel.classList.contains("open")) closeSettings();
     else if (tidesPanel && tidesPanel.classList.contains("open")) closeTides();
     else if (menuPanel && !menuPanel.classList.contains("hidden")) closeMenu();
   }
@@ -7336,18 +7350,9 @@ const CAP_GROUPS = [
   { k:"data", t:"数据与花销",   s:"备份、同步、用了多少" },
 ];
 
-function capOpen(){
-  const panel = $("#capPanel"); if (!panel) return;
-  panel.classList.remove("hidden");
-  requestAnimationFrame(() => panel.classList.add("open"));
-  capRender();                      // 先把章节骨架铺出来，别让人对着空白等
-  capLoad(false);
-}
-function capClose(){
-  const panel = $("#capPanel"); if (!panel) return;
-  panel.classList.remove("open");
-  setTimeout(() => { if (!panel.classList.contains("open")) panel.classList.add("hidden"); }, 340);
-}
+/* 网关现在是 hub 里的一个 tab —— 这两个只是老名字的别名，别的地方照旧能调 */
+function capOpen(){ hubOpen("gateway"); }
+function capClose(){ hubClose(); }
 
 /* 一次性把要的状态全拿回来。任何一个失败都不影响别的（allSettled）。 */
 async function capLoad(force){
@@ -7405,7 +7410,9 @@ function capAct(str){
     }
     if (str.indexOf("fn:") === 0){
       const fn = str.slice(3);
-      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen, openSettings };
+      // 「连接与模型」就在隔壁那个 tab 里 —— 不用关掉再开，直接切过去
+      if (fn === "openSettings"){ hubSwitch("settings"); return; }
+      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen };
       if (typeof map[fn] !== "function"){ showToast("暂时打不开：" + fn); return; }
       capClose();
       setTimeout(() => {
@@ -7418,11 +7425,11 @@ function capAct(str){
     }
     if (str.indexOf("card:") === 0){
       const name = str.slice(5);
-      capClose();
-      setTimeout(() => {
-        openSettings();
-        setTimeout(() => { expandSetCard(name); showToast("在设置里展开了这张卡"); }, 320);
-      }, 240);
+      // 原来是"关网关 → 240ms → 开设置 → 320ms → 展开卡"，两段空等；
+      // 现在同一个壳里切 tab 是同步的，展开完直接就是那一张。
+      hubSwitch("settings");
+      try{ expandSetCard(name); }catch(_){ }
+      showToast("在设置里展开了这张卡");
       return;
     }
     if (str.indexOf("cs:") === 0){
@@ -7569,7 +7576,6 @@ async function capToolGo(btn){
 (function capBind(){
   const panel = $("#capPanel");
   if (!panel) return;
-  if ($("#capClose")) $("#capClose").addEventListener("click", capClose);
   if ($("#capRefresh")) $("#capRefresh").addEventListener("click", () => { CAP_STATE.ts = 0; capLoad(true); });
 
   panel.addEventListener("click", async (e) => {
@@ -9066,17 +9072,89 @@ const KIT_TOOLS = [
 const KIT_BY_ID = {};
 KIT_TOOLS.forEach((t) => { KIT_BY_ID[t.id] = t; });
 
-function kitOpen(){
-  const p = $("#kitPanel"); if (!p) return;
+/* ════════════════════════════════════════════════════════════════════════════
+   设置与能力 · hub（工具能力 / 网关 / 设置，三合一，顶部栏切换）
+   ────────────────────────────────────────────────────────────────────────────
+   原来这是三个各自独立的整页层：三套 fixed 壳、三条进入动画、侧边栏三个入口。
+   来回对照一件事（"网关说这个工具开着，设置里到底是哪张卡"）要关三次再开三次。
+   现在收成一个壳：一条顶栏 + 一行 tab + 三个视图。
+
+   ★ 三个视图的 DOM 就是原来那三块内容，id 一个没改 —— 所以 kitTool / capRender /
+     openSettings 里那些 $("#kitBody") / $("#kitGrid") 之类的引用全都不用动，
+     这里只负责"谁在台面上"。
+   ★ 一个名字只能指一个东西：当前在哪个 tab 由下面的 hubTab 唯一持有。
+     Esc、菜单、capsGo、capAct 一律调 hubOpen / hubSwitch，不许自己去翻 classList。
+   ★ 切 tab 不再是"关掉再打开"—— 视图显隐是同步的，所以 capAct 里原来那串
+     "关网关 → 等 240ms → 开设置 → 再等 320ms 展开卡"现在就是"切过去 + 展开"。 */
+const HUB_TITLE = {
+  tools:    { t:"工具与能力", s:"它和这台手机能做的事" },
+  gateway:  { t:"网关",       s:"它会的每一件事，都是一个按钮" },
+  settings: { t:"设置",       s:"连接 · 模型 · 记忆 · 预算 · 备份" },
+};
+let hubTab = "tools";                       // ★ 当前 tab 的唯一来源
+
+function hubIsOpen(){
+  const p = $("#hubPanel");
+  return !!(p && p.classList.contains("open"));
+}
+function hubTabNow(){ return hubTab; }
+
+/* 只切 tab，不管壳开没开（视图显隐是同步的，随时可调） */
+function hubSwitch(tab, opt){
+  if (!HUB_TITLE[tab]) tab = "tools";
+  hubTab = tab;
+  const tabs = document.querySelectorAll("#hubTabs .hub-tab");
+  for (let i = 0; i < tabs.length; i++){
+    const on = tabs[i].getAttribute("data-hub") === tab;
+    tabs[i].classList.toggle("on", on);
+    tabs[i].setAttribute("aria-selected", on ? "true" : "false");
+  }
+  const views = document.querySelectorAll("#hubPanel .hub-view");
+  for (let i = 0; i < views.length; i++){
+    views[i].classList.toggle("on", views[i].getAttribute("data-hub-view") === tab);
+  }
+  const back = $("#kitBack");
+  if (tab === "tools"){
+    kitBack();                                 // 回到工具网格，顺便把标题写回去
+    if (back) back.classList.add("hidden");    // 工具首页用不上"返回"
+    if (opt && opt.kit) kitTool(opt.kit);      // 直达某一项（capsGo("mcp") 走这条）
+  } else {
+    if (back) back.classList.remove("hidden");
+    if ($("#kitTitle")) $("#kitTitle").textContent = HUB_TITLE[tab].t;
+    if ($("#kitSub")) $("#kitSub").textContent = HUB_TITLE[tab].s;
+  }
+  if (tab === "gateway"){ capRender(); capLoad(false); }   // 骨架先铺，别让人对着空白等
+  if (tab === "settings") hubLoadSettings();
+}
+
+function hubOpen(tab, opt){
+  const p = $("#hubPanel"); if (!p) return;
+  hubSwitch(tab || "tools", opt);
   p.classList.remove("hidden");
   requestAnimationFrame(() => p.classList.add("open"));
-  kitBack();
 }
-function kitClose(){
-  const p = $("#kitPanel"); if (!p) return;
+function hubClose(){
+  const p = $("#hubPanel"); if (!p) return;
   p.classList.remove("open");
   setTimeout(() => { if (!p.classList.contains("open")) p.classList.add("hidden"); }, 340);
 }
+/* 顶栏左键：在工具详情里是"回网格"，其余情况是"关面板 + 回菜单"
+   （原来设置页那个「返回」就是回菜单，合并后挪到这条顶栏上，行为不变） */
+function hubBack(){
+  if (hubTab === "tools" && $("#kitDetail") && !$("#kitDetail").classList.contains("hidden")){
+    return kitBack();
+  }
+  hubClose();
+  setTimeout(() => { try{ openMenu(); }catch(_){} }, 60);
+}
+
+/* kitOpen() 打开工具页；kitOpen("mcp") 直达那一项
+   ★ 原来这个函数没有参数，capsGo 传进来的 "mcp" 被悄悄丢掉了 ——
+     「能力总览」里点「MCP 设置 · 去调」只落在工具网格上，还得自己再找一遍。 */
+function kitOpen(id){
+  hubOpen("tools", id ? { kit: String(id) } : null);
+}
+function kitClose(){ hubClose(); }
 function kitBack(){
   const g = $("#kitGrid"), d = $("#kitDetail");
   if (g) g.classList.remove("hidden");
@@ -9145,16 +9223,24 @@ setInterval(() => {
 /* ── 事件（委托：卡片与详情都是动态生成的）───────────────────────────── */
 (function kitBind(){
   const p = $("#kitPanel"); if (!p) return;
-  if ($("#kitClose")) $("#kitClose").addEventListener("click", kitClose);
-  if ($("#kitBack")) $("#kitBack").addEventListener("click", kitBack);
+  // 顶栏：左键在工具详情里是"回网格"，其余情况"关面板 + 回菜单"
+  if ($("#kitBack")) $("#kitBack").addEventListener("click", hubBack);
+  if ($("#hubClose")) $("#hubClose").addEventListener("click", hubClose);
+  // tab 行：委托一次就够（三个按钮不各自绑）
+  const tabsEl = $("#hubTabs");
+  if (tabsEl) tabsEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".hub-tab");
+    if (b && b.dataset.hub) hubSwitch(b.dataset.hub);
+  });
   p.addEventListener("click", (e) => {
     const card = e.target.closest("[data-kit]");
     if (card && card.closest("#kitGrid")) kitTool(card.dataset.kit);
   });
 })();
 
-/* ── 设置面板:连接管理(中转站 / DeepSeek)── */
-function openSettings(){
+/* ── 设置页那一长串"打开时顺手读一次" —— 现在是切到「设置」tab 时跑。
+   ★ *LoadedOnce 那几个是"只读一次"的闸门，来回切 tab 不会重复打后端。 */
+function hubLoadSettings(){
   renderConnList();
   closeEditor();
   syncCloudFields();
@@ -9172,13 +9258,10 @@ function openSettings(){
   if (!acLoadedOnce){ acLoadedOnce = true; acLoad(false); }                 // 工具 · 动作读一次
   applySetCards();                        // 恢复上次的折叠状态
   refreshSetCardSubs();                   // 卡头摘要（后端地址 / 当前连接 / 语音 / 模型）
-  settingsPanel.classList.remove("hidden");
-  requestAnimationFrame(() => settingsPanel.classList.add("open"));
 }
-function closeSettings(){
-  settingsPanel.classList.remove("open");
-  setTimeout(() => settingsPanel.classList.add("hidden"), 360);
-}
+/* 老名字的别名：设置现在是 hub 里的一个 tab（壳的显隐由 hub 统一管） */
+function openSettings(){ hubOpen("settings"); }
+function closeSettings(){ hubClose(); }
 /* ── MiniMax 声音克隆（TTS）·存本机 ───────────────────────────────────────
    伴侣在语音通话里朗读时，若已启用就用克隆声音（经后端 /relay/minimax/tts）。 */
 const MM_KEY = "tidal_mm";
@@ -10668,8 +10751,8 @@ function cloudSelfTest(){
     });
 }
 if ($("#cloudTest")) $("#cloudTest").addEventListener("click", cloudSelfTest);
-if ($("#settingsBack")) $("#settingsBack").addEventListener("click", () => { closeEditor(); closeSettings(); openMenu(); });
-if ($("#settingsClose")) $("#settingsClose").addEventListener("click", closeSettings);
+/* 设置页原来那两个按钮（返回 / 关闭）已并进 hub 顶栏 —— hubBack 与 hubClose
+   做的事跟它们一模一样（返回＝关面板＋回菜单，关闭＝只关面板），所以这里不再绑。 */
 if ($("#connAdd")) $("#connAdd").addEventListener("click", () => openEditor(null));
 if ($("#fType")) $("#fType").addEventListener("change", syncEditorFields);
 if ($("#fProvider")) $("#fProvider").addEventListener("change", () => {
@@ -11548,8 +11631,8 @@ function capsDot(on){
 }
 function capsGo(go){
   if (go === "mcp"){
-    try{ if ($("#settingsClose")) $("#settingsClose").click(); }catch(_){}
-    setTimeout(() => { try{ if (typeof kitOpen === "function") kitOpen("mcp"); }catch(_){} }, 280);
+    // 合并后不用"关设置再开工具页"——同一个壳里直接切过去，并打开那一项
+    try{ if (typeof hubOpen === "function") hubOpen("tools", { kit: "mcp" }); }catch(_){}
     return;
   }
   const M = { actions:"actions", styles:"actions", memory:"nearfield",
@@ -14284,7 +14367,7 @@ if ($("#csMuList")) $("#csMuList").addEventListener("click", async (e) => {
 if ($("#csImgCfg")) $("#csImgCfg").addEventListener("click", () => {
   csClose();
   openSettings();
-  setTimeout(() => { try{ expandSetCard("image"); }catch(_){} }, 320);
+  setTimeout(() => { try{ expandSetCard("image"); }catch(_){} }, 120);
 });
 
 

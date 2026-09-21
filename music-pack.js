@@ -300,7 +300,14 @@
         S.notes = d.notes || [];
         paint();
         if (S.now && S.now.sid) await loadSong(S.now.sid, { autoplay: false });
-        else { setHint("点「点歌」放一首 —— 放起来之后，你在这儿说的每一句它都看得到。"); }
+        else if (!S.cfg.has_token) {
+          /* ★ 线上实测：eryu 不带令牌直接 403 —— 填不填令牌决定了这一页能不能出声。
+             所以先把它说在前面，别让人点了歌卡住再去猜。 */
+          setHint('还没填 eryu 的令牌 —— 点下面「设置」填上（在你那个 9090 页面的设置里' +
+                  '能看到那一串）。歌词、搜索、播放都要它；歌单与封面不依赖它，现在就能看。');
+        } else {
+          setHint("点「点歌」放一首 —— 放起来之后，你在这儿说的每一句它都看得到。");
+        }
       } else {
         setHint("读不到一起听的状态：" + ((d && d.error) || "后端没回话"));
       }

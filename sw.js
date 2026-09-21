@@ -2,7 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v111-ear";            // v111：Movie 里多了「一起听」——唱片页（黑胶转着、
+const CACHE = "companion-v112-earfix";         // v112：一起听 —— 没填 eryu 令牌时先给一句明确引导
+                                               //       （线上实测：不带令牌 eryu 回 403，
+                                               //        填不填它决定这一页能不能出声）
+                                               // v111：Movie 里多了「一起听」——唱片页（黑胶转着、
                                                //       歌词跟着走）+ 听歌时你们俩的留言；
                                                //       歌曲来自云服务器那两套音乐服务
                                                // v110：网关卡那 5 张外部服务的能力卡**点开直接填令牌**

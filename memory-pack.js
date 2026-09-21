@@ -698,7 +698,7 @@
      ★ 写这个兜底的时候我差点又抄成第二份定义 —— 那样改一处就漂，
        而"同一个概念多处实现"正是这一路在收的病（后端 test_layers 里有断言挡着，
        前端这份靠这条注释与 smoke 用例挡）。 */
-  const NARRATIVE_FALLBACK = ["event", "story", "summary", "fragment"];
+  const NARRATIVE_FALLBACK = ["event", "story", "summary"];
   function narrativeKinds() {
     const L = hostApi().layers;
     const k = L && L.narrative_kinds;

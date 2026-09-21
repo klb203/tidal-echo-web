@@ -452,8 +452,10 @@ const BX_FIX = {
     /* 读不到 /app/layers 时退回内置 */
     const b2 = boot({ libItems: { event: [{ id: "e2" }] }, layers: null }, { "/app/archive/boxes": BX_FIX });
     await b2.MP.render("archive");
-    eq(b2.MP._narrativeKinds().sort(), ["event", "fragment", "story", "summary"],
-      "拿不到后端时用内置兜底（离线也能画）");
+    /* ★ 兜底名单也要跟着口径走：fragment 是**素材**（工具/活动跑出来的原始碎片），
+       不是"AI 以第一人称总结出来的记忆" —— 它不该出现在事件盒成员里。 */
+    eq(b2.MP._narrativeKinds().sort(), ["event", "story", "summary"],
+      "拿不到后端时用内置兜底（离线也能画），且兜底里**不含素材**");
   }
 
   console.log('\n=== 14. 档案馆：没有漏的就不发请求 ===');

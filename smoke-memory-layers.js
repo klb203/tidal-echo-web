@@ -164,7 +164,7 @@ try {
   const sw = fs.readFileSync(SW, 'utf8');
   const m = /const CACHE = "([^"]+)"/.exec(sw);
   ok(!!m, '找到 CACHE');
-  ok(/v10[01]|tidy|book|memory-pack|worldbook/.test(m ? m[1] : ''), 'CACHE 是本次的版本：' + (m ? m[1] : '?'));
+  ok(/v10[12]|archive|tidy|book/.test(m ? m[1] : ''), 'CACHE 是本次的版本：' + (m ? m[1] : '?'));
   for (const f of ['./memory-pack.js', './memory-pack.css']) {
     ok(sw.includes(f), f + ' 在 PRECACHE 里（否则离线打开是空的）');
   }

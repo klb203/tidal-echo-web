@@ -2,7 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v105-roomback";       // v105：修「房间」返回键点了没反应——按钮写着 data-act="back"
+const CACHE = "companion-v106-memnav";         // v106：记忆面板导航改版——底部横滑栏 → 顶部两个 tab
+                                               //       （总览 / 全部）+ 卡片网格（沿用工具能力页那套排版）；
+                                               //       侧边栏的「记忆宫殿」入口并了进来
+                                               // v105：修「房间」返回键点了没反应——按钮写着 data-act="back"
                                                //       但 act() 里没有这个分支；顺手把点按区从 34px 撑到 48px
                                                // v104：侧边栏顶部换成状态卡（头像与名字跟随「主题美化」，
                                                //       地点与状态由它自己写；存本机，20 分钟 + 有新对话才重写）

@@ -3964,33 +3964,41 @@
      ★ 它现在挂在 .settings-page 上、而不是 .settings-scroll 里 ——
      所以不再受 column flex「自动最小尺寸为 0」那条规则影响，也不会随内容滚走。
      同时给滚动区垫出等高的底部内边距，免得最后一屏被它盖住。 */
-  #memoryPanel .settings-scroll{ padding-bottom: calc(env(safe-area-inset-bottom) + 108px); }
-  .mem-bar{
-    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    min-height: 74px;
-    padding: 10px clamp(14px, 4.5vw, 40px) calc(env(safe-area-inset-bottom) + 10px);
-    display: flex; gap: 10px;
-    overflow-x: auto; overflow-y: hidden;
-    touch-action: pan-x;                 /* 横滑交给这一条自己处理，别被外层纵向滚动抢走 */
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 55%);
+  /* ══ 记忆页 · 顶部导航（总览 / 全部）＋ 卡片网格 ══════════════════════
+     原来是一条**底部横滑栏**：卡片横着排、绝对定位钉在面板底部，滚动区还得
+     给它垫 108px 的下内边距。现在收成两件事：
+       · 顶部两个 tab：总览（一眼看全）/ 全部（一个分区一张卡）
+       · 「全部」页的网格沿用工具能力页那套 .kit-grid / .kit-card —— 同一个排版
+         语言，不另做一套（改一处两处都改）。
+     进二级页后 tab 仍停在「全部」，另给一条「‹ 全部」的面包屑 ——
+     "我在哪、怎么回去"是明摆着的。 */
+  .mem-nav{ display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .mem-tabs{
+    display: flex; align-items: stretch; gap: 4px;
+    padding: 4px; border-radius: 12px;
+    border: 1px solid var(--card-line); background: var(--card-bg, transparent);
   }
-  .mem-bar::-webkit-scrollbar{ height: 0; }
-  .mem-bar-card{
-    flex: 0 0 auto; width: 128px; min-width: 0;
-    display: flex; flex-direction: column; align-items: flex-start;
-    padding: 11px 12px 10px; border-radius: 16px;
-    text-align: left; cursor: pointer; white-space: normal;
-    background: var(--mg-surface-2); border: 1px solid var(--mg-edge);
-    color: var(--text);
-    appearance: none; -webkit-appearance: none;
+  .mem-tab{
+    appearance: none; -webkit-appearance: none; border: none; background: transparent;
+    color: var(--text-faint); font-family: var(--font-cn); font-size: 13.5px;
+    padding: 7px 16px; border-radius: 9px; cursor: pointer;
+    transition: color .2s ease, box-shadow .2s ease;
   }
-  .mem-bar-card.on{ background: var(--mg-surface); border-color: rgba(var(--mg-heat), .55); }
-  .mem-bar-card .mb-ico{ font-size: 15px; line-height: 1; color: #b98a3f; }
-  .mem-bar-card .mb-name{ font-size: 12.5px; font-weight: 600; margin-top: 6px; letter-spacing: .02em; }
-  .mem-bar-card .mb-sub{ font-size: 10.5px; color: var(--mg-dim); margin-top: 3px; }
+  .mem-tab:hover{ color: var(--text); }
+  .mem-tab.on{ color: var(--accent); font-weight: 600; box-shadow: inset 0 -2px 0 0 var(--accent); }
+  .mem-crumb{
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    border: 1px solid var(--card-line); background: var(--card-bg, transparent);
+    color: var(--text-soft); font-family: var(--font-cn); font-size: 12.5px;
+    padding: 7px 13px; border-radius: 999px; white-space: nowrap;
+  }
+  .mem-crumb:hover{ color: var(--text); border-color: var(--accent); }
+  .mem-crumb.hidden{ display: none; }
+  #memGrid{ margin-bottom: 6px; }
+  #memGrid .kit-card.on{ border-color: var(--accent); }
+  /* 卡片上的计数（拿不到后端数字时是空的 —— :empty 直接不占位，不显示"0 条"那种谎话） */
+  .mem-n{ align-self: flex-start; font-size: 11px; font-weight: 600; color: var(--accent); }
+  .mem-n:empty{ display: none; }
   .mem-page.hidden{ display: none; }
   .arc-hint{ font-size:11.5px; color:var(--text-faint); line-height:1.6; margin:0 2px 8px; }
   .arc-stats{ display: flex; gap: 22px; margin-top: 14px; }
@@ -4903,12 +4911,6 @@
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.8 5 3.5 7.7 8.5 8.5-5 .8-7.7 3.5-8.5 8.5-.8-5-3.5-7.7-8.5-8.5 5-.8 7.7-3.5 8.5-8.5Z"/></svg></span>
           <span class="menu-dot"></span>
           <span class="menu-copy"><span class="menu-name">Memory</span><span class="menu-sub">The echoes we keep.</span></span>
-          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
-        </button>
-        <button class="menu-item" type="button" data-menu="palace">
-          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.2 12 3.6l8.5 6.6"/><path d="M5.4 11.4V20h13.2v-8.6"/><path d="M9.6 20v-5.1h4.8V20"/></svg></span>
-          <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name">Palace</span><span class="menu-sub">Seven rooms of memory.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
         <button class="menu-item" type="button" data-menu="tides">
@@ -6016,6 +6018,18 @@
         </button>
       </div>
 
+      <!-- 顶部导航：总览 / 全部。原来是一条**底部横滑栏**（八张 128px 的卡横着排，
+           滑到第十几张已经不是"选一层"而是"翻一柜子抽屉"），侧边栏还另有一个
+           「记忆宫殿」入口。现在都收进这里：两个 tab + 一页卡片网格，
+           点卡片进对应那一页；记忆宫殿也变成网格里的一张卡。 -->
+      <div class="mem-nav">
+        <div class="mem-tabs" id="memTabs" role="tablist" aria-label="记忆">
+          <button class="mem-tab on" type="button" role="tab" data-mem-tab="overview" aria-selected="true">总览</button>
+          <button class="mem-tab" type="button" role="tab" data-mem-tab="all" aria-selected="false">全部</button>
+        </div>
+        <button class="mem-crumb hidden" id="memCrumb" type="button">‹ 全部</button>
+      </div>
+
       <!-- 动作胶囊（脱水 / 重拼 / 月度 / 刷新） -->
       <div class="mem-actions">
         <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
@@ -6081,6 +6095,14 @@
 
 
       </div><!-- /总览页 -->
+
+      <!-- 「全部」这一页：一个分区一张卡，点开就是那一页。
+           ★ 卡片沿用工具能力页那套 .kit-grid / .kit-card（同一个排版语言，
+             不另做一套）—— 名字与副标题来自 MEM_SECTIONS，
+             计数由 memNavSync() 从 /app/layers 盖上来。 -->
+      <div class="mem-page hidden" data-mp="all">
+      <div class="kit-grid" id="memGrid"></div>
+      </div><!-- /全部页 -->
 
       <!-- ⑥ 档案馆（独立一页）：所有记忆按**事件盒**存放 ─────────────────────
            两个子视图，默认「事件盒」：
@@ -6287,7 +6309,6 @@
     <!-- 底部栏：绝对定位钉在面板底部（内容从它下面滚过去），横向可滑；点哪张就翻到哪页。
          注意它现在是 .settings-page 的子元素 —— 不放在 .settings-scroll 里，
          所以既不会被 column flex 压扁，也不会随内容滚走。 -->
-    <nav class="mem-bar" id="memBar" aria-label="记忆分区"></nav>
   </div>
 </div>
 
@@ -7319,7 +7340,6 @@ if (menuPanel){
     const item = e.target.closest(".menu-item");
     if (!item) return;
     if (item.dataset.menu === "chat") closeMenu();       // back to chat
-    else if (item.dataset.menu === "palace") openPalace();       // 记忆宫殿（长期内置记忆库）
     else if (item.dataset.menu === "settings") hubOpen("settings");  // 设置与能力（工具 / 网关 / 设置）
     else if (item.dataset.menu === "memory") openMemory();       // 记忆（银河 + 近景 + 记忆库）
     else if (item.dataset.menu === "toolkit") hubOpen("tools");      // 兼容老写法：直达工具页
@@ -15812,7 +15832,7 @@ async function openMemory(){
   memoryPanel.classList.remove("hidden");
   requestAnimationFrame(() => memoryPanel.classList.add("open"));
   buildLibCards();
-  buildMemBar();
+  buildMemNav();
   memLoad(true);
 }
 function closeMemory(){
@@ -15838,7 +15858,7 @@ async function memLoad(verbose){
     renderLibs();
     workLoad();
     memRenderStats();
-    memBarSync();
+    memNavSync();
     arcRender();
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
@@ -15850,7 +15870,7 @@ async function memLoad(verbose){
   /* 六层的定义与计数在后端 layers.py（唯一一处）。读到就用它刷副标题；
      读不到保持内置文案 —— 离线也能画，只是没有数字。 */
   memApi("/app/layers").then((d) => {
-    if (d && d.ok) { memData.layers = d; memBarSync(); }
+    if (d && d.ok) { memData.layers = d; memNavSync(); }
   }).catch(() => {});
 }
 /* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
@@ -16415,12 +16435,14 @@ if ($("#pdList")){
 }
 
 /* 底部栏的固定分栏 —— 就是「六层记忆」加两个过程视图。
-   顺序：总览（银河）→ 长期（宫殿）→ 短期（近景）→ 外置（Haven）→ 世界书 → 档案馆
+   这个常量原来是**底部横滑栏**那八张卡的来源，所以叫 MEM_BAR_FIXED；
+   现在横滑栏没了，它是「全部」页的卡片表 —— 名字跟着改（一个名字只能指一个东西）。
+   顺序：长期（宫殿）→ 短期（近景）→ 外置（Haven）→ 世界书 → 档案馆
         → 待确认 → 时间线。
-   名字与副标题在这里是**离线兜底**；连上后端后 memBarSync() 会用 /app/layers
-   的计数覆盖副标题（层的定义在后端 layers.py，唯一一处）。 */
-const MEM_BAR_FIXED = [
-  { key: "overview",  ico: "◍", name: "总览",       sub: "记忆银河 · 日历" },
+   ★ 「总览」不在这张表里：它是顶部第一个 tab。
+   名字与副标题在这里是**离线兜底**；连上后端后 memNavSync() 会用 /app/layers
+   的计数盖上来（层的定义在后端 layers.py，唯一一处）。 */
+const MEM_SECTIONS = [
   { key: "palace",    ico: "⌂", name: "长期记忆",   sub: "记忆宫殿" },
   { key: "near",      ico: "✦", name: "短期记忆",   sub: "近景 · 七天" },
   { key: "haven",     ico: "☁", name: "外置记忆库", sub: "Haven Brain · 只读" },
@@ -16429,25 +16451,36 @@ const MEM_BAR_FIXED = [
   { key: "pending",   ico: "⧗", name: "待确认",     sub: "机器写的" },
   { key: "timeline",  ico: "◷", name: "时间线",     sub: "别处 · 聊天 合一" },
 ];
-function buildMemBar(){
-  const host = $("#memBar"); if (!host || host.dataset.built) return;
-  host.dataset.built = "1";
-  /* ★ 只有八张固定卡。记忆库那八个分区**不再各占一张** ——
-     它们收进「世界书」那一页了（一叠可折叠的卡片）。
-     理由：底部栏横滑到第十几张已经不是"选一层"，而是"翻一柜子抽屉"；
-     而它们和世界书是同一件事的两种看法，放在一起才点得进去、看得全。 */
-  const cards = MEM_BAR_FIXED;
-  host.innerHTML = cards.map((c) =>
-    '<button type="button" class="mem-bar-card' + (c.key === "overview" ? " on" : "") + '" data-mp-go="' + c.key + '">' +
-      '<span class="mb-ico">' + c.ico + "</span>" +
-      '<span class="mb-name">' + escapeHtml(c.name) + "</span>" +
-      '<span class="mb-sub" id="mbSub-' + c.key + '">' + escapeHtml(c.sub || "—") + "</span>" +
-    "</button>").join("");
-  host.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-mp-go]");
-    if (b) memShowPage(b.dataset.mpGo);
-  });
-  memBarSync();
+function buildMemNav(){
+  /* tab 行与卡片网格都是静态壳（HTML 里就那两个容器），这里只填一次、绑一次 */
+  const grid = $("#memGrid");
+  if (grid && !grid.dataset.built){
+    grid.dataset.built = "1";
+    grid.innerHTML = MEM_SECTIONS.map((c) =>
+      '<button class="kit-card" type="button" data-mp-go="' + c.key + '">' +
+        '<span class="kit-card-t">' + c.ico + " " + escapeHtml(c.name) + "</span>" +
+        '<span class="kit-card-s">' + escapeHtml(c.sub || "—") + "</span>" +
+        '<span class="mem-n" id="mcNum-' + c.key + '"></span>' +
+      "</button>").join("");
+    grid.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-mp-go]");
+      if (b) memShowPage(b.dataset.mpGo);
+    });
+  }
+  const tabs = $("#memTabs");
+  if (tabs && !tabs.dataset.built){
+    tabs.dataset.built = "1";
+    tabs.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-mem-tab]");
+      if (b) memShowPage(b.dataset.memTab);
+    });
+  }
+  const crumb = $("#memCrumb");
+  if (crumb && !crumb.dataset.built){
+    crumb.dataset.built = "1";
+    crumb.addEventListener("click", () => memShowPage("all"));
+  }
+  memNavSync();
 }
 /* 调 memory-pack 画那一页。
    ★ 上一版这里是 `try { MemoryPack.render(...) } catch (_) { }` —— 静默吞掉一切。
@@ -16483,16 +16516,20 @@ function memShowPage(key){
   if (!target) target = pages.filter((p) => p.dataset.mp === "overview")[0];
   if (!target) return;
   pages.forEach((p) => p.classList.toggle("hidden", p !== target));
-  let onEl = null;
-  Array.prototype.slice.call(panel.querySelectorAll(".mem-bar-card")).forEach((c) => {
-    const on = c.dataset.mpGo === target.dataset.mp;
-    c.classList.toggle("on", on);
-    if (on) onEl = c;
+  /* 顶部两个 tab：总览 / 全部。二级页（长期记忆、档案馆…）都算在「全部」底下 ——
+     tab 仍停在「全部」，另给一条「‹ 全部」的面包屑，这样"我在哪、怎么回去"是明摆着的。 */
+  const mp = target.dataset.mp;
+  const isOverview = mp === "overview";
+  Array.prototype.slice.call(panel.querySelectorAll(".mem-tab")).forEach((t) => {
+    const on = (t.dataset.memTab === "overview") === isOverview;
+    t.classList.toggle("on", on);
+    t.setAttribute("aria-selected", on ? "true" : "false");
   });
-  /* 底部栏是横滑的：翻到某页后把那张卡滑进视野，否则它可能在屏幕外、看起来像没反应 */
-  if (onEl && onEl.scrollIntoView) {
-    try { onEl.scrollIntoView({ inline: "center", block: "nearest" }); } catch (_) { }
-  }
+  const crumb = $("#memCrumb");
+  if (crumb) crumb.classList.toggle("hidden", isOverview || mp === "all");
+  Array.prototype.slice.call(panel.querySelectorAll("[data-mp-go]")).forEach((c) => {
+    c.classList.toggle("on", c.dataset.mpGo === mp);
+  });
   /* Haven 那一页的内容是异步拉的（/app/brain，走外网）：切过去时补一次，
      免得首次没拉到就一直是空壳 —— 它现在不在首屏，没有别的时机来补。 */
   if (target.dataset.mp === "haven") { try { brLoad(false); } catch (_) { } }
@@ -16518,40 +16555,40 @@ function memShowPage(key){
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }
-function memBarSync(){
+function memNavSync(){
   const st = memData.status || {};
   const days = (st.days || []).length;
   const counts = memData.counts || {};
-  const put = (k, v) => { const el = $("#mbSub-" + k); if (el) el.textContent = v; };
+  /* 计数写在「全部」页卡片右下那个小数字上（#mcNum-<key>）。
+     拿不到就不写 —— 空着比写 0 好（0 看起来像"空的"，那是撒谎）。 */
+  const put = (k, v) => { const el = $("#mcNum-" + k); if (el) el.textContent = v; };
   const tag = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   /* 六层的计数来自 /app/layers（后端按 layers.archive_kinds 数的）。
      ★ 拿不到就退回内置文案 —— 副标题写错不要紧，写 0 才是撒谎（看起来像"空的"）。 */
   const LC = (memData.layers && memData.layers.counts) || {};
   const nx = (k) => (typeof LC[k] === "number" ? LC[k] : null);
-  const many = (k, alt) => { const n = nx(k); return n === null ? alt : (n + " 条"); };
+  const many = (k) => { const n = nx(k); return n === null ? "" : (n + " 条"); };
 
-  put("overview", "银河 · 日历 · 档案馆");
-  put("palace", many("palace", "记忆宫殿"));
-  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
-  put("haven", "Haven Brain · 只读");
-  put("worldbook", many("worldbook", "手写的补充设定"));
-  put("archive", many("archive", "所有记忆 · 按事件盒"));
-  put("pending", pdData && pdData.length ? (pdData.length + " 条待看") : "机器写的");
-  put("timeline", tlData ? (tlData.length + " 条") : "别处 · 聊天 合一");
-  /* 八个分区的条数写在**卡片上**（#libSub-<kind>）—— 它们已经不在底部栏上了，
-     所以这里不能再走 put()（那是分栏卡的 #mbSub-*）。 */
+  put("palace", many("palace"));
+  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "");
+  put("haven", "");                       // Haven 在别人服务器上，它自己那页会说话；这里不报数
+  put("worldbook", many("worldbook"));
+  put("archive", many("archive"));
+  put("pending", pdData && pdData.length ? (pdData.length + " 条待看") : "");
+  put("timeline", tlData ? (tlData.length + " 条") : "");
+  /* 八个分区的条数写在**卡片上**（#libSub-<kind>）——
+     它们在世界书页里是「顺带还能改」的那几叠，不走 put()。 */
   LIB_DEFS.forEach((d) => tag("#libSub-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));
   tag("#palTag", nx("palace") === null ? "记忆宫殿" : (nx("palace") + " 条"));
   /* #wbTag 没有了 —— 世界书那一页整个由 memory-pack.js 画（它自带统计格），
      宿主不再越界去改别人地盘上的元素。 */
 }
 
-/* ── 手指在内容区左右滑 = 翻上一页 / 下一页 ────────────────────────────────
-   底部栏本身是横滑的，但「滑屏幕翻页」更顺手（用户要的也是这个）。
-   判定三条：① 单指 ② 横向位移 ≥ 48px ③ 横向大于纵向 1.5 倍 —— 免得把纵向滚动误判成翻页。
-   往左滑 = 下一页，往右滑 = 上一页；到头就停住（不循环，免得划过头回不去）。
-   ★ 底部栏不在这块区域里（它挂在 .settings-page 上），所以在栏上横滑仍然是滚那条栏，
-     不会误触发翻页。 */
+/* ── 手指在内容区**往右滑 = 回「全部」** ─────────────────────────────────
+   原来这里是"左右滑翻页"（按底部栏那张横滑表的顺序翻）。现在只有两个 tab，
+   那套顺序没意义了；改成在二级页里往右滑就退回卡片网格 —— 和「‹ 全部」同一个意思，
+   手感更顺。判定三条：① 单指 ② 往右位移 ≥ 48px ③ 横向大于纵向 1.5 倍
+   （免得把纵向滚动误判成翻页）。首页与「全部」页本身不响应。 */
 (function memSwipe(){
   const panel = $("#memoryPanel"); if (!panel) return;
   const zone = panel.querySelector(".settings-scroll"); if (!zone) return;
@@ -16565,16 +16602,11 @@ function memBarSync(){
     armed = false;
     const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
     const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    const bar = $("#memBar"); if (!bar) return;
-    const cards = Array.prototype.slice.call(bar.querySelectorAll(".mem-bar-card"));
-    if (cards.length < 2) return;
-    let cur = -1;
-    cards.forEach((c, i) => { if (c.classList.contains("on")) cur = i; });
-    if (cur < 0) return;
-    const next = dx < 0 ? cur + 1 : cur - 1;
-    if (next < 0 || next >= cards.length) return;
-    memShowPage(cards[next].dataset.mpGo);
+    if (dx < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;   // 只认"往右滑"
+    const cur = panel.querySelector(".mem-page:not(.hidden)");
+    const at = cur && cur.dataset.mp;
+    if (!at || at === "overview" || at === "all") return;        // 首页 / 全部页不响应
+    memShowPage("all");
   }, { passive: true });
 })();
 

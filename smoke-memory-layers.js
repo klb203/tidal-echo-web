@@ -35,25 +35,36 @@ function block(needle) {
   return end ? html.slice(i, end) : '';
 }
 
-console.log('=== 1. 底部栏六层 ===');
-const barBlock = block('const MEM_BAR_FIXED = [');
-ok(barBlock.length > 0, '找到 MEM_BAR_FIXED');
+console.log('=== 1. 顶部两个 tab + 「全部」页的卡片表 ===');
+/* ★ 导航改过一次：原来是一条**底部横滑栏**（MEM_BAR_FIXED 八张卡，含"总览"），
+   现在是顶部两个 tab（总览 / 全部）+ 卡片网格（MEM_SECTIONS，七张，**不含总览**）。
+   断言跟着改，但表达的是同一件事：**层的顺序与名字只有一份来源**。 */
+const barBlock = block('const MEM_SECTIONS = [');
+ok(barBlock.length > 0, '找到 MEM_SECTIONS');
 const barKeys = [...barBlock.matchAll(/\bkey:\s*"([^"]+)"/g)].map((m) => m[1]);
 const barNames = [...barBlock.matchAll(/\bname:\s*"([^"]+)"/g)].map((m) => m[1]);
-eq(barKeys, ['overview', 'palace', 'near', 'haven', 'worldbook', 'archive', 'pending', 'timeline'],
-  '分栏顺序：总览 → 长期 → 短期 → 外置 → 世界书 → 档案馆 → 待确认 → 时间线');
-eq(barNames.slice(0, 6), ['总览', '长期记忆', '短期记忆', '外置记忆库', '世界书', '档案馆'],
-  '六层的名字');
+eq(barKeys, ['palace', 'near', 'haven', 'worldbook', 'archive', 'pending', 'timeline'],
+  '卡片顺序：长期 → 短期 → 外置 → 世界书 → 档案馆 → 待确认 → 时间线');
+eq(barNames.slice(0, 5), ['长期记忆', '短期记忆', '外置记忆库', '世界书', '档案馆'],
+  '各层的名字');
+ok(!barKeys.includes('overview'), '★ 「总览」不在卡片表里 —— 它是顶部第一个 tab');
+ok(/data-mem-tab="overview"/.test(html) && /data-mem-tab="all"/.test(html),
+  '顶部就是那两个 tab：总览 / 全部');
+ok(!/id="memBar"/.test(html) && !/mem-bar-card/.test(html), '底部横滑栏那一套已经清零');
 
-console.log('\n=== 2. 每张分栏卡都有对应页面（点了不能静默跳回总览）===');
+console.log('\n=== 2. 每张卡片都有对应页面（点了不能静默跳回总览）===');
 const pageKeys = [...html.matchAll(/class="mem-page[^"]*"\s+data-mp="([^"]+)"/g)].map((m) => m[1]);
-for (const k of ['palace', 'worldbook', 'archive', 'near', 'haven', 'overview']) {
+/* ★ 顶部两个 tab 直接切的页（overview / all）不在卡片表里，所以分开点验 */
+const TAB_KEYS = ['overview', 'all'];
+for (const k of ['palace', 'worldbook', 'archive', 'near', 'haven', 'overview', 'all']) {
   ok(pageKeys.includes(k), '有页面 data-mp="' + k + '"');
 }
+ok(pageKeys.includes('all'), '★ 「全部」页在（它就是卡片网格那一页）');
 for (const k of barKeys) {
   if (!k.startsWith('lib-')) ok(pageKeys.includes(k), '分栏 "' + k + '" 有对应页面');
 }
-const orphan = pageKeys.filter((p) => !p.startsWith('lib-') && !barKeys.includes(p));
+/* 孤儿 = 有页、但既不是 tab、也不在卡片表里 —— 那页永远点不到 */
+const orphan = pageKeys.filter((p) => !p.startsWith('lib-') && !TAB_KEYS.includes(p) && !barKeys.includes(p));
 eq(orphan, [], '没有孤儿页面（有页但没入口）');
 
 console.log('\n=== 3. 世界书不再是"聊天记录长出来的叙事" ===');
@@ -85,7 +96,9 @@ ok(/const note = LIB_DEFS\.filter/.test(html) === false, '旧的"按 book 拆"�
 ok(/\$\("#wbLibBlocks"\)/.test(html), '剩下的仍有落地容器（摘要 / 参考资料）');
 ok(!/\$\("#libCards"\)/.test(html), '#libCards 容器已退休');
 ok(!/data-mp="lib-/.test(html), '不再有 lib-* 页面（它们不是"页"了）');
-ok(/const cards = MEM_BAR_FIXED;/.test(html), '底部栏只出八张固定卡');
+ok(/MEM_SECTIONS\.map\(/.test(html), '「全部」页的卡片由 MEM_SECTIONS 生成（唯一一份表）');
+ok(!/MEM_BAR_FIXED/.test(html.replace(/\/\*[\s\S]*?\*\//g, '')),
+  '旧常量名除了注释里的历史说明，代码里已经没有了');
 ok(/tag\("#libSub-" \+ d\.kind/.test(html), '条数改写到卡片副标题上（#libSub-*）');
 /* 默认折叠：它们在这儿是"顺带还能改"，不是这一页的主角 */
 ok(/secHtml\(d, false\)/.test(html), '剩下的分区默认折叠');
@@ -114,7 +127,8 @@ ok(!(html.slice(iOverview, iOverviewEnd).includes('id="arcCard"')), '总览页�
 
 console.log('\n=== 6. 两个新挂载点各一个，且 pack 真的被引入 ===');
 for (const id of ['arcBoxes', 'arcTimeline', 'memWbMount', 'wbLibBlocks', 'arcCard', 'arcBody',
-                  'arcCrumb', 'arcLead', 'arcChars', 'arcCount', 'memBar', 'palCard', 'palOpen']) {
+                  'arcCrumb', 'arcLead', 'arcChars', 'arcCount', 'palCard', 'palOpen',
+                  'memTabs', 'memGrid', 'memCrumb']) {
   const n = (html.match(new RegExp('id="' + id + '"', 'g')) || []).length;
   ok(n === 1, '#' + id + ' 恰好一个', n);
 }
@@ -164,7 +178,11 @@ try {
   const sw = fs.readFileSync(SW, 'utf8');
   const m = /const CACHE = "([^"]+)"/.exec(sw);
   ok(!!m, '找到 CACHE');
-  ok(/v10[12]|archive|tidy|book/.test(m ? m[1] : ''), 'CACHE 是本次的版本：' + (m ? m[1] : '?'));
+  /* ★ 别把版本号写死（原来是 /v10[12]|archive|tidy|book/ 这种"历次关键词并集"，
+     加一个功能就要回来改一次 —— 已经被 hub 那次撞红过）。
+     基线只往前推，作用是"防止有人把 CACHE 改回去"，不是"记住今天是几"。 */
+  const cacheVer = m ? parseInt((/-v(\d+)/.exec(m[1]) || [])[1], 10) : 0;
+  ok(cacheVer >= 103, 'CACHE 版本 >= v103（基线，随每次 bump 往前推）：' + (m ? m[1] : '?'));
   for (const f of ['./memory-pack.js', './memory-pack.css']) {
     ok(sw.includes(f), f + ' 在 PRECACHE 里（否则离线打开是空的）');
   }

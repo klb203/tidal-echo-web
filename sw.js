@@ -2,7 +2,10 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v97-monopoly";      // v97：万花筒下线（只留大富翁）· 荷官独立模型位 · 阿澈走聊天连接
+const CACHE = "companion-v98-layers";          // v98：记忆重排成六层（长期/短期/外置/世界书/档案馆/银河）
+                                               //    · 宫殿节点进银河与档案馆（档案室 → 档案馆，收所有记忆）
+                                               //    · 世界书 = 事件·摘要·故事·片段 合一（原来四张卡）
+                                               // v97：万花筒下线（只留大富翁）· 荷官独立模型位 · 阿澈走聊天连接      // v97：万花筒下线（只留大富翁）· 荷官独立模型位 · 阿澈走聊天连接
                                                // v96：近景日更能覆盖了 + 秒表与预期时长     // v96：近景日更能覆盖了（原来从不带 force，永远只回「已有日更」）+ 秒表与预期时长
                                                // v95：MiniMax 默认音色（留空即用内置）+ 用量预算卡 + 外部工具卡（麦当劳/瑞幸）
                                                // v94：MCP 设置（传输 / 自定义头 / 每工具开关 / 状态常驻）+ 能力总览卡

@@ -5925,7 +5925,7 @@
         <div class="mg-head">
           <div>
             <div class="mg-title">记忆日历</div>
-            <div class="mg-sub">颜色越深，那天记得越多</div>
+            <div class="mg-sub">颜色越深，那天记得越多（跨层：库 + 世界书 + 日更 + 宫殿）</div>
           </div>
           <span class="mg-tag" id="calRange">近三个月</span>
         </div>
@@ -5946,14 +5946,25 @@
         </div>
       </section>
 
-      <!-- ④ 档案室：年份文件夹 → 月份 → 本月记忆（TIME LOGS） -->
+
+      </div><!-- /总览页 -->
+
+      <!-- ⑥ 档案馆（独立一页）：所有记忆按年 / 月归档 ────────────────────
+           它收的是**所有记忆**：记忆库八类 + 记忆宫殿节点 + 近景日更 / 月度
+           （准确定义见后端 layers.archive_kinds()，不在这里另列一份）。
+           数据来自 starList（银河那一份）—— 所以它天然跨层：
+           谁进了星图，谁就被归档。这正是「一处登记、处处可见」。
+           ⚠️ 记忆宫殿节点在这里是**只读**的：它在档案馆里没有对应的记忆库条目，
+              点开"编辑"会去更新一条不存在的记录。要改去「长期记忆」那一页。 -->
+      <div class="mem-page hidden" data-mp="archive">
+      <!-- ↓ 原「档案室」，已改名并扩成"所有记忆" -->
       <section class="mg-card" id="arcCard">
         <div class="mg-head">
           <div>
-            <div class="mg-title">档案室</div>
-            <div class="mg-sub" id="arcLead">全部记忆按年 / 月归档</div>
+            <div class="mg-title">档案馆</div>
+            <div class="mg-sub" id="arcLead">所有记忆 · 按年 / 月归档</div>
           </div>
-          <span class="arc-crumb" id="arcCrumb">档案</span>
+          <span class="arc-crumb" id="arcCrumb">档案馆</span>
         </div>
         <div class="arc-stats">
           <div><span>总字数</span><b id="arcChars">0</b></div>
@@ -5961,15 +5972,70 @@
         </div>
         <div id="arcBody"></div>
       </section>
+      </div><!-- /档案馆页 -->
 
-      </div><!-- /总览页 -->
+      <!-- ⑦ 世界书（独立一页）：事件 · 摘要 · 故事 · 片段 ──────────────────
+           这四类本来散在底部栏四张卡上，但它们其实是**同一件事**：
+           从对话与统一时间线里长出来的叙事，只是粗细不同。合并成一页，
+           "我记得的那个故事"才有一处能看完。
+           ★ 判据是"谁写的"：这四类都不是人打进去的（后端 layers.WORLDBOOK_KINDS）。
+             人自己开的分区（参考资料 / 工作记忆 / 房间 / 留言）是笔记本，不算世界书，
+             它们在底部栏各自还留着一页。
+           ★ 四个分区由 buildLibCards() 渲染进 #wbSections；这一页只提供摆放位置。 -->
+      <div class="mem-page hidden" data-mp="worldbook">
+      <section class="mg-card" id="wbCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">世界书</div>
+            <div class="mg-sub" id="wbLead">事件 · 摘要 · 故事 · 片段 —— 它自己长出来的叙事</div>
+          </div>
+          <span class="mg-tag" id="wbTag">—</span>
+        </div>
+        <div class="nf-actions">
+          <button id="wbRefresh" type="button">刷新</button>
+          <button id="wbCompose" type="button" class="primary">从时间线组装片段</button>
+          <button id="wbMonth" type="button">合并成月度</button>
+        </div>
+        <div class="conn-sub" id="wbStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+        <div class="settings-tip">四种粗细，都是它自己攒下来的：<b>事件</b>是一句一条的骨头；
+        <b>摘要</b>压得更干（对话压缩的产物）；<b>故事</b>是值得复述的那种；
+        <b>片段</b>由统一时间线<b>自动组装</b>（同一件事合并成一条、不同场合分开、带时间与出处）。
+        都按时间倒序铺开，卡片里可以直接改。</div>
+      </section>
+      <div id="wbSections" style="display:flex;flex-direction:column;gap:14px"></div>
+      </div><!-- /世界书页 -->
 
-      <!-- ⑤ 近景 · 七天（独立一页）-->
+      <!-- ⑤ 长期记忆 · 记忆宫殿（独立一页）────────────────────────────────
+           长期记忆这一层住在**另一个面板**里（palacePanel：七房间 / 门牌 / 混合召回 /
+           水位线 / 维护五步）。这里刻意**不做第二套 UI**，只给一张说明卡 + 一个入口 ——
+           两套 UI 的下场就是两边各自实现、慢慢不一致，那正是这次整理要收掉的问题。 -->
+      <div class="mem-page hidden" data-mp="palace">
+      <section class="mg-card" id="palCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">长期记忆 · 记忆宫殿</div>
+            <div class="mg-sub" id="palLead">七个房间 · 门牌 · BM25 + 向量 + 图谱混合召回</div>
+          </div>
+          <span class="mg-tag" id="palTag">—</span>
+        </div>
+        <div class="nf-actions">
+          <button id="palOpen" type="button" class="primary">打开记忆宫殿 ↗</button>
+        </div>
+        <div class="settings-tip">分层是这么分的：<b>长期记忆</b>回答「你是谁」，
+        <b>短期记忆</b>（近景）回答「最近在过什么」，<b>外置记忆库</b>（Haven Brain）是别人服务器上
+        那一桶语义原话，<b>世界书</b>是它自己长出来的叙事，<b>档案馆</b>把上面这些按年月归到一处。<br>
+        宫殿是长期那一半 —— 它把聊天里值得留下的提纯成<b>情景节点</b>，按房间归位
+        （客厅 / 卧室 / 书房 / 用户房 / 自我房…），重要的进<b>门牌</b>：每轮注入、不衰减。
+        召回靠质量不靠数量（三路融合后按稀有度与可靠度重排）。</div>
+      </section>
+      </div><!-- /长期记忆页 -->
+
+      <!-- ⑧ 短期记忆 · 近景七天（独立一页）-->
       <div class="mem-page hidden" data-mp="near">
       <section class="set-card open" data-card="nearfield">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
-          <span class="set-card-txt"><span class="set-card-name">近景 · 七天</span><span class="set-card-sub" id="cardSubNear">还没生成</span></span>
+          <span class="set-card-txt"><span class="set-card-name">短期记忆 · 近景七天</span><span class="set-card-sub" id="cardSubNear">还没生成</span></span>
           <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="set-card-body">
@@ -6062,8 +6128,8 @@
       <section class="mg-card" id="brainCard">
         <div class="mg-head">
           <div>
-            <div class="mg-title">Haven · 长期记忆</div>
-            <div class="mg-sub" id="brLead">服务器上的记忆库 · 只读</div>
+            <div class="mg-title">外置记忆库 · Haven Brain</div>
+            <div class="mg-sub" id="brLead">别人服务器上的一桶语义原话 · 只读</div>
           </div>
           <span class="mg-tag" id="brTag">—</span>
         </div>
@@ -14825,13 +14891,19 @@ if ($("#thWallReset")) $("#thWallReset").addEventListener("click", () => {
 })();
 
 /* ════════════ 记忆页：银河 + 近景 + 记忆库分区 ════════════ */
+/* 记忆库分区卡。
+   ★ book: true 的四类**不单独出一页** —— 它们是「世界书」（从对话与统一时间线里
+     长出来的叙事），合并进「世界书」那一页看才对；人自己写的四类（笔记本）仍旧各占一页。
+   ★ 归属的**唯一**判据在后端 layers.WORLDBOOK_KINDS，这里只是标注渲染位置 ——
+     两边不一致时以 layers 为准（/app/worldbook 就是这个口径）。 */
+const WB_KINDS = ["event", "summary", "story", "fragment"];
 const LIB_DEFS = [
-  { kind: "event",   name: "事件",       ico: "✦", tip: "发生过的事，一句话一条。" },
+  { kind: "event",   name: "事件",       ico: "✦", book: true, tip: "发生过的事，一句话一条。" },
+  { kind: "summary", name: "摘要",       ico: "≡", book: true, tip: "对话压缩出来的长期摘要（自动生成）。" },
+  { kind: "story",   name: "故事",       ico: "❋", book: true, tip: "值得复述的片段。" },
+  { kind: "fragment",name: "片段",       ico: "◈", book: true, tip: "由时间线里的碎片**自动组装**出来的小场景（朋友圈 / 屋子 / 自由活动 / 大富翁…）。同一件事合并成一条、不同场合分开，带时间与出处。" },
   { kind: "ref",     name: "参考资料",   ico: "❖", tip: "TA 喜欢的、要记住的资料。" },
   { kind: "working", name: "工作记忆",   ico: "☰", tip: "正在进行、还没结束的事。" },
-  { kind: "summary", name: "摘要",       ico: "≡", tip: "对话压缩出来的长期摘要（自动生成）。" },
-  { kind: "story",   name: "故事",       ico: "❋", tip: "值得复述的片段。" },
-  { kind: "fragment",name: "片段",       ico: "◈", tip: "由时间线里的碎片**自动组装**出来的小场景（朋友圈 / 屋子 / 自由活动 / 大富翁…）。同一件事合并成一条、不同场合分开，带时间与出处。" },
   { kind: "room",    name: "我的房间",   ico: "⌂", tip: "你自己的一方天地。" },
   { kind: "letter",  name: "留给西西的话", ico: "✉", tip: "想对 TA 说、但还没说出口的。" },
 ];
@@ -15035,7 +15107,10 @@ function arcItems(){
       libKind: src ? src.kind : "",
       cat: kind === "day" ? "近景日更" : kind === "month" ? "月度记忆" : (s.domain || "记忆"),
       content: String(s.content || ""),
-      canEdit: kind === "day" || !!(src && src.kind && rawId),
+      /* ★ ro（只读）由后端星图给：记忆宫殿节点在档案馆里没有对应的记忆库条目，
+         点开"编辑"会去更新一条不存在的记录 —— 所以它只看不改（要改去记忆宫殿页）。 */
+      ro: !!s.ro,
+      canEdit: !s.ro && (kind === "day" || !!(src && src.kind && rawId)),
     };
   }).filter((x) => !!x.date);
 }
@@ -15067,10 +15142,10 @@ function arcSync(){
 }
 function arcCrumb(path){
   const el = $("#arcCrumb"); if (!el) return;
-  el.textContent = path || "档案";
-  el.title = path ? ("档案 / " + path) : "档案";
+  el.textContent = path || "档案馆";
+  el.title = path ? ("档案馆 / " + path) : "档案馆";
   const lead = $("#arcLead");
-  if (lead) lead.textContent = path ? ("档案 / " + path) : "全部记忆按年 / 月归档";
+  if (lead) lead.textContent = path ? ("档案馆 / " + path) : "所有记忆 · 按年 / 月归档";
 }
 function arcEntryHtml(it){
   const chip = '<span class="arc-chip">#' + escapeHtml(it.cat) + "</span>";
@@ -15087,11 +15162,12 @@ function arcEntryHtml(it){
     ? '<span class="arc-acts"><button class="arc-act" type="button" data-arc-edit="' + escapeHtml(it.key) +
       '" title="编辑">' + MEM_ICO.pen + "</button></span>"
     : "";
+  const openAttr = it.ro ? "" : ' data-arc-open="' + escapeHtml(it.key) + '"';
   const title = (it.kind === "lib" && it.name)
-    ? '<div class="arc-title" data-arc-open="' + escapeHtml(it.key) + '">' + escapeHtml(it.name) + "</div>" : "";
+    ? '<div class="arc-title"' + openAttr + '>' + escapeHtml(it.name) + "</div>" : "";
   const cls = "arc-text" + (arc.full ? "" : " clamp");
   return '<div class="arc-entry">' + chip + acts + title +
-    '<div class="' + cls + '" data-arc-open="' + escapeHtml(it.key) + '">' + escapeHtml(it.content) + "</div></div>";
+    '<div class="' + cls + '"' + openAttr + '>' + escapeHtml(it.content) + "</div></div>";
 }
 function arcRender(){
   const host = $("#arcBody"); if (!host) return;
@@ -15392,6 +15468,11 @@ async function memLoad(verbose){
   loadGalaxy();
   loadCalendar();
   brLoad(false);          // Haven 长期记忆：顺手读一次（它不在首屏，但翻下来就该有了）
+  /* 六层的定义与计数在后端 layers.py（唯一一处）。读到就用它刷副标题；
+     读不到保持内置文案 —— 离线也能画，只是没有数字。 */
+  memApi("/app/layers").then((d) => {
+    if (d && d.ok) { memData.layers = d; memBarSync(); }
+  }).catch(() => {});
 }
 /* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
 const GX_PAL = { "恋爱": "#ff8fc7", "家庭": "#ffd479", "日常": "#7fe3e0", "编程": "#9fa8ff",
@@ -15605,10 +15686,10 @@ async function memMonth(){
 function buildLibCards(){
   const host = $("#libCards"); if (!host || host.dataset.built) return;
   host.dataset.built = "1";
-  host.innerHTML = LIB_DEFS.map((d) => (
-    '<div class="mem-page hidden" data-mp="lib-' + d.kind + '">' +
-    '<section class="set-card" data-card="lib-' + d.kind + '">' +
-      '<button class="set-card-head" type="button" aria-expanded="false">' +
+  /* 一张卡片的 HTML。open=true 时默认展开（世界书那一页就是来看它们的）。 */
+  const secHtml = (d, open) => (
+    '<section class="set-card' + (open ? " open" : "") + '" data-card="lib-' + d.kind + '">' +
+      '<button class="set-card-head" type="button" aria-expanded="' + (open ? "true" : "false") + '">' +
         '<span class="set-card-ico" style="font-size:15px">' + d.ico + "</span>" +
         '<span class="set-card-txt"><span class="set-card-name">' + escapeHtml(d.name) + "</span>" +
         '<span class="set-card-sub" id="libSub-' + d.kind + '">—</span></span>' +
@@ -15646,12 +15727,19 @@ function buildLibCards(){
             ? "（技术记忆单独一层：按项目分文件夹、能真删、按项目查进度；情感记忆在 Ombre / 记忆宫殿那两层，两者互不干扰）"
             : "（存在后端 memories 表，按 kind 分区）") + "</div>" +
       "</div>" +
-    "</section>" +
-    "</div>"
-  )).join("");
-  host.querySelectorAll(".set-card-head").forEach((h) => h.addEventListener("click", () => toggleSetCard(h.closest(".set-card"))));
-  wireWork();                       // 工作记忆那套控件是刚生成的，监听器得在这之后挂
-  host.addEventListener("click", async (e) => {
+    "</section>"
+  );
+  const book = LIB_DEFS.filter((d) => d.book);
+  const note = LIB_DEFS.filter((d) => !d.book);
+  /* 笔记本（人自己写的）各占一页；世界书那四类住进「世界书」页的 #wbSections */
+  host.innerHTML = note.map((d) =>
+    '<div class="mem-page hidden" data-mp="lib-' + d.kind + '">' + secHtml(d, false) + "</div>").join("");
+  const wbHost = $("#wbSections");
+  if (wbHost) wbHost.innerHTML = book.map((d) => secHtml(d, true)).join("");
+
+  /* ★ 世界书那四张卡挂在 #wbSections 上、笔记本挂在 #libCards 上 —— 两边都要挂监听器。
+     用**同一个**处理器，免得两处实现慢慢走偏（这次要收掉的就是那类问题）。 */
+  const onLibClick = async (e) => {
     const nw = e.target.closest("[data-lib-new]");
     const sv = e.target.closest("[data-lib-save]");
     const cx = e.target.closest("[data-lib-cancel]");
@@ -15666,7 +15754,13 @@ function buildLibCards(){
       const it = (memData.items[kind] || []).find((x) => String(x.id) === String(id));
       if (it) libEditOpen(kind, it);
     }
+  };
+  [host, $("#wbSections")].filter(Boolean).forEach((h) => {
+    h.querySelectorAll(".set-card-head").forEach((x) =>
+      x.addEventListener("click", () => toggleSetCard(x.closest(".set-card"))));
+    h.addEventListener("click", onLibClick);
   });
+  wireWork();                       // 工作记忆那套控件是刚生成的，监听器得在这之后挂
 }
 /* ── 底部栏：横向可滑的分区卡（总览 / 近景 / Haven / 7 个记忆库）───────────
    点一张翻一页 —— 一次只显示一个 .mem-page，其余 .hidden。
@@ -15934,17 +16028,28 @@ if ($("#pdList")){
   });
 }
 
+/* 底部栏的固定分栏 —— 就是「六层记忆」加两个过程视图。
+   顺序：总览（银河）→ 长期（宫殿）→ 短期（近景）→ 外置（Haven）→ 世界书 → 档案馆
+        → 待确认 → 时间线。
+   名字与副标题在这里是**离线兜底**；连上后端后 memBarSync() 会用 /app/layers
+   的计数覆盖副标题（层的定义在后端 layers.py，唯一一处）。 */
 const MEM_BAR_FIXED = [
-  { key: "overview", ico: "◍", name: "总览",        sub: "银河 · 日历 · 档案室" },
-  { key: "pending",  ico: "⧗", name: "待确认",      sub: "机器写的" },
-  { key: "timeline", ico: "◷", name: "时间线",      sub: "别处 · 聊天 合一" },
-  { key: "near",     ico: "✦", name: "近景 · 七天", sub: "" },
-  { key: "haven",    ico: "☁", name: "Haven",       sub: "长期记忆 · 只读" },
+  { key: "overview",  ico: "◍", name: "总览",       sub: "记忆银河 · 日历" },
+  { key: "palace",    ico: "⌂", name: "长期记忆",   sub: "记忆宫殿" },
+  { key: "near",      ico: "✦", name: "短期记忆",   sub: "近景 · 七天" },
+  { key: "haven",     ico: "☁", name: "外置记忆库", sub: "Haven Brain · 只读" },
+  { key: "worldbook", ico: "❋", name: "世界书",     sub: "事件 · 摘要 · 故事 · 片段" },
+  { key: "archive",   ico: "▤", name: "档案馆",     sub: "所有记忆归档" },
+  { key: "pending",   ico: "⧗", name: "待确认",     sub: "机器写的" },
+  { key: "timeline",  ico: "◷", name: "时间线",     sub: "别处 · 聊天 合一" },
 ];
 function buildMemBar(){
   const host = $("#memBar"); if (!host || host.dataset.built) return;
   host.dataset.built = "1";
-  const cards = MEM_BAR_FIXED.concat(LIB_DEFS.map((d) => ({ key: "lib-" + d.kind, ico: d.ico, name: d.name, sub: "" })));
+  /* ★ 世界书那四类不给分栏卡 —— 它们已经有「世界书」那一页了。
+     重复出卡就是"同一条记忆两个入口"，正是这次要收掉的。 */
+  const cards = MEM_BAR_FIXED.concat(
+    LIB_DEFS.filter((d) => !d.book).map((d) => ({ key: "lib-" + d.kind, ico: d.ico, name: d.name, sub: "" })));
   host.innerHTML = cards.map((c) =>
     '<button type="button" class="mem-bar-card' + (c.key === "overview" ? " on" : "") + '" data-mp-go="' + c.key + '">' +
       '<span class="mb-ico">' + c.ico + "</span>" +
@@ -15981,6 +16086,17 @@ function memShowPage(key){
   if (target.dataset.mp === "timeline") { try { tlLoad(false); } catch (_) { } }
   /* 待确认队列同理：机器写的东西随时在长，切过来时补一次 */
   if (target.dataset.mp === "pending") { try { pdLoad(false); } catch (_) { } }
+  /* 档案馆是纯前端渲染（数据在 memLoad 里就取好了），但切过来时重画一次更保险：
+     它的编辑框/展开态是上一次留下的，重画能对齐当前数据。 */
+  if (target.dataset.mp === "archive") { try { arcRender(); } catch (_) { } }
+  /* 世界书那四张卡按 data-card 记住了折叠状态，跨会话可能还闭着 ——
+     这一页就是来看它们的，进来就展开。 */
+  if (target.dataset.mp === "worldbook") {
+    WB_KINDS.forEach((k) => {
+      const card = document.querySelector('.set-card[data-card="lib-' + k + '"]');
+      if (card && !card.classList.contains("open")) toggleSetCard(card);
+    });
+  }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }
@@ -15989,12 +16105,24 @@ function memBarSync(){
   const days = (st.days || []).length;
   const counts = memData.counts || {};
   const put = (k, v) => { const el = $("#mbSub-" + k); if (el) el.textContent = v; };
-  put("overview", "银河 · 日历 · 档案室");
+  const tag = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  /* 六层的计数来自 /app/layers（后端按 layers.archive_kinds 数的）。
+     ★ 拿不到就退回内置文案 —— 副标题写错不要紧，写 0 才是撒谎（看起来像"空的"）。 */
+  const LC = (memData.layers && memData.layers.counts) || {};
+  const nx = (k) => (typeof LC[k] === "number" ? LC[k] : null);
+  const many = (k, alt) => { const n = nx(k); return n === null ? alt : (n + " 条"); };
+
+  put("overview", "银河 · 日历 · 档案馆");
+  put("palace", many("palace", "记忆宫殿"));
+  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
+  put("haven", "Haven Brain · 只读");
+  put("worldbook", many("worldbook", "事件 · 摘要 · 故事 · 片段"));
+  put("archive", many("archive", "所有记忆归档"));
   put("pending", pdData && pdData.length ? (pdData.length + " 条待看") : "机器写的");
   put("timeline", tlData ? (tlData.length + " 条") : "别处 · 聊天 合一");
-  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "还没生成");
-  put("haven", "长期记忆 · 只读");
   LIB_DEFS.forEach((d) => put("lib-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));
+  tag("#palTag", nx("palace") === null ? "记忆宫殿" : (nx("palace") + " 条"));
+  tag("#wbTag", nx("worldbook") === null ? "四类合一" : (nx("worldbook") + " 条"));
 }
 
 /* ── 手指在内容区左右滑 = 翻上一页 / 下一页 ────────────────────────────────
@@ -16365,6 +16493,19 @@ if ($("#arcBody")) $("#arcBody").addEventListener("click", async (e) => {
   if (mo){ arc.month = mo.dataset.arcMonth; arc.level = 2; arc.edit = null; arcRender(); arcScrollTop(); return; }
   const op = e.target.closest("[data-arc-open]");
   if (op) arcOpen(op.dataset.arcOpen);
+});
+/* 长期记忆那一页的入口 —— 直接调 openPalace()，不复制一套宫殿 UI */
+if ($("#palOpen")) $("#palOpen").addEventListener("click", () => { try { openPalace(); } catch (_) { } });
+if ($("#wbRefresh")) $("#wbRefresh").addEventListener("click", () => memLoad(true));
+/* 世界书那两件动作是**复用**时间线/近景的按钮 —— 同一个后端动作只留一个入口，
+   免得两处实现慢慢不一致（点隐藏页里那颗按钮，等价于用户自己去时间线点它）。 */
+if ($("#wbCompose")) $("#wbCompose").addEventListener("click", async () => {
+  const b = $("#tlCompose"); if (!b) return;
+  try { await tlLoad(false); } catch (_) { }
+  b.click();
+});
+if ($("#wbMonth")) $("#wbMonth").addEventListener("click", () => {
+  const b = $("#nfMonth"); if (b) b.click();
 });
 if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
 if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay);

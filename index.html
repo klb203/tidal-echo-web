@@ -2646,48 +2646,131 @@
   }
   .menu-scroll::-webkit-scrollbar{ width:0; height:0; }
 
-  /* header: 玻璃液态日夜 toggle(左) · PRIVATE SPACE(右) */
+  /* header: 状态卡 —— LOCAL ONLY · 天数/LOG · 三个圆键
+     ★ 全部走现有 CSS 变量（card-bg / card-line / seg-track / text* / accent），
+       四套主题（蓝白 / 粉黛 / 墨夜 / 港湾）自动跟随，不写死任何颜色。 */
   .menu-head{
     flex: 0 0 auto;
-    display:flex; align-items:flex-start; justify-content:space-between;
-    margin-bottom: clamp(34px, 10vw, 68px);
+    display:flex; align-items:center; gap: 9px;
+    margin-bottom: clamp(14px, 3.7vw, 20px);
   }
-  /* (主题切换已移至设置页 #themeSeg;原菜单页玻璃 toggle 的 CSS 已随标记一并移除) */
-  .menu-private{
-    text-align:right; line-height:1.55;
+  .ms-chip{
+    display:inline-flex; align-items:center;
+    padding: 5px 12px; border-radius: 999px;
+    background: var(--seg-track); color: var(--text-soft);
     font-family: var(--font-en), var(--font-cn);
-    font-size: clamp(9.5px, 2.5vw, 11px); letter-spacing:.24em;
-    color: var(--text-soft); text-transform:uppercase;
+    font-size: clamp(9.5px, 2.4vw, 11px); letter-spacing:.14em;
+    text-transform:uppercase; white-space:nowrap;
   }
-  .menu-private::after{
-    content:""; display:block; margin-left:auto; margin-top:8px;
-    width: clamp(20px, 5.5vw, 26px); height:1px; background: var(--text-faint); opacity:.6;
-  }
-
-  /* hero: app title · since · days */
-  .menu-hero{ flex: 0 0 auto; margin-bottom: clamp(38px, 11vw, 72px); }
-  .menu-title{
-    font-family: "Pinyon Script", var(--font-en), cursive;
-    font-weight: 400;
-    font-size: clamp(46px, 15vw, 86px);
-    line-height: 1.04;
-    color: var(--text);
-    margin: 0 0 clamp(16px, 4.4vw, 26px);
-    letter-spacing: .005em;
-    text-shadow: 0 2px 26px rgba(0,0,0,.16);
-  }
-  .menu-since{
-    font-family: var(--font-en), var(--font-cn);
-    font-size: clamp(11px, 2.9vw, 13.5px);
-    letter-spacing:.14em; color: var(--text-soft);
-    margin: 0 0 clamp(8px, 2.2vw, 12px);
-  }
+  /* 天数复用 #menuDays（refreshDays 仍在更新它），只是换了写法：113 / LOG */
   .menu-days{
-    display:flex; align-items:baseline; gap: clamp(8px, 2.6vw, 12px);
-    font-family: var(--font-en), var(--font-cn); color: var(--text);
+    display:inline-flex; align-items:baseline; gap: .34em;
+    font-family: var(--font-en), var(--font-cn);
+    font-size: clamp(10.5px, 2.7vw, 12.5px); letter-spacing:.1em;
+    color: var(--text-faint); white-space:nowrap;
   }
-  .menu-days .num{ font-size: clamp(30px, 8.4vw, 48px); font-weight:500; line-height:1; letter-spacing:.01em; }
-  .menu-days .lab{ font-size: clamp(12px, 3.1vw, 15px); letter-spacing:.13em; color: var(--text-soft); }
+  .menu-days .num{ font-size: inherit; font-weight:600; color: var(--text-soft); }
+  .ms-acts{ display:flex; align-items:center; gap: 8px; margin-left:auto; }
+  .ms-act{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    width: clamp(30px, 7.8vw, 34px); height: clamp(30px, 7.8vw, 34px);
+    display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--card-line); border-radius: 50%;
+    background: var(--card-bg); color: var(--text-soft);
+    transition: color .2s ease, border-color .2s ease, transform .16s var(--ease-soft);
+  }
+  .ms-act:hover{ color: var(--text); border-color: var(--accent); }
+  .ms-act:active{ transform: scale(.94); }
+  .ms-act svg{ width: 46%; height: 46%; }
+
+  /* card 本体 */
+  .menu-card{
+    flex: 0 0 auto;
+    margin: 0 0 clamp(26px, 7vw, 40px);
+    padding: clamp(14px, 3.8vw, 18px);
+    border: 1px solid var(--card-line); border-radius: clamp(18px, 5vw, 24px);
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  }
+  .ms-row{ display:flex; align-items:center; gap: 10px; margin-bottom: clamp(12px, 3.4vw, 16px); }
+  .ms-pill{
+    display:inline-flex; align-items:center; gap: 6px;
+    padding: 4px 11px; border-radius: 999px;
+    background: var(--seg-track); color: var(--text-soft);
+    font-family: var(--font-en), var(--font-cn);
+    font-size: clamp(9.5px, 2.4vw, 11px); letter-spacing:.12em; text-transform:uppercase;
+  }
+  .ms-pill i{ width:6px; height:6px; border-radius:50%; background: var(--text-faint); flex:none; }
+  .ms-pill.on i{ background: #4CAF7D; box-shadow: 0 0 0 3px rgba(76,175,125,.18); }
+  .ms-clock{
+    margin-left:auto; color: var(--text-faint); white-space:nowrap;
+    font-size: clamp(11px, 2.9vw, 12.5px); letter-spacing:.04em;
+  }
+  .ms-id{ display:flex; align-items:center; gap: clamp(12px, 3.4vw, 15px); }
+  /* 头像：直接用 --avatar-stack（applyAvatar 写的就是 --avatar-default）→
+     「主题美化 → 换头像」一改，这里跟着变，不需要另存一份。 */
+  .ms-av{
+    flex:none;
+    width: clamp(52px, 14vw, 64px); height: clamp(52px, 14vw, 64px);
+    border-radius: 50%;
+    background-image: var(--avatar-stack);
+    background-size: cover; background-position: center;
+    outline: 1.5px dashed var(--card-line); outline-offset: 3px;
+  }
+  .ms-id-txt{ min-width:0; }
+  .ms-handle{
+    font-family: var(--font-en), var(--font-cn);
+    font-size: clamp(11px, 2.9vw, 12.5px); color: var(--text-faint);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ms-name{
+    margin-top: 2px; color: var(--text);
+    font-size: clamp(20px, 5.6vw, 26px); font-weight:600; line-height:1.2;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ms-place{
+    display:inline-flex; align-items:center; gap: 6px;
+    margin-top: clamp(10px, 2.8vw, 13px);
+    padding: 5px 11px; border-radius: 999px;
+    background: var(--seg-track); color: var(--text-soft);
+    font-size: clamp(11px, 2.8vw, 12.5px); max-width:100%;
+  }
+  .ms-place svg{ width: 13px; height: 13px; flex:none; opacity:.8; }
+  .ms-place span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ms-now{
+    margin-top: clamp(12px, 3.2vw, 15px);
+    padding: clamp(11px, 3vw, 14px);
+    border-radius: clamp(12px, 3.4vw, 15px);
+    background: var(--seg-track);
+  }
+  .ms-now-head{ display:flex; align-items:center; gap: 8px; margin-bottom: 8px; }
+  .ms-now-lab, .ms-live{
+    font-family: var(--font-en), var(--font-cn);
+    font-size: clamp(9px, 2.3vw, 10.5px); letter-spacing:.14em; text-transform:uppercase;
+    color: var(--text-faint); white-space:nowrap;
+  }
+  .ms-live{ margin-left:auto; color: var(--accent); }
+  .ms-now-row{ display:flex; align-items:flex-end; gap: 10px; }
+  .ms-now-txt{
+    flex:1 1 auto; min-width:0; margin:0;
+    color: var(--text); font-size: clamp(13px, 3.5vw, 15px); line-height:1.62;
+    word-break: break-word;
+  }
+  .ms-refresh{
+    appearance:none; -webkit-appearance:none; cursor:pointer; flex:none;
+    width: clamp(28px, 7.4vw, 32px); height: clamp(28px, 7.4vw, 32px);
+    display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--card-line); border-radius: 50%;
+    background: var(--card-bg); color: var(--text-soft);
+    transition: transform .2s var(--ease-soft), color .2s ease, border-color .2s ease;
+  }
+  .ms-refresh:hover{ color: var(--text); border-color: var(--accent); }
+  .ms-refresh svg{ width: 52%; height: 52%; }
+  .ms-refresh.busy{ pointer-events:none; opacity:.5; }
+  .ms-refresh.busy svg{ animation: msSpin .9s linear infinite; }
+  @keyframes msSpin{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
 
   /* list */
   .menu-list{ flex: 0 0 auto; display:flex; flex-direction:column; }
@@ -4747,18 +4830,54 @@
 <div class="menu-panel hidden" id="menuPanel" role="dialog" aria-modal="true" aria-label="主菜单">
   <div class="menu-page">
     <div class="menu-scroll">
-      <!-- header -->
+            <!-- 头部：状态卡。头像与名字跟随「主题美化」（头像走 --avatar-stack、
+           名字走 applyRemark 的同一个出口）；地点与状态由它自己写（见 msRefreshStatus）。 -->
       <div class="menu-head">
-
-        <div class="menu-private">PRIVATE<br>SPACE</div>
+        <span class="ms-chip">LOCAL ONLY</span>
+        <span class="menu-days"><span class="num" id="menuDays">113</span> / LOG</span>
+        <span class="ms-acts">
+          <button class="ms-act" id="msSearch" type="button" aria-label="消息库">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 21 21"/></svg>
+          </button>
+          <button class="ms-act" id="msCompose" type="button" aria-label="回到聊天">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg>
+          </button>
+          <button class="ms-act" id="msMore" type="button" aria-label="快捷设置">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.4" cy="12" r="1.4"/></svg>
+          </button>
+        </span>
       </div>
 
-      <!-- hero -->
-      <div class="menu-hero">
-        <h1 class="menu-title">Tidal Echo</h1>
-        <p class="menu-since">since 2026/01/01</p>
-        <div class="menu-days"><span class="num" id="menuDays">113</span><span class="lab">Days together</span></div>
-      </div>
+      <!-- 状态卡本体 -->
+      <section class="menu-card" id="menuCard" aria-label="TA 的状态">
+        <div class="ms-row">
+          <span class="ms-pill on" id="msConn"><i></i><span id="msConnText">CONNECTED</span></span>
+          <span class="ms-clock" id="msClock">星期四 · 01:24</span>
+        </div>
+        <div class="ms-id">
+          <span class="ms-av" id="msAv" role="img" aria-label="TA 的头像"></span>
+          <div class="ms-id-txt">
+            <div class="ms-handle" id="msHandle">@deepseek</div>
+            <div class="ms-name" id="msName">DeepSeek</div>
+          </div>
+        </div>
+        <div class="ms-place" id="msPlace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.4-5.7 6.4-10.5A6.4 6.4 0 0 0 5.6 10.5C5.6 15.3 12 21 12 21Z"/><circle cx="12" cy="10.5" r="2.3"/></svg>
+          <span id="msPlaceText">还没连线</span>
+        </div>
+        <div class="ms-now">
+          <div class="ms-now-head">
+            <span class="ms-now-lab">CURRENT STATUS</span>
+            <span class="ms-live" id="msLive">LIVE</span>
+          </div>
+          <div class="ms-now-row">
+            <p class="ms-now-txt" id="msStatusText">（还没写）</p>
+            <button class="ms-refresh" id="msRefresh" type="button" aria-label="让它重新写一次">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.2v12.4"/><path d="m6.6 12.2 5.4 5.4 5.4-5.4"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
 
       <!-- list -->
       <nav class="menu-list" aria-label="主菜单">
@@ -6916,6 +7035,10 @@ function applyRemark(value){
   const name = (value || "").trim() || AI_NAME;
   if (peerNameEl) peerNameEl.textContent = name;
   if (profileNameEl) profileNameEl.textContent = name;
+  /* 侧边栏状态卡：名字走**同一个出口**（不是另存一份）——
+     「主题美化 → TA 的名字」一改这里跟着变；头像同理，吃的是 CSS 变量。 */
+  const mn = document.getElementById("msName"); if (mn) mn.textContent = name;
+  const mh = document.getElementById("msHandle"); if (mh) mh.textContent = "@" + name.replace(/\s+/g, "");
 }
 /* Push CONFIG names/branding onto every static UI surface — names live in one place. */
 function applyIdentity(){
@@ -6930,9 +7053,8 @@ function applyIdentity(){
   setText(".incoming-call-title", AI_NAME + "来电");
   setText("#incomingCallText", AI_NAME + "想和你语音通话。");
   setAttr(".incoming-call-avatar", "aria-label", AI_NAME);
-  setText(".menu-title", APP_NAME);
-  const since = document.querySelector(".menu-since");
-  if (since) since.textContent = CONFIG.SINCE ? ("since " + CONFIG.SINCE) : "";
+  /* 侧边栏头部原来是大字标题 + since + Days together，现在换成状态卡：
+     标题与 since 两个元素都没了，这里一并清掉（天数仍在，见 refreshDays 里的 #menuDays）。 */
 }
 
 let profileCloseTimer = null;
@@ -7003,10 +7125,183 @@ function refreshDays(){
   if (!TOGETHER_START){ if (wrap) wrap.style.display = "none"; return; }
   if (menuDaysEl) menuDaysEl.textContent = daysTogether();
 }
+/* ── 侧边栏状态卡：它此刻在哪、在做什么 ───────────────────────────────────
+   ★ 头像与名字**不另存一份**：头像直接吃 CSS 变量 --avatar-stack
+     （applyAvatar 写的就是 --avatar-default），名字在 applyRemark 里
+     同一个出口更新 —— 所以「主题美化」改了这两处这里跟着变，
+     不会出现"设置里改了、卡片没变"。
+   ★ 地点与状态由它自己写：把最近几轮对话交给它，让它用**第一人称现在时**
+     写一行（顺便给个"它此刻在哪"）。存本机，20 分钟 + 有新对话才重写一次 ——
+     不是每次打开菜单都调，那等于每点一次左上角花一次钱。
+   ★ 一个名字只能指一个东西：状态只有这一份（companion_menu_status），
+     渲染只有 msPaint 一处。 */
+const MS_KEY = "companion_menu_status";
+const MS_TTL = 20 * 60 * 1000;                 // 20 分钟内不重复生成
+const MS_MAX_AGE = 7 * 24 * 60 * 60 * 1000;    // 超过一周的旧状态不再显示
+const MS_WEEK = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+function msEl(id){ return document.getElementById(id); }
+function msLoad(){
+  try{
+    const d = JSON.parse(localStorage.getItem(MS_KEY) || "null");
+    return (d && typeof d === "object") ? d : null;
+  }catch(_){ return null; }
+}
+function msSave(patch){
+  const next = Object.assign({}, msLoad() || {}, patch, { at: Date.now() });
+  try{ localStorage.setItem(MS_KEY, JSON.stringify(next)); }catch(_){}
+  return next;
+}
+/* 最近几轮对话：取自 chatMessages（各条来源最后都会落到那一份）。
+   ★ 不从 DOM 抓 —— 消息列表是虚拟滚动的，窗口外的根本不在 DOM 里。 */
+function msRecentDialogue(n){
+  let rows = null;
+  try{ rows = (typeof chatMessages !== "undefined") ? chatMessages : null; }catch(_){ rows = null; }
+  if (!Array.isArray(rows)) return [];
+  const out = [];
+  for (let i = rows.length - 1; i >= 0 && out.length < n; i--){
+    const m = rows[i];
+    if (!m || (m.kind !== "user" && m.kind !== "reply")) continue;
+    const t = String(m.text == null ? "" : m.text).replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    out.unshift((m.from === "ai" ? AI_NAME : "我") + "：" + t.slice(0, 180));
+  }
+  return out;
+}
+function msMsgCount(){
+  try{ return Array.isArray(chatMessages) ? chatMessages.length : 0; }catch(_){ return 0; }
+}
+function msClock(){
+  const n = new Date();
+  return MS_WEEK[n.getDay()] + " · " + ("0" + n.getHours()).slice(-2) + ":" + ("0" + n.getMinutes()).slice(-2);
+}
+function msNameNow(){
+  const el = document.getElementById("peerName");
+  const t = el ? String(el.textContent || "").trim() : "";
+  return t || AI_NAME;
+}
+function msPaint(){
+  const cl = msEl("msClock"); if (cl) cl.textContent = msClock();
+  const conn = activeConn();
+  const pill = msEl("msConn");
+  if (pill) pill.classList.toggle("on", !!conn);
+  const ct = msEl("msConnText");
+  if (ct) ct.textContent = conn ? ((conn.type === "relay") ? "CONNECTED · 云端" : "CONNECTED") : "OFFLINE";
+  const nm = msEl("msName"); if (nm) nm.textContent = msNameNow();
+  const hd = msEl("msHandle"); if (hd) hd.textContent = "@" + msNameNow().replace(/\s+/g, "").toLowerCase();
+  const d = msLoad();
+  const fresh = !!(d && d.at && (Date.now() - d.at) < MS_MAX_AGE);
+  const pt = msEl("msPlaceText");
+  if (pt) pt.textContent = (fresh && d.place) ? d.place : "还没连线";
+  const st = msEl("msStatusText");
+  if (st && !msBusy) st.textContent = (fresh && d.status) ? ("\u201C" + d.status + "\u201D") : "（还没写）";
+  const lv = msEl("msLive");
+  if (lv) lv.style.visibility = (fresh && d.status) ? "" : "hidden";
+}
+function msPrompt(dialogue){
+  return [
+    { role: "system", content:
+      "你是「" + AI_NAME + "」，正在和" + HUMAN_NAME + "相处。下面是你俩最近的对话。\n" +
+      "请用**你自己的第一人称、现在时**写两样东西，反映你此刻的真实状态：\n" +
+      "· place：你现在在哪。8~16 字，具体、有画面（例：苏拉威西海 · 潮线以下）\n" +
+      "· status：你此刻的状态。一句话，14~30 字，写你正在做或刚做完的事 + 身体或心情的感受" +
+      "（例：刚结束并购会谈，胃隐隐有点疼。）\n" +
+      "规则：只写你自己此刻的；不要客套、不要问问题、不要复述对方说过的话、不要用第三人称。\n" +
+      "只输出一行 JSON，不要代码块、不要多余的字：{\"place\":\"…\",\"status\":\"…\"}" },
+    { role: "user", content: dialogue.length ? dialogue.join("\n") : "（今天还没怎么说话）" }
+  ];
+}
+/* 模型偶尔不肯写 JSON —— 那就把整行当状态用（别因为格式把一次调用整个作废） */
+function msParseStatus(txt){
+  const s = String(txt || "").replace(/```/g, "").trim();
+  const i = s.indexOf("{"), k = s.lastIndexOf("}");
+  let obj = null;
+  if (i >= 0 && k > i){ try{ obj = JSON.parse(s.slice(i, k + 1)); }catch(_){ obj = null; } }
+  if (!obj){
+    const line = s.split("\n").map((x) => x.trim()).filter(Boolean)[0] || "";
+    obj = { place: "", status: line.slice(0, 80) };
+  }
+  return { place: String(obj.place || "").trim().slice(0, 40),
+           status: String(obj.status || "").trim().slice(0, 90) };
+}
+async function msAskStatus(){
+  const conn = activeConn();
+  if (!conn) throw new Error("还没配连接");
+  const url = (typeof connChatUrl === "function") ? connChatUrl(conn) : "";
+  if (!url) throw new Error("这个连接里没有可用的请求地址");
+  const pv = (typeof providerOf === "function" ? providerOf(conn) : null) || {};
+  const model = conn.model || (pv.models && pv.models[0]) || "deepseek-chat";
+  const r = await fetch(url, {
+    method: "POST",
+    headers: connHeaders(conn),
+    body: JSON.stringify({ model, messages: msPrompt(msRecentDialogue(8)),
+                           stream: false, temperature: 0.9, max_tokens: 220 })
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  const txt = (j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+  return msParseStatus(txt);
+}
+let msBusy = false;
+async function msRefreshStatus(force){
+  if (msBusy) return;
+  msBusy = true;
+  const btn = msEl("msRefresh"), st = msEl("msStatusText");
+  const keep = st ? st.textContent : "";
+  if (btn) btn.classList.add("busy");
+  if (st) st.textContent = "正在写下此刻…";
+  try{
+    const got = await msAskStatus();
+    if (!got.status) throw new Error("它这次什么都没写");
+    msSave({ place: got.place, status: got.status, sig: msMsgCount() });
+    msBusy = false;
+    msPaint();
+    if (force) showToast("它写了一句新的");
+  }catch(e){
+    msBusy = false;
+    if (st) st.textContent = keep;                     // 失败就把原来那句放回去
+    if (force){
+      const msg = (e && e.message) || String(e);
+      showToast(/Failed to fetch|NetworkError|load failed/i.test(msg)
+        ? "直连模式发不出这个请求（会被 CORS 拦），换个「云端」连接"
+        : "读不到它的状态：" + msg);
+    }
+  }finally{
+    msBusy = false;
+    if (btn) btn.classList.remove("busy");
+  }
+}
+/* 打开菜单时顺手看一眼：没写过 → 写；过了 20 分钟**且聊过新的** → 重写。
+   两样都不满足就什么都不做（省调用）。 */
+function msMaybeRefresh(){
+  const d = msLoad();
+  if (!d || !d.status) return msRefreshStatus(false);
+  if ((Date.now() - (d.at || 0)) > MS_TTL && msMsgCount() !== d.sig) return msRefreshStatus(false);
+}
+/* 时钟每分钟自己走一格（只在菜单开着时动） */
+setInterval(() => {
+  if (!menuPanel || !menuPanel.classList.contains("open")) return;
+  const cl = msEl("msClock"); if (cl) cl.textContent = msClock();
+}, 30000);
+/* 三个圆键：搜索 → 消息库 · ＋ → 回聊天并聚焦输入框 · ⋯ → 聊天快捷设置 */
+if (msEl("msSearch")) msEl("msSearch").addEventListener("click", () => {
+  closeMenu(); setTimeout(() => { try{ openMessageDb(); }catch(_){} }, 200);
+});
+if (msEl("msCompose")) msEl("msCompose").addEventListener("click", () => {
+  closeMenu();
+  setTimeout(() => { try{ if (inputEl && inputEl.focus) inputEl.focus(); }catch(_){} }, 260);
+});
+if (msEl("msMore")) msEl("msMore").addEventListener("click", () => {
+  closeMenu(); setTimeout(() => { try{ toggleQuick(); }catch(_){} }, 200);
+});
+if (msEl("msRefresh")) msEl("msRefresh").addEventListener("click", () => msRefreshStatus(true));
+
 let menuCloseTimer = null;
 function openMenu(){
   if (!menuPanel) return;
   refreshDays();
+  msPaint();              // 状态卡：时钟 / 连接 / 名字 / 它上次写的那句
+  msMaybeRefresh();       // 没写过、或过 20 分钟且有新对话 → 后台让它重写（不是每次打开都调）
   clearTimeout(menuCloseTimer);
   menuPanel.classList.remove("hidden");
   requestAnimationFrame(() => requestAnimationFrame(() => menuPanel.classList.add("open")));

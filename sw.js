@@ -2,7 +2,9 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v103-hub";            // v103：工具能力 / 网关 / 设置 三合一（侧边栏一个入口，
+const CACHE = "companion-v104-statuscard";     // v104：侧边栏顶部换成状态卡（头像与名字跟随「主题美化」，
+                                               //       地点与状态由它自己写；存本机，20 分钟 + 有新对话才重写）
+                                               // v103：工具能力 / 网关 / 设置 三合一（侧边栏一个入口，
                                                //       顶部栏 tab 切换）—— 原来三个整页层、三个入口
                                                // v102：档案馆只收"AI 第一人称的总结性记忆"——
                                                //       片段（工具/活动跑出来的原始素材）不再入档 / 进银河 / 归盒

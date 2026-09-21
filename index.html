@@ -5178,14 +5178,40 @@
       </label>
       <label class="fld"><span>Group ID</span><input id="mmGroup" type="text" placeholder="你的 MiniMax GroupId" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>API Key</span><input id="mmKey" type="password" placeholder="MiniMax API Key" autocomplete="off" spellcheck="false"></label>
-      <label class="fld"><span>克隆声音 ID</span><input id="mmVoice" type="text" placeholder="在 MiniMax 平台克隆好声音后得到的 Voice ID" autocomplete="off" spellcheck="false"></label>
+      <label class="fld"><span>克隆声音 ID</span><input id="mmVoice" type="text" placeholder="moss_audio_9cc288f3-a9d3-11f1-a626-8a59b47fb1f9" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>语速（0.5–2，默认 1）</span><input id="mmSpeed" type="number" step="0.1" min="0.5" max="2" value="1"></label>
       <div class="conn-sub" id="mmStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.5"></div>
       <button class="conn-add" id="mmTest" type="button" style="margin-bottom:8px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h1v-7H5v-1a7 7 0 0 1 14 0v1h-2v7h1a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9z"/></svg>
         测试克隆声音
       </button>
-      <div class="settings-tip">在 <a href="https://www.minimax.io/" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">MiniMax</a> 平台克隆好一个声音后会得到一个 Voice ID；填进来并启用，伴侣在语音通话里就会用这个克隆声音朗读（经你的后端 /relay/minimax/tts 转发，绕过浏览器 CORS）。</div>
+      <div class="settings-tip">在 <a href="https://www.minimax.io/" target="_blank" rel="noopener" style="color:var(--accent,#1f6feb)">MiniMax</a> 平台克隆好一个声音后会得到一个 Voice ID；<b>留空就用内置的默认音色 moss_audio_9cc288f3-a9d3…</b>。填好 Group ID / API Key 并勾选启用，伴侣在语音通话里就会用这个声音朗读（经你的后端 /relay/minimax/tts 转发，绕过浏览器 CORS）。</div>
+        </div>
+      </section>
+
+      <section class="set-card" data-card="budget">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z"/><path d="M12 7.6V12l3 1.8"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">用量预算 · 外部工具</span><span class="set-card-sub" id="cardSubBudget"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+          <div class="conn-sub" id="bgStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.6">读用量…</div>
+          <label class="fld"><span>每日 token 上限</span><input id="bgTokens" type="number" min="0" step="1000" placeholder="120000"></label>
+          <label class="fld"><span>每日费用上限（元）</span><input id="bgCost" type="number" min="0" step="0.1" placeholder="3"></label>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <button class="conn-add" id="bgSave" type="button" style="flex:1;margin:0">保存额度</button>
+            <button class="conn-add" id="bgReset" type="button" style="flex:1;margin:0">清空今天用量</button>
+          </div>
+          <div class="settings-section-label">外部工具 · 麦当劳 / 瑞幸</div>
+          <div class="conn-sub" id="exStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.6">读状态…</div>
+          <label class="fld"><span>麦当劳 · <span id="exSub_mcd"></span></span><input type="checkbox" id="exOn_mcd"></label>
+          <label class="fld"><span>瑞幸咖啡 · <span id="exSub_luckin"></span></span><input type="checkbox" id="exOn_luckin"></label>
+          <div class="settings-tip">这些是它在聊天里能自己调的外部工具（写成一行 <code>[[mcp: mcd.available-coupons {}]]</code>）。
+            在这里开关的是<b>服务</b>：打开会把该服务的<b>只读</b>工具给它（查券 / 查门店 / 试算价）；
+            领券、下单这类会产生真实后果的工具默认不勾，等你在聊天里明确让它做。<br>
+            Token 走 Render 的环境变量（<code>MCD_MCP_TOKEN</code> / <code>LUCKIN_MCP_TOKEN</code>），
+            <b>不经过浏览器</b>，这里也不显示。</div>
         </div>
       </section>
 
@@ -7187,6 +7213,24 @@ const CAP_TILES = [
       return [sy.last_ok === null ? "还没推过" : (sy.last_ok ? "上次成功" : "上次失败"),
               sy.last_ok === null ? null : (sy.last_ok ? "on" : "warn")];
     }) },
+  { g:"data", n:"用量预算", s:"它自己动手花掉的钱", ic:"chart", act:"card:budget",
+    badge:() => capB(() => {
+      const bg = capDig(CAP_STATE.data, "budget.budget", null);
+      if (!bg) return null;
+      const left = capNum(bg.tokens_remaining) / Math.max(1, capNum(bg.token_limit));
+      return [capNum(bg.tokens_used) + " / " + capNum(bg.token_limit) + " tokens · " +
+              bgMoney(bg.cost_used) + " / " + bgMoney(bg.cost_limit),
+              left <= 0 ? "warn" : (left < 0.2 ? "warn" : "on")];
+    }) },
+  { g:"data", n:"外部工具", s:"麦当劳 / 瑞幸，点单前先问你", ic:"bolt", act:"card:extools",
+    badge:() => capB(() => {
+      const sv = capDig(CAP_STATE.data, "extools.servers", null);
+      if (!sv || !sv.length) return null;
+      const on = sv.filter((x) => x.enabled);
+      const ready = on.filter((x) => x.has_token).length;
+      return [on.length ? (on.length + " 个开着" + (ready < on.length ? " · 有缺 token 的" : "")) : "全关",
+              on.length ? (ready === on.length ? "on" : "warn") : null];
+    }) },
 ];
 
 const CAP_ICONS = {
@@ -7257,6 +7301,8 @@ async function capLoad(force){
     ["sync",     "/app/sync/status"],
     ["backup",   "/app/backup/status"],
     ["palace",   "/app/palace/status"],
+    ["budget",   "/app/budget/status"],      // 自主行为用量闸门（今天还能花多少）
+    ["extools",  "/app/extools/status"],     // 外部工具（麦当劳 / 瑞幸）
   ];
   const results = await Promise.allSettled(
     want.map(([, p]) => fetch(appUrl(p), { headers: authHeaders() }).then((r) => r.json()))
@@ -9046,6 +9092,8 @@ function openSettings(){
   syncCloudFields();
   syncMiniMaxFields();
   syncImageFields();
+  budgetLoad();       // 用量预算 + 外部工具（只读接口，失败也不挡别的）
+  extoolsLoad();
   if (!apLoadedOnce){ apLoadedOnce = true; loadAppSettings(false); }   // 首次打开顺手拉一次后端设置
   if (!omLoadedOnce){ omLoadedOnce = true; omLoad(false); }              // OB 配置读一次就够
   if (!fgLoadedOnce){ fgLoadedOnce = true; fgLoad(false); }              // Forge 配置读一次就够
@@ -9066,8 +9114,14 @@ function closeSettings(){
 /* ── MiniMax 声音克隆（TTS）·存本机 ───────────────────────────────────────
    伴侣在语音通话里朗读时，若已启用就用克隆声音（经后端 /relay/minimax/tts）。 */
 const MM_KEY = "tidal_mm";
+/* 默认音色：没填声音 ID 时用它。这样只补 Group ID + API Key 就能开口，
+   不用先去平台克隆一个再回来粘贴。填了别的就以填的为准。 */
+const MM_DEFAULT_VOICE = "moss_audio_9cc288f3-a9d3-11f1-a626-8a59b47fb1f9";
 function loadMiniMax(){
-  try{ return JSON.parse(localStorage.getItem(MM_KEY) || "null") || {}; }catch(e){ return {}; }
+  let c = {};
+  try{ c = JSON.parse(localStorage.getItem(MM_KEY) || "null") || {}; }catch(e){ c = {}; }
+  if (!c.voice) c.voice = MM_DEFAULT_VOICE;
+  return c;
 }
 function saveMiniMax(cfg){
   try{ localStorage.setItem(MM_KEY, JSON.stringify(cfg)); }catch(e){}
@@ -9083,7 +9137,7 @@ function syncMiniMaxFields(){
   if (en) en.checked = !!c.enable;
   if (g) g.value = c.group || "";
   if (k) k.value = c.key || "";
-  if (v) v.value = c.voice || "";
+  if (v){ v.value = c.voice || ""; v.placeholder = MM_DEFAULT_VOICE; }
   if (s) s.value = (c.speed != null && !isNaN(c.speed)) ? c.speed : 1;
   if (st) st.innerHTML = minimaxEnabled()
     ? '✅ 已启用：语音通话会用克隆声音「<b>' + escapeHtml(c.voice) + '</b>」朗读。'
@@ -9101,6 +9155,133 @@ function persistMiniMax(){
   syncMiniMaxFields();
   showToast(minimaxEnabled() ? "MiniMax 语音已启用" : "MiniMax 设置已保存（未启用）");
 }
+/* ── 用量预算 + 外部工具 · 存后端 ─────────────────────────────────────────
+   后端把「它自己想做的事」收进同一本账（budget.py）：补全轮、主动消息、日记、
+   生图、外部工具调用都算在里面；**普通聊天不算**（配额一到线人还能正常说话）。
+   `local_date` 按你本地时区切（默认东八区），凌晨 5 点才换日。 */
+function bgMoney(v){ return "¥" + (capNum(v)).toFixed(3); }
+function bgEsc(v){ return (typeof escapeHtml === "function") ? escapeHtml(String(v)) : String(v); }
+function renderBudget(j){
+  const b = (j && j.budget) || {};
+  const st = $("#bgStatus");
+  if (st){
+    st.innerHTML = b.local_date
+      ? ("日期 <b>" + bgEsc(b.local_date) + "</b>（按你本地时区算，凌晨 5 点换日）<br>"
+        + "已用 <b>" + capNum(b.tokens_used) + "</b> / " + capNum(b.token_limit) + " tokens"
+        + " · <b>" + bgMoney(b.cost_used) + "</b> / " + bgMoney(b.cost_limit) + "<br>"
+        + "剩余 " + capNum(b.tokens_remaining) + " tokens · " + bgMoney(b.cost_remaining)
+        + (b.reserved_tokens ? ("（含在途预占 " + capNum(b.reserved_tokens) + "）") : ""))
+      : "还没读到用量。";
+  }
+  const t = $("#bgTokens"), c = $("#bgCost");
+  if (t && !t.dataset.touched) t.value = (b.token_limit != null ? b.token_limit : "");
+  if (c && !c.dataset.touched) c.value = (b.cost_limit != null ? b.cost_limit : "");
+  const sub = $("#cardSubBudget");
+  if (sub) sub.textContent = b.local_date
+    ? (capNum(b.tokens_used) + " / " + capNum(b.token_limit) + " tokens · "
+       + bgMoney(b.cost_used) + " / " + bgMoney(b.cost_limit))
+    : "还没读到";
+}
+async function budgetLoad(){
+  const st = $("#bgStatus");
+  try{
+    const r = await fetch(appUrl("/app/budget/status"), { headers: authHeaders() });
+    const j = await r.json();
+    if (j && j.error) throw new Error((j.error && j.error.message) || "读不到");
+    renderBudget(j);
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ 读不到用量：" + bgEsc((e && e.message) || e)
+      + "<br>（先在「云端后端」填好地址；后端也要更新到含 budget 模块的版本）";
+  }
+}
+async function budgetPost(path, body, okMsg){
+  const st = $("#bgStatus");
+  try{
+    const r = await fetch(appUrl(path), { method: "POST",
+      headers: Object.assign({}, authHeaders(), { "Content-Type": "application/json" }),
+      body: JSON.stringify(body || {}) });
+    const j = await r.json();
+    if (j && j.error) throw new Error((j.error && j.error.message) || "失败");
+    $("#bgTokens") && delete $("#bgTokens").dataset.touched;
+    $("#bgCost") && delete $("#bgCost").dataset.touched;
+    renderBudget(j);
+    extoolsLoad();
+    showToast(okMsg);
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ " + bgEsc((e && e.message) || e);
+  }
+}
+async function extoolsLoad(){
+  const st = $("#exStatus");
+  try{
+    const r = await fetch(appUrl("/app/extools/status"), { headers: authHeaders() });
+    const j = await r.json();
+    if (j && j.error) throw new Error((j.error && j.error.message) || "读不到");
+    renderExtools(j);
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ 读不到外部工具状态：" + bgEsc((e && e.message) || e);
+  }
+}
+function renderExtools(j){
+  const list = (j && j.servers) || [];
+  list.forEach((sv) => {
+    const on = $("#exOn_" + sv.server), sub2 = $("#exSub_" + sv.server);
+    if (on) on.checked = !!sv.enabled;
+    if (sub2) sub2.textContent = (sv.has_token ? "token 已就绪" : ("缺 " + sv.token_env))
+      + " · " + sv.tool_count + " 个工具 · 今天调了 " + sv.calls_today + " / " + sv.daily_cap;
+  });
+  const st = $("#exStatus");
+  if (st) st.innerHTML = list.length
+    ? ("两家都是远程 MCP，调用要过同一本用量账。现在："
+       + list.map((sv) => sv.label + (sv.enabled ? "<b>开</b>" : "关")).join(" · "))
+    : "还没读到。";
+  const sub = $("#cardSubExtools");
+  if (sub) sub.textContent = list.length
+    ? list.map((sv) => sv.label + (sv.enabled ? "（开）" : "（关）")).join(" · ")
+    : "还没读到";
+}
+/* 打开服务时默认只勾**只读**工具：领券 / 下单这类有副作用的不勾。
+   要让它能下单，就在聊天里明确说 —— 或者用后端 /app/extools/config 带上完整 tools。 */
+const EXTOOLS_READONLY = {
+  mcd: ["available-coupons", "query-my-coupons", "query-my-account",
+        "campaign-calendar", "query-meals", "calculate-price"],
+  luckin: ["queryShopList", "searchProductForMcp", "queryProductDetailInfo",
+           "previewOrder", "queryOrderDetailInfo"],
+};
+async function extoolsToggle(server, enabled){
+  try{
+    const body = { server: server, enabled: !!enabled };
+    if (enabled) body.tools = EXTOOLS_READONLY[server] || undefined;
+    const r = await fetch(appUrl("/app/extools/config"), { method: "POST",
+      headers: Object.assign({}, authHeaders(), { "Content-Type": "application/json" }),
+      body: JSON.stringify(body) });
+    const j = await r.json();
+    if (j && j.error) throw new Error((j.error && j.error.message) || "保存失败");
+    renderExtools(j);
+    showToast((enabled ? "已开启 " : "已关闭 ") + server);
+  }catch(e){ showToast("保存失败：" + ((e && e.message) || e)); }
+}
+(function bindBudgetCard(){
+  const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+  on("#bgSave", "click", () => {
+    const body = {};
+    const t = parseInt(($("#bgTokens") || {}).value, 10);
+    const c = parseFloat(($("#bgCost") || {}).value);
+    if (!isNaN(t)) body.token_limit = t;
+    if (!isNaN(c)) body.cost_limit = c;
+    budgetPost("/app/budget/config", body, "额度已保存（今天立刻生效）");
+  });
+  on("#bgReset", "click", () => {
+    budgetPost("/app/budget/reset", {}, "今天已用的额度清零了（配置没动）");
+  });
+  ["mcd", "luckin"].forEach((sv) => {
+    on("#exOn_" + sv, "change", (e) => extoolsToggle(sv, e.target.checked));
+  });
+  ["#bgTokens", "#bgCost"].forEach((sel) => {
+    const el = $(sel); if (el) el.addEventListener("input", () => { el.dataset.touched = "1"; });
+  });
+})();
+
 /* ── 生图 · 中转站（OpenAI 兼容）·存本机 ──────────────────────────────────
    地址 + Key + 模型；拉模型与生图都经后端 /app/image/* 转发（浏览器直连会被 CORS 拦）。 */
 const IG_KEY = "companion_image_gen";

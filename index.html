@@ -36,7 +36,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <!-- 群聊（多 AI 协作）· 面板样式。整页面板，四套主题自动跟随 -->
 <link rel="stylesheet" href="group-chat-pack.css">
-<!-- 万花筒（角色扮演渠道）· 面板样式。整页面板，四套主题自动跟随 -->
+<!-- 大富翁（原「万花筒」；摇世界/扮演已下线，总闸 RP_ENABLED 在 rp-channel-pack.js）· 面板样式 -->
 <link rel="stylesheet" href="rp-channel-pack.css">
 <!-- 自由活动（让 TA 自己用 MCP 出门逛）· 面板样式 -->
 <link rel="stylesheet" href="activity-pack.css">
@@ -4786,7 +4786,7 @@
         <button class="menu-item" type="button" data-menu="rp">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.4"/><path d="M8.6 15.4l6.8-6.8M15.4 15.4L8.6 8.6"/></svg></span>
           <span class="menu-dot"></span>
-          <span class="menu-copy"><span class="menu-name" id="rpMenuName">万花筒</span><span class="menu-sub">摇个世界，进去演。</span></span>
+          <span class="menu-copy"><span class="menu-name" id="rpMenuName">大富翁</span><span class="menu-sub">开局打一局，荷官主持。</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
         <button class="menu-item" type="button" data-menu="activity">
@@ -6950,7 +6950,7 @@ if (menuPanel){
     else if (item.dataset.menu === "groupchat") { closeMenu(); if (window.openGroupChat) window.openGroupChat(); }   // 群聊（三个 AI + 你，派活/进度/收结果）
     else if (item.dataset.menu === "rp") { closeMenu(); if (window.openRp) window.openRp(); }
     else if (item.dataset.menu === "activity") { closeMenu(); if (window.openActivity) window.openActivity(); }
-    else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈                          // 万花筒（角色扮演渠道：摇世界 / 召唤制旁白与 NPC）
+    else if (item.dataset.menu === "moments") { closeMenu(); if (window.openMoments) window.openMoments(); }   // 朋友圈
     else if (item.dataset.menu === "gateway") capOpen();         // 网关：全部能力摊成按钮
     else if (item.dataset.menu === "theme") themeOpen();         // 主题美化（头像/名字/背景/语音条）
     /* 图片记忆 = App 内的整页面板。原来是 location.assign("album.html")，
@@ -19794,7 +19794,7 @@ init().then(() => {
      面板的 DOM 由这个包自己注入，index.html 里不需要写那一大坨标记。 -->
 <script defer src="group-chat-pack.js"></script>
 
-<!-- 万花筒（角色扮演渠道）· 面板逻辑。同样 defer，复用宿主连接层。
+<!-- 大富翁（原「万花筒」）· 面板逻辑。同样 defer，复用宿主连接层。
      面板 DOM 由包自己注入，index.html 里不需要写那一大坨标记。 -->
 <script defer src="rp-channel-pack.js"></script>
 

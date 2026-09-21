@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Tidal Echo · 万花筒（角色扮演渠道）— 逻辑层
+   Tidal Echo · 大富翁（原「万花筒」；摇世界/扮演已下线，总闸见 RP_ENABLED）— 逻辑层
    ───────────────────────────────────────────────────────────────────────────
    范式来源：github.com/sebastianevan200-stack/kaleidoscope-rp（CC BY-NC-SA 4.0）
      「摇老虎机开世界 · 旁白与 NPC 召唤制 · 红线分层 · 配出戏信号」
@@ -51,6 +51,14 @@
   /* ⚠️ 这个常量必须在 state 之前声明 —— MONO_DEFAULT 在初始化时就要读它。
      顶层 const 有 TDZ：反着写会抛 "Cannot access 'MCP_DEFAULT' before initialization"，
      而且会**整个包一起挂掉**（这类错误只在控制台留一行，页面其余功能看着都正常）。 */
+  /* ── 万花筒下线总闸 ────────────────────────────────────────────────────────
+     只留「大富翁」。摇世界 / 扮演那套（老虎机、世界卡、旁白与 NPC、词池）
+     **代码都还在**，只是入口与配置被这里关掉 —— 想恢复改成 true 就行，
+     不用回滚版本。做法上刻意选了"留一条总闸"而不是删得七零八落：
+     这个包在这个环境里没有浏览器可测，删 800 行渲染代码的代价是整站白屏。
+     关掉之后：mode 锁 mono、底部模式切换收起、配置页只留「荷官」一个模型位。 */
+  const RP_ENABLED = false;
+
   const MCP_DEFAULT = "https://spicy-monopoly.lol/mcp";
   const MSG_CAP = 400;
 
@@ -77,13 +85,24 @@
   ];
   const ROW1_ID_KEYS = ["我是谁", "你是谁", "我们之间"];   // 世界卡里单独成行的三项
 
-  /* ── 三个模型位（复用宿主 cloud:* 预设）───────────────────────────────────
-     原项目建议：主角用强模型，旁白 / NPC 用便宜的。 */
+  /* ── 模型位（复用宿主 cloud:* 预设）────────────────────────────────────────
+     ★ 只留一个「荷官」。为什么不是两个：
+       荷官是**驱动工具**的那个（roll / game_action / new_game），
+       而「阿澈」不再单独配模型 —— 它用**聊天里的当前连接**（见 chatSlot()）。
+       人格和模型都跟聊天走，牌桌上的它才是聊天里那个人；另配一个位
+       只会又变成"另一个阿澈"。
+     温度比原来低一些：荷官要的是稳定地按工具返回说话，不是发挥文采。 */
   const MODELS_DEFAULT = {
-    char: { provider: "cloud:deepseek", model: "deepseek-chat",      temp: 0.95, connId: "" },
-    narr: { provider: "cloud:moonshot", model: "moonshot-v1-8k",     temp: 0.7,  connId: "" },
-    npc:  { provider: "cloud:zhipu",    model: "glm-4-flash",        temp: 0.85, connId: "" }
+    dealer: { provider: "cloud:deepseek", model: "deepseek-chat", temp: 0.6, connId: "" }
   };
+  /* rp 时代的三个位。万一以后把 RP_ENABLED 开回来，它们也一起回来 ——
+     否则一开就是满屏「这个位置还没配模型」。 */
+  const LEGACY_SLOTS_RP = {
+    char: { provider: "cloud:deepseek", model: "deepseek-chat",  temp: 0.95, connId: "" },
+    narr: { provider: "cloud:moonshot", model: "moonshot-v1-8k", temp: 0.7,  connId: "" },
+    npc:  { provider: "cloud:zhipu",    model: "glm-4-flash",    temp: 0.85, connId: "" }
+  };
+  if (RP_ENABLED) Object.keys(LEGACY_SLOTS_RP).forEach((k) => { MODELS_DEFAULT[k] = LEGACY_SLOTS_RP[k]; });
 
   const CFG_DEFAULT = {
     character: "",      // 你是谁（主角人设）—— 使用者自己填
@@ -94,8 +113,12 @@
     adultOk: false,     // 一次性确认记录
     blur: true,         // 私密打码：内容默认模糊，点一下才显形
     ctxMsgs: 24,        // 带进上下文的轮数
-    menuName: "万花筒"   // 侧边栏显示名（可自己改得更隐蔽）
+    menuName: "大富翁"   // 侧边栏显示名（可自己改）
   };
+  /* 上一个大版本里这个默认值是「万花筒」。load() 只把**恰好等于它**的迁过来 ——
+     menuName 是用户可改的（"改成一个只有你自己认得的名字"），不能无脑覆盖。 */
+  const MENU_NAME_OLD = "万花筒";
+  const MENU_NAME_FALLBACK = "大富翁";
 
   /* 结构红线：不动。想换玩法去改口味红线，别动这几条。 */
   const STRUCT_REDLINES = [
@@ -115,6 +138,9 @@
     try { H.connChatUrl = (typeof connChatUrl === "function") ? connChatUrl : null; } catch (_) { H.connChatUrl = null; }
     try { H.connHeaders = (typeof connHeaders === "function") ? connHeaders : null; } catch (_) { H.connHeaders = null; }
     try { H.loadConns = (typeof loadConnections === "function") ? loadConnections : null; } catch (_) { H.loadConns = null; }
+    /* ★ 阿澈要用的那条路：聊天里的**当前连接**（见 chatSlot()）。
+       宿主把它挂在全局（activeConn()），这里顺手接过来。 */
+    try { H.activeConn = (typeof activeConn === "function") ? activeConn : null; } catch (_) { H.activeConn = null; }
     try { H.toast = (typeof showToast === "function") ? showToast : null; } catch (_) { H.toast = null; }
     return H;
   }
@@ -178,6 +204,7 @@
   }
   /* 一个模型位 → {url, headers, model, label}；解析不出来 → null */
   function resolve(slot) {
+    slot = slot || {};      // 位没配时给个空对象：报「还没配模型」比 TypeError 清楚得多
     const H = hostApi();
     if (slot.connId && H.loadConns) {
       let list = []; try { list = H.loadConns() || []; } catch (_) { }
@@ -228,7 +255,7 @@
   };
 
   const state = {
-    mode: "rp",          // rp（老虎机/扮演）| mono（大富翁）
+    mode: RP_ENABLED ? "rp" : "mono",   // rp（老虎机/扮演）| mono（大富翁）—— 见 RP_ENABLED
     view: "slot",        // rp: slot | scene · mono: mono · 两者都可进 cfg
     scene: null,         // { id, world, msgs, cuts, createdAt, updatedAt }
     pick: {},            // 老虎机当前摇到的词 { "世界": "...", ... }
@@ -249,8 +276,22 @@
   function lsWrite(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { } }
   function load() {
     state.cfg = Object.assign({}, CFG_DEFAULT, lsRead(K_CFG, {}) || {});
+    /* 菜单名从「万花筒」改成「大富翁」：只迁**恰好还是旧默认值**的，
+       用户自己改过的名字（"改成只有你自己认得的名字"）保持不动。 */
+    if (!state.cfg.menuName || state.cfg.menuName === MENU_NAME_OLD) state.cfg.menuName = CFG_DEFAULT.menuName;
+    /* ★ 模型位必须**逐位合并**，不能像原来那样 Object.assign(默认, 存档)：
+       存档里带着 char/narr/npc 时会被整体塞回 state.models，
+       于是 rp 下线之后配置页又冒出三个模型位。 */
+    state.models = JSON.parse(JSON.stringify(MODELS_DEFAULT));
     const m = lsRead(K_CFG + "_models", null);
-    state.models = m ? Object.assign(JSON.parse(JSON.stringify(MODELS_DEFAULT)), m) : JSON.parse(JSON.stringify(MODELS_DEFAULT));
+    if (m && typeof m === "object") {
+      Object.keys(state.models).forEach((k) => {
+        if (m[k] && typeof m[k] === "object") Object.assign(state.models[k], m[k]);
+      });
+      /* dealer 是这次新增的位 —— 老存档里没有它，但一定有 char（rp 时代真正在跑的那一个）。
+         不迁的话老用户升级后「荷官」位是空的，一点就报「这个位置还没配模型」。 */
+      if (!m.dealer && m.char && state.models.dealer) Object.assign(state.models.dealer, m.char);
+    }
     const p = lsRead(K_POOL, null);
     state.pools = p ? Object.assign(JSON.parse(JSON.stringify(POOLS_DEFAULT)), p) : JSON.parse(JSON.stringify(POOLS_DEFAULT));
     state.scene = lsRead(K_SCENE, null);
@@ -258,7 +299,9 @@
     state.mono = monoSaved
       ? mergeDeep(JSON.parse(JSON.stringify(MONO_DEFAULT)), monoSaved)
       : JSON.parse(JSON.stringify(MONO_DEFAULT));
-    state.mode = lsRead(K_CFG + "_mode", "rp") === "mono" ? "mono" : "rp";
+    /* 万花筒下线后模式锁死 mono —— 老存档里还存着 "rp"，
+       放它进去会落在一页空白（老虎机的 DOM 还在，但没有入口能出来）。 */
+    state.mode = (RP_ENABLED && lsRead(K_CFG + "_mode", "rp") === "rp") ? "rp" : "mono";
   }
   function mergeDeep(base, over) {
     Object.keys(over || {}).forEach((k) => {
@@ -291,16 +334,29 @@
   const nid = (p) => p + "_" + Date.now().toString(36) + "_" + (++seq).toString(36);
 
   /* ════════════════════════════ 调模型 ════════════════════════════ */
-  async function call(slotKey, messages, onDelta, signal) {
-    const conn = resolve(state.models[slotKey]);
-    if (!conn) throw new Error("「" + slotName(slotKey) + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
-    if (!conn.model) throw new Error("「" + slotName(slotKey) + "」没填模型名。");
-    const body = { model: conn.model, messages: deStar(messages), stream: true, temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
+  /* 一个"模型位" → { conn, temp, label }。
+     ★ 参数可以是**位名**（"dealer"），也可以是**已经拼好的位对象**。
+     这一层是本次改动的关键接缝：不能再假设「每个说话人都对应 state.models 里的一格」——
+     阿澈走的是「聊天当前连接」，它根本不在 state.models 里。 */
+  function slotOf(spec) {
+    if (typeof spec === "string") {
+      const s = state.models[spec] || {};
+      return { conn: resolve(s), temp: (s.temp != null ? s.temp : 0.9), label: slotName(spec) };
+    }
+    const s = spec || {};
+    return { conn: resolve(s), temp: (s.temp != null ? s.temp : 0.9), label: s.label || "模型" };
+  }
+  async function call(spec, messages, onDelta, signal) {
+    const S = slotOf(spec);
+    const conn = S.conn;
+    if (!conn) throw new Error("「" + S.label + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
+    if (!conn.model) throw new Error("「" + S.label + "」没填模型名。");
+    const body = { model: conn.model, messages: deStar(messages), stream: true, temperature: S.temp };
     const res = await fetch(conn.url, { method: "POST", headers: conn.headers, body: JSON.stringify(body), signal });
     if (!res.ok) {
       let d = "HTTP " + res.status;
       try { const j = await res.json(); if (j && j.error && j.error.message) d = j.error.message; } catch (_) { }
-      throw new Error("「" + slotName(slotKey) + "」返回错误：" + d);
+      throw new Error("「" + S.label + "」返回错误：" + d);
     }
     const ctype = (res.headers.get("content-type") || "").toLowerCase();
     if (ctype.indexOf("application/json") >= 0 && ctype.indexOf("event-stream") < 0) {
@@ -330,7 +386,8 @@
     }
     return acc;
   }
-  const slotName = (k) => ({ char: "主角", narr: "旁白", npc: "NPC" }[k] || k);
+  /* 位名 → 给人看的名字。char/narr/npc 留着（rp 的老路还在，报错时能说人话）。 */
+  const slotName = (k) => ({ dealer: "荷官", char: "主角", narr: "旁白", npc: "NPC" }[k] || k);
 
   /* ════════════════════════════ 提示词装配 ════════════════════════════ */
   function worldBlock() {
@@ -804,17 +861,18 @@
   }
 
   /* 非流式的完整调用（工具循环必须用它 —— 流式拿不到 tool_calls 的完整结构） */
-  async function callJson(slotKey, messages, tools, signal) {
-    const conn = resolve(state.models[slotKey]);
-    if (!conn) throw new Error("「" + slotName(slotKey) + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
-    if (!conn.model) throw new Error("「" + slotName(slotKey) + "」没填模型名。");
-    const body = { model: conn.model, messages: deStar(messages), temperature: (state.models[slotKey].temp != null ? state.models[slotKey].temp : 0.9) };
+  async function callJson(spec, messages, tools, signal) {
+    const S = slotOf(spec);
+    const conn = S.conn;
+    if (!conn) throw new Error("「" + S.label + "」这个位置还没配模型 —— 到「⋯ → 配置」里给它选一个。");
+    if (!conn.model) throw new Error("「" + S.label + "」没填模型名。");
+    const body = { model: conn.model, messages: deStar(messages), temperature: S.temp };
     if (tools && tools.length) { body.tools = tools; body.tool_choice = "auto"; }
     const res = await fetch(conn.url, { method: "POST", headers: conn.headers, body: JSON.stringify(body), signal });
     if (!res.ok) {
       let d = "HTTP " + res.status;
       try { const j = await res.json(); if (j && j.error && j.error.message) d = j.error.message; } catch (_) { }
-      throw new Error("「" + slotName(slotKey) + "」返回错误：" + d);
+      throw new Error("「" + S.label + "」返回错误：" + d);
     }
     const j = await res.json();
     const m = (j && j.choices && j.choices[0] && j.choices[0].message) || {};
@@ -921,6 +979,33 @@
     return String(state.cfg.character || "").trim();
   }
 
+  /* ── 阿澈说话走**聊天里的当前连接** ─────────────────────────────────────
+     用户的说法是「阿澈是聊天的那个」。所以牌桌上它不只是人格复用（chatPersona），
+     **模型也必须是同一条连接** —— 否则人格和模型分家，会出现
+     "聊天的阿澈"和"牌桌的阿澈"说话风格明显不是一个人。
+
+     接入方式很省事：把当前连接（activeConn()）当成一个「模型位」交给 slotOf()，
+     resolve() 本来就支持 connId 这条路（在连接列表里按 id 查），
+     不用另写一套 fetch / 流式 / 工具循环。 */
+  function chatSlot() {
+    const H = hostApi();
+    let c = null;
+    try { c = H.activeConn ? H.activeConn() : null; } catch (_) { c = null; }
+    if (!c || !c.id || !H.connChatUrl) return null;
+    return {
+      connId: c.id, provider: "", model: c.model || "",
+      temp: (c.temp != null ? c.temp : 0.8),
+      label: "聊天连接（" + (c.name || c.id) + "）"
+    };
+  }
+  /* 阿澈这一路该用哪个位：优先聊天连接，拿不到就退回荷官。
+     ★ 一定要有兜底 —— 牌桌不能因为"还没配连接"整个哑掉；
+     顶多是这一轮阿澈借荷官的模型说话，总比整局没反应强。 */
+  function acheSlot() {
+    const s = chatSlot();
+    return (s && resolve(s)) ? s : "dealer";
+  }
+
   /* ── 荷官的 system：**只管驱动工具 + 汇报任务**，不演角色。
      ⚠️ 这里不含任何玩法内容 —— 规则与卡库都在你部署的那套引擎里。 */
   function dealerSystem() {
@@ -972,6 +1057,12 @@
       "都算任务，都要写进上面那两行。**只写「轮到你了」不算任务**，那是一句废话。",
       "【什么时候写「无」】轮到人类、且没有任何新情况 → 【给" + ache + "的任务】写「无」，",
       "荷官本人也只说一句「轮到主人了」就够。",
+      "",
+      "【主人直接在跟「" + ache + "」说话的时候】不要写「无」。",
+      "如果主人这轮不是在操作游戏，而是在跟「" + ache + "」聊天、吐槽、问它在干嘛 ——",
+      "【给" + ache + "的任务】就写「接住主人刚说的话，用第一人称回他」；",
+      "它要有这一行才会开口，你写「无」等于替主人把它静音了。",
+      "这种时候你自己（荷官）只留一句【局面】就够，**别替它回答**。",
       "",
       state.mono.rulesAck ? "rules_ack：" + state.mono.rulesAck : "rules_ack：（还没取，先调 monopoly_help）",
       g.game_id ? "\n当前 game_id：" + g.game_id : "",
@@ -1068,7 +1159,7 @@
     for (let i = 0; i < MONO_MAX_STEPS; i++) {
       if (state.abort) break;
       let out;
-      try { out = await callJson("char", msgs, tools, state.ctrl && state.ctrl.signal); }
+      try { out = await callJson("dealer", msgs, tools, state.ctrl && state.ctrl.signal); }
       catch (e) {
         /* ⚠️ 人手按的「停下」会让 fetch 抛 AbortError —— 那**不是故障**，
            别在对话里留一行 "signal is aborted without reason" 吓人。
@@ -1116,7 +1207,7 @@
     });
     msgs.push({ role: "user", content: "（荷官把任务交给你了，做出来）" });
     try {
-      const out = await callJson("char", msgs, [], state.ctrl && state.ctrl.signal);
+      const out = await callJson(acheSlot(), msgs, [], state.ctrl && state.ctrl.signal);
       const tx = String((out && out.content) || "").trim();
       if (!tx || MONO_SILENT.test(tx)) return "";        // 它回「·」= 这轮没话说
       return tx;
@@ -1187,13 +1278,14 @@
     const showMono = !isCfg && state.mode === "mono";
 
     if (elSwitch) {
-      elSwitch.classList.toggle("hidden", isCfg);
+      /* 只留大富翁之后，底部那个「老虎机 / 大富翁」切换就没意义了 —— 整个收起 */
+      elSwitch.classList.toggle("hidden", isCfg || !RP_ENABLED);
       elSwitch.querySelectorAll(".rp-mode").forEach((b) => b.classList.toggle("active", b.dataset.mode === state.mode));
     }
 
     elTitle.textContent = isCfg ? "配置"
       : showMono ? (state.mono.game ? "大富翁" : "开局")
-        : (showSlot ? state.cfg.menuName || "万花筒" : ((state.scene.world && state.scene.world.name) || "这一场"));
+        : (showSlot ? state.cfg.menuName || MENU_NAME_FALLBACK : ((state.scene.world && state.scene.world.name) || "这一场"));
     elSub.innerHTML = isCfg ? "人设 · 尺度 · 红线 · 模型"
       : showMono ? (state.mono.game ? "掷骰 · 占地 · 抽卡" : "先定规矩，再开局")
         : showSlot ? "摇一排词，开一个世界"
@@ -1356,6 +1448,42 @@
   }
 
   /* ── 配置页 ──────────────────────────────────────────────────────────── */
+  /* rp（万花筒）专属的配置栏 —— 世界与身份 / 红线。
+     RP_ENABLED 关掉之后不再显示，但**代码留着**：想恢复改成 true 就回来。 */
+  function rpConfigCards() {
+    return `
+      <div class="rp-card">
+        <div class="rp-card-h"><b>世界与身份</b><span>这几栏是空的 —— 由你填，代码里不写内容</span></div>
+        <label class="rp-lbl">TA 是谁（主角人设）</label>
+        <textarea class="rp-ta" rows="3" data-f="character" placeholder="名字、外形、说话方式、在意什么…">${esc(state.cfg.character)}</textarea>
+        <label class="rp-lbl">我是谁</label>
+        <textarea class="rp-ta" rows="2" data-f="userPersona" placeholder="你在这场戏里的身份、脾气…">${esc(state.cfg.userPersona)}</textarea>
+        <label class="rp-lbl">尺度与笔法</label>
+        <textarea class="rp-ta" rows="2" data-f="tone" placeholder="想要多露骨、多克制；长句还是短句；第几人称…">${esc(state.cfg.tone)}</textarea>
+        <div class="rp-note">参照 kaleidoscope-rp 的分层法：内容全部住在配置里，
+          改玩法不用动代码，也不用重发版本。</div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rp-card-h"><b>红线</b><span>结构红线动不了，口味红线随你删改</span></div>
+        ${STRUCT_REDLINES.map((r) => `<div class="rp-rl fixed"><span class="lk">结构</span><span class="tx">${esc(r)}</span></div>`).join("")}
+        ${(state.cfg.redlines || []).map((r, i) =>
+          `<div class="rp-rl"><span class="tx">${esc(r)}</span>
+           <button class="x" data-act="rl-del" data-i="${i}" aria-label="删除">✕</button></div>`).join("")}
+        <div class="rp-rl-add">
+          <input class="rp-in" id="rpRlNew" placeholder="加一条口味红线，例如：不许出现第三人">
+          <button class="rp-btn" data-act="rl-add">加</button>
+        </div>
+        <div class="rp-note"><b>为什么要分两层：</b>混在一起写会互相绞死 ——
+          口味红线原样保留，你就只能玩原作者的玩法。所以它们单独存、随便删。</div>
+      </div>
+
+      ${modelCard("char", "主角", "用强一点的模型")}
+      ${modelCard("narr", "旁白", "便宜的就行，只写环境")}
+      ${modelCard("npc", "NPC", "便宜的就行，一人一句")}
+`;
+  }
+
   function renderCfg() {
     const pvTable = providerTable();
     let conns = [];
@@ -1392,38 +1520,24 @@
     };
 
     elCfg.innerHTML = `
-      <div class="rp-card">
-        <div class="rp-card-h"><b>世界与身份</b><span>这几栏是空的 —— 由你填，代码里不写内容</span></div>
-        <label class="rp-lbl">TA 是谁（主角人设）</label>
-        <textarea class="rp-ta" rows="3" data-f="character" placeholder="名字、外形、说话方式、在意什么…">${esc(state.cfg.character)}</textarea>
-        <label class="rp-lbl">我是谁</label>
-        <textarea class="rp-ta" rows="2" data-f="userPersona" placeholder="你在这场戏里的身份、脾气…">${esc(state.cfg.userPersona)}</textarea>
-        <label class="rp-lbl">尺度与笔法</label>
-        <textarea class="rp-ta" rows="2" data-f="tone" placeholder="想要多露骨、多克制；长句还是短句；第几人称…">${esc(state.cfg.tone)}</textarea>
-        <div class="rp-note">参照 kaleidoscope-rp 的分层法：内容全部住在配置里，
-          改玩法不用动代码，也不用重发版本。</div>
-      </div>
+      ${RP_ENABLED ? rpConfigCards() : ""}
+
+      ${modelCard("dealer", "荷官", "驱动游戏 · 调工具 —— 用稳一点、支持工具调用的模型")}
 
       <div class="rp-card">
-        <div class="rp-card-h"><b>红线</b><span>结构红线动不了，口味红线随你删改</span></div>
-        ${STRUCT_REDLINES.map((r) => `<div class="rp-rl fixed"><span class="lk">结构</span><span class="tx">${esc(r)}</span></div>`).join("")}
-        ${(state.cfg.redlines || []).map((r, i) =>
-          `<div class="rp-rl"><span class="tx">${esc(r)}</span>
-           <button class="x" data-act="rl-del" data-i="${i}" aria-label="删除">✕</button></div>`).join("")}
-        <div class="rp-rl-add">
-          <input class="rp-in" id="rpRlNew" placeholder="加一条口味红线，例如：不许出现第三人">
-          <button class="rp-btn" data-act="rl-add">加</button>
-        </div>
-        <div class="rp-note"><b>为什么要分两层：</b>混在一起写会互相绞死 ——
-          口味红线原样保留，你就只能玩原作者的玩法。所以它们单独存、随便删。</div>
+        <div class="rp-card-h"><b>阿澈用哪个模型</b><span>不用在这里配</span></div>
+        <div class="rp-note">牌桌上的「阿澈」就是聊天里的那个它 ——
+          <b>人格和模型都跟聊天走同一条连接</b>（「设置 → 连接与模型」里的当前连接）。
+          这样牌桌上说的和聊天里说的才是同一个人，而不是"另一个阿澈"。
+          ${chatSlot()
+            ? "现在会打到 <b>" + esc(chatSlot().label) + "</b>。"
+            : "<b>还没读到聊天连接</b> —— 阿澈这一轮会先借荷官的模型说话；去「设置」里选个连接就正常了。"}</div>
       </div>
 
-      ${modelCard("char", "主角", "用强一点的模型")}
-      ${modelCard("narr", "旁白", "便宜的就行，只写环境")}
-      ${modelCard("npc", "NPC", "便宜的就行，一人一句")}
 
       <div class="rp-card">
         <div class="rp-card-h"><b>渠道设置</b></div>
+        ${RP_ENABLED ? `
         <div class="rp-switch">
           <div class="t">成人模式<small>开了才会出现第三排（状态 / 场所 / 要求）。可随时关。</small></div>
           <button class="rp-sw${state.cfg.adult ? " on" : ""}" data-act="adult"></button>
@@ -1432,14 +1546,17 @@
           <div class="t">私密打码<small>内容默认模糊，点气泡才显形。手机被别人看到时不至于社死。</small></div>
           <button class="rp-sw${state.cfg.blur ? " on" : ""}" data-act="blur"></button>
         </div>
+` : ""}
         <div class="rp-switch">
           <div class="t">侧边栏显示名<small>改成一个只有你自己认得的名字。</small></div>
-          <input class="rp-in" data-f="menuName" value="${esc(state.cfg.menuName || "万花筒")}" maxlength="8" style="width:110px;flex:0 0 auto">
+          <input class="rp-in" data-f="menuName" value="${esc(state.cfg.menuName || MENU_NAME_FALLBACK)}" maxlength="8" style="width:110px;flex:0 0 auto">
         </div>
+        ${RP_ENABLED ? `
         <div class="rp-switch">
           <div class="t">带进上下文的轮数<small>越多越"记得住"，也越费 token。</small></div>
           <input class="rp-in" type="number" min="6" max="80" step="2" data-f="ctxMsgs" value="${esc(state.cfg.ctxMsgs)}" style="width:74px;flex:0 0 auto">
         </div>
+` : ""}
       </div>
 
       <div class="rp-card">
@@ -2012,7 +2129,7 @@
       msgs.push({ role: "user", content: text });
       for (let i = 0; i < SETUP_MAX_STEPS; i++) {
         if (state.abort) break;
-        const out = await callJson("char", msgs, apiTools, state.ctrl && state.ctrl.signal);
+        const out = await callJson("dealer", msgs, apiTools, state.ctrl && state.ctrl.signal);
         if (out.tool_calls && out.tool_calls.length) {
           msgs.push(out);
           for (const tc of out.tool_calls) {
@@ -2093,7 +2210,7 @@
     });
     msgs.push({ role: "user", content: "（把刚才那一步做出来）" });
     try {
-      const out = await callJson("char", msgs, [], state.ctrl && state.ctrl.signal);
+      const out = await callJson(acheSlot(), msgs, [], state.ctrl && state.ctrl.signal);
       const tx = String((out && out.content) || "").trim();
       if (!tx || MONO_SILENT.test(tx)) return "";
       return tx;
@@ -2333,7 +2450,7 @@
      宿主没有这个 id 时（比如脱离宿主的预览页）什么都不做。 */
   function syncMenuName() {
     const n = document.getElementById("rpMenuName");
-    if (n && n.textContent !== (state.cfg.menuName || "万花筒")) n.textContent = state.cfg.menuName || "万花筒";
+    if (n && n.textContent !== (state.cfg.menuName || MENU_NAME_FALLBACK)) n.textContent = state.cfg.menuName || MENU_NAME_FALLBACK;
   }
 
   function bind() {
@@ -2423,7 +2540,7 @@
     elCfg.addEventListener("change", (e) => {
       const t = e.target, f = t.dataset && t.dataset.f;
       if (!f) return;
-      if (f === "menuName") { state.cfg.menuName = (t.value || "").trim().slice(0, 8) || "万花筒"; syncMenuName(); }
+      if (f === "menuName") { state.cfg.menuName = (t.value || "").trim().slice(0, 8) || MENU_NAME_FALLBACK; syncMenuName(); }
       else if (f === "ctxMsgs") state.cfg.ctxMsgs = clamp(+t.value || 24, 6, 80);
       else if (f === "character") state.cfg.character = t.value;
       else if (f === "userPersona") state.cfg.userPersona = t.value;
@@ -2524,7 +2641,7 @@
     <div class="rp-page">
       <div class="rp-top">
         <button data-back type="button" aria-label="返回" class="hidden">‹</button>
-        <div class="rp-title-wrap"><div class="rp-title">万花筒</div><div class="rp-sub"></div></div>
+        <div class="rp-title-wrap"><div class="rp-title">大富翁</div><div class="rp-sub"></div></div>
         <button data-act="cfg" type="button" aria-label="配置" title="配置">⋯</button>
         <button data-close type="button" aria-label="关闭">✕</button>
       </div>
@@ -2532,17 +2649,17 @@
       <div class="rp-scroll hidden"><div class="rp-msgs"></div></div>
       <div class="rp-mono hidden"></div>
       <div class="rp-cfg hidden"></div>
-      <div class="rp-switchbar">
+      ${RP_ENABLED ? `<div class="rp-switchbar">
         <button class="rp-mode" type="button" data-mode="rp">老虎机<small>摇个世界演一场</small></button>
         <button class="rp-mode" type="button" data-mode="mono">大富翁<small>掷骰 · 占地 · 抽卡</small></button>
-      </div>
+      </div>` : ""}
       <div class="rp-composer hidden">
         <div class="rp-quick"></div>
         <div class="rp-inputrow">
           <textarea rows="1" placeholder="说你要做什么…" autocomplete="off" spellcheck="false"></textarea>
           <button class="rp-send" type="button" aria-label="发送"></button>
         </div>
-        <div class="rp-hint">打「停」立刻出戏 · 主角自己决定要不要叫旁白 / NPC</div>
+        <div class="rp-hint">${RP_ENABLED ? "打「停」立刻出戏 · 主角自己决定要不要叫旁白 / NPC" : "说你要做什么 · 说「404 / 停」立刻停下"}</div>
       </div>
     </div>`;
 
@@ -2601,7 +2718,7 @@
     if (!el) {
       el = document.createElement("div");
       el.className = "rp-panel hidden"; el.id = "rpPanel";
-      el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "万花筒");
+      el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "大富翁");
       document.body.appendChild(el);
     }
     if (!el.querySelector(".rp-page")) el.innerHTML = PANEL_HTML;
@@ -2750,7 +2867,7 @@
     toggle: () => { ensureInit(); toggle(); },
     close, init,
     state,
-    menuName: () => state.cfg.menuName || "万花筒",
+    menuName: () => state.cfg.menuName || MENU_NAME_FALLBACK,
     send,                       // 暴露给冒烟测试：可以直接验 run 级锁（不走按钮，按钮在跑的时候是"停止"）
     reset() { state.scene = null; state.world = null; save(); render(); },
     /* 给冒烟测试用的两个口子：open() 内部会 load() 覆盖内存，

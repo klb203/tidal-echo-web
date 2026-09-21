@@ -77,6 +77,7 @@
     album:    { label: "一起看",     fn: "openAlbum" },
     ear:      { label: "一起听",     fn: "openEar" },
     letter:   { label: "信箱",       fn: "openLetter" },
+    read:     { label: "共读",       fn: "openRead" },
     palace:   { label: "记忆宫殿",   fn: "palace",   local: true },
     room:     { label: "我们的房间", fn: "openRoom" },
     moments:  { label: "朋友圈",     fn: "openMoments" },
@@ -104,6 +105,7 @@
       { k: "activity", ic: "✧", n: "自由活动" },
       { k: "group",    ic: "⬡", n: "群聊" },
       { k: "ear",      ic: "♪", n: "一起听" },
+      { k: "read",     ic: "❋", n: "共读" },
       { k: "album",    ic: "▢", n: "一起看" },
     ] },
     { t: "生活记录", rows: [

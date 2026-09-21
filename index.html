@@ -1825,6 +1825,18 @@
   .cap-ab.off{ opacity: .6; }
   .cap-ab.off .cap-ab-st{ color: var(--text-faint); }
   #capAbBox:empty{ display: none; }
+  /* 凭据表单：一张卡里直接填 —— 输入框沿用 .kit-in，不另造一套 */
+  .cap-cred{ display:flex; flex-direction:column; gap:8px; }
+  .cap-cred .kit-in{ width:100%; }
+  .cap-cred-url{ font-size:12.5px; color:var(--text-faint); line-height:1.6; word-break:break-all; }
+  .cap-cred-url code{ font-size:12.5px; padding:1px 5px; border-radius:5px;
+    background:var(--card-bg,rgba(127,127,127,.10)); border:1px solid var(--card-line,transparent); }
+  .cap-cred-lock{ margin-left:6px; opacity:.75; }
+  .cap-cred-btns{ display:flex; gap:8px; }
+  .cap-cred-btns .kit-btn{ flex:1; }
+  .cap-cred-note{ font-size:12.5px; color:var(--text-faint); line-height:1.6; }
+  .cap-cred-note .cap-ok{ color:var(--accent,#1f6feb); font-weight:600; }
+  .cap-cred-note .cap-bad{ color:#d9534f; font-weight:600; }
 
   .cap-sec{ margin: 16px 0 0; }
   .cap-sec:first-child{ margin-top: 4px; }
@@ -7673,7 +7685,7 @@ const CAP_GROUPS = [
    src 的四种来源：
      page  前端页面（自由活动 / 大富翁 / 朋友圈 / 群聊）—— 永远是开的
      tool  内置动作（天气 / 调动微信 / QQ Bot / AI 付）—— 看后端工具清单
-     mcp   外部 MCP 服务（麦当劳 / 瑞幸 / 高德 / 小红书 / 查手机）—— 还要有 token
+     mcp   外部 MCP 服务（麦当劳 / 瑞幸 / 高德 / 小红书 / 查手机）—— 令牌在卡片里直接填
      cfg   设置项（MCP 设置）—— 只是个入口 */
 const CAP_ABILITY = [
   { k:"activity", n:"自由活动",  s:"一起做点什么",             ic:"✦", src:"page", go:"fn:openActivity" },
@@ -7681,11 +7693,13 @@ const CAP_ABILITY = [
   { k:"moments",  n:"朋友圈",    s:"它自言自语的地方",         ic:"◍", src:"page", go:"fn:openMoments" },
   { k:"group",    n:"群聊",      s:"三个 AI 分工干活",         ic:"⬡", src:"page", go:"fn:openGroupChat" },
   { k:"weather",  n:"天气",      s:"现在与未来五天",           ic:"☀", src:"tool", match:["weather"] },
-  { k:"mcd",      n:"麦当劳",    s:"点单 · 优惠券",            ic:"☰", src:"mcp",  match:["mcd", "mcdonald"] },
-  { k:"luckin",   n:"瑞幸咖啡",  s:"点单 · 券",                ic:"☕", src:"mcp",  match:["luckin", "lkcoffee"] },
-  { k:"amap",     n:"高德地图",  s:"路线 · 附近 · 导航",        ic:"◈", src:"mcp",  match:["amap", "gaode", "高德"] },
-  { k:"xhs",      n:"小红书",    s:"搜笔记 · 看攻略",           ic:"▤", src:"mcp",  match:["xhs", "redbook", "xiaohongshu"] },
-  { k:"device",   n:"查手机",    s:"设备 / 网络 / 存储",        ic:"▢", src:"mcp",  match:["device", "phone"] },
+  /* cred = 这张卡有凭据要填（令牌在卡片里直接填，不用绕去设置页）。
+     键名就是后端 bots.EXT_CRED 里的那个 —— 前端不写"存哪"，那是后端的事。 */
+  { k:"mcd",      n:"麦当劳",    s:"点单 · 优惠券",            ic:"☰", src:"mcp",  match:["mcd", "mcdonald"], cred:"mcd" },
+  { k:"luckin",   n:"瑞幸咖啡",  s:"点单 · 券",                ic:"☕", src:"mcp",  match:["luckin", "lkcoffee"], cred:"luckin" },
+  { k:"amap",     n:"高德地图",  s:"路线 · 附近 · 导航",        ic:"◈", src:"mcp",  match:["amap", "gaode", "高德"], cred:"amap" },
+  { k:"xhs",      n:"小红书",    s:"搜笔记 · 看攻略",           ic:"▤", src:"mcp",  match:["xhs", "redbook", "xiaohongshu"], cred:"xhs" },
+  { k:"device",   n:"查手机",    s:"设备 / 网络 / 存储",        ic:"▢", src:"mcp",  match:["device", "phone"], cred:"phone" },
   { k:"wechat",   n:"调动微信",  s:"发消息 · 转发",            ic:"✉", src:"tool", match:["wechat", "weixin"] },
   { k:"qq",       n:"QQ Bot",    s:"官方 AppID / OneBot",     ic:"◔", src:"tool", match:["qq"] },
   { k:"pay",      n:"AI 付",     s:"下单时走支付",             ic:"¥", src:"tool", match:["pay", "payment"] },
@@ -7699,6 +7713,13 @@ function capAbilityOf(a){
   if (!a) return { ok:false, text:"不认识这项", tools:[] };
   if (a.src === "page") return { ok:true, text:"前端面板 · 随时能开", tools:[] };
   if (a.src === "cfg")  return { ok:true, text:"在这儿开 / 关", tools:[] };
+  // 要令牌的能力：没填就是"还没接上"，文案直接指向"点开这张卡"。
+  // ★ capCredOf 返回 null（状态还没拉回来）时**不判**——否则刚打开网关那一下，
+  //   五张卡会先全灭再亮，第一眼像坏了。等 keys 回来自然就准了。
+  if (a.src === "mcp" && a.cred){
+    const c = capCredOf(a.cred);
+    if (c && !c.has_token) return { ok:false, text:"还没填令牌 · 点开填", tools:[] };
+  }
   const tools = capDig(CAP_STATE.data, "tools.tools", null);
   if (!tools) return { ok:false, text:"后端还没回话", tools:[] };
   const denied = capDig(CAP_STATE.data, "tools.denied", []) || [];
@@ -7711,6 +7732,145 @@ function capAbilityOf(a){
   const on = hit.filter(function (nm){ return denied.indexOf(nm) < 0; });
   if (!on.length) return { ok:false, text:"故意不给它（" + hit.length + " 个）", tools:hit };
   return { ok:true, text:on.length + " 个工具可用", tools:hit };
+}
+
+/* ── 外部服务的令牌：读 / 存 / 试 ────────────────────────────────────────────
+   ★ 前端**只有这一处**读、这一处存 —— 卡片渲染不自己去翻状态
+     （一个名字只指一个东西：不然会出现"卡片说填了、点开是空的"）。
+   ★ 落点（存哪儿）由后端 bots.EXT_CRED 那张表说，前端只认能力的 key。
+     所以以后加一项能力 = 后端表加一行，这里一个字都不用动。 */
+function capCredOf(key){
+  if (!key) return null;
+  const list = capDig(CAP_STATE.data, "keys.creds", null);
+  if (!Array.isArray(list)) return null;
+  for (const c of list){ if (c && c.key === key) return c; }
+  return null;
+}
+
+async function capCredSave(key, token, url){
+  const d = await memApi("/app/extools/keys", { method: "POST",
+    body: JSON.stringify({ key: key, token: token, url: url || "" }) });
+  if (!d || !d.ok) throw new Error((d && d.error) || "保存失败");
+  return d;
+}
+
+/* 保存成功后拿回来的那份直接覆盖状态 —— 不用再跑一趟 capLoad（十二个请求）。 */
+function capCredApply(d){
+  if (d && Array.isArray(d.creds)) CAP_STATE.data["keys"] = { ok: true, creds: d.creds };
+}
+
+/* 令牌是哪来的 —— 一句话说清"填了没生效"到底怎么回事。 */
+function capCredSrcText(c){
+  if (!c) return "";
+  if (c.token_src === "user") return "已填";
+  if (c.token_src === "env") return "用环境变量里的（Render 上那份）";
+  return "还没填";
+}
+
+/* 凭据表单。字段名与提示文案都由**后端**给（token_label / token_hint）——
+   前端不再抄一份，改文案时不会两边不一致。 */
+function capCredForm(a, c){
+  const key = a.cred;
+  const label = (c && c.token_label) || (a.n + " 令牌");
+  const hint = (c && c.token_hint) || "";
+  const urlLocked = !!(c && c.url_locked);
+  const urlVal = (c && c.url) || "";
+  let h = '<section class="cap-sec"><div class="cap-sec-t">' + a.ic + " " + escapeHtml(a.n) +
+          " · 凭据</div>";
+  if (hint) h += '<div class="cap-sec-s">' + escapeHtml(hint) + "</div>";
+  h += '<div class="cap-cred">';
+  h += '<input class="kit-in" id="capCredTok" type="password" autocomplete="off" spellcheck="false" placeholder="' +
+       escapeHtml(label) + '（留空 = 不改）">';
+  if (urlLocked){
+    h += '<div class="cap-cred-url">服务地址：<code>' + escapeHtml(urlVal) + "</code>" +
+         '<span class="cap-cred-lock">（这项由服务方定，改不了）</span></div>';
+  } else {
+    h += '<input class="kit-in" id="capCredUrl" type="text" autocomplete="off" spellcheck="false" value="' +
+         escapeHtml(urlVal) + '" placeholder="' +
+         escapeHtml((c && c.url_hint) || "https://服务地址/mcp") + '">';
+  }
+  h += '<div class="cap-cred-btns">' +
+       '<button class="kit-btn" type="button" data-cap-cred-save="' + escapeHtml(key) + '">保存</button>' +
+       '<button class="kit-btn ghost" type="button" data-cap-cred-test="' + escapeHtml(key) + '">测试握手</button>' +
+       "</div>";
+  h += '<div class="cap-cred-note" id="capCredNote">' + escapeHtml(capCredSrcText(c)) +
+       (c && c.has_token ? " · 可以直接用了" : " · 填好保存就能用") + "</div>";
+  h += "</div></section>";
+  return h;
+}
+
+/* 测试握手：按后端给的 way 走对应的探针。
+   preset 型（麦当劳 / 瑞幸）问 /app/extools/tools（那才是它真正的调用链路）；
+   server 型（高德 / 小红书 / 查手机）问 /app/mcp/ping —— 都是既有通道，不另造一个。 */
+async function capCredProbe(a){
+  const c = capCredOf(a.cred);
+  const way = (c && c.way) || "preset";
+  if (way === "server"){
+    const d = await memApi("/app/mcp/ping", { method: "POST",
+      body: JSON.stringify({ name: (c && c.server) || a.cred }) });
+    const tl = (d && d.tools) || [];
+    return { ok: !!(d && d.ok), ms: (d && d.ms) || 0,
+             text: (d && d.ok ? "握手成功" : "握手失败") +
+                   (tl.length ? " · " + tl.length + " 个工具：" + tl.slice(0, 8).join("、") +
+                                (tl.length > 8 ? " …" : "") : "") +
+                   (d && d.error ? " · " + d.error : "") +
+                   (d && d.hint ? " · " + d.hint : "") };
+  }
+  const t0 = Date.now();
+  const d = await memApi("/app/extools/tools?server=" + encodeURIComponent(a.cred));
+  const tools = (d && d.tools) || [];
+  return { ok: !!(d && d.ok), ms: Date.now() - t0,
+           text: (d && d.ok ? "握手成功" : "握手失败") +
+                 (tools.length ? " · " + tools.length + " 个工具：" +
+                                 tools.slice(0, 8).map((x) => x.name || x).join("、") : "") +
+                 (d && d.error ? " · " + d.error : "") };
+}
+
+/* 重渲染会把 #capAbBox 清空 —— 保存完那一下表单跟着消失，看着像"点没了"。
+   所以记住"刚才开着哪张卡"，重渲染后自己再摊开一次（只重开会话里的那一张）。 */
+let CAP_REOPEN = "";
+function CAPABILITY_BY_CRED(key){
+  return CAP_ABILITY.filter((x) => x.cred === key)[0] || null;
+}
+function capReopen(){
+  const k = CAP_REOPEN;
+  if (!k) return;
+  CAP_REOPEN = "";
+  const a = CAP_ABILITY.filter((x) => x.k === k)[0];
+  if (!a) return;
+  const inPanel = document.querySelector("#capPanel [data-cap-ab=\"" + k + "\"]");
+  if (!inPanel) return;                      // 网关已经不在台面上了，就别管
+  capOpenAb(a);
+}
+
+/* 摊开一张能力卡：有凭据先给表单，再列它背后的工具。
+   点击与「保存后重开」共用这一份 —— 两条路各写一遍，迟早长得不一样。 */
+function capOpenAb(a){
+  const box = $("#capAbBox");
+  if (!box || !a) return;
+  const st = capAbilityOf(a);
+  /* ★ 这里不能直接用 capRender 里的 tools —— 那是另一个函数的局部变量。
+     重新取一次（capDig 就是读状态，幂等）。 */
+  const toolMap = capDig(CAP_STATE.data, "tools.tools", null) || {};
+  const c = a.cred ? capCredOf(a.cred) : null;
+  let h = a.cred ? capCredForm(a, c) : "";
+  if (st.tools.length){
+    h += '<section class="cap-sec"><div class="cap-sec-t">' + a.ic + " " + escapeHtml(a.n) +
+      " · 背后的工具</div>" +
+      '<div class="cap-sec-s">点一个 → 填参数 → 直接运行一次（它聊天时也会自己调）。</div>' +
+      '<div class="cap-grid">' +
+      st.tools.map((n) =>
+        '<button class="cap-tile cap-wide" type="button" data-cap-tool="' + escapeHtml(n) + '">' +
+        '<span class="cap-tile-t">' + capIcon("bolt") +
+        '<span class="cap-toolname">' + escapeHtml(n) + "</span></span>" +
+        '<span class="cap-tile-s">' + escapeHtml(String(toolMap[n] || "")) + "</span></button>").join("") +
+      "</div></section>";
+  } else if (a.cred){
+    h += '<div class="cap-note">填好令牌并保存，然后点「测试握手」——' +
+         '接上之后这里会列出它背后具体有哪些工具。</div>';
+  }
+  box.innerHTML = h;
+  try{ box.scrollIntoView({ behavior: "smooth", block: "nearest" }); }catch(_){}
 }
 
 /* 网关现在是 hub 里的一个 tab —— 这两个只是老名字的别名，别的地方照旧能调 */
@@ -7739,6 +7899,7 @@ async function capLoad(force){
     ["palace",   "/app/palace/status"],
     ["budget",   "/app/budget/status"],      // 自主行为用量闸门（今天还能花多少）
     ["extools",  "/app/extools/status"],     // 外部工具（麦当劳 / 瑞幸）
+    ["keys",     "/app/extools/keys"],       // 外部服务的令牌填了没（网关卡那 5 张卡）
   ];
   const results = await Promise.allSettled(
     want.map(([, p]) => fetch(appUrl(p), { headers: authHeaders() }).then((r) => r.json()))
@@ -7960,6 +8121,53 @@ async function capToolGo(btn){
     const runBtn = e.target.closest("#capToolRun");
     if (runBtn){ capToolGo(runBtn); return; }
 
+    /* ── 凭据：保存 / 测试握手 ──────────────────────────────────────────
+       ★ 这两条要排在能力卡分支**之前**：表单是点开卡片后渲染出来的，
+         按钮本身不带 data-cap-ab，但先判更省心（一个点击只走一条路）。 */
+    const cSave = e.target.closest("[data-cap-cred-save]");
+    if (cSave){
+      const key = cSave.dataset.capCredSave;
+      const a = CAPABILITY_BY_CRED(key);
+      const tokEl = $("#capCredTok");
+      const urlEl = $("#capCredUrl");
+      const note = $("#capCredNote");
+      const put = (t) => { if (note) note.innerHTML = t; };
+      cSave.disabled = true;
+      put("保存中…");
+      try{
+        const d = await capCredSave(key, tokEl ? tokEl.value.trim() : "",
+                                    urlEl ? urlEl.value.trim() : "");
+        capCredApply(d);
+        if (tokEl) tokEl.value = "";
+        put('<b>已保存</b>（令牌留空 = 没改）' +
+            ((d && d.saved && d.saved.url) ? " · 地址：" + escapeHtml(d.saved.url) : ""));
+        capRender();
+        if (a) CAP_REOPEN = a.k;      // 重渲染后把这张卡的表单再摊开
+        capReopen();
+      }catch(err){
+        put("保存失败：" + escapeHtml((err && err.message) || String(err)));
+      }finally{ cSave.disabled = false; }
+      return;
+    }
+    const cTest = e.target.closest("[data-cap-cred-test]");
+    if (cTest){
+      const key = cTest.dataset.capCredTest;
+      const a = CAPABILITY_BY_CRED(key);
+      const note = $("#capCredNote");
+      const put = (t) => { if (note) note.innerHTML = t; };
+      cTest.disabled = true;
+      put("后端去握手…");
+      try{
+        const r = await capCredProbe(a);
+        put((r.ok ? '<span class="cap-ok">' : '<span class="cap-bad">') +
+            escapeHtml(r.text) + "</span>" + (r.ms ? " · " + r.ms + "ms" : ""));
+        if (r.ok){ capLoad(true); }     // 手通了 → 把工具清单也刷新一遍
+      }catch(err){
+        put("探针请求失败：" + escapeHtml((err && err.message) || String(err)));
+      }finally{ cTest.disabled = false; }
+      return;
+    }
+
     /* 能力卡：有 go 的直接去那个地方；没有的就展开它背后的工具（点一个就能试跑） */
     const ab = e.target.closest("[data-cap-ab]");
     if (ab){
@@ -7968,27 +8176,14 @@ async function capToolGo(btn){
       if (a.go){ capAct(a.go); return; }
       const box = $("#capAbBox");
       const st = capAbilityOf(a);
-      if (!st.tools.length){
+      /* ★ 有凭据的卡**不再把人送去别处**：卡片自己就是填写口。
+         改前这里是一句 toast + 跳「MCP 设置」，五样东西五条绕路。 */
+      if (!a.cred && !st.tools.length){
         showToast(a.n + " 现在还没接上 —— 在「MCP 设置」里配好 token 并勾上工具");
         capAct("kit:mcp");
         return;
       }
-      /* ★ 这里不能直接用 capRender 里的 tools —— 那是另一个函数的局部变量。
-         重新取一次（capDig 就是读状态，幂等）。 */
-      const toolMap = capDig(CAP_STATE.data, "tools.tools", null) || {};
-      if (box){
-        box.innerHTML = '<section class="cap-sec"><div class="cap-sec-t">' + a.ic + " " + escapeHtml(a.n) +
-          " · 背后的工具</div>" +
-          '<div class="cap-sec-s">点一个 → 填参数 → 直接运行一次（它聊天时也会自己调）。</div>' +
-          '<div class="cap-grid">' +
-          st.tools.map((n) =>
-            '<button class="cap-tile cap-wide" type="button" data-cap-tool="' + escapeHtml(n) + '">' +
-            '<span class="cap-tile-t">' + capIcon("bolt") +
-            '<span class="cap-toolname">' + escapeHtml(n) + "</span></span>" +
-            '<span class="cap-tile-s">' + escapeHtml(String(toolMap[n] || "")) + "</span></button>").join("") +
-          "</div></section>";
-        try{ box.scrollIntoView({ behavior: "smooth", block: "nearest" }); }catch(_){}
-      }
+      capOpenAb(a);
       return;
     }
 

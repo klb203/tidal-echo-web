@@ -2,7 +2,12 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v99-memory";          // v99：世界书 = Lorebook（手写设定 + 命中预览 + 导入导出）
+const CACHE = "companion-v101-tidy";          // v101：事件/故事/片段/工作记忆/我的房间/留给西西的话
+                                               //       这六类**从界面去掉**（用户点名），内容走「从记忆库导入」
+                                               // v100：记忆库分区收进「世界书」页（底部栏不再各占一张卡）
+                                               //       世界书面板出错/没加载时把原因画出来（不再是一片空白）
+                                               //       新增「从记忆库导入」：把分区复制成世界书条目
+                                               // v99：世界书 = Lorebook（手写设定 + 命中预览 + 导入导出）
                                                //      档案馆 = 事件盒（活/灰节点可复活、压缩、封盒）
                                                //      纠正 v98 的一处理解错误：世界书**不是**"事件·摘要·故事·片段"，
                                                //      那四类是聊天里长出来的叙事，归档案馆

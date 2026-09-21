@@ -45,6 +45,7 @@
     grab("esc", () => (typeof escapeHtml === "function") ? escapeHtml : null);
     grab("libItems", () => (typeof memData === "object" && memData) ? (memData.items || {}) : {});
     grab("layers", () => (typeof memData === "object" && memData) ? memData.layers : null);
+    grab("libCounts", () => (typeof memData === "object" && memData) ? (memData.counts || {}) : {});
     grab("arcRender", () => (typeof arcRender === "function") ? arcRender : null);
     grab("reload", () => (typeof memLoad === "function") ? memLoad : null);
     grab("aiName", () => {
@@ -78,6 +79,22 @@
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
   const line = (s, n) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, n);
 
+  /* 记忆库那八类（可以导进世界书的）。
+     ★ 列表与中文名**以后端 /app/layers 为准**（layers.MEM_KINDS / KIND_LABEL）——
+       前端这份只是"读不到 /app/layers"时的兜底。抄第二份定义的下场，
+       这个项目已经踩过好几次（改一处漏一处）。 */
+  const LIB_FALLBACK = ["event", "ref", "working", "summary", "story", "room", "letter", "fragment"];
+  function libKinds() {
+    const L = hostApi().layers;
+    const k = L && L.library_kinds;
+    return (Array.isArray(k) && k.length) ? k : LIB_FALLBACK;
+  }
+  function kindLabel(k) {
+    const L = hostApi().layers;
+    const m = (L && L.labels) || {};
+    return m[k] || k;
+  }
+
   /* 选择性逻辑 —— 语义照 worldbook.secondary_passes()，名字照 SillyTavern（是反的，别改） */
   const LOGIC = [
     { v: 0, label: "次词中任意一个即可", en: "AND_ANY" },
@@ -91,8 +108,10 @@
     loaded: false, busy: false, err: "",
     items: [], stats: null, cats: [], posLabels: {}, posDesc: {}, roleLabels: {}, defaults: null,
     cat: "", edit: null,       // edit = 条目 id / "new" / null
-    panel: "",                 // "" | "import" | "preview"
+    panel: "",                 // "" | "import" | "preview" | "fromlib"
     importText: "", preview: null, previewText: "", names: { char: "", user: "" },
+    libPick: { room: true, letter: true },   // 默认勾"房间与留言"（它们是静态设定）
+    libConst: true,                          // 导进来默认标成常驻
   };
 
   async function wbLoad() {
@@ -314,6 +333,39 @@
       }
       return out;
     }
+    if (WB.panel === "fromlib") {
+      /* 把记忆库那八个分区**复制**成世界书条目 —— 用户要的"归类为世界书"就是这条。
+         默认只勾「我的房间」「留给西西的话」：那两类回答的是"它住在什么样的地方 /
+         它想对 TA 说什么"，是**静态设定**，本来就该在世界书里；
+         其余六类（事件/摘要/故事/片段/参考资料/工作记忆）要用户自己决定 ——
+         它们是"记忆"，硬塞进世界书会让每轮上下文变长（而且白花钱）。 */
+      const C = hostApi().libCounts || {};
+      const ks = libKinds();
+      const rows = ks.map((k) => {
+        const n = num(C[k], 0);
+        const on = WB.libPick[k] ? " checked" : "";
+        return '<label class="mp-check"' + (n ? "" : ' style="opacity:.55"') +
+          '><input type="checkbox" data-wb-libpick="' + esc(k) + '"' + on + ">" +
+          esc(kindLabel(k)) + " · " + n + " 条</label>";
+      }).join("");
+      const picked = ks.filter((k) => WB.libPick[k]).length;
+      return '<div class="mp-note" style="margin-top:12px">' +
+        "把记忆库的分区<b>复制</b>一份成世界书条目（记忆库那边一条都不动）。" +
+        "导进来的就是普通条目 —— 能改正文、能设关键词、能设位置、能设成常驻。<br>" +
+        "同一条只会导一次，反复点不会灌重复。</div>" +
+        '<div class="mp-chips" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px">' +
+        rows + "</div>" +
+        '<label class="mp-check" style="margin-top:11px"><input type="checkbox" data-wb-libconst="1"' +
+        (WB.libConst ? " checked" : "") + ">导进来标成常驻（每轮都在上下文里）</label>" +
+        '<div class="mp-hint">不勾的话：「我的房间」「留给西西的话」仍然常驻，' +
+        "其余按关键词 —— 前者是「一直在那儿」的设定，后者要等说到才需要。</div>" +
+        '<div class="mp-acts">' +
+        '<button type="button" class="mp-btn primary" data-wb-fromlib-go="1">导入选中的 ' +
+        picked + " 类</button>" +
+        '<button type="button" class="mp-btn" data-wb-fromlib-all="1">全选</button>' +
+        '<button type="button" class="mp-btn" data-wb-panel-close="1">取消</button>' +
+        "</div>";
+    }
     return "";
   }
 
@@ -346,14 +398,16 @@
       '<button type="button" class="mp-btn" data-wb-preview-open="1">命中预览</button>' +
       '<button type="button" class="mp-btn" data-wb-import-open="1">导入</button>' +
       '<button type="button" class="mp-btn" data-wb-export="1">导出</button>' +
-      '<button type="button" class="mp-btn" data-wb-migrate="1">把房间与留言拉进来</button>' +
+      '<button type="button" class="mp-btn primary" data-wb-fromlib-open="1">从记忆库导入</button>' +
       '<button type="button" class="mp-btn" data-wb-reload="1">刷新</button>' +
       "</div>" +
       '<div class="mp-note" style="margin-top:12px">这里放的是<b>你自己写</b>的设定 —— ' +
       "世界观、人物关系、地点、规则。「我的房间」「留给西西的话」也属于这一层" +
       "（它们回答的是「它住在什么样的地方 / 它想对 TA 说什么」，不是「发生过什么事」）。" +
       "<br>按关键词命中的条目<b>只在那几轮</b>进上下文；留空关键词的就是常驻。" +
-      "聊天里自己长出来的那些叙事（事件 / 摘要 / 故事 / 片段）在<b>档案馆</b>。</div>" +
+      "<br>下面那一叠是<b>记忆库的分区</b>（事件 / 摘要 / 故事 / 片段 / 参考资料 / " +
+      "工作记忆 / 我的房间 / 留给西西的话）—— 在这里也能看、也能改。" +
+      "想把它们变成世界书条目，用上面的「从记忆库导入」。</div>" +
       wbPanelHtml() +
       "</section>";
     if (WB.edit) {
@@ -367,8 +421,11 @@
       wbChipsHtml() +
       (list.length
         ? '<div style="margin-top:10px">' + list.map(wbCardHtml).join("") + "</div>"
-        : '<div class="arc-empty">这个分组还是空的。<br>点上面的「新建条目」，' +
-          "或者把「我的房间」「留给西西的话」拉进来。</div>") +
+        : '<div class="arc-empty">这里还是空的 —— ' +
+          "世界书放的是<b>你自己写</b>的设定，它不会自己长出来。<br><br>" +
+          "两条路：点「<b>新建条目</b>」手写一条；或者点「<b>从记忆库导入</b>」，" +
+          "把下面那些分区（我的房间 / 留给西西的话 / 事件 …）复制一份过来，" +
+          "再改成你想要的写法。</div>") +
       "</section>";
   }
 
@@ -488,6 +545,37 @@
     } catch (e) { toast("导入失败：" + ((e && e.message) || e)); }
   }
 
+  async function wbFromLib() {
+    const kinds = libKinds().filter((k) => WB.libPick[k]);
+    if (!kinds.length) { toast("一类都没勾 —— 先勾上要导的（比如「我的房间」）"); return; }
+    WB.busy = true;
+    try {
+      const d = await POST("/app/worldbook/from-library",
+        { kinds: kinds, constant: !!WB.libConst });
+      if (!d || d.ok === false) throw new Error((d && d.error) || "导入失败");
+      toast("导进 " + num(d.made, 0) + " 条" +
+        (num(d.skipped, 0) ? "（跳过 " + d.skipped + " 条已导过的）" : ""));
+      WB.panel = "";
+      await wbLoad();
+      wbPaint();
+      /* 顺手让宿主重读一次记忆库 —— 分区卡的副标题（共 N 条）跟着刷新。
+         ★ 导完**不**动记忆库的数据（那是复制），但分栏上的计数要跟当前状态一致。 */
+      const H = hostApi();
+      if (H.reload) { try { await H.reload(); } catch (_) { } }
+    } catch (e) {
+      toast("导入失败：" + ((e && e.message) || e));
+    }
+    WB.busy = false;
+  }
+
+  /* 勾选只改按钮上那个数字，**不重绘整个面板** ——
+     重绘会把刚勾的 checkbox 洗掉（用户的勾选状态在 DOM 里，不在 WB 里）。 */
+  function wbFromLibCount() {
+    const host = document.getElementById("memWbMount"); if (!host) return;
+    const btn = host.querySelector("[data-wb-fromlib-go]");
+    if (btn) btn.textContent = "导入选中的 " + libKinds().filter((k) => WB.libPick[k]).length + " 类";
+  }
+
   async function wbPreview() {
     const host = document.getElementById("memWbMount");
     const box = host && host.querySelector("[data-wb-prevbox]");
@@ -519,7 +607,16 @@
     if (!host || host.dataset.bound) return;
     host.dataset.bound = "1";
     host.addEventListener("change", (e) => {
-      if (e.target && e.target.matches && e.target.matches('[data-wbf="position"]')) wbPosHint();
+      const t = e.target;
+      if (!t || !t.matches) return;
+      if (t.matches('[data-wbf="position"]')) { wbPosHint(); return; }
+      /* 导入面板的勾选：只记状态（+更新按钮上那个数字），不重绘 —— 见 wbFromLibCount */
+      if (t.matches("[data-wb-libpick]")) {
+        WB.libPick[t.dataset.wbLibpick] = !!t.checked;
+        wbFromLibCount();
+        return;
+      }
+      if (t.matches("[data-wb-libconst]")) { WB.libConst = !!t.checked; return; }
     });
     host.addEventListener("click", async (e) => {
       const t = e.target;
@@ -536,6 +633,16 @@
         if (hit("[data-wb-preview-open]")) {
           WB.panel = WB.panel === "preview" ? "" : "preview"; wbPaint(); return;
         }
+        if (hit("[data-wb-fromlib-open]")) {
+          WB.panel = WB.panel === "fromlib" ? "" : "fromlib";
+          /* 打开时把"有没有东西可导"摆在明面：一条都没有的类别变淡（见面板里那行） */
+          wbPaint(); return;
+        }
+        if (hit("[data-wb-fromlib-all]")) {
+          libKinds().forEach((k) => { WB.libPick[k] = true; });
+          wbPaint(); return;
+        }
+        if (hit("[data-wb-fromlib-go]")) { await wbFromLib(); return; }
         if (hit("[data-wb-import]")) { await wbImport(); return; }
         if (hit("[data-wb-preview]")) { await wbPreview(); return; }
         if (hit("[data-wb-export]")) { await wbExport(); return; }
@@ -841,21 +948,59 @@
     host.classList.toggle("hidden", v !== "boxes");
   }
 
+  /* 出错时把原因画出来（而不是留一片空白）+ 一个能点的重试。
+     ★ 重试按钮要挂监听器，所以这里再 bind 一次 —— bind 是幂等的（dataset.bound）。 */
+  function paintFailure(page, e) {
+    const isArc = page === "archive";
+    const msg = String((e && e.message) || e || "未知错误");
+    try { if (typeof console !== "undefined" && console.error) console.error("[memory-pack]", page, e); } catch (_) { }
+    /* ★ 兜底路径必须**自包含**：不能调 hostApi().esc / esc() / hostApi().toast。
+       它们是"正常路径"的依赖 —— 而正常路径刚刚才炸过。第一版这里写的是 esc(msg)，
+       于是一旦坏在 esc 上（比如宿主给的 escapeHtml 有问题），兜底自己也跟着抛，
+       结果还是留一片空白，等于没有兜底。（smoke 里那条"兜底不许依赖会坏的东西"抓到的。） */
+    const safe = (x) => String(x == null ? "" : x).replace(/[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    let host = null;
+    try { host = document.getElementById(isArc ? "arcBoxes" : "memWbMount"); } catch (_) { host = null; }
+    if (!host) return;
+    /* 整段拼装也包起来 —— 目标是"无论如何都留下一点可读的东西"，不是"再抛一次" */
+    try {
+      host.innerHTML = '<section class="mg-card"><div class="mg-head"><div>' +
+        '<div class="mg-title">' + (isArc ? "档案馆" : "世界书") + "</div>" +
+        '<div class="mg-sub">这一页没能画出来</div></div></div>' +
+        '<div class="arc-empty">' + safe(msg) + "<br><br>" +
+        "常见原因：后端刚重启（等十几秒再点重试）、网络断了、或者这条记录的形状不对。</div>" +
+        '<div class="mp-acts"><button type="button" class="mp-btn primary" data-' +
+        (isArc ? "bx" : "wb") + '-reload="1">重试</button></div></section>';
+    } catch (_) { host.innerHTML = "这一页没能画出来：" + safe(msg); }
+    /* 重试按钮得有监听器，否则它是个死按钮 */
+    try { if (isArc) bxBindEv(); else wbBind(); } catch (_) { }
+  }
+
   /* ════════════════════════════ 出口 ════════════════════════════ */
   const api_ = {
     /* page: "worldbook" | "archive"。force=true 时强制重读。 */
     async render(page, force) {
-      if (page === "worldbook") {
-        wbBind();
-        if (force || !WB.loaded) await wbLoad();
-        wbPaint();
-        return WB;
-      }
-      if (page === "archive") {
-        bxBindEv();
-        if (force || !BX.loaded) await bxLoad();
-        bxPaint();
-        return BX;
+      try {
+        if (page === "worldbook") {
+          wbBind();
+          if (force || !WB.loaded) await wbLoad();
+          wbPaint();
+          return WB;
+        }
+        if (page === "archive") {
+          bxBindEv();
+          if (force || !BX.loaded) await bxLoad();
+          bxPaint();
+          return BX;
+        }
+      } catch (e) {
+        /* ★ 不静默。
+           宿主那边是 `try { MemoryPack.render(...) } catch (_) { }` —— 它会把错误吃掉，
+           界面上只剩一片空白。用户看到的是"打开没有"，而真正的原因谁也看不见 ——
+           排查成本全落在"再读一遍代码"上。所以这里自己把错误画在页面上：
+           至少能分清是"后端连不上""数据形状不对"还是"哪儿写崩了"。 */
+        paintFailure(page, e);
       }
     },
     /* 换页/重进记忆面板时清掉"停在某一层"的状态 —— 否则下次进来还停在上次的盒里 */
@@ -872,7 +1017,10 @@
     _wbDraft: wbDraft,
     _bxLoose: bxLoose,
     _narrativeKinds: narrativeKinds,
+    _libKinds: libKinds,
+    _kindLabel: kindLabel,
     _wbReadForm: wbReadForm,
+    _wbPanelHtml: wbPanelHtml,
     _bxView: bxView,
     _reset() {
       WB.loaded = false; WB.items = []; WB.stats = null; WB.err = "";

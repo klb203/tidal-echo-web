@@ -570,6 +570,111 @@ const BX_FIX = {
     eq((w.els.memWbMount._listeners.click || []).length, 1, "世界书那边也只挂一个");
   }
 
+  console.log('\n=== 18. 从记忆库导入（用户要的「归类为世界书」）===');
+  {
+    const host = {
+      libCounts: { event: 1, summary: 32, story: 0, fragment: 16, ref: 0, working: 0, room: 0, letter: 0 },
+      layers: { library_kinds: ["event", "ref", "working", "summary", "story", "room", "letter", "fragment"],
+                labels: { event: "事件", ref: "参考资料", working: "工作记忆", summary: "摘要",
+                          story: "故事", room: "我的房间", letter: "留给西西的话", fragment: "片段" } },
+    };
+    const { MP, els, calls } = boot(host, { "/app/worldbook": WB_FIX });
+    await MP.render("worldbook");
+    els.memWbMount._fire("click", { target: tgt({ "[data-wb-fromlib-open]": {} }) });
+    await settle();
+    const h = els.memWbMount._html;
+    for (const t of ["事件", "摘要", "故事", "片段", "参考资料", "工作记忆", "我的房间", "留给西西的话"]) {
+      ok(h.includes(t), "导入面板列出：" + t);
+    }
+    ok(h.includes("事件 · 1 条"), "带上每类的条数（1）");
+    ok(h.includes("摘要 · 32 条"), "带上每类的条数（32）");
+    ok(h.includes("复制"), "说清是复制不是搬走");
+    ok(h.includes("反复点不会灌重复"), "说清去重（不然用户不敢多点）");
+    /* 默认只勾"房间与留言"——它们是静态设定，本来就该在世界书里 */
+    ok(/data-wb-libpick="room" checked/.test(h), "默认勾上「我的房间」");
+    ok(/data-wb-libpick="letter" checked/.test(h), "默认勾上「留给西西的话」");
+    ok(!/data-wb-libpick="summary" checked/.test(h), "默认不勾「摘要」（它是记忆，且 32 条会撑长上下文）");
+    ok(h.includes("导入选中的 2 类"), "按钮上写着会导几类");
+    ok(/data-wb-libconst="1" checked/.test(h), "默认勾「导进来标成常驻」");
+
+    /* 全选 */
+    els.memWbMount._fire("click", { target: tgt({ "[data-wb-fromlib-all]": {} }) });
+    await settle();
+    ok(els.memWbMount._html.includes("导入选中的 8 类"), "全选后按钮变成 8 类");
+
+    /* 勾选只改按钮文案，**不重绘**（重绘会把刚勾的 checkbox 洗掉）。
+       ★ 假 DOM 的 querySelector 只看测试预置的映射，所以先把那颗按钮放进去 ——
+         真浏览器里它是 innerHTML 里的一个真实节点。 */
+    const goBtn = makeEl();
+    goBtn.textContent = "导入选中的 8 类";
+    els.memWbMount._q["[data-wb-fromlib-go]"] = goBtn;
+    const beforeHtml = els.memWbMount._html;
+    els.memWbMount._fire("change", {
+      target: { matches: (sel) => sel === "[data-wb-libpick]", checked: false,
+                dataset: { wbLibpick: "event" } },
+    });
+    await settle();
+    eq(MP._state.WB.libPick.event, false, "勾选状态记进了 state");
+    eq(goBtn.textContent, "导入选中的 7 类", "按钮数字跟着变（8 → 7 类）");
+    eq(els.memWbMount._html, beforeHtml, "★ 而且整块 HTML 一模一样 —— 没有重绘（否则刚勾的会被洗掉）");
+
+    /* 导入 */
+    calls.length = 0;
+    els.memWbMount._fire("click", { target: tgt({ "[data-wb-fromlib-go]": {} }) });
+    await settle();
+    const c = calls.filter((x) => x.path === "/app/worldbook/from-library")[0];
+    ok(!!c, "发了 from-library 请求");
+    ok(c.body.kinds.indexOf("room") >= 0 && c.body.kinds.indexOf("letter") >= 0, "带上勾中的类");
+    eq(c.body.kinds.indexOf("event"), -1, "★ 刚取消勾选的那类不该在里面");
+    eq(c.body.constant, true, "带着「标成常驻」这个选择");
+    eq(c.body.kinds.length, 7, "一共 7 类");
+  }
+
+  console.log('\n=== 19. 一类都没勾时别发请求 ===');
+  {
+    const toasts = [];
+    const host = {
+      toast: (m) => toasts.push(m),
+      layers: { library_kinds: ["event", "room"], labels: { event: "事件", room: "我的房间" } },
+    };
+    const { MP, els, calls } = boot(host, { "/app/worldbook": WB_FIX });
+    await MP.render("worldbook");
+    els.memWbMount._fire("click", { target: tgt({ "[data-wb-fromlib-open]": {} }) });
+    await settle();
+    els.memWbMount._fire("change", {
+      target: { matches: (sel) => sel === "[data-wb-libpick]", checked: false, dataset: { wbLibpick: "room" } },
+    });
+    await settle();
+    calls.length = 0;
+    els.memWbMount._fire("click", { target: tgt({ "[data-wb-fromlib-go]": {} }) });
+    await settle();
+    ok(!calls.some((x) => x.path === "/app/worldbook/from-library"), "没勾任何一类 → 不发请求");
+    ok(toasts.some((m) => m.indexOf("一类都没勾") >= 0), "并且说清了原因");
+  }
+
+  console.log('\n=== 20. ★ 出错时不能留一片空白（用户看到「打开没有」的那条路）===');
+  {
+    /* 让正常路径里必然会用到的东西坏掉 —— 模拟"宿主给的 escapeHtml 有问题" */
+    const { MP, els } = boot({
+      esc: () => { throw new Error("宿主给的 escapeHtml 炸了"); },
+    }, { "/app/worldbook": WB_FIX });
+    await MP.render("worldbook");
+    const h = els.memWbMount._html;
+    ok(h.length > 0, "★ 页面上有东西（不是空白）");
+    ok(h.includes("没能画出来"), "写清了「这一页没能画出来」");
+    ok(h.includes("宿主给的 escapeHtml 炸了"), "把**真正的原因**带出来了（排查不用再读代码）");
+    ok(h.includes("重试"), "给了一个重试按钮");
+    ok(!h.includes("&lt;script"), "兜底路径自己转义了（没把原始字符直接拼进 HTML）");
+    /* 重试按钮必须真的可点 —— 兜底里也要 bind */
+    ok((els.memWbMount._listeners.click || []).length >= 1, "重试按钮挂了监听器（不是死按钮）");
+  }
+  {
+    /* 兜底路径不许依赖"可能已经坏掉的东西"：连 esc 都没有时也得有输出 */
+    const { MP, els } = boot({ esc: null, toast: null }, { "/app/worldbook": WB_FIX });
+    await MP.render("worldbook");
+    ok(els.memWbMount._html.includes("世界书"), "没有 escapeHtml 时也能画出正常页（内置兜底转义）");
+  }
+
   console.log('\n────────────────────────────────────────');
   console.log(PASS + ' 通过 / ' + FAIL + ' 失败');
   process.exit(FAIL ? 1 : 0);

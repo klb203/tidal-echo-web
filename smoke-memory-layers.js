@@ -73,12 +73,24 @@ for (const k of ['event', 'summary', 'story', 'fragment']) {
 ok(/const note = LIB_DEFS\.filter\(\(d\)\s*=>\s*!d\.book\)/.test(html) === false,
   'buildLibCards 不再按 book 拆（那个过滤器连同 #wbSections 一起退休了）');
 
-console.log('\n=== 4. 八个分区各占一页，一个处理器 ===');
-ok(/host\.innerHTML = LIB_DEFS\.map\(/.test(html),
-  '八个分区都渲染进 #libCards');
-ok(!/\$\("#wbSections"\)/.test(html), '#wbSections 已经不存在（不再往那儿塞卡片）');
-ok(!/\[\s*host,\s*\$\("#wbSections"\)\s*\]/.test(html),
-  '监听器只挂一个宿主（两个宿主的写法是上一版的）');
+console.log('\n=== 4. 分区卡片：按名单显示（用户点名去掉的六类不出现）===');
+/* ★ 用户的原话：「事件，故事，片段，工作空间，我的房间，留给西西的话，去掉」
+     ——它们不再占底部栏、也不再在世界书页里显示；内容走「从记忆库导入」变成世界书条目。
+     ★ 关键：**数据一条都没删**（LIB_DEFS 仍是八类）—— 去掉的只是"显示"。 */
+ok(/const LIB_HIDDEN = \["event", "story", "fragment", "working", "room", "letter"\]/.test(html),
+  'LIB_HIDDEN 就是用户点名的那六类');
+ok(/LIB_DEFS\.filter\(\(d\) => LIB_HIDDEN\.indexOf\(d\.kind\) < 0\)/.test(html),
+  '渲染时按这份名单过滤（改名单只改一处）');
+ok(/const note = LIB_DEFS\.filter/.test(html) === false, '旧的"按 book 拆"没有残留');
+ok(/\$\("#wbLibBlocks"\)/.test(html), '剩下的仍有落地容器（摘要 / 参考资料）');
+ok(!/\$\("#libCards"\)/.test(html), '#libCards 容器已退休');
+ok(!/data-mp="lib-/.test(html), '不再有 lib-* 页面（它们不是"页"了）');
+ok(/const cards = MEM_BAR_FIXED;/.test(html), '底部栏只出八张固定卡');
+ok(/tag\("#libSub-" \+ d\.kind/.test(html), '条数改写到卡片副标题上（#libSub-*）');
+/* 默认折叠：它们在这儿是"顺带还能改"，不是这一页的主角 */
+ok(/secHtml\(d, false\)/.test(html), '剩下的分区默认折叠');
+/* 去掉之后要给人指路：数据还在哪看 */
+ok(/档案馆 · 时间线/.test(html), '页面上写清了"原来那些去哪看"');
 
 console.log('\n=== 5. 档案馆：两个子视图，DOM 搬家要真落在新页里 ===');
 const iArchive = html.indexOf('data-mp="archive"');
@@ -101,19 +113,22 @@ const iOverviewEnd = html.indexOf('<!-- /总览页 -->');
 ok(!(html.slice(iOverview, iOverviewEnd).includes('id="arcCard"')), '总览页里已经没有被搬走的档案卡');
 
 console.log('\n=== 6. 两个新挂载点各一个，且 pack 真的被引入 ===');
-for (const id of ['arcBoxes', 'arcTimeline', 'memWbMount', 'arcCard', 'arcBody', 'arcCrumb',
-                  'arcLead', 'arcChars', 'arcCount', 'libCards', 'memBar', 'palCard', 'palOpen']) {
+for (const id of ['arcBoxes', 'arcTimeline', 'memWbMount', 'wbLibBlocks', 'arcCard', 'arcBody',
+                  'arcCrumb', 'arcLead', 'arcChars', 'arcCount', 'memBar', 'palCard', 'palOpen']) {
   const n = (html.match(new RegExp('id="' + id + '"', 'g')) || []).length;
   ok(n === 1, '#' + id + ' 恰好一个', n);
 }
 ok(/<script defer src="memory-pack\.js"><\/script>/.test(html), 'index.html 引入了 memory-pack.js');
 ok(/<link rel="stylesheet" href="memory-pack\.css">/.test(html), 'index.html 引入了 memory-pack.css');
-/* 两个挂载点的监听器由 pack 自己挂（dataset.bound），宿主不该碰它们 */
-ok(!/\$\("#memWbMount"\)/.test(html), '宿主不碰 #memWbMount（整页归 pack）');
-ok(!/\$\("#arcBoxes"\)/.test(html), '宿主不碰 #arcBoxes');
+/* 两个挂载点的**内容**由 pack 画（宿主只在失败兜底时写一句错误说明） */
+ok(!/\$\("#memWbMount"\)\.innerHTML/.test(html), '宿主不往 #memWbMount 写正文（整页归 pack）');
+ok(!/\$\("#arcBoxes"\)\.innerHTML/.test(html), '宿主不往 #arcBoxes 写正文');
 /* 但切页时必须通知 pack，否则进去是空的 */
-ok(/MemoryPack\.render\("worldbook"\)/.test(html), 'memShowPage 会通知 pack 渲染世界书');
-ok(/MemoryPack\.render\("archive"\)/.test(html), 'memShowPage 会通知 pack 渲染档案馆');
+ok(/memPackRender\("worldbook", "#memWbMount"\)/.test(html), 'memShowPage 通知 pack 渲染世界书');
+/* ★ 失败不许沉默：上一版是 try{...}catch(_){}，界面只剩一片空白，用户看到"打开没有" */
+ok(/function memPackRender/.test(html), '有 memPackRender 这层兜底');
+ok(/typeof MemoryPack === "undefined"/.test(html), '包没加载时给出明确说法（不是空白）');
+ok(/memPackRender\("archive", "#arcBoxes"\)/.test(html), 'memShowPage 通知 pack 渲染档案馆');
 /* 时间线那一屏还是宿主的 arcRender —— 不能因为加了 pack 就没人画它 */
 ok(/try \{ arcRender\(\); \} catch/.test(html), '档案馆页仍然会调宿主自己的 arcRender()');
 
@@ -149,7 +164,7 @@ try {
   const sw = fs.readFileSync(SW, 'utf8');
   const m = /const CACHE = "([^"]+)"/.exec(sw);
   ok(!!m, '找到 CACHE');
-  ok(/v99|events?box|memory-pack|worldbook/.test(m ? m[1] : ''), 'CACHE 是本次的版本：' + (m ? m[1] : '?'));
+  ok(/v10[01]|tidy|book|memory-pack|worldbook/.test(m ? m[1] : ''), 'CACHE 是本次的版本：' + (m ? m[1] : '?'));
   for (const f of ['./memory-pack.js', './memory-pack.css']) {
     ok(sw.includes(f), f + ' 在 PRECACHE 里（否则离线打开是空的）');
   }

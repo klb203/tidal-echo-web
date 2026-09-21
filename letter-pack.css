@@ -179,3 +179,45 @@
   transition: opacity .2s ease, transform .2s ease;
 }
 .lt-toast.show { opacity: 1; transform: translateX(-50%); }
+
+/* ── 乌有乡 · 明信片 ──────────────────────────────────────────────────── */
+.lt-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 4px 2px 8px;
+}
+.lt-bar .lt-count { padding: 0; }
+.lt-bar-b { display: flex; flex: 0 0 auto; gap: 6px; }
+.lt-btn.sm {
+  flex: 0 0 auto; min-width: 0;
+  padding: 5px 11px; font-size: 11.5px; border-radius: 9px;
+}
+
+.lt-pc {
+  position: relative;
+  padding: 12px 13px 11px 15px;
+  margin-bottom: 9px;
+  border-radius: 13px;
+  background: var(--card-bg, rgba(127, 127, 127, .06));
+  border: 1px solid var(--card-line, rgba(127, 127, 127, .18));
+}
+.lt-pc::before {                    /* 左边一道窄边：像卡片的装订 */
+  content: ""; position: absolute; left: 6px; top: 11px; bottom: 11px;
+  width: 2px; border-radius: 2px;
+  background: var(--accent, #1f6feb); opacity: .45;
+}
+.lt-pc-h {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; margin-bottom: 6px;
+}
+.lt-pc-place { font-size: 13px; font-weight: 600; color: var(--text, #e8eaed); }
+.lt-pc-time {
+  flex: 0 0 auto; font-size: 10.5px; white-space: nowrap;
+  color: var(--text-faint, rgba(160, 166, 176, .95));
+}
+.lt-pc-t { font-size: 13px; line-height: 1.72; color: var(--text, #e8eaed); }
+.lt-pc-stamp {
+  margin-top: 8px; padding-top: 7px;
+  border-top: 1px dashed var(--card-line, rgba(127, 127, 127, .22));
+  font-size: 10.5px; letter-spacing: .2px;
+  color: var(--text-faint, rgba(160, 166, 176, .95));
+}

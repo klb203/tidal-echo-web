@@ -1818,6 +1818,14 @@
     flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding: 10px 14px calc(env(safe-area-inset-bottom) + 26px);
   }
+  /* 能力卡（A 组）：**沿用**工具能力页那套 .kit-grid / .kit-card，
+     这里只补"能不能用"那行小字与"还没接"的降权。 */
+  .cap-ab-st{ align-self: flex-start; margin-top: 2px; font-size: 10.5px; color: var(--text-faint); }
+  .cap-ab:not(.off) .cap-ab-st{ color: var(--accent); }
+  .cap-ab.off{ opacity: .6; }
+  .cap-ab.off .cap-ab-st{ color: var(--text-faint); }
+  #capAbBox:empty{ display: none; }
+
   .cap-sec{ margin: 16px 0 0; }
   .cap-sec:first-child{ margin-top: 4px; }
   .cap-sec-t{ font-size: 13.5px; font-weight: 600; color: var(--text); letter-spacing:.03em; }
@@ -7656,6 +7664,55 @@ const CAP_GROUPS = [
   { k:"data", t:"数据与花销",   s:"备份、同步、用了多少" },
 ];
 
+/* ── 它现在会什么：一张卡一个「能力」────────────────────────────────────
+   ★ 卡片上写的是**能力名**（"麦当劳"），不是后端的工具名（mcd.available-coupons）。
+     这一组是给人扫的：一眼看过去就知道它现在会什么、什么还没接上。
+     具体工具名藏进卡里 —— 点开才看（要看的时候看得见，不看的时候不占眼睛）。
+   ★ 一个能力背后可能是好几样东西（"查手机"是 device.* 一串），所以匹配用前缀；
+     判定只有 capAbilityOf() 一处，渲染里不现算 —— 一个名字只指一个东西。
+   src 的四种来源：
+     page  前端页面（自由活动 / 大富翁 / 朋友圈 / 群聊）—— 永远是开的
+     tool  内置动作（天气 / 调动微信 / QQ Bot / AI 付）—— 看后端工具清单
+     mcp   外部 MCP 服务（麦当劳 / 瑞幸 / 高德 / 小红书 / 查手机）—— 还要有 token
+     cfg   设置项（MCP 设置）—— 只是个入口 */
+const CAP_ABILITY = [
+  { k:"activity", n:"自由活动",  s:"一起做点什么",             ic:"✦", src:"page", go:"fn:openActivity" },
+  { k:"mono",     n:"大富翁",    s:"掷骰子 · 走格子 · 三方互动", ic:"⚄", src:"page", go:"fn:openRp" },
+  { k:"moments",  n:"朋友圈",    s:"它自言自语的地方",         ic:"◍", src:"page", go:"fn:openMoments" },
+  { k:"group",    n:"群聊",      s:"三个 AI 分工干活",         ic:"⬡", src:"page", go:"fn:openGroupChat" },
+  { k:"weather",  n:"天气",      s:"现在与未来五天",           ic:"☀", src:"tool", match:["weather"] },
+  { k:"mcd",      n:"麦当劳",    s:"点单 · 优惠券",            ic:"☰", src:"mcp",  match:["mcd", "mcdonald"] },
+  { k:"luckin",   n:"瑞幸咖啡",  s:"点单 · 券",                ic:"☕", src:"mcp",  match:["luckin", "lkcoffee"] },
+  { k:"amap",     n:"高德地图",  s:"路线 · 附近 · 导航",        ic:"◈", src:"mcp",  match:["amap", "gaode", "高德"] },
+  { k:"xhs",      n:"小红书",    s:"搜笔记 · 看攻略",           ic:"▤", src:"mcp",  match:["xhs", "redbook", "xiaohongshu"] },
+  { k:"device",   n:"查手机",    s:"设备 / 网络 / 存储",        ic:"▢", src:"mcp",  match:["device", "phone"] },
+  { k:"wechat",   n:"调动微信",  s:"发消息 · 转发",            ic:"✉", src:"tool", match:["wechat", "weixin"] },
+  { k:"qq",       n:"QQ Bot",    s:"官方 AppID / OneBot",     ic:"◔", src:"tool", match:["qq"] },
+  { k:"pay",      n:"AI 付",     s:"下单时走支付",             ic:"¥", src:"tool", match:["pay", "payment"] },
+  { k:"mcp",      n:"MCP 设置",  s:"外部服务在这儿开",          ic:"⚙", src:"cfg",  go:"kit:mcp" },
+];
+
+/* 某个能力现在能不能用 —— 只有这一处判定。
+   返回 { ok, text, tools }：ok 决定亮不亮；text 是卡片上那行小字；
+   tools 是它背后具体有哪些工具（点开卡才看，卡片上不写）。 */
+function capAbilityOf(a){
+  if (!a) return { ok:false, text:"不认识这项", tools:[] };
+  if (a.src === "page") return { ok:true, text:"前端面板 · 随时能开", tools:[] };
+  if (a.src === "cfg")  return { ok:true, text:"在这儿开 / 关", tools:[] };
+  const tools = capDig(CAP_STATE.data, "tools.tools", null);
+  if (!tools) return { ok:false, text:"后端还没回话", tools:[] };
+  const denied = capDig(CAP_STATE.data, "tools.denied", []) || [];
+  const pats = a.match || [];
+  const hit = Object.keys(tools).filter(function (nm){
+    const low = String(nm).toLowerCase();
+    return pats.some(function (p){ return low.indexOf(String(p).toLowerCase()) >= 0; });
+  });
+  if (!hit.length) return { ok:false, text:"还没接", tools:[] };
+  const on = hit.filter(function (nm){ return denied.indexOf(nm) < 0; });
+  if (!on.length) return { ok:false, text:"故意不给它（" + hit.length + " 个）", tools:hit };
+  return { ok:true, text:on.length + " 个工具可用", tools:hit };
+}
+
 /* 网关现在是 hub 里的一个 tab —— 这两个只是老名字的别名，别的地方照旧能调 */
 function capOpen(){ hubOpen("gateway"); }
 function capClose(){ hubClose(); }
@@ -7701,6 +7758,13 @@ async function capLoad(force){
 /* 动作分发：只认表里写好的那几种前缀，别的一律不执行 */
 function capAct(str){
   try{
+    /* kit:<id> —— 跳到「工具能力」页并打开那一项（能力卡上的 MCP 设置走这条） */
+    if (str.indexOf("kit:") === 0){
+      const id = str.slice(4);
+      hubSwitch("tools");
+      setTimeout(() => { try { kitTool(id); } catch (_) { } }, 140);
+      return;
+    }
     if (str === "palaceSync"){                       // 同步的界面在宫殿页里
       capClose();
       setTimeout(() => {
@@ -7718,7 +7782,13 @@ function capAct(str){
       const fn = str.slice(3);
       // 「连接与模型」就在隔壁那个 tab 里 —— 不用关掉再开，直接切过去
       if (fn === "openSettings"){ hubSwitch("settings"); return; }
-      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen };
+      /* 这四个是各个 pack 挂在 window 上的（不在这一层的作用域里）——
+         包一层再放进 map，别直接写 openActivity（那会 ReferenceError）。 */
+      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen,
+                    openActivity:   function (){ if (window.openActivity) window.openActivity(); },
+                    openRp:         function (){ if (window.openRp) window.openRp(); },
+                    openMoments:    function (){ if (window.openMoments) window.openMoments(); },
+                    openGroupChat:  function (){ if (window.openGroupChat) window.openGroupChat(); } };
       if (typeof map[fn] !== "function"){ showToast("暂时打不开：" + fn); return; }
       capClose();
       setTimeout(() => {
@@ -7764,34 +7834,36 @@ function capRender(){
 
   let html = "";
 
-  /* ── A. 它自己能用的（动态来自后端，不在前端写死）────────────────── */
+  /* ── A. 它现在会什么：一张卡一个「能力」──────────────────────────────
+     ★ 卡片上写的是能力名（"麦当劳"），不是后端的工具名（mcd.available-coupons）——
+       这一组是给人扫的：一眼看过去知道它现在会什么、什么还没接上。
+       工具名藏进卡里，点开才看。
+     ★ 卡片沿用工具能力页那套 .kit-grid / .kit-card（同一个排版语言，不另做一套）。 */
   const tools = capDig(CAP_STATE.data, "tools.tools", null);
   const denied = capDig(CAP_STATE.data, "tools.denied", []) || [];
   html += '<section class="cap-sec"><div class="cap-sec-t">' + CAP_GROUPS[0].t + '</div>' +
           '<div class="cap-sec-s">' + CAP_GROUPS[0].s + '</div>';
-  if (!tools){
-    html += '<div class="cap-note">' + (CAP_STATE.busy ? "正在问后端…" : "没拿到工具清单。点右上角刷新试试。") + "</div>";
-  } else {
-    const names = Object.keys(tools);
-    html += '<div class="cap-grid">';
-    names.forEach((n) => {
-      // 工具的描述都比较长 —— 一律整行排，两列会把字挤成一坨
-      html += '<button class="cap-tile cap-wide" type="button" data-cap-tool="' +
-              escapeHtml(n) + '">' +
-              '<span class="cap-tile-t">' + capIcon("bolt") +
-              '<span class="cap-toolname">' + escapeHtml(n) + "</span></span>" +
-              '<span class="cap-tile-s">' + escapeHtml(String(tools[n] || "")) + "</span></button>";
-    });
-    html += "</div>";
-    html += '<div class="cap-note">共 ' + names.length + ' 个工具。点任意一个 → 填参数 → 直接运行一次' +
-            '（它聊天时也会自己调）。</div>';
-    if (denied.length){
-      html += '<div class="cap-note">这几个是<b>故意不给它</b>的（破坏性操作）：</div><div class="cap-denied">' +
-              denied.slice(0, 14).map((d) => "<span>" + escapeHtml(String(d)) + "</span>").join("") +
-              "</div>";
-    }
+  html += '<div class="kit-grid">';
+  CAP_ABILITY.forEach((a) => {
+    const st = capAbilityOf(a);
+    html += '<button class="kit-card cap-ab' + (st.ok ? "" : " off") + '" type="button" data-cap-ab="' +
+            escapeHtml(a.k) + '">' +
+            '<span class="kit-card-t">' + a.ic + " " + escapeHtml(a.n) + "</span>" +
+            '<span class="kit-card-s">' + escapeHtml(a.s) + "</span>" +
+            '<span class="cap-ab-st">' + escapeHtml(st.text) + "</span>" +
+            "</button>";
+  });
+  html += "</div>";
+  html += '<div class="cap-note">' + CAP_ABILITY.length + ' 项能力。卡片上写的是<b>能力</b>，' +
+          '点开才看它背后具体是哪些工具（每张卡的绿字 = 现在能不能用）。' +
+          (tools ? " 后端报了 " + Object.keys(tools).length + ' 个工具。'
+                 : (CAP_STATE.busy ? " 正在问后端…" : " 后端还没回话，点右上角刷新。")) + "</div>";
+  if (denied.length){
+    html += '<div class="cap-note">这几个是<b>故意不给它</b>的（破坏性操作）：</div><div class="cap-denied">' +
+            denied.slice(0, 14).map((d) => "<span>" + escapeHtml(String(d)) + "</span>").join("") +
+            "</div>";
   }
-  html += '<div id="capToolBox"></div></section>';
+  html += '<div id="capAbBox"></div><div id="capToolBox"></div></section>';
 
   /* ── B / C / D. 三组静态按钮 ────────────────────────────────────────── */
   CAP_GROUPS.slice(1).forEach((grp) => {
@@ -7887,6 +7959,38 @@ async function capToolGo(btn){
   panel.addEventListener("click", async (e) => {
     const runBtn = e.target.closest("#capToolRun");
     if (runBtn){ capToolGo(runBtn); return; }
+
+    /* 能力卡：有 go 的直接去那个地方；没有的就展开它背后的工具（点一个就能试跑） */
+    const ab = e.target.closest("[data-cap-ab]");
+    if (ab){
+      const a = CAP_ABILITY.filter((x) => x.k === ab.dataset.capAb)[0];
+      if (!a) return;
+      if (a.go){ capAct(a.go); return; }
+      const box = $("#capAbBox");
+      const st = capAbilityOf(a);
+      if (!st.tools.length){
+        showToast(a.n + " 现在还没接上 —— 在「MCP 设置」里配好 token 并勾上工具");
+        capAct("kit:mcp");
+        return;
+      }
+      /* ★ 这里不能直接用 capRender 里的 tools —— 那是另一个函数的局部变量。
+         重新取一次（capDig 就是读状态，幂等）。 */
+      const toolMap = capDig(CAP_STATE.data, "tools.tools", null) || {};
+      if (box){
+        box.innerHTML = '<section class="cap-sec"><div class="cap-sec-t">' + a.ic + " " + escapeHtml(a.n) +
+          " · 背后的工具</div>" +
+          '<div class="cap-sec-s">点一个 → 填参数 → 直接运行一次（它聊天时也会自己调）。</div>' +
+          '<div class="cap-grid">' +
+          st.tools.map((n) =>
+            '<button class="cap-tile cap-wide" type="button" data-cap-tool="' + escapeHtml(n) + '">' +
+            '<span class="cap-tile-t">' + capIcon("bolt") +
+            '<span class="cap-toolname">' + escapeHtml(n) + "</span></span>" +
+            '<span class="cap-tile-s">' + escapeHtml(String(toolMap[n] || "")) + "</span></button>").join("") +
+          "</div></section>";
+        try{ box.scrollIntoView({ behavior: "smooth", block: "nearest" }); }catch(_){}
+      }
+      return;
+    }
 
     const tool = e.target.closest("[data-cap-tool]");
     if (tool){

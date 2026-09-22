@@ -5883,6 +5883,17 @@
             换成不产出 reasoning 的普通模型时，它可能把本该隐藏的独白直接写进正文，那时把它关掉。</span></span>
             <input type="checkbox" id="acThink">
           </label>
+          <label class="fld" style="margin-top:8px"><span>思考强度
+            <br><span style="font-size:11.5px;color:var(--text-faint);font-weight:400">推理模型的「想多久」。
+            <b>「默认」= 一个字段都不往上发</b>（用厂商默认档）—— 有些严格的网关对未知参数直接报 400，
+            所以只有你明确选了才发。认不得这个参数的模型会忽略它。</span></span>
+            <select id="acEffort">
+              <option value="">默认（不发这个字段）</option>
+              <option value="low">low · 想少一点，快且省</option>
+              <option value="medium">medium · 折中</option>
+              <option value="high">high · 想得多，更不容易漏</option>
+            </select>
+          </label>
 
           <div class="fld-pair" style="margin-top:12px">
             <label class="fld"><span>最多补全几轮
@@ -12411,6 +12422,11 @@ async function acLoad(verbose){
   if (el("#acHints"))  el("#acHints").checked = !!c.hints;
   /* thinking 风格：默认**开**（老配置里没这个键），只有后端明确说 false 时才关 */
   if (el("#acThink"))  el("#acThink").checked = (c.think_style !== false);
+  /* 思考强度：默认空串 = 不发这个字段（老行为）。认不得的值也当空 */
+  if (el("#acEffort")){
+    const _ev = String(c.reasoning_effort || "").toLowerCase();
+    el("#acEffort").value = ["low", "medium", "high"].indexOf(_ev) >= 0 ? _ev : "";
+  }
   if (el("#acRounds"))  el("#acRounds").value  = (c.rounds == null ? 2 : c.rounds);
   if (el("#acTimeout")) el("#acTimeout").value = (c.ob_timeout == null ? 20 : c.ob_timeout);
 
@@ -12464,6 +12480,8 @@ async function acSave(){
     img:    !!($("#acImgOn") || {}).checked,
     hints:  !!($("#acHints") || {}).checked,
     think_style: !!($("#acThink") || {}).checked,
+    reasoning_effort: (() => { const v = (($("#acEffort") || {}).value || "").toLowerCase();
+                              return ["low", "medium", "high"].indexOf(v) >= 0 ? v : ""; })(),
     rounds: (() => { const v = parseInt(($("#acRounds") || {}).value, 10); return isNaN(v) ? 2 : v; })(),
     ob_timeout: (() => { const v = parseInt(($("#acTimeout") || {}).value, 10); return isNaN(v) ? 20 : v; })(),
   };
@@ -14154,13 +14172,17 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
   }
 
   async function speakOne(text){
+    /* ★ 送进 TTS 的必须是**清洗过**的文本（加粗星号、网址、识图插进来的「（图：…）」
+       都会被念出来）。显示与落库用的仍是原文 —— 只在这一处清。 */
+    const say = ttsClean(text);
+    if (!say) return;                      // 清完没内容（整条都是标记）→ 不发声，省一次调用
     try{
       let blob = null;
       // 优先用 MiniMax 克隆声音（若已启用）
       if (minimaxEnabled()){
         try{
           console.log("[speak] fetching MiniMax TTS…");
-          blob = await minimaxTts(text);
+          blob = await minimaxTts(say);
           console.log("[speak] minimax blob:", blob && blob.size);
         }catch(e){ console.error("[speak] minimax failed, fallback:", e); blob = null; }
       }
@@ -14168,7 +14190,7 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
       if (!blob && open){
         try{
           console.log("[speak] fetching TTS…");
-          blob = await apiTts(text);
+          blob = await apiTts(say);
           console.log("[speak] blob:", blob && blob.size);
         }catch(e){ console.error("[speak] apiTts failed:", e); blob = null; }
       }
@@ -14218,7 +14240,7 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
          后端**根本没有 /app/tts 这个路由**（全仓库搜不到，只有 /relay/minimax/tts），
          所以以前没配 MiniMax 或 MiniMax 失败时就彻底没声了。系统音色不如克隆声音，
          但"它能开口"这件事不该取决于一张 API Key。 */
-      if (open && String(text || "").trim()) await browserSpeak(text);
+      if (open && say) await browserSpeak(say);
     }catch(e){
       console.error("[speak] speakOne failed:", e);
     }
@@ -19196,7 +19218,9 @@ function aiVoiceBubbleOn(){
   try{ return loadMiniMax().bubble !== false; }catch(_){ return true; }
 }
 async function attachVoiceBubble(key, text){
-  const t = String(text || "").trim();
+  /* 同 speakOne：念的是清洗后的文本（否则这条语音条会把星号、网址、
+     「（图：…）」逐字念出来），显示用的正文不动。 */
+  const t = ttsClean(text);
   if (!t || t.length > 240) return;              // 太长的段落不合成，省钱也不吵
   if (!aiVoiceBubbleOn() || !minimaxEnabled()) return;
   if (voiceBubbleBusy.has(String(key))) return;
@@ -19490,6 +19514,64 @@ function fmtDay(ts){
 function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
+/* ════════════ 朗读前的文本清洗（做法对齐 AionsHome 的 tts._strip_tags）════════════
+   它是用来「念」的，不是用来「显示」的 —— 所以**只清这一遍，正文一个字都不动**。
+   不清的话，这几样都会被念出来：
+     · `**加粗**` / `#` 标题 / `- ` 列表 / ``` 代码围栏  → 念出星号井号
+     · `[文字](https://…)` 与裸网址                    → 把一长串 URL 念完
+     · `（图：一只橘猫趴在窗台上…）`                    → **我们自己识图插进正文的**，整段念出来
+     · 没剥干净的 `[标签：内容]`（心里嘀咕 / 画图指令之类）
+   两条路都走这里：通话朗读 speakOne、以及「AI 回复带语音条」的 attachVoiceBubble。 */
+const _TTS_JUNK_LINE = /^(?:原始资料|原文|来源|网址|链接|参考|参考资料|参考链接|附图|图片|附件)[：:]?[。.]?$/;
+function ttsClean(text){
+  let t = String(text == null ? "" : text);
+  if (!t.trim()) return "";
+  /* ── 整段丢掉的 ── */
+  t = t.replace(/<think\b[\s\S]*?<\/think>/gi, " ")
+       .replace(/<think\b[\s\S]*$/i, " ")              // 没闭合的思考：从它起全部不要
+       .replace(/\[\[[\s\S]*?\]\]/g, " ")              // 万一还有残留的动作标记
+       /* 识图插进正文的「（图：…）」：括号里只要以「图:」开头就整块去掉 */
+       .replace(/[（(]\s*图\s*[：:][\s\S]*?[）)]/g, " ")
+       /* 带冒号的标签：名字**限 10 字以内且不含换行**，避免误吃正常句子里的方括号 */
+       .replace(/[\[【][^\[\]【】\n]{1,10}[：:][^\[\]【】\n]{0,400}[\]】]/g, " ")
+       /* 不带冒号的全大写标签：`[CAM_CHECK]` `[SCHEDULE_LIST]` 这种 */
+       .replace(/[\[【][A-Z][A-Z_]{1,19}[\]】]/g, " ")
+       /* 附件占位：后端在没有文本时会补 `[图片]` / `[附件]` */
+       .replace(/\[(?:图片|附件|文件|语音|语音通话|视频|语音条)\]/g, " ");
+  /* ── 链接与网址：先处理 Markdown 链接（保留可读文字），再删裸网址 ── */
+  t = t.replace(/!\[([^\]]*)\]\([^)\n]*\)/g, "$1")
+       .replace(/\[([^\]]*)\]\([^)\n]*\)/g, "$1")
+       .replace(/https?:\/\/[^\s，。；：！？、）】"'’]+/g, "");
+  /* ── Markdown 记号 ── */
+  t = t.replace(/```[^\n]*\n?/g, "")
+       .replace(/~~/g, "")
+       .replace(/\*\*\*([^*\n]+)\*\*\*/g, "$1")
+       .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+       .replace(/\*([^*\n]+)\*/g, "$1")
+       .replace(/__([^_\n]+)__/g, "$1")
+       .replace(/`([^`\n]+)`/g, "$1")
+       /* 行首记号：分隔线 / 标题 / 引用 / 列表（含 `1. ` `- [ ] `） */
+       .replace(/^[ \t]*(?:-{3,}|\*{3,}|_{3,}|={3,})[ \t]*$/gm, "")
+       .replace(/^[ \t]*#{1,6}[ \t]*/gm, "")
+       .replace(/^[ \t]*>[ \t]?/gm, "")
+       .replace(/^[ \t]*(?:[-+*]|\d{1,3}[.)])[ \t]+(?:\[[ xX]\][ \t]*)?/gm, "");
+  /* ── 只写着「参考/来源」的行整行丢掉 ── */
+  t = t.split(/\r?\n/).filter((l) => !_TTS_JUNK_LINE.test(l.trim())).join("\n");
+  /* ── 收尾 ── */
+  t = t.replace(/[ \t]+([，。；：！？、,.])/g, "$1")
+       .replace(/[ \t]{2,}/g, " ")
+       .replace(/\n+/g, " ")                     // 换行拆成停顿：句子本身的句号已经在断句了
+       .replace(/[ \t]{2,}/g, " ")
+       /* ★ 中文之间的空格**不能**一律收掉 —— 试过：那样会把「标记残留的空格」和
+          「换行拆出来的停顿」一起粘没了（`今天` / `她来了` 两行会变成 `今天她来了`，
+          TTS 连读成一整句）。而一个空格对 TTS 是无害的（中文里不发音），
+          粘字反而更难听。所以这里只压空格数量，不做中文合并。 */
+       .trim();
+  /* 清完只剩标点/符号 → 当空处理（调用方据此跳过合成，别合成一段"。。。"） */
+  if (!/[\u4e00-\u9fa5A-Za-z0-9]/.test(t)) return "";
+  return t;
+}
+
 /* 模型可以把「值得长期记住」的事写成一行 [[remember: …]]（后端会剥离并存进 Ombre）。
    流式时它是逐字出现的，所以渲染前统一过滤 —— 连**没闭合的尾巴**一起去掉，
    否则会看到「[[remem」这种半截标记。每帧渲染的都是累积全文，因此这个过滤幂等、不会吃掉正文。 */
@@ -21358,7 +21440,11 @@ const ATT_MAX = 4 * 1024 * 1024;   // 与后端 FILE_MAX_BYTES 对齐（文件�
 function isImageFile(file){
   return /^image\//.test(file.type || "") || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(file.name || "");
 }
-function imageToJpeg(file){
+function imageToJpeg(file, maxSide, quality){
+  /* ★ 边长与质量可传：大图放不下时要用**更狠的参数**再压一次（见 shrinkToFit）。
+     不传就是老行为（2048 / 0.9），别处调用不受影响。 */
+  const _max = maxSide || 2048;
+  const _q = quality == null ? 0.9 : quality;
   return new Promise((resolve) => {
     if (!isImageFile(file)){ resolve(null); return; }
     if (/gif$/i.test(file.type || "") || /\.gif$/i.test(file.name || "")){ resolve(null); return; }  // 动图保留原样
@@ -21366,7 +21452,7 @@ function imageToJpeg(file){
     const img = new Image();
     img.onload = () => {
       try{
-        const max = 2048;
+        const max = _max;
         let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
         if (!w || !h){ URL.revokeObjectURL(url); resolve(null); return; }
         let outW = w, outH = h;
@@ -21378,13 +21464,39 @@ function imageToJpeg(file){
           if (!blob){ resolve(null); return; }
           const base = (file.name || "image").replace(/\.[^.]+$/, "") || "image";
           resolve({ blob: blob, name: base + ".jpg", width: outW, height: outH });
-        }, "image/jpeg", 0.9);
+        }, "image/jpeg", _q);
       }catch(e){ URL.revokeObjectURL(url); resolve(null); }
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
     img.src = url;
   });
 }
+/* ★ 图片放不下就**降一档再压**，而不是直接拒绝。
+   为什么不能靠提高后端上限解决：文件是 base64 后存进 Supabase 文本列的
+   （app_api.py 的 /app/upload），4MB 原始字节 → 约 5.5MB 文本，再大行就不好办了，
+   免费档 0.1 CPU 也扛不住。所以正解在前端：压到放得下为止。
+   改之前只有一句「文件超过 4MB，发不了」—— 遇到 HEIC（浏览器解不了）、
+   转换失败、或压完仍超限时，用户除了干看着没有任何办法。
+   返回 {blob, name, mime, width, height, ok}；ok=false 表示压到最小仍然超限，
+   由调用方决定怎么告知（别在这里弹提示，它不知道自己被谁调用）。 */
+const IMG_SHRINK_TIERS = [[1600, 0.8], [1280, 0.7], [1024, 0.6], [800, 0.5]];
+async function shrinkImageToFit(file, limit, start, startName, startMime, startW, startH){
+  let blob = start, name = startName, mime = startMime, width = startW || 0, height = startH || 0;
+  for (let i = 0; i < IMG_SHRINK_TIERS.length && blob.size > limit; i++){
+    try{
+      const conv = await imageToJpeg(file, IMG_SHRINK_TIERS[i][0], IMG_SHRINK_TIERS[i][1]);
+      /* ★ 只有**真的更小**才采用：解不了的格式（HEIC / 动图）会回 null，
+         也可能回一个反而更大的（罕见）。否则这一档等于白试。 */
+      if (conv && conv.blob && conv.blob.size < blob.size){
+        blob = conv.blob; name = conv.name; mime = "image/jpeg";
+        width = conv.width || width; height = conv.height || height;
+      }
+    }catch(_){}
+  }
+  return { blob: blob, name: name, mime: mime, width: width, height: height,
+           ok: blob.size <= limit, tiers: IMG_SHRINK_TIERS.length };
+}
+
 async function sendOneFile(file){
   /* ★ 这里原来有一行 `if (!secret) return;` —— 那是从带开屏密钥的旧前端抄过来的。
      本应用没有那道门（文本消息一直用空的 secret 在发），
@@ -21400,7 +21512,16 @@ async function sendOneFile(file){
       if (conv){ blob = conv.blob; name = conv.name; mime = "image/jpeg"; imgW = conv.width || 0; imgH = conv.height || 0; }
     }catch(_){}
   }
-  if (blob.size > ATT_MAX){ showToast("文件超过 4MB，发不了（图片会先自动压成 JPEG）"); return; }
+  if (image && blob.size > ATT_MAX){
+    const fit = await shrinkImageToFit(file, ATT_MAX, blob, name, mime, imgW, imgH);
+    blob = fit.blob; name = fit.name; mime = fit.mime;
+    imgW = fit.width || imgW; imgH = fit.height || imgH;
+  }
+  if (blob.size > ATT_MAX){
+    showToast("这张图压到最小还有 " + Math.round(blob.size / 1048576 * 10) / 10 +
+              "MB（上限 4MB）—— 裁一下再发，或换个截图试试");
+    return;
+  }
   const kind = image ? "image" : "file";
   const localUrl = image ? URL.createObjectURL(blob) : "";
   const optimisticTs = Date.now();

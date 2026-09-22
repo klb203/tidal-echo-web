@@ -112,6 +112,12 @@
     importText: "", preview: null, previewText: "", names: { char: "", user: "" },
     libPick: { room: true, letter: true },   // 默认勾"房间与留言"（它们是静态设定）
     libConst: true,                          // 导进来默认标成常驻
+    /* ── 下面这四个是「照 SullyOS 摆」用的（WorldbookApp.tsx）────────────
+       collapsed  哪几个分类被收起来了（默认全展开 —— 条目不多时展开更省事）
+       openId     哪一条正在就地展开正文（SullyOS 的 previewBookId）
+       selecting  多选模式开着没有（SullyOS 的 isSelecting）
+       sel        勾了哪几条，键是条目 id（SullyOS 的 selectedBookIds） */
+    collapsed: {}, openId: null, selecting: false, sel: {},
   };
 
   async function wbLoad() {
@@ -203,7 +209,63 @@
       cats.map((c) => one(c, c, n[c] || 0)).join("") + "</div>";
   }
 
+  /* ── 按分类分组（SullyOS 是「一个分类一折，折起来只留标题行」）──────
+     顺序就按条目自己的 order —— 分组内不再重排，免得和"顺序（小的先注入）"
+     那个字段打架（那个字段管的是注入先后，不是列表长相）。 */
+  function wbGroups() {
+    const map = new Map();
+    wbList().forEach((b) => {
+      const c = String(b.category || "").trim() || "通用设定";
+      if (!map.has(c)) map.set(c, []);
+      map.get(c).push(b);
+    });
+    return Array.from(map.entries()).map((kv) => ({ name: kv[0], items: kv[1] }));
+  }
+
+  function wbGroupHtml(g) {
+    const off = !!WB.collapsed[g.name];
+    return '<div class="wb-group">' +
+      '<div class="wb-group-head" data-wb-gtog="' + esc(g.name) + '">' +
+        '<span class="wb-caret">' + (off ? "▸" : "▾") + "</span>" +
+        '<span class="wb-gname">' + esc(g.name) + "</span>" +
+        '<span class="wb-gcount">' + g.items.length + " 条</span>" +
+        '<button type="button" class="mp-mini" data-wb-gexport="' + esc(g.name) + '">导出</button>' +
+      "</div>" +
+      (off ? "" : '<div class="wb-group-body">' + g.items.map(wbCardHtml).join("") + "</div>") +
+      "</div>";
+  }
+
+  async function wbBulkDelete() {
+    const ids = Object.keys(WB.sel);
+    if (!ids.length) { toast("先在条目上勾几条"); return; }
+    if (!confirm("删除选中的 " + ids.length + " 条世界书条目？删掉就没了。")) return;
+    let ok = 0;
+    for (const id of ids) {
+      try {
+        const d = await POST("/app/worldbook/delete", { id: id });
+        if (d && d.ok !== false) ok++;
+      } catch (_) { }
+    }
+    toast("已删除 " + ok + " / " + ids.length + " 条");
+    WB.sel = {}; WB.selecting = false;
+    await wbLoad(); wbPaint();
+  }
+
+  async function wbDeleteOne(id) {
+    const b = wbById(id);
+    if (!b) return;
+    if (!confirm("删除「" + (b.title || "（无标题）") + "」？")) return;
+    try {
+      const d = await POST("/app/worldbook/delete", { id: String(id) });
+      if (d && d.ok === false) throw new Error(d.error || "删除失败");
+      toast("已删除");
+      if (WB.edit === String(id)) { WB.edit = null; WB.editDraft = null; }
+      await wbLoad(); wbPaint();
+    } catch (e) { toast("删除失败：" + ((e && e.message) || e)); }
+  }
+
   function wbCardHtml(b) {
+    const id = String(b.id);
     const hot = [];
     if (b.constant) hot.push('<span class="mp-chip hot">常驻</span>');
     else {
@@ -213,15 +275,30 @@
     }
     if (b.disable) hot.push('<span class="mp-chip off">已停用</span>');
     const pos = WB.posLabels[String(b.position)] || ("位置 " + b.position);
-    return '<div class="arc-entry mp-item' + (WB.edit === String(b.id) ? " on" : "") +
-      '" data-wb-open="' + esc(String(b.id)) + '">' +
-      '<div class="mp-item-t">' + esc(b.title || "（无标题）") + "</div>" +
+    const open = WB.openId === id;
+    const picked = !!WB.sel[id];
+    /* 点卡片主体 = 就地展开正文（SullyOS 的 togglePreview），进编辑要点「编辑」按钮。
+       ★ data-wb-open 仍然挂在那个「编辑」按钮上 —— 冒烟测试就是靠它定位条目的。 */
+    return '<div class="arc-entry mp-item wb-item' + (WB.edit === id ? " on" : "") +
+      (picked ? " sel" : "") + '" data-wb-prev="' + esc(id) + '">' +
+      '<div class="wb-top">' +
+        (WB.selecting ? '<input type="checkbox" class="wb-pick" data-wb-pick="' + esc(id) + '"' +
+          (picked ? " checked" : "") + ">" : "") +
+        '<div class="mp-item-t">' + esc(b.title || "（无标题）") + "</div>" +
+        '<span class="wb-caret">' + (open ? "▾" : "▸") + "</span>" +
+      "</div>" +
       '<div class="mp-chips">' + hot.join("") +
       '<span class="mp-chip">' + esc(b.category || "") + "</span>" +
       '<span class="mp-chip">' + esc(pos) + "</span>" +
       '<span class="mp-chip">顺序 ' + esc(String(b.order)) + "</span>" +
       "</div>" +
-      (b.content ? '<div class="mp-item-s">' + esc(b.content) + "</div>" : "") +
+      (open
+        ? '<div class="wb-body">' + (b.content ? esc(b.content) : "（这条还没有正文）") + "</div>"
+        : (b.content ? '<div class="mp-item-s">' + esc(b.content) + "</div>" : "")) +
+      '<div class="wb-acts">' +
+        '<button type="button" class="mp-mini" data-wb-open="' + esc(id) + '">编辑</button>' +
+        (WB.selecting ? "" : '<button type="button" class="mp-mini" data-wb-del-one="' + esc(id) + '">删除</button>') +
+      "</div>" +
       "</div>";
   }
 
@@ -414,13 +491,29 @@
       return head + '<section class="mg-card" style="margin-top:14px">' + wbEditorHtml() + "</section>";
     }
     const list = wbList();
+    const groups = wbGroups();
+    const selN = Object.keys(WB.sel).length;
     return head +
       '<section class="mg-card" style="margin-top:14px"><div class="mg-head"><div>' +
       '<div class="mg-title">' + (WB.cat ? esc(WB.cat) : "全部条目") + "</div>" +
-      '<div class="mg-sub">' + list.length + " 条 · 按顺序排</div></div></div>" +
+      '<div class="mg-sub">' + list.length + " 条 · " +
+        (WB.cat ? "按顺序排" : groups.length + " 个分类") + "</div></div>" +
+      (WB.selecting ? '<span class="mg-tag">已选 ' + selN + "</span>" : "") + "</div>" +
+      /* 多选那套（SullyOS 的 isSelecting / selectedBookIds / confirmBulkDelete）：
+         平时只留一个「选择」按钮，进了选择模式才出现全选与删除 —— 免得误删。 */
+      '<div class="mp-acts" style="margin-top:10px">' +
+      (WB.selecting
+        ? '<button type="button" class="mp-btn" data-wb-sel-all="1">全选 / 清空</button>' +
+          '<button type="button" class="mp-btn danger" data-wb-bulk-del="1">删除选中</button>' +
+          '<button type="button" class="mp-btn" data-wb-sel-mode="1">退出选择</button>'
+        : '<button type="button" class="mp-btn" data-wb-sel-mode="1">选择</button>' +
+          (WB.cat ? "" : '<button type="button" class="mp-btn" data-wb-collapse="1">全部收起 / 展开</button>')) +
+      "</div>" +
       wbChipsHtml() +
       (list.length
-        ? '<div style="margin-top:10px">' + list.map(wbCardHtml).join("") + "</div>"
+        ? '<div style="margin-top:10px">' +
+            (WB.cat ? list.map(wbCardHtml).join("") : groups.map(wbGroupHtml).join("")) +
+          "</div>"
         : '<div class="arc-empty">这里还是空的 —— ' +
           "世界书放的是<b>你自己写</b>的设定，它不会自己长出来。<br><br>" +
           "两条路：点「<b>新建条目</b>」手写一条；或者点「<b>从记忆库导入</b>」，" +
@@ -510,9 +603,11 @@
     } catch (e) { toast("迁移失败：" + ((e && e.message) || e)); }
   }
 
-  async function wbExport() {
+  async function wbExport(cat) {
+    /* cat 为真是"导出这个分组"（SullyOS 的 handleExportGroup）；不传就用当前的筛选 */
+    const only = (cat != null && String(cat) !== "") ? String(cat) : WB.cat;
     try {
-      const d = await api("/app/worldbook/export" + (WB.cat ? ("?category=" + encodeURIComponent(WB.cat)) : ""));
+      const d = await api("/app/worldbook/export" + (only ? ("?category=" + encodeURIComponent(only)) : ""));
       if (!d || !d.content) throw new Error("没有可导出的内容");
       const name = d.filename || "worldbook.json";
       try {
@@ -617,6 +712,14 @@
         return;
       }
       if (t.matches("[data-wb-libconst]")) { WB.libConst = !!t.checked; return; }
+      /* 多选：勾选状态记在 WB.sel，重绘一次把「已选 N」和卡片描边同步上 */
+      if (t.matches("[data-wb-pick]")) {
+        const id = String(t.dataset.wbPick || "");
+        if (!id) return;
+        if (t.checked) WB.sel[id] = true; else delete WB.sel[id];
+        wbPaint();
+        return;
+      }
     });
     host.addEventListener("click", async (e) => {
       const t = e.target;
@@ -628,6 +731,40 @@
         if (hit("[data-wb-save]")) { await wbSave(); return; }
         if (hit("[data-wb-del]")) { await wbDelete(); return; }
         if (hit("[data-wb-cat]")) { WB.cat = hit("[data-wb-cat]").dataset.wbCat || ""; wbPaint(); return; }
+        /* 勾选框自己会冒泡成"点卡片" —— 先让开，交给上面那个 change */
+        if (t.matches && t.matches("[data-wb-pick]")) return;
+        if (hit("[data-wb-gtog]")) {
+          const c = hit("[data-wb-gtog]").dataset.wbGtog || "";
+          WB.collapsed[c] = !WB.collapsed[c]; wbPaint(); return;
+        }
+        if (hit("[data-wb-gexport]")) {
+          e.stopPropagation();
+          await wbExport(hit("[data-wb-gexport]").dataset.wbGexport || "");
+          return;
+        }
+        if (hit("[data-wb-collapse]")) {
+          const anyOpen = wbGroups().some((g) => !WB.collapsed[g.name]);
+          wbGroups().forEach((g) => { WB.collapsed[g.name] = anyOpen; });
+          wbPaint(); return;
+        }
+        if (hit("[data-wb-sel-mode]")) {
+          WB.selecting = !WB.selecting;
+          if (!WB.selecting) WB.sel = {};
+          wbPaint(); return;
+        }
+        if (hit("[data-wb-sel-all]")) {
+          const all = wbList();
+          const on = Object.keys(WB.sel).length < all.length;
+          WB.sel = {};
+          if (on) all.forEach((b) => { WB.sel[String(b.id)] = true; });
+          wbPaint(); return;
+        }
+        if (hit("[data-wb-bulk-del]")) { await wbBulkDelete(); return; }
+        if (hit("[data-wb-del-one]")) {
+          e.stopPropagation();
+          await wbDeleteOne(hit("[data-wb-del-one]").dataset.wbDelOne || "");
+          return;
+        }
         if (hit("[data-wb-panel-close]")) { WB.panel = ""; WB.preview = null; wbPaint(); return; }
         if (hit("[data-wb-import-open]")) { WB.panel = WB.panel === "import" ? "" : "import"; wbPaint(); return; }
         if (hit("[data-wb-preview-open]")) {
@@ -653,6 +790,14 @@
           // ★ 先把表单里的值存起来？不 —— 点开是**进入**编辑，不会丢未保存的输入
           WB.edit = op.dataset.wbOpen;
           WB.editDraft = b ? wbToDraft(b) : null;
+          wbPaint(); return;
+        }
+        /* ★ 放在所有按钮之后：点「编辑」「删除」时 closest 先命中的是它们自己，
+           不会跑到这里把卡片展开。点卡片主体才展开正文（SullyOS 的 togglePreview）。 */
+        const pv = hit("[data-wb-prev]");
+        if (pv) {
+          const id = String(pv.dataset.wbPrev || "");
+          WB.openId = (WB.openId === id) ? null : id;
           wbPaint(); return;
         }
       } catch (err) { toast("出错了：" + ((err && err.message) || err)); }

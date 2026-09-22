@@ -6237,6 +6237,13 @@
            事件盒那一屏由 memory-pack.js 渲染进 #arcBoxes；
            时间线那一屏是原来这段代码，只是搬进 #arcTimeline。 -->
       <div class="mem-page hidden" data-mp="archive">
+      <!-- 事件盒不会自己长出来：原来靠宫殿提取那一步顺手归盒，宫殿停用后就没人喂它了。
+           这里给一个一次性动作：把记忆库里现有的叙事记忆（event / story / summary）
+           按"是不是同一件事"重新归盒（复用后端 /app/archive/box/bind 那套关键词相似度）。 -->
+      <div class="nf-actions" style="margin:0 0 10px">
+        <button id="arcRebuild" type="button" class="primary">从记忆库重建事件盒</button>
+        <span class="pal-status" id="arcRebuildStatus" style="display:inline-block;margin:0"></span>
+      </div>
       <div id="arcBoxes"></div>
       <div id="arcTimeline" class="hidden">
       <!-- ↓ 原「档案室」，改名并扩成"所有记忆" -->
@@ -10547,6 +10554,27 @@ if ($("#dyVector")) $("#dyVector").addEventListener("click", () => { if (window.
 if ($("#dyList")) $("#dyList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-dy]");
   if (b) dyOpen(b.dataset.dy);
+});
+if ($("#arcRebuild")) $("#arcRebuild").addEventListener("click", async () => {
+  const btn = $("#arcRebuild"), st = $("#arcRebuildStatus");
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "重建中…";
+  if (st) st.textContent = "正在读记忆库、按相似度归盒…";
+  try{
+    const r = await fetch(appUrl("/app/archive/rebuild"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ limit: 400 })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    if (st) st.textContent = d.bound
+      ? ("✅ 归了 " + d.bound + " 条（新开了 " + d.created + " 个盒）· 共 " + ((d.stats || {}).boxes || 0) + " 个盒")
+      : ("没有可归的：" + (d.message || ""));
+    memPackRender("archive", "#arcBoxes");     /* 让 memory-pack 重画那一屏 */
+    showToast(d.bound ? ("归了 " + d.bound + " 条") : "没有新的叙事记忆可归");
+  }catch(e){
+    if (st) st.textContent = "⚠️ " + ((e && e.message) || e);
+  }finally{ btn.disabled = false; btn.textContent = old; }
 });
 if ($("#palPurge")) $("#palPurge").addEventListener("click", palPurge);
 if ($("#peExtract")) $("#peExtract").addEventListener("change", async (e) => {

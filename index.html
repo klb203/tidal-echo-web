@@ -5210,6 +5210,10 @@
       <label class="fld switch-row"><span>启用 MiniMax 语音</span>
         <input type="checkbox" id="mmEnable">
       </label>
+      <label class="fld switch-row"><span>AI 回复带语音条</span>
+        <input type="checkbox" id="mmBubble">
+      </label>
+      <div class="settings-tip" style="margin:-2px 0 10px">开着的时候，它每次回完话会再用这个声音念一遍，作为一条语音条挂在气泡下面。<b>每条回复都会合成一次（按 MiniMax 用量计费）</b>，嫌吵可以随时关掉。</div>
       <label class="fld"><span>Group ID</span><input id="mmGroup" type="text" placeholder="你的 MiniMax GroupId" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>API Key</span><input id="mmKey" type="password" placeholder="MiniMax API Key" autocomplete="off" spellcheck="false"></label>
       <label class="fld"><span>克隆声音 ID</span><input id="mmVoice" type="text" placeholder="moss_audio_9cc288f3-a9d3-11f1-a626-8a59b47fb1f9" autocomplete="off" spellcheck="false"></label>
@@ -9904,6 +9908,7 @@ function syncMiniMaxFields(){
   const c = loadMiniMax();
   const en = $("#mmEnable"), g = $("#mmGroup"), k = $("#mmKey"), v = $("#mmVoice"), s = $("#mmSpeed"), st = $("#mmStatus");
   if (en) en.checked = !!c.enable;
+  const bb = $("#mmBubble"); if (bb) bb.checked = (c.bubble !== false);
   if (g) g.value = c.group || "";
   if (k) k.value = c.key || "";
   if (v){ v.value = c.voice || ""; v.placeholder = MM_DEFAULT_VOICE; }
@@ -9918,7 +9923,8 @@ function persistMiniMax(){
     group: $("#mmGroup") ? $("#mmGroup").value.trim() : "",
     key: $("#mmKey") ? $("#mmKey").value.trim() : "",
     voice: $("#mmVoice") ? $("#mmVoice").value.trim() : "",
-    speed: parseFloat(($("#mmSpeed") ? $("#mmSpeed").value : "1")) || 1
+    speed: parseFloat(($("#mmSpeed") ? $("#mmSpeed").value : "1")) || 1,
+    bubble: ($("#mmBubble") && !$("#mmBubble").checked) ? false : true
   };
   saveMiniMax(c);
   syncMiniMaxFields();
@@ -10455,7 +10461,7 @@ function applyCloudHost(){
 if ($("#fCloud")) $("#fCloud").addEventListener("change", applyCloudHost);
 if ($("#fCloudToken")) $("#fCloudToken").addEventListener("change", applyCloudHost);
 /* MiniMax 声音克隆设置：改动即存本机 */
-["mmEnable", "mmGroup", "mmKey", "mmVoice", "mmSpeed"].forEach((id) => {
+["mmEnable", "mmGroup", "mmKey", "mmVoice", "mmSpeed", "mmBubble"].forEach((id) => {
   const el = $("#" + id);
   if (el) el.addEventListener("change", persistMiniMax);
 });
@@ -13308,9 +13314,37 @@ if (themeSeg) themeSeg.addEventListener("click", e => {
           return;
         }
       }
+      /* ★ 第三级兜底：MiniMax 与后端 /app/tts 都没给出音频时，用浏览器自带的语音合成顶上。
+         后端**根本没有 /app/tts 这个路由**（全仓库搜不到，只有 /relay/minimax/tts），
+         所以以前没配 MiniMax 或 MiniMax 失败时就彻底没声了。系统音色不如克隆声音，
+         但"它能开口"这件事不该取决于一张 API Key。 */
+      if (open && String(text || "").trim()) await browserSpeak(text);
     }catch(e){
       console.error("[speak] speakOne failed:", e);
     }
+  }
+
+  /* 浏览器内置 TTS：不花钱、不需要后端。音色是系统的那几个（手机上通常有中文女声）。 */
+  function browserSpeak(text){
+    return new Promise((resolve) => {
+      try{
+        const ss = window.speechSynthesis;
+        if (!ss || !window.SpeechSynthesisUtterance){ resolve(false); return; }
+        ss.cancel();
+        const u = new SpeechSynthesisUtterance(String(text || "").slice(0, 300));
+        const vs = ss.getVoices() || [];
+        const zh = vs.find((v) => /^zh|Chinese|cmn/i.test(((v && v.lang) || "") + " " + ((v && v.name) || "")));
+        if (zh) u.voice = zh;
+        u.lang = "zh-CN"; u.rate = 1; u.pitch = 1;
+        let done = false;
+        const fin = () => { if (!done){ done = true; resolve(true); } };
+        u.onend = fin; u.onerror = fin;
+        ss.speak(u);
+        /* 有的浏览器不会回调 onend（iOS 静音开关、部分安卓 WebView）——
+           超时兜底，免得朗读队列卡死后面的话。 */
+        setTimeout(fin, Math.min(30000, Math.max(4000, String(text || "").length * 220)));
+      }catch(e){ resolve(false); }
+    });
   }
 
   function incoming(text){
@@ -18191,6 +18225,45 @@ async function apiTts(text){
   return await r.blob();
 }
 
+/* ── AI 回复带语音条 ───────────────────────────────────────────────────
+   它回完一句话，把这句话合成语音、传上去，作为一条语音条挂在这条消息下面。
+   语音走 MiniMax（需在「设置 → 语音」里启用），文件走 /app/upload。
+
+   ⚠️ 后端没有「给已有消息补附件」的接口，所以这条语音条只挂在本机缓存里：
+   刷新之后气泡会回到纯文字（音频文件还在服务器上）。要做成永久的，
+   得让后端在 push 回复时一并带上 audio 附件 —— 那是后端的事。 */
+const voiceBubbleBusy = new Set();
+function aiVoiceBubbleOn(){
+  try{ return loadMiniMax().bubble !== false; }catch(_){ return true; }
+}
+async function attachVoiceBubble(key, text){
+  const t = String(text || "").trim();
+  if (!t || t.length > 240) return;              // 太长的段落不合成，省钱也不吵
+  if (!aiVoiceBubbleOn() || !minimaxEnabled()) return;
+  if (voiceBubbleBusy.has(String(key))) return;
+  voiceBubbleBusy.add(String(key));
+  try{
+    const blob = await minimaxTts(t);
+    if (!blob || !blob.size) return;
+    const up = await apiUpload(blob, "voice.mp3", "audio/mpeg");
+    const url = up && (up.url || (up.id ? "/app/file/" + up.id : ""));
+    if (!url) return;
+    const m = messageByKey.get(String(key));
+    if (!m) return;
+    const atts = (m.meta && Array.isArray(m.meta.attachments)) ? m.meta.attachments.slice() : [];
+    if (atts.some((a) => a && (a.kind === "voice" || a.kind === "audio"))) return;   // 已经有了
+    atts.push({ kind: "voice", url: url, name: "voice.mp3",
+                dur: Math.max(1, Math.round(t.length / 5)), size: blob.size, mime: "audio/mpeg" });
+    m.meta = Object.assign({}, m.meta || {}, { attachments: atts });
+    invalidateRows();
+    scheduleRender({});
+    scheduleCacheSave();
+    console.log("[voice-bubble] attached", blob.size, "B");
+  }catch(e){
+    console.warn("[voice-bubble] skipped:", (e && e.message) || e);
+  }finally{ voiceBubbleBusy.delete(String(key)); }
+}
+
 async function apiHealth(){
   try{
     const d = useDirect(); if (d) return await deepseekHealth(d);
@@ -19814,6 +19887,7 @@ function onMessage(m){
   if (stick && m.kind !== "thinking" && m.kind !== "act") freshKeys.add(key);          // 在底部时新消息弹入
   if (m.from === "ai" && m.kind !== "thinking" && m.kind !== "act"){               // act 是环境信息:不响铃、不在通话里朗读
     playReceiveSound();
+    attachVoiceBubble(key, m.text || "");          // ★ 顺带把这句话做成一条语音条（设置 → 语音里可关）
     /* 通话里要念出来（并看这条是不是说了"挂断"→ 温柔收线）。
        交给 onAssistant 统一处理：它认得"这条我们已经念过了"，不会念第二遍。 */
     if (window.VoiceCall && window.VoiceCall.isOpen()){

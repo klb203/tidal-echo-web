@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>邮箱 · 预览</title>
+<!-- 预览页：只给面板一个能挂的宿主。没有 media-store 时，mail-pack 会退回本机模式
+     （网关/静态都取不到），照样能看布局、写草稿、试 AI 之外的全流程。 -->
+<link rel="stylesheet" href="mail-pack.css">
+<style>
+  :root{
+    --bg:#F7FAFC; --text:#253447; --text-soft:#5E7080; --text-faint:#8A99A8;
+    --accent:#4C6378; --accent-deep:#2C4056; --hairline:rgba(120,142,165,.18);
+    --seg-track:rgba(140,160,176,.10); --field-bg:rgba(255,255,255,.55);
+    --field-line:rgba(255,255,255,.7); --font-cn:inherit; --font-en:inherit;
+    --ref-width:941px; --ease-soft:cubic-bezier(.22,1,.36,1);
+  }
+  body{ margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+  .stage{ min-height:100vh; display:grid; place-items:center; padding:24px; box-sizing:border-box; }
+  .ph{ position:relative; width:min(100vw,430px); height:min(88vh,860px); overflow:hidden;
+       border-radius:22px; box-shadow:0 18px 50px rgba(40,60,80,.18); background:var(--bg); }
+  h1{ font-size:15px; font-weight:600; text-align:center; margin:0 0 14px; }
+  p.hint{ font-size:12px; color:var(--text-faint); text-align:center; margin:10px 0 0; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div>
+    <h1>邮箱 · 预览</h1>
+    <div class="ph" id="ph"></div>
+    <p class="hint">面板会自己挂到 body 上；这里只提供手机框。<br>没接后端时走本机模式 —— 可以写信、存草稿、导入 JSON。</p>
+  </div>
+</div>
+<script defer src="mail-pack.js"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    if (window.openMail) window.openMail();
+  });
+</script>
+</body>
+</html>

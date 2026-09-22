@@ -42,6 +42,8 @@
 <link rel="stylesheet" href="activity-pack.css">
 <!-- 朋友圈 · 整页（各自经过同一面墙留痕迹）样式 -->
 <link rel="stylesheet" href="moments-pack.css">
+<!-- 邮箱（收件 / 已发 / 草稿）· 整页样式 -->
+<link rel="stylesheet" href="mail-pack.css">
 <!-- 图片记忆（原 Album，现在是 App 内整页面板）样式 -->
 <link rel="stylesheet" href="album-pack.css">
 <!-- 我们的房间（人格核/关系/档案/生活线/状态卡/日记/回忆种子）样式 -->
@@ -4950,6 +4952,12 @@
           <span class="menu-copy"><span class="menu-name">Room</span><span class="menu-sub">Our quiet place.</span></span>
           <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
         </button>
+        <button class="menu-item" type="button" data-menu="mail">
+          <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="M4 7.6 12 13.1l8-5.5"/></svg></span>
+          <span class="menu-dot"></span>
+          <span class="menu-copy"><span class="menu-name">邮箱</span><span class="menu-sub">Letters that wait.</span></span>
+          <span class="menu-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </button>
         <button class="menu-item" type="button" data-menu="theme">
           <span class="menu-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-4.7 0-8.5 3.5-8.5 7.9 0 3.3 2.6 5.4 5.6 5.4h1.4c.8 0 1.4.6 1.4 1.4 0 .5-.2.9-.5 1.3-.3.4-.5.8-.5 1.3 0 .9.7 1.6 1.6 1.6 4.6 0 8-3.7 8-8.4 0-5.8-4.2-10.5-8.5-10.5Z"/><circle cx="8.4" cy="10.4" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.6" cy="10.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
           <span class="menu-dot"></span>
@@ -7372,6 +7380,7 @@ if (menuPanel){
     else if (item.dataset.menu === "room") { closeMenu(); if (window.openRoom) window.openRoom(); }
     /* Tides：开的是 Tidefall 的身体面板（壳在 #tidesPanel，内容 tides.html） */
     else if (item.dataset.menu === "tides") { closeMenu(); openTides(); }
+    else if (item.dataset.menu === "mail") { closeMenu(); if (window.openMail) window.openMail(); }   // 邮箱（收件/已发/草稿）
     else showToast("即将开放");                           // placeholder items
   });
 }
@@ -20683,6 +20692,9 @@ init().then(() => {
 <script defer src="album-pack.js"></script>
 <script defer src="room-pack.js"></script>
 <script defer src="moments-pack.js"></script>
+<!-- 邮箱 · 整页面板逻辑。同样 defer，复用宿主连接层与 MediaStore。
+     面板 DOM 由包自己注入，index.html 里不需要写那一大坨标记。 -->
+<script defer src="mail-pack.js"></script>
 <script defer src="activity-pack.js"></script>
 
 <!-- 选项卡（AI 抛给你的选择题）。同样 defer，且必须**排在宿主主体脚本之后** ——

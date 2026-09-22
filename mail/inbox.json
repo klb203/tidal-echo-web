@@ -1,0 +1,6 @@
+{
+  "address": "",
+  "updated_at": "",
+  "note": "占位文件。由 .github/workflows/mail-sync.yml 覆盖：仓库 Secret MAIL_SYNC_URL 指向一个返回 { items: [...] } 的接口（例如你自己的 relay /app/mail/list），Actions 定时拉一次写回这里。前端「邮箱」面板直接 fetch 这个静态文件，所以零后端也能看到真实邮件。没配 Secret 时 workflow 会直接跳过，这个文件保持原样。",
+  "items": []
+}

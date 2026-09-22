@@ -1,0 +1,68 @@
+# 邮件同步：把一个「返回 JSON 的邮件接口」拉成仓库里的静态文件。
+#
+# 为什么绕这一下：GitHub Pages 是纯静态，浏览器又连不了 IMAP/SMTP，
+# 所以真邮件只能由某个有网络、有凭据的地方取回来。这里就用 Actions 当那个地方：
+# 定时（或手动）取一次 → 写进 mail/inbox.json → 前端同域 fetch，零后端也能显示。
+#
+# 怎么用：
+#   1) Settings → Secrets and variables → Actions → New repository secret
+#      MAIL_SYNC_URL   必填：返回 {"items":[{from,subject,body,at,...}]} 的接口
+#      MAIL_SYNC_TOKEN 选填：那个接口的 Bearer 令牌
+#   2) Actions → mail-sync → Run workflow（也可等定时）
+# 没配 MAIL_SYNC_URL 时，这个 workflow 会安静跳过，什么都不改。
+name: mail-sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull mail JSON
+        env:
+          MAIL_SYNC_URL: ${{ secrets.MAIL_SYNC_URL }}
+          MAIL_SYNC_TOKEN: ${{ secrets.MAIL_SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MAIL_SYNC_URL:-}" ]; then
+            echo "MAIL_SYNC_URL 没配，跳过（mail/inbox.json 保持原样）。"
+            exit 0
+          fi
+          args=(-sSf --max-time 25)
+          if [ -n "${MAIL_SYNC_TOKEN:-}" ]; then
+            args+=(-H "Authorization: Bearer ${MAIL_SYNC_TOKEN}")
+          fi
+          curl "${args[@]}" "$MAIL_SYNC_URL" -o /tmp/mail_raw.json
+          python3 - <<'PY'
+          import json, datetime, pathlib
+          raw = json.loads(pathlib.Path("/tmp/mail_raw.json").read_text(encoding="utf-8"))
+          items = raw if isinstance(raw, list) else (raw.get("items") or raw.get("messages") or [])
+          out = {
+              "address": (raw.get("address") if isinstance(raw, dict) else "") or "",
+              "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "items": items[:200],
+          }
+          p = pathlib.Path("mail/inbox.json")
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+          print("写入 %d 封" % len(out["items"]))
+          PY
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- mail/inbox.json; then
+            echo "没有变化。"
+            exit 0
+          fi
+          git config user.name  "mail-sync bot"
+          git config user.email "mail-sync@users.noreply.github.com"
+          git add mail/inbox.json
+          git commit -m "chore(mail): 同步收件箱 $(date -u +'%Y-%m-%dT%H:%MZ')"
+          git push

@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v116-nowhere";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
+const CACHE = "companion-v117-mail";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
                                                //       （字是它写的，邮戳是世界的），密钥就在那一栏里填
                                                // v115：Movie 里多了「看电影」——你放你的片，
                                                //       它在旁边说；每条话都记着说到第几秒
@@ -79,6 +79,9 @@ const PRECACHE = [
   "./wander-pack.css", "./wander-pack.js",
   "./mcp-pack.css", "./mcp-pack.js",
   "./clock-pack.css", "./clock-pack.js",
+  "./mail-pack.css", "./mail-pack.js",
+  /* 静态收件：由 .github/workflows/mail-sync.yml 定时覆盖 */
+  "./mail/inbox.json",
   "./memory-pack.css", "./memory-pack.js",
   "./day-pack.css", "./day-pack.js",
   "./music-pack.css", "./music-pack.js",
@@ -116,7 +119,17 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;                     // 只处理 GET
   if (url.origin !== location.origin) return;                 // 跨域（后端 / CDN）一律放行不缓存
   if (url.pathname.startsWith("/relay/")) return;             // never intercept the API / SSE
-  if (url.pathname.endsWith("/sw.js")) return;                // 别把 SW 自己塞进缓存
+  if (url.pathname.endsWith("/sw.js")) return;
+  /* 收件箱是活的：网络优先，断网才用缓存。否则预缓存那份 inbox.json 会一直被返回。 */
+  if (url.pathname.endsWith("/mail/inbox.json")) {
+    e.respondWith(
+      fetch(e.request, { cache: "reload" }).then((res) => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {}); }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }                // 别把 SW 自己塞进缓存
   if (e.request.mode === "navigate") {
     // network-first for the page → an online reload always gets the latest index.html
     e.respondWith(fetch(e.request, { cache: "reload" }).catch(() => caches.match("./index.html")));

@@ -297,6 +297,7 @@
         : (b.content ? '<div class="mp-item-s">' + esc(b.content) + "</div>" : "")) +
       '<div class="wb-acts">' +
         '<button type="button" class="mp-mini" data-wb-open="' + esc(id) + '">编辑</button>' +
+        '<button type="button" class="mp-mini" data-wb-qr="' + esc(id) + '">条码</button>' +
         (WB.selecting ? "" : '<button type="button" class="mp-mini" data-wb-del-one="' + esc(id) + '">删除</button>') +
       "</div>" +
       "</div>";
@@ -763,6 +764,18 @@
         if (hit("[data-wb-del-one]")) {
           e.stopPropagation();
           await wbDeleteOne(hit("[data-wb-del-one]").dataset.wbDelOne || "");
+          return;
+        }
+        /* 条码：这一条编成二维码带走（扫出来就是标准 JSON，别处能认出它是什么） */
+        if (hit("[data-wb-qr]")) {
+          e.stopPropagation();
+          const b = wbById(hit("[data-wb-qr]").dataset.wbQr);
+          if (b && window.Barcode) {
+            window.Barcode.show(window.Barcode.fromWorldbook(b),
+              { title: (b.title || "世界书条目"), note: "分组：" + (b.category || "通用设定") });
+          } else {
+            toast("条码模块没加载 —— 刷新一次页面");
+          }
           return;
         }
         if (hit("[data-wb-panel-close]")) { WB.panel = ""; WB.preview = null; wbPaint(); return; }

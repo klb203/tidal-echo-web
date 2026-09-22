@@ -76,10 +76,13 @@
   function ymd(x) { const d = new Date(x || 0); return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10); }
   function txt(x) { return typeof x === "string" ? x : (x == null ? "" : String(x)); }
 
+  /* ★ 2026-09-22 按用户要求下掉五项：生活线 / 状态卡 / 梦 / 日记 / 记忆档案。
+     它们的渲染函数与数据都还在（没删代码），只是不再出现在导航里 ——
+     长期记忆现在由「长期记忆 · 日记（GitHub）」那一页承担，
+     梦与状态卡那类自动产物统一走「机器写的记忆」那一页看。 */
   const TABS = [
     { k: "core", n: "人格核" }, { k: "bond", n: "关系" }, { k: "inner", n: "内在" },
-    { k: "life", n: "生活线" }, { k: "status", n: "状态卡" }, { k: "dream", n: "梦" },
-    { k: "diary", n: "日记" }, { k: "archive", n: "记忆档案" }, { k: "seed", n: "回忆种子" }
+    { k: "seed", n: "回忆种子" }
   ];
 
   const state = {

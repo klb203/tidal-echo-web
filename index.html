@@ -44,6 +44,8 @@
 <link rel="stylesheet" href="moments-pack.css">
 <!-- 邮箱（收件 / 已发 / 草稿）· 整页样式 -->
 <link rel="stylesheet" href="mail-pack.css">
+<!-- 条码（把一条记忆 / 世界书条目编成能扫走的二维码）· 样式 -->
+<link rel="stylesheet" href="qr-pack.css">
 <!-- 图片记忆（原 Album，现在是 App 内整页面板）样式 -->
 <link rel="stylesheet" href="album-pack.css">
 <!-- 我们的房间（人格核/关系/档案/生活线/状态卡/日记/回忆种子）样式 -->
@@ -6362,11 +6364,16 @@
       <section class="mg-card" id="pdCard">
         <div class="mg-head">
           <div>
-            <div class="mg-title">待确认 · 机器写的</div>
-            <div class="mg-sub" id="pdLead">宫殿提取 · 近景日更 · 片段组装 · 牌桌回顾 —— 等你过目</div>
+            <div class="mg-title">机器写的 · 已自动生效</div>
+            <div class="mg-sub" id="pdLead">近景日更 · 小记忆 · 牌桌回顾 —— 闸门已关，直接入库</div>
           </div>
           <span class="mg-tag" id="pdTag">—</span>
         </div>
+        <!-- ★ 人工确认闸门已取消（2026-09-22 用户决定）：机器写的记忆直接生效。
+             这个开关是「反悔键」—— 打开就恢复审核，那时它写的东西会先落到这一页等你点头。 -->
+        <label class="fld switch-row" style="margin:10px 0 2px"><span>恢复人工确认（写好的先等你点头）</span>
+          <input type="checkbox" id="pdGate">
+        </label>
         <div class="conn-sub" id="pdHint" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.6"></div>
         <div class="nf-actions">
           <button id="pdRefresh" type="button">刷新</button>
@@ -6374,11 +6381,12 @@
         </div>
         <div class="br-list" id="pdList"></div>
         <div class="br-foot" id="pdFoot">—</div>
-        <div class="settings-tip">这些都是<b>它自己写下来的</b>：宫殿从聊天里提取的片段、近景的日更、
-        自动组装的小记忆、一局牌桌的回顾。<br>
-        <b>没放行之前，它们不参与它说话</b>（不进召回、也不进档案室和银河）——
-        所以你在这儿看到的，是「它打算记住什么」，而不是「它已经记住了什么」。<br>
-        觉得写得对 → 放行；写得不对或者你不认这段 → 撤回（直接删掉）。</div>
+        <div class="settings-tip">这些都是<b>它自己写下来的</b>：近景的日更、自动组装的小记忆、
+        一局牌桌的回顾、从记忆里收进事件盒的条目。<br>
+        <b>现在它们直接生效</b>（不再等你点头）—— 所以这一页平时是空的；
+        想回看它最近写了什么，去<b>记忆库</b>（按分区）或<b>档案馆</b>（按事件），
+        想看它把一整天写成了什么，去「<b>长期记忆 · 日记</b>」。<br>
+        把上面的开关打开就恢复审核：那时它写的东西会先落在这一页，等你放行或撤回。</div>
       </section>
       </div><!-- /待确认页 -->
 
@@ -17044,6 +17052,17 @@ function buildLibCards(){
     if (nw){ libEditOpen(nw.dataset.libNew, null); return; }
     if (cx){ $("#libEdit-" + cx.dataset.libCancel).classList.add("hidden"); return; }
     if (sv){ await libSave(sv.dataset.libSave); return; }
+    /* 条码：把这一条原样编进二维码 —— 扫出来就是正文，离线、换设备都能读。
+       （用户 2026-09-22：「摘要/参考资料删掉，直接建立条码的」） */
+    const qr = e.target.closest("[data-lib-qr]");
+    if (qr){
+      const kind = qr.dataset.libKind || "", id = qr.dataset.libQr;
+      const it = (memData.items[kind] || []).find((x) => String(x.id) === String(id));
+      if (it && window.Barcode) window.Barcode.show(window.Barcode.fromMemory(it),
+        { title: (it.title || "记忆条码"), note: "分区：" + kind });
+      else showToast("条码模块没加载 —— 刷新一次页面");
+      return;
+    }
     if (del){ await libDelete(del.dataset.libDel); return; }
     if (item){
       const kind = item.dataset.libKind, id = item.dataset.libItem;
@@ -17274,6 +17293,32 @@ function pdRender(){
   }
   host.innerHTML = items.map(pdRowHtml).join("");
 }
+/* 闸门（机器写的记忆要不要人工点头）。默认关 —— 关着时这一页平时是空的，
+   所以副标题与 foot 文案都跟着它变，不然会出现"一条都没有却说等你过目"的矛盾。 */
+let pdGateOn = false;
+async function pdGateLoad(){
+  const cb = $("#pdGate"), lead = $("#pdLead");
+  try{
+    const r = await memApi("/app/memory/pending/config");
+    pdGateOn = !(r && r.auto_confirm);
+  }catch(_){ pdGateOn = false; }
+  if (cb) cb.checked = pdGateOn;
+  if (lead) lead.textContent = pdGateOn
+    ? "近景日更 · 小记忆 · 牌桌回顾 —— 等你过目"
+    : "近景日更 · 小记忆 · 牌桌回顾 —— 闸门已关，直接入库";
+}
+async function pdGateSet(on){
+  try{
+    await memApi("/app/memory/pending/config", { method: "POST", body: { auto_confirm: !on } });
+    pdGateOn = !!on;
+    showToast(on ? "已恢复人工确认：机器写的会先等你点头" : "已关闭人工确认：机器写的直接生效");
+    pdGateLoad();
+    pdLoad(true);
+  }catch(e){
+    showToast("没改成：" + ((e && e.message) || e));
+    pdGateLoad();
+  }
+}
 async function pdLoad(verbose){
   if (verbose) pdStatus("读待确认…");
   try{
@@ -17283,7 +17328,9 @@ async function pdLoad(verbose){
     const foot = $("#pdFoot");
     if (foot) foot.textContent = pdData.length
       ? "共 " + pdData.length + " 条待你过目 · 没放行之前它们不进召回、也不进档案室和银河"
-      : "共 0 条 · 机器写新东西时会自动出现在这里";
+      : (pdGateOn
+          ? "共 0 条 · 机器写新东西时会自动出现在这里"
+          : "共 0 条 · 闸门关着：机器写的直接生效，不再堆到这里");
     if (verbose) pdStatus(pdData.length ? ("读到 " + pdData.length + " 条") : "没有待确认的", "ok");
     pdRender();
   }catch(err){
@@ -17309,7 +17356,10 @@ async function pdAct(ids, act){
   }
 }
 if ($("#pdList")){
-  if ($("#pdRefresh")) $("#pdRefresh").addEventListener("click", () => pdLoad(true));
+  if ($("#pdGate")) $("#pdGate").addEventListener("change", (e) => pdGateSet(!!e.target.checked));
+if ($("#pdRefresh")) $("#pdRefresh").addEventListener("click", () => { pdGateLoad(); pdLoad(true); });
+pdGateLoad();
+
   if ($("#pdAll")) $("#pdAll").addEventListener("click", () => {
     const ids = (pdData || []).map((x) => x.id);
     pdAct(ids, "confirm");
@@ -17760,6 +17810,8 @@ function renderLibs(){
           '<span class="arc-acts">' +
             '<button class="arc-act" type="button" data-lib-item="' + escapeHtml(String(it.id)) +
               '" data-lib-kind="' + d.kind + '" title="编辑">' + MEM_ICO.pen + "</button>" +
+            '<button class="arc-act" type="button" data-lib-qr="' + escapeHtml(String(it.id)) +
+              '" data-lib-kind="' + d.kind + '" title="条码">▦</button>' +
             '<button class="arc-act" type="button" data-lib-del="' + escapeHtml(String(it.id)) +
               '" title="删除">' + MEM_ICO.trash + "</button>" +
           "</span>" +
@@ -21340,6 +21392,11 @@ init().then(() => {
 <!-- 邮箱 · 整页面板逻辑。同样 defer，复用宿主连接层与 MediaStore。
      面板 DOM 由包自己注入，index.html 里不需要写那一大坨标记。 -->
 <script defer src="mail-pack.js"></script>
+
+<!-- 条码 · 二维码生成。vendor/qrcode.min.js 是 davidshimjs/qrcodejs（MIT，约 20KB），
+     必须排在 qr-pack.js 前面 —— 后者用它的全局 QRCode。 -->
+<script defer src="vendor/qrcode.min.js"></script>
+<script defer src="qr-pack.js"></script>
 <script defer src="activity-pack.js"></script>
 
 <!-- 选项卡（AI 抛给你的选择题）。同样 defer，且必须**排在宿主主体脚本之后** ——

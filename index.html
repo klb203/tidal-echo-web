@@ -14193,7 +14193,7 @@ function streamEventText(ev){
   return v == null ? "" : String(v);
 }
 
-async function appChatStream(text, streamId, conn, onMeta, resend){
+async function appChatStream(text, streamId, conn, onMeta, resend, attachments){
   const qk = backendQuick();
   let model = (conn && conn.model) || "";
   if (qk.thinking && typeof pickThinkingModel === "function") model = pickThinkingModel(conn, model);
@@ -14215,6 +14215,10 @@ async function appChatStream(text, streamId, conn, onMeta, resend){
      以前的「重试」是「删掉本地气泡 → 再发一次」，后端于是又存一条一模一样的 ——
      越重试越多，全堆在会话末尾（用户报的「发不出去的消息一直堆在下面」）。 */
   if (resend) payload.resend = true;
+  /* ★ 附件（图片/文件）。这条流式对话的 payload 里原来**没有** attachments 字段，
+     后端也就不可能把图挂到消息上。发图片因此只能是「先上传、再发一条空文本」，
+     而空文本会被后端 400「缺 message」拒掉 —— 前端看到的就是「未送达」。 */
+  if (attachments && attachments.length) payload.attachments = attachments;
 
   const url = appUrl("/app/chat/stream");
   const init = {
@@ -14406,6 +14410,7 @@ async function deleteFailed(key){
 
 async function backendSend(text, tempKey, opts){
   const resend = !!(opts && opts.resend);
+  const atts = (opts && opts.attachments) || [];
   const conn = activeConn();
   showTyping();
   backendStreaming = true;
@@ -14418,7 +14423,7 @@ async function backendSend(text, tempKey, opts){
       const cur = messageByKey.get(msgKey(tempKey));
       confirmOptimistic(tempKey, userKey, Object.assign({}, cur || { text: text, ts: new Date().toISOString(),
         from: "human", kind: "user", meta: {} }, { id: userKey, status: "sent" }));
-    }, resend);
+    }, resend, atts);
   }catch(err){
     errMsg = (err && err.message) || String(err);
   }
@@ -18077,8 +18082,18 @@ async function apiNewerHistory(since, limit = 200){
 }
 
 async function apiSend(text, attachments, tempKey){
-  if (hasBackendChat() && !isMock()) return backendSend(text, tempKey);
-  const d = useDirect(); if (d) return directSend(text, d, tempKey);
+  const atts = (attachments && attachments.length) ? attachments : null;
+  /* ★ 有附件时**必须**把附件交给后端：以前这里是无条件
+     `return backendSend(text, tempKey)` —— 附件参数被丢掉，而且它还会拿空文本去请求，
+     被后端 400「缺 message」拒掉，气泡就变成「未送达」。图片看着就像发不出去。 */
+  if (hasBackendChat() && !isMock()) return backendSend(text, tempKey, atts ? { attachments: atts } : undefined);
+  const d = useDirect();
+  if (d){
+    /* 直连模式就是「浏览器直接打模型服务商」，没有存附件的地方 ——
+       与其悄悄丢掉，不如说清楚怎么发得出去。 */
+    if (atts) throw new Error("直连模式发不了附件：去「设置 → 连接」换成走后端的连接（或在设置里开启「后端对话」）");
+    return directSend(text, d, tempKey);
+  }
   if (isMock()) return Mock.send(text);
   const payload = { text: text || "" };
   const sid = effectiveApiSession();

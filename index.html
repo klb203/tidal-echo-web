@@ -4132,6 +4132,56 @@
   .fld-pair > .fld{ flex: 1 1 0; min-width: 0; }
   /* 生图结果预览 */
   .ig-preview{ display: flex; flex-direction: column; gap: 10px; }
+  /* ── 记忆库（AionsHome 那套：两档筛选 + 关键词 chips + 就地编辑）──────── */
+  .ml-tabs{ display: flex; gap: 6px; margin: 10px 0 2px; flex-wrap: wrap; }
+  .ml-tabs button{
+    appearance: none; font: inherit; font-size: 12.5px; cursor: pointer;
+    padding: 5px 12px; border-radius: 999px; color: var(--text-soft, #5b6b7c);
+    border: 1px solid var(--hairline, rgba(120,142,165,.24));
+    background: transparent;
+  }
+  .ml-tabs button.on{
+    color: var(--text, #253447); font-weight: 600;
+    background: var(--seg-track, rgba(140,160,176,.14));
+    border-color: transparent;
+  }
+  .ml-list{ display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .ml-item{
+    padding: 10px 12px; border-radius: 12px;
+    background: var(--seg-track, rgba(140,160,176,.07));
+    border: 1px solid var(--hairline, rgba(120,142,165,.14));
+  }
+  .ml-item-head{ display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ml-chip{
+    font-size: 10.5px; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+    background: var(--seg-track, rgba(140,160,176,.18)); color: var(--text-soft, #5b6b7c);
+  }
+  .ml-chip.long{ color: #c45a24; background: rgba(196,90,36,.13); }
+  .ml-chip.daily{ color: #2e7d32; background: rgba(46,125,50,.12); }
+  .ml-chip.from-ai{ color: #2b6cb0; background: rgba(43,108,176,.12); }
+  .ml-acts{ margin-left: auto; display: flex; gap: 2px; }
+  .ml-acts button{
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    font: inherit; font-size: 12px; color: var(--text-faint, #8A99A8);
+    padding: 3px 6px; border-radius: 7px;
+  }
+  .ml-acts button:hover{ background: rgba(140,160,176,.16); color: var(--text, #253447); }
+  .ml-body{ font-size: 13.5px; line-height: 1.75; color: var(--text, #253447); word-break: break-word; white-space: pre-wrap; }
+  .ml-kws{ display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .ml-kw{ font-size: 11px; padding: 2px 8px; border-radius: 999px;
+          background: rgba(88,132,180,.13); color: #4a6d92; }
+  .ml-time{ margin-top: 7px; font-size: 11px; color: var(--text-faint, #8A99A8); line-height: 1.6; }
+  .ml-row{ display: flex; gap: 10px; }
+  .ml-row .fld{ flex: 1 1 0; min-width: 0; }
+  .ml-row input[type=range]{ width: 100%; }
+  .ml-edit{ display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; }
+  .ml-tidy{ padding: 10px 0 2px; }
+  .ml-op{
+    padding: 9px 11px; border-radius: 10px; margin-bottom: 7px; font-size: 12.5px; line-height: 1.7;
+    background: var(--seg-track, rgba(140,160,176,.07));
+  }
+  .ml-op b{ font-size: 11.5px; }
+
   /* ── 长期记忆 · 日记（GitHub 仓库里的 markdown）────────────────────── */
   .dy-list{ display: flex; flex-direction: column; margin-top: 6px; }
   .dy-item{
@@ -6324,6 +6374,54 @@
         <b>档案馆</b>把上面这些按事件归到一处。<br>
         写日记要用到「小助手 · 中转站」（设置里配地址 / Key / 模型 + GitHub token）。</div>
       </section>
+
+      <!-- 记忆库 · AionsHome 那一套（日常 / 长期重要 两档 + 关键词 + 理由）
+           ★ 这里放的是**条目**，不是分区卡：世界书页那一叠是"按 kind 分区看全库"，
+             这一页是"把它自己写的和你写的放在一起，按重量筛"。
+           ★ 它自己写的（source=ai）也在这儿 —— 以前 [[remember:]] 只写外部 Haven，
+             Haven 没配就整条丢弃，界面上一条都找不到（"说记住了其实没有"）。 -->
+      <section class="mg-card" id="mlCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">记忆库</div>
+            <div class="mg-sub" id="mlLead">它自己写的 + 你写的，都能改</div>
+          </div>
+          <span class="mg-tag" id="mlTag">—</span>
+        </div>
+        <div class="ml-tabs" id="mlTabs">
+          <button type="button" data-mlt="all" class="on">全部</button>
+          <button type="button" data-mlt="daily">日常</button>
+          <button type="button" data-mlt="long_term">长期重要</button>
+        </div>
+        <div class="nf-actions">
+          <button id="mlNew" type="button" class="primary">＋ 记一条</button>
+          <button id="mlTidy" type="button">让 TA 整理</button>
+          <button id="mlRefresh" type="button">刷新</button>
+        </div>
+        <div class="pal-status" id="mlStatus"></div>
+
+        <div class="ml-edit hidden" id="mlEdit">
+          <textarea class="nf-box" id="mlBody" rows="3" placeholder="要记住的事（一句话最好）"></textarea>
+          <input class="nf-box" id="mlKw" placeholder="关键词（逗号分隔，可留空）—— 以后靠它们想起来" style="min-height:auto;padding:9px 11px">
+          <input class="nf-box" id="mlReason" placeholder="理由 / 证据（可留空）" style="min-height:auto;padding:9px 11px">
+          <div class="ml-row">
+            <label class="fld"><span>档位</span>
+              <select id="mlTier"><option value="daily">日常</option><option value="long_term">长期重要</option></select>
+            </label>
+            <label class="fld"><span>重要度 <b id="mlImpVal">6</b></span>
+              <input type="range" id="mlImp" min="1" max="10" value="6">
+            </label>
+          </div>
+          <div class="nf-actions"><button type="button" class="primary" id="mlSaveBtn">保存</button>
+            <button type="button" id="mlCancelBtn">取消</button></div>
+        </div>
+
+        <div class="ml-tidy hidden" id="mlTidyBox"></div>
+        <div id="mlList" class="ml-list"></div>
+        <div class="settings-tip">记忆库是它会**一直记得**的东西 —— 它自己判断值得记的（对话里写
+        <code>[[remember: 事 || 关键词 || 长期]]</code>）、机器自动写的、以及你手动补的，都在这儿。<br>
+        「让 TA 整理」会先给你<b>预览</b>：合并重复、补关键词与理由、把真正重要的提到「长期重要」——
+        你看过点「应用」才落库（记忆是长期资产，误合并拆不回来，所以不给它自动改）。</div>
       </div><!-- /长期记忆页 -->
 
       <!-- ⑧ 短期记忆 · 近景七天（独立一页）-->
@@ -10559,6 +10657,249 @@ if ($("#asTest")) $("#asTest").addEventListener("click", async () => {
 if ($("#dyWrite")) $("#dyWrite").addEventListener("click", dyWrite);
 if ($("#dyRefresh")) $("#dyRefresh").addEventListener("click", () => { dyFiles = []; dyOpenPath = ""; dyLoad(true); });
 if ($("#dyVector")) $("#dyVector").addEventListener("click", () => { if (window.palaceOpen) palaceOpen(); });
+/* ════════════ 记忆库（AionsHome：日常 / 长期重要 两档）════════════════
+   ★ 为什么单独一页而不是并进世界书那叠分区卡：分区卡是"按 kind 看全库"，
+     这一页是"把它自己写的和你写的放一起、按重量筛" —— 两件事，两个视图。
+   ★ 「它自己写的」怎么来的：对话里它写 [[remember: 事 || 关键词 || 长期]]，
+     后端解析后落进同一张表（source=ai）。在这儿能看见、能改、能删。 */
+let mlData = { items: [], filter: "all", editing: null, tidy: null };
+
+function mlTierOf(it){
+  return it.tier || ((it.pinned || (it.importance || 0) >= 7) ? "long_term" : "daily");
+}
+function mlSourceLabel(it){
+  const s = String(it.source || "");
+  if (s === "ai") return "它写的";
+  if (!s) return "你写的";
+  return "自动";
+}
+function mlStatus(msg, kind){
+  const el = $("#mlStatus");
+  if (!el) return;
+  el.textContent = msg || "";
+  el.className = "pal-status" + (kind === "err" ? " om-status err" : (kind === "ok" ? " om-status ok" : ""));
+}
+async function mlLoad(force){
+  const host = $("#mlList");
+  if (!host) return;
+  if (!force && mlData.items.length){ mlRender(); return; }
+  mlStatus("正在读记忆库…");
+  try{
+    const d = await memApi("/app/memory/list?limit=200");
+    /* ★ 排除 fragment：按项目的口径它是**素材**（跑过什么工具、参加过什么活动留下的
+       原始碎片），不是记忆 —— 掺进来会让"记住的事"里混一堆"某次调用过某工具"。 */
+    mlData.items = (d.items || []).filter((x) => x.kind !== "fragment");
+    const n = mlData.items.length;
+    const mine = mlData.items.filter((x) => String(x.source || "") === "ai").length;
+    const tag = $("#mlTag"); if (tag) tag.textContent = n ? (n + " 条") : "空";
+    const lead = $("#mlLead");
+    if (lead) lead.textContent = n
+      ? ("共 " + n + " 条 · 其中它自己写的 " + mine + " 条")
+      : "它自己写的 + 你写的，都能改";
+    mlRender();
+    mlStatus(n ? "" : "记忆库还是空的 —— 点「＋ 记一条」，或者跟它说点什么（它会自己写）。");
+  }catch(e){
+    mlStatus("读取失败：" + ((e && e.message) || e), "err");
+    host.innerHTML = "";
+  }
+}
+function mlRender(){
+  const host = $("#mlList");
+  if (!host) return;
+  const f = mlData.filter;
+  const list = mlData.items.filter((it) => f === "all" || mlTierOf(it) === f);
+  if (!list.length){
+    host.innerHTML = '<div class="arc-empty">' +
+      (f === "all" ? "还没有内容。" : ("「" + (f === "daily" ? "日常" : "长期重要") + "」这一档是空的。")) +
+      "</div>";
+    return;
+  }
+  host.innerHTML = list.map((it) => {
+    const tier = mlTierOf(it);
+    const kws = (it.keywords || []).map((k) =>
+      '<span class="ml-kw">#' + escapeHtml(String(k)) + "</span>").join("");
+    const reason = it.reason ? (" · 理由：" + escapeHtml(String(it.reason))) : "";
+    return '<div class="ml-item" data-mlid="' + escapeHtml(String(it.id)) + '">' +
+      '<div class="ml-item-head">' +
+        '<span class="ml-chip ' + (tier === "long_term" ? "long" : "daily") + '">' +
+          (tier === "long_term" ? "长期重要" : "日常") + "</span>" +
+        '<span class="ml-chip' + (String(it.source || "") === "ai" ? " from-ai" : "") + '">' +
+          escapeHtml(mlSourceLabel(it)) + " · " + escapeHtml(it.label || it.kind || "") + "</span>" +
+        '<span class="ml-acts">' +
+          '<button type="button" data-mledit="' + escapeHtml(String(it.id)) + '" title="编辑">改</button>' +
+          '<button type="button" data-mlqr="' + escapeHtml(String(it.id)) + '" title="条码">▦</button>' +
+          '<button type="button" data-mldel="' + escapeHtml(String(it.id)) + '" title="删除">删</button>' +
+        "</span>" +
+      "</div>" +
+      '<div class="ml-body">' + escapeHtml(String(it.content || "")) + "</div>" +
+      (kws ? '<div class="ml-kws">' + kws + "</div>" : "") +
+      '<div class="ml-time">' + escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + reason + "</div>" +
+    "</div>";
+  }).join("");
+}
+function mlEditOpen(it){
+  const box = $("#mlEdit");
+  if (!box) return;
+  mlData.editing = it ? String(it.id) : null;
+  box.classList.remove("hidden");
+  $("#mlBody").value = it ? String(it.content || "") : "";
+  $("#mlKw").value = it ? (it.keywords || []).join(",") : "";
+  $("#mlReason").value = it ? String(it.reason || "") : "";
+  $("#mlTier").value = it ? mlTierOf(it) : "daily";
+  const imp = it && it.importance ? it.importance : (it && mlTierOf(it) === "long_term" ? 8 : 6);
+  $("#mlImp").value = imp;
+  $("#mlImpVal").textContent = imp;
+  const b = $("#mlSaveBtn"); if (b) b.textContent = it ? "保存修改" : "保存";
+  $("#mlBody").focus();
+}
+async function mlSave(){
+  const body = ($("#mlBody").value || "").trim();
+  if (!body){ showToast("正文不能空"); return; }
+  const tier = $("#mlTier").value === "long_term" ? "long_term" : "daily";
+  const payload = {
+    kind: "event", title: body.slice(0, 40), content: body,
+    keywords: ($("#mlKw").value || "").trim(),
+    reason: ($("#mlReason").value || "").trim(),
+    tier: tier,
+    importance: parseInt($("#mlImp").value, 10) || 6
+  };
+  if (mlData.editing) payload.id = mlData.editing;
+  const btn = $("#mlSaveBtn"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "保存中…";
+  try{
+    await memApi("/app/memory/save", { method: "POST", body: JSON.stringify(payload) });
+    showToast(mlData.editing ? "改好了" : "记下了");
+    $("#mlEdit").classList.add("hidden");
+    mlData.editing = null;
+    memData.items = {}; memData.itemIndex = {};   /* 世界书那叠分区卡也要跟着变 */
+    await mlLoad(true);
+    if (typeof renderLibs === "function") { try{ await memLoad(false); }catch(_){} }
+  }catch(e){
+    showToast("没存上：" + ((e && e.message) || e));
+  }finally{ btn.disabled = false; btn.textContent = old; }
+}
+async function mlDelete(id){
+  const it = mlData.items.find((x) => String(x.id) === String(id));
+  if (!confirm("删掉这条记忆？\n\n" + String((it && it.content) || "").slice(0, 100))) return;
+  try{
+    await memApi("/app/memory/item?id=" + encodeURIComponent(id), { method: "DELETE" });
+    showToast("删掉了");
+    mlData.items = mlData.items.filter((x) => String(x.id) !== String(id));
+    mlRender();
+    memData.items = {}; memData.itemIndex = {};
+  }catch(e){ showToast("没删掉：" + ((e && e.message) || e)); }
+}
+/* ── 让 TA 整理 ──────────────────────────────────────────────────────
+   两段式：先 dry_run 拿预览（一条都不落库），人点「应用」才真改。 */
+function mlTidyRender(ops){
+  const box = $("#mlTidyBox");
+  if (!box) return;
+  if (!ops || !ops.length){
+    box.classList.remove("hidden");
+    box.innerHTML = '<div class="arc-empty">它看过一遍，觉得没什么要整理的。</div>' +
+      '<div class="nf-actions"><button type="button" id="mlTidyClose">收起</button></div>';
+    return;
+  }
+  const label = { update: "补信息", add: "新增一条", merge: "合并" };
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="conn-sub" style="padding:0 2px 8px;color:var(--text-faint)">' +
+      "它给了 " + ops.length + " 条建议 —— 看过再决定（点「应用」才会真的改）：</div>" +
+    ops.map((o) => {
+      const act = label[o.op] || o.op;
+      const kws = (o.keywords && o.keywords.length) ? ("关键词：" + o.keywords.join("、")) : "";
+      const why = o.reason ? ("理由：" + o.reason) : "";
+      const before = Array.isArray(o.before) ? o.before.join(" ／ ")
+        : (o.before ? ("原：" + o.before) : "");
+      return '<div class="ml-op"><b>' + act + '</b>' +
+        (o.tier ? ' <span class="ml-chip ' + (o.tier === "long_term" ? "long" : "daily") + '">' +
+          (o.tier === "long_term" ? "长期重要" : "日常") + "</span>" : "") +
+        (o.importance ? ' <span class="ml-chip">重要度 ' + o.importance + "</span>" : "") +
+        (before ? '<div style="color:var(--text-faint);margin-top:4px">' + escapeHtml(before) + "</div>" : "") +
+        '<div style="margin-top:4px">' + escapeHtml(String(o.content || "")) + "</div>" +
+        ((kws || why) ? '<div style="color:var(--text-faint);margin-top:4px">' +
+          escapeHtml([kws, why].filter(Boolean).join(" · ")) + "</div>" : "") +
+      "</div>";
+    }).join("") +
+    '<div class="nf-actions"><button type="button" class="primary" id="mlTidyApply">应用这些改动</button>' +
+    '<button type="button" id="mlTidyClose">不理它</button></div>';
+}
+async function mlTidy(){
+  const btn = $("#mlTidy"); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "它在看…";
+  mlStatus("正在把记忆库交给它整理（只出建议，不动数据）…");
+  try{
+    const d = await memApi("/app/memory/tidy", {
+      method: "POST",
+      body: JSON.stringify({ dry_run: true, tier: mlData.filter === "all" ? "" : mlData.filter })
+    });
+    mlData.tidy = d.ops || [];
+    mlTidyRender(mlData.tidy);
+    mlStatus(d.scanned ? ("看过 " + d.scanned + " 条，给出 " + mlData.tidy.length + " 条建议。") : "", d.scanned ? "" : "ok");
+  }catch(e){
+    mlStatus("整理失败：" + ((e && e.message) || e), "err");
+  }finally{ btn.disabled = false; btn.textContent = old; }
+}
+async function mlTidyApply(){
+  const btn = $("#mlTidyApply"); if (!btn) return;
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "正在落库…";
+  try{
+    const d = await memApi("/app/memory/tidy", {
+      method: "POST", body: JSON.stringify({ dry_run: false })
+    });
+    showToast("改了 " + (d.applied || 0) + " 条" + ((d.fails || []).length ? ("，" + d.fails.length + " 条没成功") : ""));
+    $("#mlTidyBox").classList.add("hidden");
+    mlData.tidy = null;
+    memData.items = {}; memData.itemIndex = {};
+    await mlLoad(true);
+  }catch(e){
+    showToast("没应用上：" + ((e && e.message) || e));
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+if ($("#mlNew")) $("#mlNew").addEventListener("click", () => mlEditOpen(null));
+if ($("#mlRefresh")) $("#mlRefresh").addEventListener("click", () => { mlLoad(true); });
+if ($("#mlTidy")) $("#mlTidy").addEventListener("click", mlTidy);
+if ($("#mlCancelBtn")) $("#mlCancelBtn").addEventListener("click", () => {
+  $("#mlEdit").classList.add("hidden"); mlData.editing = null;
+});
+if ($("#mlSaveBtn")) $("#mlSaveBtn").addEventListener("click", mlSave);
+if ($("#mlImp")) $("#mlImp").addEventListener("input", (e) => {
+  const v = $("#mlImpVal"); if (v) v.textContent = e.target.value;
+});
+if ($("#mlTabs")) $("#mlTabs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-mlt]");
+  if (!b) return;
+  mlData.filter = b.dataset.mlt;
+  Array.prototype.forEach.call($("#mlTabs").querySelectorAll("[data-mlt]"), (x) =>
+    x.classList.toggle("on", x === b));
+  mlRender();
+});
+if ($("#mlTidyBox")) $("#mlTidyBox").addEventListener("click", (e) => {
+  if (e.target.closest("#mlTidyApply")) { mlTidyApply(); return; }
+  if (e.target.closest("#mlTidyClose")) { $("#mlTidyBox").classList.add("hidden"); }
+});
+if ($("#mlList")) $("#mlList").addEventListener("click", (e) => {
+  const ed = e.target.closest("[data-mledit]");
+  if (ed){
+    const it = mlData.items.find((x) => String(x.id) === String(ed.dataset.mledit));
+    if (it) mlEditOpen(it);
+    return;
+  }
+  const del = e.target.closest("[data-mldel]");
+  if (del){ mlDelete(del.dataset.mldel); return; }
+  const qr = e.target.closest("[data-mlqr]");
+  if (qr && window.Barcode){
+    const it = mlData.items.find((x) => String(x.id) === String(qr.dataset.mlqr));
+    if (!it) return;
+    window.Barcode.show(window.Barcode.fromMemory({
+      kind: it.kind, content: it.content, meta: {
+        title: it.title, importance: it.importance, pinned: it.pinned,
+        keywords: it.keywords, reason: it.reason, tier: mlTierOf(it), source: it.source
+      }, at: it.ts
+    }), { title: "记忆条码" });
+  }
+});
 if ($("#dyList")) $("#dyList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-dy]");
   if (b) dyOpen(b.dataset.dy);

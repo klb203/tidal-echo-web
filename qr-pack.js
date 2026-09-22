@@ -269,12 +269,19 @@
   }
 
   function fromMemory(item) {
+    /* 两种形状都收：接口回的是**扁平**字段（title / keywords 在顶层），
+       老调用点传的是 {meta:{…}}。带上关键词与档位 —— 扫出来的人才知道
+       这条记忆"该怎么想起来"，而不是只有一段正文。 */
     const meta = item.meta || {};
+    const pick = (k) => (item[k] !== undefined ? item[k] : meta[k]);
     return JSON.stringify({
       tidal: "memory", v: 1,
       item: {
-        kind: item.kind || "", title: meta.title || "", content: item.content || "",
-        importance: meta.importance, pinned: !!meta.pinned, created_at: item.at || item.created_at || "",
+        kind: item.kind || "", title: pick("title") || "", content: item.content || "",
+        importance: pick("importance"), pinned: !!pick("pinned"),
+        keywords: pick("keywords") || [], reason: pick("reason") || "",
+        tier: pick("tier") || "", source: pick("source") || "",
+        created_at: item.at || item.created_at || "",
       },
     });
   }

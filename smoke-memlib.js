@@ -104,12 +104,18 @@ ok(w.mlSourceLabel({ source: "nearfield" }) === "自动", "来源标：机器路
       importance: 9, label: "故事", ts: "2026-09-20T10:00:00" },
     { id: "3", kind: "fragment", source: "scenes", content: "跑过某工具", keywords: [],
       tier: "daily", importance: 3, label: "片段", ts: "2026-09-19T10:00:00" },
+    { id: "4", kind: "summary", source: "nearfield", content: "机器压缩出来的老摘要", keywords: [],
+      tier: "daily", importance: 5, label: "摘要", ts: "2026-09-18T10:00:00" },
+    { id: "5", kind: "ref", source: "", content: "参考资料", keywords: [],
+      tier: "daily", importance: 5, label: "参考资料", ts: "2026-09-17T10:00:00" },
   ] };
   await w.mlLoad(true);
   const listReq = reqs.filter((r) => r.url.indexOf("/app/memory/list") >= 0);
   ok(listReq.length === 1, "加载打了 /app/memory/list 一次");
   ok(/limit=200/.test(listReq[0].url), "带上了 limit=200");
   ok(w.__mlData.items.length === 2, "★ fragment（素材）被排除，只剩 2 条");
+  ok(!w.__mlData.items.some((x) => x.kind === "summary"), "★ summary（机器老摘要）不占记忆库");
+  ok(!w.__mlData.items.some((x) => x.kind === "ref"), "★ ref（参考资料）不占记忆库");
   ok(w.$("#mlTag").textContent === "2 条", "计数标签 = 2 条");
   ok(/它自己写的 1 条/.test(w.$("#mlLead").textContent), "副标题标出「它自己写的 1 条」");
 

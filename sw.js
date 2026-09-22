@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v125-memlib";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
+const CACHE = "companion-v126-memlib";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
                                                //       （字是它写的，邮戳是世界的），密钥就在那一栏里填
                                                // v115：Movie 里多了「看电影」——你放你的片，
                                                //       它在旁边说；每条话都记着说到第几秒

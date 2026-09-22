@@ -10686,9 +10686,14 @@ async function mlLoad(force){
   mlStatus("正在读记忆库…");
   try{
     const d = await memApi("/app/memory/list?limit=200");
-    /* ★ 排除 fragment：按项目的口径它是**素材**（跑过什么工具、参加过什么活动留下的
-       原始碎片），不是记忆 —— 掺进来会让"记住的事"里混一堆"某次调用过某工具"。 */
-    mlData.items = (d.items || []).filter((x) => x.kind !== "fragment");
+    /* 这一页只放**真的算记忆**的：
+       · fragment —— 按项目口径它是**素材**（跑过什么工具、参加过什么活动的原始碎片），
+         不是记忆。掺进来会让"记住的事"里混一堆"某次调用过某工具"。
+       · summary / ref —— 后两类是**机器压缩产出**的老摘要与参考资料，你此前明确要求
+         它们不占记忆库（后端 layers.LIB_HIDDEN_KINDS 也是这两类）。
+         数据一条都没删，在世界书页的「从记忆库导入」里仍然找得到。 */
+    const ML_SKIP = ["fragment", "summary", "ref"];
+    mlData.items = (d.items || []).filter((x) => ML_SKIP.indexOf(x.kind) < 0);
     const n = mlData.items.length;
     const mine = mlData.items.filter((x) => String(x.source || "") === "ai").length;
     const tag = $("#mlTag"); if (tag) tag.textContent = n ? (n + " 条") : "空";

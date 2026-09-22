@@ -15149,27 +15149,43 @@ async function appChatStream(text, streamId, conn, onMeta, resend, attachments){
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   };
-  /* ★ 网络层失败（TypeError: Failed to fetch / 连接被掐）自动重试一次。
-     这不是"多此一举"：免费档实例会被平台回收、重启、冷启动，
-     那段窗口里请求直接是连不上的 —— 前端看到的就只有一句 Failed to fetch。
-     隔 2 秒再试一次，能把绝大多数「刚重启/正在冷启动」扛过去。 */
+  /* ★ 冷启动窗口要扛过去，而且**5xx 也要算进去**。
+     免费档实例会被平台回收 / 冷启动，那段时间请求有两种坏法：
+       · fetch 直接抛（连接被掐）—— 老代码重试了这一种；
+       · 回 502 / 503 / 522（网关连不到源站）—— **老代码没重试这一种**，
+         直接把 "HTTP 522" 抛给用户。可它恰恰是"正在启动"最典型的样子。
+     间隔递增试三次；三次都不行才认输。 */
+  const CHAT_RETRY_WAIT = [2000, 5000];
+  const gatewayDown = (st) => /^(50[234]|52[0-4])$/.test(String(st == null ? "" : st));
   let r = null, netErr = null;
-  for (let attempt = 0; attempt < 2; attempt++){
+  for (let attempt = 0; attempt <= CHAT_RETRY_WAIT.length; attempt++){
     try{
       r = await fetch(url, init);
-      break;
     }catch(e){
-      netErr = e;
-      if (attempt === 0){
-        showToast("连不上后端，2 秒后自动重试一次…");
-        await new Promise((res) => setTimeout(res, 2000));
-      }
+      netErr = e; r = null;
+    }
+    /* 通了、或者是个「跟后端在不在无关」的错误码（400/401…）→ 不再重试 */
+    if (r && (r.ok || !gatewayDown(r.status))) break;
+    if (attempt < CHAT_RETRY_WAIT.length){
+      showToast("后端还没起来，第 " + (attempt + 1) + " 次重试…（最多再等 "
+        + Math.round(CHAT_RETRY_WAIT.slice(attempt).reduce((a, b) => a + b, 0) / 1000) + " 秒）");
+      await new Promise((res) => setTimeout(res, CHAT_RETRY_WAIT[attempt]));
     }
   }
   if (!r) throw netErr || new Error("Failed to fetch");
   if (!r.ok || !r.body){
     let msg = "后端对话 HTTP " + r.status;
     try{ const j = await r.json(); msg = (j.error && j.error.message) || j.detail || msg; }catch(_){}
+    /* ★ 502/503/504/520–524 这几个码几乎只有一个意思：**后端实例没在跑**
+       （被平台回收、正在冷启动、或平台侧故障）。把它们原样丢给用户，
+       用户看到的就只是一串数字，体感是"AI 不理我"。
+       换成一句人话 + 该去哪儿看 —— 并且说清"消息没丢"。 */
+    if (gatewayDown(r.status)) {
+      msg = "后端这会儿没起来（HTTP " + r.status + "）—— 试了三次都没通。\n"
+          + "消息没丢，过一两分钟再发一次就行。\n"
+          + "要是几分钟都这样：去 Render 控制台看一眼那个服务的 Logs，"
+          + "或者点一下 Manual Deploy 重启它。";
+    }
     throw new Error(msg);
   }
 
@@ -21930,7 +21946,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v128";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v129";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

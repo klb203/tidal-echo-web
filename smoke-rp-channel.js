@@ -295,9 +295,16 @@ console.log('\n=== 9. 端到端：没有聊天连接时，阿澈退回荷官位�
     ok(calls[1].body.tools === undefined, '阿澈不带工具（动手是荷官的事）');
     const msgs = R.state.mono.msgs || [];
     const host = msgs.filter((m) => m.who === 'host');
-    ok(host.length === 1, '只有一条 host 消息（荷官 + 阿澈合并成一条）');
-    const segs = R._split(host[0].text);
-    eq(segs.map((s) => s.role), ['dealer', '阿澈'], '一条消息里切出荷官和阿澈两个说话人');
+    /* ★ 现在是**两条**：荷官一条、阿澈一条，各带 by 归属。
+       以前拼成一条、靠正文里的【名字】标记去切 —— 那条路正是
+       「荷官把阿澈的说了」的来源（荷官越界写一行【阿澈】就被算成阿澈说的）。
+       归属改由程序给，不再问"模型守没守标记约定"。 */
+    eq(host.length, 2, '荷官与阿澈各一条（不再拼成一条）');
+    eq(host.map((m) => m.by), ['dealer', 'ache'], '两条各带自己的归属 by');
+    ok(!!host[0].text.trim(), '荷官那条有内容');
+    /* 正文标记那套仍在（老数据 / 老存档靠它兜底），只是不再是从 host[0] 取样本 */
+    const segs = R._split('【荷官】局面如上。\n【阿澈】我伸手把骰子拿起来。');
+    eq(segs.map((s) => s.role), ['dealer', '阿澈'], '正文标记那套仍能切（老数据兜底）');
     /* 用户直接跟阿澈说话时，荷官不许写「无」—— 否则阿澈永远不会被叫到 */
     const dsys = (calls[0].body.messages[0] || {}).content || '';
     ok(dsys.indexOf('不要写「无」') >= 0, '荷官被明确告知：主人跟阿澈说话时不要写「无」');
@@ -330,8 +337,8 @@ function next() {
     ok(sys.indexOf('给阿澈的任务') >= 0, '阿澈的 system 里带着荷官派的任务');
     ok(sys.indexOf('打一局大富翁') >= 0, '阿澈知道自己在牌桌上');
     const host = (R.state.mono.msgs || []).filter((m) => m.who === 'host');
-    const segs = R._split(host[0].text);
-    eq(segs.map((s) => s.role), ['dealer', '阿澈'], '界面上一眼能分开谁在说话');
+    eq(host.map((m) => m.by), ['dealer', 'ache'], '界面上一眼能分开谁在说话（by 归属）');
+    ok(host[1].text.indexOf('你叫阿澈') < 0, '阿澈那条不会把人格原文吐出来');
 
     console.log('\n────────────────────────────────────────');
     console.log(PASS + ' 通过 / ' + FAIL + ' 失败');

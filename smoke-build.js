@@ -64,15 +64,21 @@ function run(swText, opts) {
 }
 
 (async () => {
+  /* ★ 本页版本**动态取**，别写死。
+     第一版把 v128 硬编码在这两行和下面的断言里 —— index.html 一 bump 到 v129，
+     两条断言就莫名其妙地红（SW_SAME 不再"与线上相同"，文案里也找不到 v128）。
+     这类"测试自己过期"最难查：看失败信息会以为是功能的锅。 */
+  const MY_BUILD = (/var BUILD = "(v\d+)"/.exec(CODE) || [])[1] || "v0";
   const SW_NEW = 'const CACHE = "companion-v999-newer";   // 线上更新了\nconst X = 1;\n';
-  const SW_SAME = 'const CACHE = "companion-v128-package";\n';
+  const SW_SAME = 'const CACHE = "companion-' + MY_BUILD + '-package";\n';
 
   console.log("【① 线上版本更新了 → 顶 bar】");
   let g = await run(SW_NEW);
   ok(!!g.bar, "buildBar 被创建了");
   ok(g.bar && g.bar.classList.contains("on"), "bar 显示出来了（class=on）");
   eq("文案里带线上版本", g.bar && /v999/.test(g.bar.textContent), true);
-  eq("文案里也带本页版本（方便一眼看出差在哪）", g.bar && /v128/.test(g.bar.textContent), true);
+  eq("文案里也带本页版本（方便一眼看出差在哪）",
+     !!(g.bar && g.bar.textContent.indexOf(MY_BUILD) >= 0), true);
   ok(g.bar && /更新/.test(g.bar.querySelector("button").textContent), "有「更新」按钮");
   ok(g.fetchUrls.length === 1 && /sw\.js\?build=\d+/.test(g.fetchUrls[0]), "去读的是带时间戳的 sw.js（绕缓存）");
   ok(g.fetchOpts && g.fetchOpts.cache === "no-store", "★ 用了 no-store（否则拿旧文件判断有没有更新是自欺）");

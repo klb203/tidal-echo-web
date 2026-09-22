@@ -6433,6 +6433,7 @@
         <code>[[remember: 事 || 关键词 || 长期]]</code>）、机器自动写的、以及你手动补的，都在这儿。<br>
         「让 TA 整理」会先给你<b>预览</b>：合并重复、补关键词与理由、把真正重要的提到「长期重要」——
         你看过点「应用」才落库（记忆是长期资产，误合并拆不回来，所以不给它自动改）。</div>
+      </section>
       </div><!-- /长期记忆页 -->
 
       <!-- ⑧ 短期记忆 · 近景七天（独立一页）-->
@@ -21901,6 +21902,90 @@ init().then(() => {
 <script defer src="letter-pack.js"></script>
 <script defer src="read-pack.js"></script>
 <script defer src="cinema-pack.js"></script>
+
+<!-- ── 版本自检 · 一键更新 ────────────────────────────────────────────────
+     这个项目是 GitHub Pages + Service Worker 的 PWA，最容易出的状态是
+     **「HTML 是新的、某个 pack 还是旧的」**（SW 缓存分版本、十几个 pack 各自 defer 加载）。
+     那种状态下"某个入口点了没反应"，而用户完全无从判断 —— 以前只能让他去清站点数据。
+     这里改成：页面自己比对线上 sw.js 的版本号，不一致就顶一条 bar，一点就清缓存 + 更新 + 重载。
+
+     ★ 唯一的纪律：下面这个 BUILD 要和 sw.js 里 `const CACHE = "companion-vNNN-…"`
+       的版本号**一起改**（改 sw.js 时顺手改这里）。不一致时顶出来的 bar 就是它自己。 -->
+<style>
+  #buildBar{
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    z-index: 9999; display: none; align-items: center; gap: 10px;
+    padding: 9px 14px; border-radius: 999px; max-width: min(92vw, 460px);
+    background: rgba(37,52,71,.94); color: #fff; font-size: 13px; line-height: 1.4;
+    box-shadow: 0 8px 26px rgba(16,28,44,.32); backdrop-filter: blur(8px);
+  }
+  #buildBar.on{ display: flex; }
+  #buildBar b{ font-weight: 600; }
+  #buildBar button{
+    appearance: none; border: none; cursor: pointer; font: inherit; font-weight: 600;
+    padding: 5px 13px; border-radius: 999px; background: #fff; color: #253447; white-space: nowrap;
+  }
+  #buildBar button:disabled{ opacity: .6; cursor: default; }
+</style>
+<script>
+(function(){
+  var BUILD = "v128";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  window.BUILD = BUILD;
+  try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
+
+  var bar = null;
+  function showBar(serverVer){
+    if (bar) return;
+    bar = document.createElement("div");
+    bar.id = "buildBar";
+    bar.innerHTML = '<b>有新版本 ' + serverVer + '</b><span>你现在这个页面是 ' + BUILD +
+                    '，点一下更新（会清掉旧缓存再重载）</span>';
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = "更新";
+    b.addEventListener("click", function () { hardUpdate(b); });
+    bar.appendChild(b);
+    document.body.appendChild(bar);
+    requestAnimationFrame(function () { bar.classList.add("on"); });
+  }
+
+  async function hardUpdate(btn){
+    if (btn && btn.disabled) return;
+    if (btn) { btn.disabled = true; btn.textContent = "更新中…"; }
+    /* 顺序有讲究：先把新 SW 装起来（它会往**新名字**的缓存里预缓存一遍），
+       再把**旧**缓存清掉，最后重载。反过来先清会导致重载瞬间啥都没有、白屏一下。 */
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+        var rs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(rs.map(function (r) { return r.update().catch(function () {}); }));
+      }
+    } catch (_) {}
+    try {
+      if (window.caches && caches.keys){
+        var ks = await caches.keys();
+        await Promise.all(ks.map(function (k) { return caches.delete(k).catch(function () {}); }));
+      }
+    } catch (_) {}
+    location.reload();
+  }
+  window.__buildUpdate = hardUpdate;        // 手动兜底：控制台里可直接调
+
+  /* 比对本页版本与线上 sw.js 里写的版本。
+     用 no-store + 时间戳，绕开 HTTP 缓存本身 —— 否则"拿旧文件判断有没有更新"是自欺。 */
+  try {
+    fetch("./sw.js?build=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.text() : ""; })
+      .then(function (t) {
+        var m = /const CACHE\s*=\s*"companion-(v\d+)-/.exec(t || "");
+        if (!m) return;
+        try { console.log("[build] 线上是 " + m[1] + "，本页是 " + BUILD); } catch (_) {}
+        if (m[1] !== BUILD) showBar(m[1]);
+      })
+      .catch(function () { /* 离线 / 拿不到就静默跳过，绝不打扰 */ });
+  } catch (_) {}
+})();
+</script>
 
 </body>
 </html>

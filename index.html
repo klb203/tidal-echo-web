@@ -15155,7 +15155,13 @@ async function appChatStream(text, streamId, conn, onMeta, resend, attachments){
        · 回 502 / 503 / 522（网关连不到源站）—— **老代码没重试这一种**，
          直接把 "HTTP 522" 抛给用户。可它恰恰是"正在启动"最典型的样子。
      间隔递增试三次；三次都不行才认输。 */
-  const CHAT_RETRY_WAIT = [2000, 5000];
+  /* ★ 间隔必须**够长** —— 这一条是实测改出来的，不是拍的：
+     Render 免费档的实例会被回收，唤醒实测要**几十秒**（我探活时 60 秒都还在超时，
+     过一会儿再看就已经是 200 了）。我第一版只给 2s + 5s = 7 秒，
+     正好整个落在"它还在醒"的窗口里 —— 等于**没重试**，用户照样看到失败。
+     现在三次共等 31 秒，加上每次请求自身的耗时，能覆盖绝大多数唤醒过程。
+     只在出错时才等，正常一次就通。 */
+  const CHAT_RETRY_WAIT = [3000, 8000, 20000];
   const gatewayDown = (st) => /^(50[234]|52[0-4])$/.test(String(st == null ? "" : st));
   let r = null, netErr = null;
   for (let attempt = 0; attempt <= CHAT_RETRY_WAIT.length; attempt++){
@@ -15167,8 +15173,10 @@ async function appChatStream(text, streamId, conn, onMeta, resend, attachments){
     /* 通了、或者是个「跟后端在不在无关」的错误码（400/401…）→ 不再重试 */
     if (r && (r.ok || !gatewayDown(r.status))) break;
     if (attempt < CHAT_RETRY_WAIT.length){
-      showToast("后端还没起来，第 " + (attempt + 1) + " 次重试…（最多再等 "
-        + Math.round(CHAT_RETRY_WAIT.slice(attempt).reduce((a, b) => a + b, 0) / 1000) + " 秒）");
+      /* 说清"在唤醒"而不是"坏了" —— 免费档的宿命，不是他的错，也别让他以为消息丢了 */
+      showToast("后端在唤醒中（闲置会被休眠），第 " + (attempt + 1) + " 次重试…"
+        + "最多再等 " + Math.round(CHAT_RETRY_WAIT.slice(attempt).reduce((a, b) => a + b, 0) / 1000)
+        + " 秒，消息不会丢");
       await new Promise((res) => setTimeout(res, CHAT_RETRY_WAIT[attempt]));
     }
   }
@@ -21946,7 +21954,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v129";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v130";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

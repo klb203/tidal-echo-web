@@ -5304,6 +5304,47 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="vision">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12S6.2 5.8 12 5.8 21.4 12 21.4 12 17.8 18.2 12 18.2 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="3.1"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">识图 · 中转站</span><span class="set-card-sub" id="cardSubVision"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+      <label class="fld switch-row"><span>发图时自动识图</span>
+        <input type="checkbox" id="vsEnable">
+      </label>
+      <label class="fld"><span>中转站地址（OpenAI 兼容，可带 /v1）</span>
+        <input id="vsBase" type="text" placeholder="https://你的中转站/v1" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="fld"><span>API Key</span>
+        <input id="vsKey" type="password" placeholder="sk-...（中转站给的 Key）" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="fld">
+        <span>识图模型（要选能看图的）</span>
+        <div class="model-row">
+          <input id="vsModel" type="text" list="vsModelList" placeholder="glm-4v-plus / gpt-4o-mini / qwen-vl-max" autocomplete="off" spellcheck="false">
+          <datalist id="vsModelList"></datalist>
+          <button id="vsFetch" type="button">拉取模型</button>
+        </div>
+        <div class="model-hint" id="vsHint" style="display:none"></div>
+      </div>
+      <label class="fld"><span>识别要求（可选，留空用内置那段）</span>
+        <input id="vsPrompt" type="text" placeholder="用中文客观描述这张图，150 字以内" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="conn-sub" id="vsStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+      <div class="editor-actions" style="margin-bottom:2px">
+        <button id="vsTest" type="button" class="primary">选一张图试试</button>
+        <button id="vsSave" type="button">保存</button>
+      </div>
+      <div id="vsPreview" class="ig-preview hidden"></div>
+      <input type="file" id="vsFile" accept="image/*" class="hidden" aria-hidden="true">
+      <div class="settings-tip">发图时它先请这个模型把图读成文字，再把这段文字和你一起发过去 ——
+      于是 TA 真的「看见」了，而且这段描述跟着消息存进后端，刷新之后还在（会带一个「（图：…）」的前缀，方便分辨）。
+      <b>地址和 Key 可以跟「生图」用同一个中转站</b>。浏览器直连会被 CORS 拦，所以这一步经后端 <code>/app/vision</code> 转发。</div>
+        </div>
+      </section>
+
       <section class="set-card open" data-card="ombre">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-3.6 0-5.6-1.6-5.6-3.9 0-1.1.4-2 .4-2.9 0-.6-1.6-1.4-1.6-3 0-1.3.9-2.4 2-2.8 0-.4-.1-.8-.1-1.2 0-2 2-3.6 4.9-3.6s4.9 1.6 4.9 3.6c0 .4 0 .8-.1 1.2 1.1.4 2 1.5 2 2.8 0 1.6-1.6 2.4-1.6 3 0 .9.4 1.8.4 2.9 0 2.3-2 3.9-5.6 3.9Z"/><path d="M9.4 10.4c.5-.8 1.4-1.2 2.6-1.2s2.1.4 2.6 1.2"/><path d="M10.2 14.6c.6.5 1.2.8 1.8.8s1.2-.3 1.8-.8"/></svg></span>
@@ -10059,6 +10100,124 @@ async function extoolsToggle(server, enabled){
 
 /* ── 生图 · 中转站（OpenAI 兼容）·存本机 ──────────────────────────────────
    地址 + Key + 模型；拉模型与生图都经后端 /app/image/* 转发（浏览器直连会被 CORS 拦）。 */
+/* ── 识图 · 中转站 ────────────────────────────────────────────────────────
+   让 TA 真的能"看见"你发的图：填一个 OpenAI 兼容的中转站 + 一个能看图的模型，
+   发图时先把图读成一段文字，再把这段文字当消息正文发出去 —— 模型读得懂，
+   描述也跟着消息存进后端，刷新之后不会消失。
+   （和生图共用同一套 base/key 也完全可以。） */
+const VISION_KEY = "companion_vision";
+function loadVision(){
+  try{ return JSON.parse(localStorage.getItem(VISION_KEY) || "null") || {}; }catch(e){ return {}; }
+}
+function saveVision(cfg){
+  try{ localStorage.setItem(VISION_KEY, JSON.stringify(cfg)); }catch(e){}
+  refreshSetCardSubs();
+}
+function visionOn(){
+  const c = loadVision();
+  return !!(c.enable && c.base && c.model);
+}
+function syncVisionFields(){
+  const c = loadVision();
+  const en = $("#vsEnable"), base = $("#vsBase"), key = $("#vsKey"), md = $("#vsModel"), pm = $("#vsPrompt"), st = $("#vsStatus");
+  if (en) en.checked = !!c.enable;
+  if (base) base.value = c.base || "";
+  if (key) key.value = c.key || "";
+  if (md) md.value = c.model || "";
+  if (pm) pm.value = c.prompt || "";
+  if (st) st.innerHTML = visionOn()
+    ? ("✅ 发图时会先用 <b>" + escapeHtml(String(c.model)) + "</b> 读一遍。")
+    : (c.base ? "填了地址，但还没启用（或没填模型）。" : "未配置 —— 填中转站地址 + Key + 一个能看图的模型。");
+}
+function persistVision(quiet){
+  const c = {
+    enable: $("#vsEnable") ? $("#vsEnable").checked : false,
+    base: $("#vsBase") ? $("#vsBase").value.trim() : "",
+    key: $("#vsKey") ? $("#vsKey").value.trim() : "",
+    model: $("#vsModel") ? $("#vsModel").value.trim() : "",
+    prompt: $("#vsPrompt") ? $("#vsPrompt").value.trim() : ""
+  };
+  saveVision(c);
+  syncVisionFields();
+  if (!quiet) showToast(visionOn() ? "识图已启用" : "识图设置已保存（未启用）");
+}
+async function apiVision(image, promptOverride){
+  const c = loadVision();
+  if (!c.base || !c.model) throw new Error("识图中转站没配好（缺地址或模型）");
+  const r = await fetch(appUrl("/app/vision"), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ base: c.base, key: c.key, model: c.model,
+                           image: image, prompt: promptOverride || c.prompt || "" })
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("识图失败 HTTP " + r.status));
+  return String(d.text || "").trim();
+}
+
+/* 保存 / 拉取模型 / 选图试一次 */
+["vsEnable", "vsBase", "vsKey", "vsModel", "vsPrompt"].forEach((id) => {
+  const el = $("#" + id);
+  if (el) el.addEventListener("change", () => persistVision(true));
+});
+if ($("#vsSave")) $("#vsSave").addEventListener("click", () => persistVision(false));
+if ($("#vsFetch")) $("#vsFetch").addEventListener("click", async () => {
+  persistVision(true);
+  const c = loadVision(), btn = $("#vsFetch"), hint = $("#vsHint");
+  if (!c.base) return showToast("先填中转站地址");
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "拉取中…";
+  try{
+    const r = await fetch(appUrl("/app/image/models"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ base: c.base, key: c.key })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    const ids = d.models || [];
+    /* 把"看着能看图"的排前面：v / vl / vision / omni / 4o 这类命名 */
+    const VHINT = /(^|[-_/])(v|vl|vision|omni)([-_/]|$)|gpt-4o|gpt-4\.1|glm-4v|qwen.*vl|gemini|claude-3|step-1v|moonshot-v1-vision/i;
+    const vis = ids.filter((i) => VHINT.test(String(i)));
+    const rest = ids.filter((i) => !VHINT.test(String(i)));
+    const list = vis.concat(rest);
+    const dl = $("#vsModelList");
+    if (dl) dl.innerHTML = list.slice(0, 200).map((i) => '<option value="' + escapeHtml(String(i)) + '"></option>').join("");
+    if (hint){
+      hint.style.display = "";
+      hint.textContent = "拉到 " + ids.length + " 个模型（能看图的排前面）：" + list.slice(0, 6).join("、");
+    }
+    showToast("拉到 " + ids.length + " 个模型");
+  }catch(e){
+    if (hint){ hint.style.display = ""; hint.textContent = "拉取失败：" + ((e && e.message) || e); }
+  }finally{ btn.disabled = false; btn.textContent = old; }
+});
+if ($("#vsTest")) $("#vsTest").addEventListener("click", () => {
+  persistVision(true);
+  if (!loadVision().base) return showToast("先填中转站地址和模型");
+  if ($("#vsFile")) $("#vsFile").click();
+});
+if ($("#vsFile")) $("#vsFile").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  const st = $("#vsStatus"), pv = $("#vsPreview"), btn = $("#vsTest");
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "识图中…";
+  try{
+    let blob = f, name = f.name || "probe.jpg", mime = f.type || "image/jpeg";
+    try{ const conv = await imageToJpeg(f); if (conv){ blob = conv.blob; name = conv.name; mime = "image/jpeg"; } }catch(_){}
+    const up = await apiUpload(blob, name, mime);
+    const txt = await apiVision(up.url);
+    if (st) st.innerHTML = "✅ 它看到的：<br>" + escapeHtml(txt);
+    if (pv){
+      pv.classList.remove("hidden");
+      pv.innerHTML = '<img src="' + escapeHtml(attUrl(up.url)) + '" alt="">';
+    }
+  }catch(err){
+    if (st) st.innerHTML = "⚠️ 识图失败：" + escapeHtml((err && err.message) || String(err));
+  }finally{ btn.disabled = false; btn.textContent = old; }
+});
+
 const IG_KEY = "companion_image_gen";
 const IG_IMG_RE = /image|dall|flux|stable|sdxl|sd3|kolor|seedream|seededit|wanx|gpt-image|imagen|midjourney|nano-banana|t2i|i2i|draw|paint/i;
 function loadImageGen(){
@@ -12354,6 +12513,11 @@ function refreshSetCardSubs(){
   put("cardSubVoice", mm.enable
     ? (mm.voice ? ("已启用 · 声音 " + String(mm.voice).slice(0, 12)) : "已启用，还差声音 ID")
     : "未启用（用默认嗓音）");
+
+  const vs = loadVision();
+  put("cardSubVision", visionOn()
+    ? ("已启用 · " + String(vs.model).slice(0, 24))
+    : (vs.base ? "已填地址，未启用" : "未配置（填中转站 + 一个能看图的模型）"));
 
   const ig = loadImageGen();
   put("cardSubImage", imageGenOn()
@@ -20475,13 +20639,23 @@ async function sendOneFile(file){
     const up = await apiUpload(blob, name, mime);
     if (localUrl && up && up.url) localPreview.set(up.url, localUrl);
     const finalAtt = { url: up.url, name: up.name, size: up.size, mime: up.mime, kind: up.kind, width: imgW, height: imgH };
-    rememberPendingOutgoing(tempKey, "", optimisticTs);
-    const sent = await apiSend("", [finalAtt]);
+    /* ★ 识图：开了「发图时自动识图」就先让中转站的视觉模型读一遍，
+       把读到的内容当作这条消息的正文发出去 —— 于是 TA 真的看得见这张图，
+       这段描述还跟着消息存进后端（刷新后不丢）。识图失败不影响发图。 */
+    let msgText = "";
+    if (image && visionOn()){
+      try{
+        const desc = await apiVision(up.url);
+        if (desc){ msgText = "（图：" + desc + "）"; finalAtt.desc = desc; }
+      }catch(e){ console.warn("[vision] 识图跳过：", (e && e.message) || e); }
+    }
+    rememberPendingOutgoing(tempKey, msgText, optimisticTs);
+    const sent = await apiSend(msgText, [finalAtt]);
     const id = sent && sent.id;
     if (sent && sent.warning) showToast(sent.warning);
     const finalMeta = { attachments: [finalAtt] };
     if (currentSid) finalMeta.api_session = currentSid;
-    confirmOptimistic(tempKey, msgKey(id), { id: id, ts: optimistic.ts, from: "human", kind: "user", text: "", meta: finalMeta, status: "sent" });
+    confirmOptimistic(tempKey, msgKey(id), { id: id, ts: optimistic.ts, from: "human", kind: "user", text: msgText, meta: finalMeta, status: "sent" });
     dropPendingOutgoing(tempKey);
   }catch(err){
     dropPendingOutgoing(tempKey);

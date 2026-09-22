@@ -4130,6 +4130,27 @@
   .fld-pair > .fld{ flex: 1 1 0; min-width: 0; }
   /* 生图结果预览 */
   .ig-preview{ display: flex; flex-direction: column; gap: 10px; }
+  /* ── 长期记忆 · 日记（GitHub 仓库里的 markdown）────────────────────── */
+  .dy-list{ display: flex; flex-direction: column; margin-top: 6px; }
+  .dy-item{
+    display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    padding: 9px 2px; border-bottom: 1px solid var(--hairline, rgba(120,142,165,.16));
+    font: inherit; color: var(--text, #253447);
+  }
+  .dy-item:hover{ background: var(--seg-track, rgba(140,160,176,.07)); }
+  .dy-date{ flex: 0 0 auto; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; }
+  .dy-path{ flex: 1 1 auto; min-width: 0; font-size: 11.5px; color: var(--text-faint, #8A99A8);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dy-size{ flex: 0 0 auto; font-size: 11px; color: var(--text-faint, #8A99A8); }
+  .dy-body{
+    margin: 10px 0 0; padding: 12px 14px; border-radius: 12px; white-space: pre-wrap;
+    word-break: break-word; background: var(--seg-track, rgba(140,160,176,.08));
+    color: var(--text, #253447); font-family: var(--font-cn, inherit);
+    font-size: 13.5px; line-height: 1.9;
+  }
+  .dy-body .dy-h1{ display: block; font-size: 16px; margin: 2px 0 8px; }
+  .dy-body .dy-h2{ display: block; font-size: 13.5px; margin: 12px 0 4px; }
   .ig-preview.hidden{ display: none; }
   .ig-preview img{
     width: 100%; max-height: 46vh; object-fit: contain; display: block;
@@ -5345,6 +5366,54 @@
         </div>
       </section>
 
+      <section class="set-card" data-card="assistant">
+        <button class="set-card-head" type="button" aria-expanded="false">
+          <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6.6A2.1 2.1 0 0 1 6.1 4.5h8.3L20 10.1v9.4A2.1 2.1 0 0 1 17.9 21.6H6.1A2.1 2.1 0 0 1 4 19.5Z"/><path d="M14.2 4.5v5.8H20"/><path d="M8 14.6h8M8 17.6h5"/></svg></span>
+          <span class="set-card-txt"><span class="set-card-name">小助手 · 中转站</span><span class="set-card-sub" id="cardSubAssistant"></span></span>
+          <svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="set-card-body">
+      <label class="fld"><span>中转站地址（OpenAI 兼容，可带 /v1）</span>
+        <input id="asBase" type="text" placeholder="https://api.deepseek.com/v1" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="fld"><span>API Key</span>
+        <input id="asKey" type="password" placeholder="sk-...（中转站给的 Key）" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="fld">
+        <span>小助手模型（整理记忆、写日记用它）</span>
+        <div class="model-row">
+          <input id="asModel" type="text" list="asModelList" placeholder="deepseek-chat / glm-4-flash / gpt-4o-mini" autocomplete="off" spellcheck="false">
+          <datalist id="asModelList"></datalist>
+          <button id="asFetch" type="button">拉取模型</button>
+        </div>
+        <div class="model-hint" id="asHint" style="display:none"></div>
+      </div>
+      <div class="fld">
+        <span>日记仓库（owner / repo / 分支）</span>
+        <div class="model-row">
+          <input id="asOwner" type="text" placeholder="klb203" autocomplete="off" spellcheck="false">
+          <input id="asRepo" type="text" placeholder="memory-archive" autocomplete="off" spellcheck="false">
+          <input id="asBranch" type="text" placeholder="main" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <label class="fld"><span>GitHub Token（需要 repo 读写权限，只存本机）</span>
+        <input id="asToken" type="password" placeholder="ghp_… 或 github_pat_…" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="fld"><span>日记里特别交代要写的事（可选）</span>
+        <input id="asNote" type="text" placeholder="写日记时会被带上" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="conn-sub" id="asStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
+      <div class="editor-actions" style="margin-bottom:2px">
+        <button id="asSave" type="button" class="primary">保存</button>
+        <button id="asTest" type="button">测试连通</button>
+      </div>
+      <div class="settings-tip">「小助手」是<b>搬运工</b>：它负责把这段时间的记忆（近景日更 + 摘要 + 最近原话）
+      整理成一篇日记，再推到你的 GitHub 仓库（<code>YYYY/MM/DD/YYYY-MM-DD.md</code>，同一天重写会覆盖）。
+      它不参与聊天，也不影响主模型 —— 用个便宜的模型就够。<br>
+      <b>Token 只存在这台设备里</b>，只在写日记 / 备份时随请求发给你的后端转发给 GitHub。</div>
+        </div>
+      </section>
+
       <section class="set-card open" data-card="ombre">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-3.6 0-5.6-1.6-5.6-3.9 0-1.1.4-2 .4-2.9 0-.6-1.6-1.4-1.6-3 0-1.3.9-2.4 2-2.8 0-.4-.1-.8-.1-1.2 0-2 2-3.6 4.9-3.6s4.9 1.6 4.9 3.6c0 .4 0 .8-.1 1.2 1.1.4 2 1.5 2 2.8 0 1.6-1.6 2.4-1.6 3 0 .9.4 1.8.4 2.9 0 2.3-2 3.9-5.6 3.9Z"/><path d="M9.4 10.4c.5-.8 1.4-1.2 2.6-1.2s2.1.4 2.6 1.2"/><path d="M10.2 14.6c.6.5 1.2.8 1.8.8s1.2-.3 1.8-.8"/></svg></span>
@@ -6222,23 +6291,29 @@
            水位线 / 维护五步）。这里刻意**不做第二套 UI**，只给一张说明卡 + 一个入口 ——
            两套 UI 的下场就是两边各自实现、慢慢不一致，那正是这次整理要收掉的问题。 -->
       <div class="mem-page hidden" data-mp="palace">
+      <!-- 长期记忆 = 一篇篇日记，存在 GitHub 仓库里（可翻、可带走、不怕服务挂）。
+           原来这里是「记忆宫殿」的入口 —— 宫殿已按你的要求取消，
+           只留向量索引那一块（点「向量设置」进去）。 -->
       <section class="mg-card" id="palCard">
         <div class="mg-head">
           <div>
-            <div class="mg-title">长期记忆 · 记忆宫殿</div>
-            <div class="mg-sub" id="palLead">七个房间 · 门牌 · BM25 + 向量 + 图谱混合召回</div>
+            <div class="mg-title">长期记忆 · 日记</div>
+            <div class="mg-sub" id="palLead">存在 GitHub 仓库里的 markdown，一天一篇</div>
           </div>
           <span class="mg-tag" id="palTag">—</span>
         </div>
         <div class="nf-actions">
-          <button id="palOpen" type="button" class="primary">打开记忆宫殿 ↗</button>
+          <button id="dyWrite" type="button" class="primary">写今天的日记</button>
+          <button id="dyRefresh" type="button">刷新列表</button>
+          <button id="dyVector" type="button">向量设置</button>
         </div>
-        <div class="settings-tip">分层是这么分的：<b>长期记忆</b>回答「你是谁」，
-        <b>短期记忆</b>（近景）回答「最近在过什么」，<b>外置记忆库</b>（Haven Brain）是别人服务器上
-        那一桶语义原话，<b>世界书</b>是它自己长出来的叙事，<b>档案馆</b>把上面这些按年月归到一处。<br>
-        宫殿是长期那一半 —— 它把聊天里值得留下的提纯成<b>情景节点</b>，按房间归位
-        （客厅 / 卧室 / 书房 / 用户房 / 自我房…），重要的进<b>门牌</b>：每轮注入、不衰减。
-        召回靠质量不靠数量（三路融合后按稀有度与可靠度重排）。</div>
+        <div class="pal-status" id="dyStatus"></div>
+        <div id="dyList" class="dy-list"></div>
+        <div class="settings-tip">分层是这么分的：<b>长期记忆</b>回答「你是谁」——
+        现在由它自己把一天里的事写成日记，推到你的 GitHub 仓库（一天一篇、可改写、可带走）；
+        <b>短期记忆</b>（近景）回答「最近在过什么」，<b>世界书</b>是它自己长出来的叙事，
+        <b>档案馆</b>把上面这些按事件归到一处。<br>
+        写日记要用到「小助手 · 中转站」（设置里配地址 / Key / 模型 + GitHub token）。</div>
       </section>
       </div><!-- /长期记忆页 -->
 
@@ -6381,7 +6456,7 @@
 
       <div class="mem-hero">
         <div class="mem-hero-num" id="palCount">—</div>
-        <div class="mem-hero-sub" id="palSub">记忆宫殿 · 七个房间</div>
+        <div class="mem-hero-sub" id="palSub">向量 · 记忆索引</div>
       </div>
 
       <!-- ① 水位线 + 动作 -->
@@ -6445,6 +6520,19 @@
         </div>
         <div class="pal-status" id="peStatus"></div>
         <div class="pe-stat" id="peStat"></div>
+        <label class="fld switch-row" style="margin-top:12px">
+          <span>恢复「记忆宫殿」提取（默认关 —— 长期记忆已改走日记）</span>
+          <input type="checkbox" id="peExtract">
+        </label>
+        <div class="pal-status" id="peExtractStatus"></div>
+        <div class="pal-acts" style="margin-top:12px">
+          <button id="palPurge" type="button">备份并删除宫殿数据</button>
+        </div>
+        <div class="settings-tip" style="margin-top:8px">
+          宫殿那一套（情景节点 / 门牌 / 分块 / 状态行）已经停用，界面上的几块也隐掉了。
+          点上面这个按钮会<b>先把四类数据整包导出成 JSON 推到 GitHub 的 <code>backup/</code></b>，
+          推成功了才删 —— 推不上去就一条都不删。近景 / 摘要 / 世界书 / 事件盒 / 聊天记录都不受影响。
+        </div>
         <div class="settings-tip" style="margin-top:10px">
           <b>硅基流动的 <code>BAAI/bge-m3</code> 是免费的</b>（1024 维，中英混，够用）。<br>
           换了模型或维度 → 库里旧向量会<b>自动作废</b>，点「整库重建」补回来；
@@ -10218,6 +10306,267 @@ if ($("#vsFile")) $("#vsFile").addEventListener("change", async (e) => {
   }finally{ btn.disabled = false; btn.textContent = old; }
 });
 
+/* ── 小助手 · 中转站 ─────────────────────────────────────────────────────
+   它不参与聊天：只做两件事 —— 把记忆整理成日记、把日记与备份搬去 GitHub。
+   配置（含 GitHub token）只存本机，随请求发给后端转发（浏览器直连 GitHub 会被 CORS 拦，
+   而且 token 放前端也别指望它安全 —— 它只在你这台设备上）。 */
+const ASSIST_KEY = "companion_assistant";
+function loadAssistant(){
+  let c = {};
+  try{ c = JSON.parse(localStorage.getItem(ASSIST_KEY) || "null") || {}; }catch(e){ c = {}; }
+  if (!c.owner) c.owner = "klb203";
+  if (!c.repo) c.repo = "memory-archive";
+  if (!c.branch) c.branch = "main";
+  return c;
+}
+function saveAssistant(c){
+  try{ localStorage.setItem(ASSIST_KEY, JSON.stringify(c)); }catch(e){}
+  refreshSetCardSubs();
+}
+function assistantOn(){ const c = loadAssistant(); return !!(c.base && c.model); }
+function assistantReady(){ const c = loadAssistant(); return !!(c.base && c.model && c.token); }
+function syncAssistantFields(){
+  const c = loadAssistant();
+  const set = (id, v) => { const el = $("#" + id); if (el) el.value = v == null ? "" : v; };
+  set("asBase", c.base); set("asKey", c.key); set("asModel", c.model);
+  set("asOwner", c.owner); set("asRepo", c.repo); set("asBranch", c.branch);
+  set("asToken", c.token); set("asNote", c.note);
+  const st = $("#asStatus");
+  if (st) st.innerHTML = assistantReady()
+    ? ("✅ 小助手就绪：<b>" + escapeHtml(String(c.model)) + "</b> → <b>" + escapeHtml(c.owner + "/" + c.repo) + "</b>（" + escapeHtml(c.branch) + "）")
+    : (assistantOn() ? "填了中转站，但还缺 GitHub token（写日记 / 备份要用）。"
+                     : "未配置 —— 填中转站地址 + Key + 模型；要写日记再补 GitHub token。");
+}
+function persistAssistant(quiet){
+  const v = (id) => { const el = $("#" + id); return el ? String(el.value || "").trim() : ""; };
+  const c = {
+    base: v("asBase"), key: v("asKey"), model: v("asModel"),
+    owner: v("asOwner") || "klb203", repo: v("asRepo") || "memory-archive",
+    branch: v("asBranch") || "main", token: v("asToken"), note: v("asNote"),
+  };
+  saveAssistant(c);
+  syncAssistantFields();
+  if (!quiet) showToast(assistantReady() ? "小助手已就绪" : "小助手设置已保存");
+}
+function assistBody(extra){
+  const c = loadAssistant();
+  return Object.assign({ base: c.base, key: c.key, model: c.model,
+                         owner: c.owner, repo: c.repo, branch: c.branch,
+                         token: c.token, note: c.note }, extra || {});
+}
+async function apiDiary(action, extra){
+  if (!assistantOn()) throw new Error("先去「设置 → 小助手 · 中转站」填好地址和模型");
+  const r = await fetch(appUrl("/app/diary/" + action), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(assistBody(extra))
+  });
+  if (r.status === 401){ handle401(); throw new Error("401"); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("日记接口 HTTP " + r.status));
+  return d;
+}
+/* 极简 markdown：只把 # 标题与 **粗体** 变成粗体（原文照旧，不解析成富文本 —— 免得引出一堆坑） */
+function dyMd(txt){
+  return escapeHtml(String(txt || ""))
+    .replace(/^#\s+(.*)$/gm, '<b class="dy-h1">$1</b>')
+    .replace(/^##\s+(.*)$/gm, '<b class="dy-h2">$1</b>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+}
+let dyFiles = [], dyOpenPath = "";
+async function dyLoad(force){
+  const host = $("#dyList"), st = $("#dyStatus");
+  if (!host) return;
+  if (!dyFiles.length || force){
+    if (st) st.innerHTML = "正在读仓库里的日记…";
+    try{
+      const d = await apiDiary("list", {});
+      dyFiles = d.files || [];
+      const tag = $("#palTag"); if (tag) tag.textContent = d.count + " 篇";
+      const lead = $("#palLead");
+      if (lead) lead.textContent = d.owner + "/" + d.repo + " · " + (d.count || 0) + " 篇 markdown";
+    }catch(e){
+      if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
+      host.innerHTML = "";
+      return;
+    }
+  }
+  if (!dyFiles.length){
+    host.innerHTML = '<div class="arc-empty">仓库里还没有日记 —— 点上面「写今天的日记」开个头。</div>';
+    if (st) st.innerHTML = "";
+    return;
+  }
+  host.innerHTML = dyFiles.map((f) =>
+    '<button class="dy-item" type="button" data-dy="' + escapeHtml(f.path) + '">' +
+      '<span class="dy-date">' + escapeHtml(f.date || f.path) + "</span>" +
+      '<span class="dy-path">' + escapeHtml(f.path) + "</span>" +
+      '<span class="dy-size">' + Math.max(1, Math.round((f.size || 0) / 1024)) + " KB</span>" +
+    "</button>").join("");
+  if (st) st.innerHTML = "<span style=\"color:var(--text-faint)\">点一篇就能看；「写今天的日记」会覆盖今天那一篇。</span>";
+}
+async function dyOpen(path){
+  const st = $("#dyStatus"), host = $("#dyList");
+  if (dyOpenPath === path){ dyOpenPath = ""; dyLoad(); return; }
+  dyOpenPath = path;
+  if (st) st.innerHTML = "正在读 " + escapeHtml(path) + " …";
+  try{
+    const d = await apiDiary("read", { path: path });
+    if (host){
+      host.innerHTML = '<pre class="dy-body">' + dyMd(d.text) + "</pre>" +
+        '<div class="nf-actions" style="margin-top:8px"><button type="button" id="dyBack">‹ 回到列表</button>' +
+        '<a class="pal-mini" style="text-decoration:none" target="_blank" rel="noopener" href="' +
+        "https://github.com/" + escapeHtml(loadAssistant().owner + "/" + loadAssistant().repo) + "/blob/" +
+        escapeHtml(loadAssistant().branch) + "/" + escapeHtml(path) + '">去 GitHub 看 ↗</a></div>';
+      const back = $("#dyBack");
+      if (back) back.addEventListener("click", () => { dyOpenPath = ""; dyLoad(); });
+    }
+    if (st) st.innerHTML = "";
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
+    dyOpenPath = "";
+  }
+}
+async function dyWrite(){
+  const st = $("#dyStatus"), btn = $("#dyWrite");
+  if (!assistantReady()){
+    showToast(assistantOn() ? "还缺 GitHub token（设置 → 小助手 · 中转站）" : "先去设置 → 小助手 · 中转站配好");
+    return;
+  }
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "写着…";
+  if (st) st.innerHTML = "小助手正在翻这段时间的记忆、写今天的日记…（几十秒）";
+  try{
+    const d = await apiDiary("write", {});
+    if (st) st.innerHTML = "✅ 已经推到 GitHub：" + escapeHtml(d.path) +
+      (d.updated ? "（覆盖了同一天那篇）" : "（新的一篇）") +
+      (d.commit ? " · commit " + escapeHtml(d.commit) : "");
+    dyFiles = []; dyOpenPath = "";
+    await dyLoad(true);
+    showToast("日记已推到 GitHub");
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
+  }finally{ btn.disabled = false; btn.textContent = old; }
+}
+/* 宫殿：界面上的几块整块隐掉（保留「向量模型」那一段）。
+   为什么用 JS 隐而不是删 HTML：删了标记，那些还在跑的配殿 JS 会去 find 一堆 null，
+   报错反而更难查；隐藏是"看得见的取消"，谁也炸不了。 */
+(function hidePalaceBlocks(){
+  const run = () => {
+    const panel = $("#palacePanel");
+    if (!panel) return;
+    const HIDE = ["水位线", "召回", "七个房间", "门牌", "对话分块", "参考项目 · 向量检索"];
+    Array.prototype.slice.call(panel.querySelectorAll(".mg-card")).forEach((card) => {
+      const t = ((card.querySelector(".mg-title") || {}).textContent || "").trim();
+      if (HIDE.some((h) => t.indexOf(h) === 0 || t === h)) card.hidden = true;
+    });
+    /* 面板抬头也改一下口径 */
+    const lead = $("#palLead2");
+    if (lead) lead.textContent = "向量 · 记忆索引（宫殿已取消）";
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+  else run();
+})();
+async function palLoadConfig(){
+  try{
+    const r = await fetch(appUrl("/app/palace/config"), { headers: authHeaders() });
+    const d = await r.json().catch(() => ({}));
+    const cb = $("#peExtract"), st = $("#peExtractStatus");
+    if (cb) cb.checked = !!d.extract_enabled;
+    if (st) st.innerHTML = d.extract_enabled
+      ? "⚠️ 宫殿提取是<b>开</b>的 —— 每轮对话后会往库里提纯情景节点。"
+      : "宫殿提取已关（长期记忆走日记）。想恢复就勾上。";
+  }catch(e){ /* 读不到就让开关保持原样 */ }
+}
+async function palPurge(){
+  const c = loadAssistant();
+  if (!c.token){
+    showToast("先填 GitHub token —— 备份要推到你的仓库里（设置 → 小助手 · 中转站）");
+    return;
+  }
+  if (!confirm("备份并删除「记忆宫殿」数据？\n\n会先把四类数据（情景节点 / 门牌 / 分块 / 状态行）整包导出成 JSON，推到 " + c.owner + "/" + c.repo + " 的 backup/ 目录；\n推成功了才从库里删除。删除不可逆。")) return;
+  const st = $("#peExtractStatus");
+  if (st) st.innerHTML = "正在导出并备份到 GitHub…（四类数据要读一遍库）";
+  try{
+    const r = await fetch(appUrl("/app/palace/purge"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(assistBody({ confirm: "DELETE" }))
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    const k = d.backup_kinds || {};
+    if (st) st.innerHTML = "✅ 已备份并删除。备份：" + escapeHtml(d.backup) +
+      "（节点 " + (k.palace||0) + " / 门牌 " + (k.palace_plate||0) + " / 分块 " + (k.palace_chunk||0) + " / 状态 " + (k.palace_state||0) + "）";
+    showToast("宫殿数据已备份到 GitHub 并删除");
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
+  }
+}
+/* 绑定 */
+["asBase", "asKey", "asModel", "asOwner", "asRepo", "asBranch", "asToken", "asNote"].forEach((id) => {
+  const el = $("#" + id);
+  if (el) el.addEventListener("change", () => persistAssistant(true));
+});
+if ($("#asSave")) $("#asSave").addEventListener("click", () => persistAssistant(false));
+if ($("#asFetch")) $("#asFetch").addEventListener("click", async () => {
+  persistAssistant(true);
+  const c = loadAssistant(), btn = $("#asFetch"), hint = $("#asHint");
+  if (!c.base) return showToast("先填中转站地址");
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "拉取中…";
+  try{
+    const r = await fetch(appUrl("/app/image/models"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ base: c.base, key: c.key })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    const ids = d.models || [];
+    const dl = $("#asModelList");
+    if (dl) dl.innerHTML = ids.slice(0, 200).map((i) => '<option value="' + escapeHtml(String(i)) + '"></option>').join("");
+    if (hint){ hint.style.display = ""; hint.textContent = "拉到 " + ids.length + " 个模型：" + ids.slice(0, 6).join("、"); }
+  }catch(e){
+    if (hint){ hint.style.display = ""; hint.textContent = "拉取失败：" + ((e && e.message) || e); }
+  }finally{ btn.disabled = false; btn.textContent = old; }
+});
+if ($("#asTest")) $("#asTest").addEventListener("click", async () => {
+  persistAssistant(true);
+  const st = $("#asStatus"), c = loadAssistant();
+  if (!c.base || !c.model) return showToast("先填地址和模型");
+  if (st) st.innerHTML = "正在试一次…";
+  try{
+    const d = await apiDiary("write", { dry_run: true, note: "（这是一次连通测试，不用真的写进日记）" });
+    if (st) st.innerHTML = "✅ 小助手回话了（" + escapeHtml(String((d.text || "").length)) + " 字）。<br>预览：" +
+      escapeHtml((d.text || "").slice(0, 120)) + "…";
+  }catch(e){
+    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
+  }
+});
+if ($("#dyWrite")) $("#dyWrite").addEventListener("click", dyWrite);
+if ($("#dyRefresh")) $("#dyRefresh").addEventListener("click", () => { dyFiles = []; dyOpenPath = ""; dyLoad(true); });
+if ($("#dyVector")) $("#dyVector").addEventListener("click", () => { if (window.palaceOpen) palaceOpen(); });
+if ($("#dyList")) $("#dyList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-dy]");
+  if (b) dyOpen(b.dataset.dy);
+});
+if ($("#palPurge")) $("#palPurge").addEventListener("click", palPurge);
+if ($("#peExtract")) $("#peExtract").addEventListener("change", async (e) => {
+  const want = !!e.target.checked;
+  try{
+    const r = await fetch(appUrl("/app/palace/config"), {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ extract_enabled: want })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
+    showToast(want ? "已恢复宫殿提取" : "已关闭宫殿提取");
+    palLoadConfig();
+  }catch(err){
+    e.target.checked = !want;
+    showToast("没改成：" + ((err && err.message) || err));
+  }
+});
+
 const IG_KEY = "companion_image_gen";
 const IG_IMG_RE = /image|dall|flux|stable|sdxl|sd3|kolor|seedream|seededit|wanx|gpt-image|imagen|midjourney|nano-banana|t2i|i2i|draw|paint/i;
 function loadImageGen(){
@@ -12513,6 +12862,11 @@ function refreshSetCardSubs(){
   put("cardSubVoice", mm.enable
     ? (mm.voice ? ("已启用 · 声音 " + String(mm.voice).slice(0, 12)) : "已启用，还差声音 ID")
     : "未启用（用默认嗓音）");
+
+  const as = loadAssistant();
+  put("cardSubAssistant", assistantReady()
+    ? ("已就绪 · " + String(as.model).slice(0, 20) + " → " + as.owner + "/" + as.repo)
+    : (assistantOn() ? "缺 GitHub token" : "未配置（整理记忆 · 写日记 · 搬去 GitHub）"));
 
   const vs = loadVision();
   put("cardSubVision", visionOn()
@@ -16949,7 +17303,7 @@ if ($("#pdList")){
    名字与副标题在这里是**离线兜底**；连上后端后 memNavSync() 会用 /app/layers
    的计数盖上来（层的定义在后端 layers.py，唯一一处）。 */
 const MEM_SECTIONS = [
-  { key: "palace",    ico: "⌂", name: "长期记忆",   sub: "记忆宫殿" },
+  { key: "palace",    ico: "✎", name: "长期记忆",   sub: "日记 · 存在 GitHub" },
   { key: "near",      ico: "✦", name: "短期记忆",   sub: "近景 · 七天" },
   { key: "haven",     ico: "☁", name: "外置记忆库", sub: "Haven Brain · 只读" },
   { key: "worldbook", ico: "❋", name: "世界书",     sub: "手写的补充设定 · 按条件注入" },

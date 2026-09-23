@@ -620,7 +620,9 @@
     border: none;
   }
 
-  .row{ display:flex; position:relative; margin-top: clamp(14px, 2.2vw, 28px); }
+  /* ★ flex-wrap 是为 think-line 加的：它要 flex-basis:100% 独占一行。
+     其余子元素（气泡 / reactions）加起来到不了 100%，所以行为不变。 */
+  .row{ display:flex; flex-wrap: wrap; position:relative; margin-top: clamp(14px, 2.2vw, 28px); }
   .day + .row{ margin-top: clamp(12px, 1.8vw, 20px); }
   .new-divider{
     display:flex;
@@ -777,14 +779,26 @@
   }
 
   /* ── 思考过程：气泡里的 💭 按钮 + 点开的弹层 ────────────────────────── */
+  /* ── 思考过程：**气泡外面、消息上方**的 💭 按钮 + 点开的弹层 ────────────
+     ★ 位置改过一次：原来那个 💭 塞在气泡内容的末尾，于是"有没有思考"看起来像
+       正文的一部分，也会被气泡底色吃掉。现在它是 row 的第一个子元素、
+       靠 flex-basis:100% + order:-1 独占一行，永远在气泡上方；
+       而 .row.ai 自带 padding-left（头像宽），所以它正好和气泡左边缘对齐。 */
+  .think-line{
+    flex: 0 0 100%; order: -1;
+    display: flex; align-items: center;
+    margin: 0 0 4px;
+  }
   .think-btn{
     appearance: none; border: none; background: transparent; cursor: pointer;
-    padding: 0 2px; margin-left: 4px; font-size: 12px; line-height: 1;
-    opacity: .58; transition: opacity .16s ease, transform .16s ease;
-    vertical-align: middle;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 999px;
+    font: inherit; font-size: 11.5px; line-height: 1.5;
+    color: var(--text-faint); opacity: .78;
+    transition: opacity .16s ease, background .16s ease, transform .16s ease;
   }
-  .think-btn:hover{ opacity: 1; transform: translateY(-1px); }
-  .think-btn:active{ transform: scale(.92); }
+  .think-btn:hover{ opacity: 1; background: var(--seg-track, rgba(140,160,176,.16)); }
+  .think-btn:active{ transform: scale(.94); }
   .think-pop{
     position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
     padding: 18px; background: rgba(12,22,34,.34); backdrop-filter: blur(3px);
@@ -16027,6 +16041,22 @@ if ($("#thWallReset")) $("#thWallReset").addEventListener("click", () => {
      长出来的叙事），合并进「世界书」那一页看才对；人自己写的四类（笔记本）仍旧各占一页。
    ★ 归属的**唯一**判据在后端 layers.WORLDBOOK_KINDS，这里只是标注渲染位置 ——
      两边不一致时以 layers 为准（/app/worldbook 就是这个口径）。 */
+/* ── 记忆面板的两个基础工具 ────────────────────────────────────────────
+   ★ 这两个函数在同一次「清掉下线页面」的清理里被误删过（它们跟时间线 tl* 挨着）。
+     memApi 是整个记忆面板的取数出口 —— 少一个就是「读取失败：memApi is not defined」。 */
+function memStatus(msg, kind){
+  const el = $("#nfStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
+}
+async function memApi(path, opt){
+  const r = await fetch(appUrl(path), Object.assign({
+    headers: Object.assign({}, authHeaders(), (opt && opt.body) ? { "Content-Type": "application/json" } : {})
+  }, opt || {}));
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
+  return d;
+}
 let memData = { status: null, current: "", counts: {}, items: {}, labels: {}, stars: 0, starList: [], itemIndex: {} };
 let memSelectedDay = "";
 
@@ -16243,6 +16273,37 @@ async function memOpenDay(date){
    直接 addEventListener("click", memRun) 的话，第一个参数会是 PointerEvent，
    而它永远是 truthy → 等于每次都强制覆盖（看着像"它自己把日更改了"）。
    所以监听里写成 () => memRun(false)。 */
+/* ── 近景七天：把 /app/nearfield 的状态画成七天胶囊 + 注入稿 ────────────
+   ★ 同上一段，它也是被误删后补回来的（近景是保留下来的那一页）。 */
+function renderNearfield(){
+  const st = memData.status || {};
+  const days = st.days || [];
+  const box = $("#nfDays");
+  if (box){
+    box.innerHTML = days.length ? days.map((d) => {
+      const on = d.date === memSelectedDay ? " on" : "";
+      return '<button class="nf-chip' + on + '" type="button" data-day="' + escapeHtml(d.date) + '">' +
+             "<b>" + escapeHtml(nfLabel(d.date)) + "</b><i>" + d.chars + "字</i></button>";
+    }).join("") : '<span class="lib-empty">还没有日更 —— 点右边「脱水 → 日更」生成昨天那篇。</span>';
+  }
+  const cur = (memData.current || "").trim();
+  $("#nfCurrent").textContent = cur || "（空）—— 有日更后点「只重拼注入稿」就会生成。";
+  $("#cardSubNear").textContent = days.length
+    ? (days.length + " 天 · 注入稿 " + cur.length + " 字")
+    : "还没生成";
+  const q = (st.quota || []).join("/");
+  memStatus("模型 " + (st.model || "-") + " · 近 " + (st.max_days || 7) + " 天 · 配额 " + q +
+            " · 时区 +" + (st.tz_offset != null ? st.tz_offset : 8) +
+            ((st.months || []).length ? (" · 月度 " + st.months.map((m) => m.month).join(",")) : ""));
+}
+function nfLabel(date){
+  const st = memData.status || {};
+  const t = st.today, y = st.yesterday;
+  if (date === t) return "今天";
+  if (date === y) return "昨天";
+  const dd = Math.round((Date.parse(t + "T00:00:00Z") - Date.parse(date + "T00:00:00Z")) / 86400000);
+  return dd > 0 ? (dd + " 天前") : date.slice(5);
+}
 async function memRun(force){
   const tgt = ($("#nfTarget") && $("#nfTarget").value) || "";
   const label = (tgt === "today") ? "今天" : "昨天";
@@ -16383,205 +16444,6 @@ function memNavSync(){
    理由很实在：技术是会过期的东西（今天的报错方案明天就是坑），留在会反复浮现的记忆里
    只会变成噪音。所以它单独住一层，而且**只在聊到相关技术时**才被引用。
    下面用「文件夹折叠」的方式呈现：一个项目一个夹子，点开才看得到里面的条目。 */
-let workData = { loaded:false, editId:null, projects:[], total:0, open:{}, items:{}, loading:{} };
-const WORK_ICO = {
-  folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.4l1.6 2h7.6a1.7 1.7 0 0 1 1.7 1.7v6.6a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7Z"/></svg>',
-  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l9.5-9.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16Z"/><path d="M13.5 6.5 17.5 10.5"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15"/><path d="M9.5 7.5V5.8A1.3 1.3 0 0 1 10.8 4.5h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 7.5 7.4 19a1.4 1.4 0 0 0 1.4 1.3h6.4A1.4 1.4 0 0 0 16.6 19l.9-11.5"/></svg>'
-};
-async function workLoad(){
-  try{
-    const d = await memApi("/app/work/overview");
-    workData.projects = d.projects || [];
-    workData.total = d.total || 0;
-    workData.loaded = true;
-    renderWork();
-  }catch(_){ /* 后端还没这个模块时静默退回普通列表 */ }
-}
-async function workReloadOpen(){
-  const opens = Object.keys(workData.open).filter((k) => workData.open[k]);
-  workData.items = {};
-  await Promise.all(opens.map((n) => memApi("/app/work/log?name=" + encodeURIComponent(n) + "&limit=200")
-    .then((d) => { workData.items[n] = d.entries || []; }).catch(() => {})));
-}
-async function workToggle(name){
-  if (workData.open[name]){ workData.open[name] = false; renderWork(); return; }
-  workData.open[name] = true;
-  if (!workData.items[name]){
-    workData.loading[name] = true; renderWork();
-    try{
-      const d = await memApi("/app/work/log?name=" + encodeURIComponent(name) + "&limit=200");
-      workData.items[name] = d.entries || [];
-    }catch(err){
-      workData.items[name] = [];
-      showToast("读取文件夹失败：" + ((err && err.message) || err));
-    }
-    delete workData.loading[name];
-  }
-  renderWork();
-}
-function renderWork(){
-  const list = $("#libList-working"); if (!list) return;
-  const ps = workData.projects || [];
-  const sub = $("#libSub-working");
-  if (sub) sub.textContent = ps.length ? (ps.length + " 个文件夹 · " + workData.total + " 条")
-                                       : "还没有技术项目";
-  if (!ps.length){
-    list.innerHTML = '<div class="arc-empty">还没有技术项目。<br>' +
-      '按项目建文件夹（某台服务器 / 某个 App / 某次踩坑），把**会过期**的技术记在里面 —— ' +
-      '它和情感记忆是分开的两层：删就是真删，不会留下来反复浮现。</div>';
-    return;
-  }
-  list.innerHTML = ps.map((p) => {
-    const open = !!workData.open[p.name];
-    const items = workData.items[p.name] || [];
-    let body = "";
-    if (open){
-      if (workData.loading[p.name]) body = '<div class="work-empty">读取中…</div>';
-      else if (!items.length) body = '<div class="work-empty">这个文件夹还是空的。点下面「＋ 记一条到这个文件夹」。</div>';
-      else body = items.map((it) => (
-        '<div class="work-item">' +
-          '<div class="work-item-head">' +
-            '<span class="work-item-date">' + escapeHtml(String(it.created || "").slice(0, 16).replace("T", " ")) + "</span>" +
-            ((it.tags && it.tags.length) ? '<span class="work-tags">' + it.tags.map((t) => "<i>" + escapeHtml(String(t)) + "</i>").join("") + "</span>" : "") +
-            '<span class="arc-acts">' +
-              '<button class="arc-act" type="button" data-work-edit="' + escapeHtml(String(it.id)) + '" data-work-proj="' + escapeHtml(p.name) + '" title="原地改（id 不变）">' + WORK_ICO.pen + "</button>" +
-              '<button class="arc-act" type="button" data-work-del="' + escapeHtml(String(it.id)) + '" title="真删（不可恢复）">' + WORK_ICO.trash + "</button>" +
-            "</span>" +
-          "</div>" +
-          '<div class="work-text">' + escapeHtml(String(it.content || "")) + "</div>" +
-        "</div>"
-      )).join("");
-    }
-    return '<div class="work-folder' + (open ? " open" : "") + '">' +
-      '<button class="work-folder-head" type="button" data-work-open="' + escapeHtml(p.name) + '">' +
-        '<span class="work-chev">' + (open ? "▾" : "▸") + "</span>" +
-        '<span class="work-ico">' + WORK_ICO.folder + "</span>" +
-        '<span class="work-name">' + escapeHtml(p.name) + "</span>" +
-        '<span class="work-count">' + (p.count || 0) + " 条</span>" +
-      "</button>" +
-      (p.desc ? '<div class="work-desc">' + escapeHtml(p.desc) + "</div>" : "") +
-      (open ? '<div class="work-body">' + body + "</div>" : "") +
-      '<div class="work-folder-acts">' +
-        '<button type="button" data-work-add="' + escapeHtml(p.name) + '">＋ 记一条到这个文件夹</button>' +
-        '<button type="button" data-work-rename="' + escapeHtml(p.name) + '">改名 / 改说明</button>' +
-        '<button type="button" data-work-rmfolder="' + escapeHtml(p.name) + '">删文件夹</button>' +
-      "</div>" +
-    "</div>";
-  }).join("");
-}
-function workEditOpen(it, proj){
-  workData.editId = it ? it.id : null;
-  $("#workEdit").classList.remove("hidden");
-  $("#workProj").value = proj || "";
-  $("#workText").value = it ? it.content : "";
-  $("#workTags").value = (it && it.tags) ? it.tags.join(", ") : "";
-  const card = document.querySelector(".set-card[data-card='lib-working']");
-  if (card) card.classList.add("open");
-  $("#workText").focus();
-}
-async function workSubmit(){
-  const proj = ($("#workProj").value || "").trim();
-  const txt = ($("#workText").value || "").trim();
-  const tags = ($("#workTags").value || "").trim();
-  if (!proj){ showToast("先写项目名（没有就会新建一个文件夹）"); return; }
-  if (!txt){ showToast("正文不能为空"); return; }
-  const editId = workData.editId;
-  try{
-    if (editId){
-      await memApi("/app/work/item", { method: "PUT",
-        body: JSON.stringify({ id: editId, content: txt, tags: tags, project: proj }) });
-      showToast("已更新（原地改，id 不变）");
-    }else{
-      await memApi("/app/work/save", { method: "POST",
-        body: JSON.stringify({ project: proj, content: txt, tags: tags }) });
-      showToast("已记入「" + proj + "」");
-    }
-    workData.editId = null;
-    $("#workEdit").classList.add("hidden");
-    $("#workText").value = ""; $("#workTags").value = "";
-    workData.open[proj] = true;
-    await workLoad();
-    await workReloadOpen();
-    renderWork();
-  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
-}
-/* ⚠️ 这些元素是 buildLibCards() 动态生成出来的 —— 监听器必须在**生成之后**挂，
-   不能在脚本顶层 `if ($("#workCards"))` 里挂（那时 DOM 里还没有这个节点，
-   条件为假、监听器根本不会装，表现为「点了没反应」）。 */
-function wireWork(){
-  const host = $("#workCards");
-  if (!host || host.dataset.wired) return;
-  host.dataset.wired = "1";
-  host.addEventListener("click", async (e) => {
-    const op = e.target.closest("[data-work-open]");
-    const ad = e.target.closest("[data-work-add]");
-    const ed = e.target.closest("[data-work-edit]");
-    const dl = e.target.closest("[data-work-del]");
-    const rn = e.target.closest("[data-work-rename]");
-    const rf = e.target.closest("[data-work-rmfolder]");
-    if (op){ await workToggle(op.dataset.workOpen); return; }
-    if (ad){ workEditOpen(null, ad.dataset.workAdd); return; }
-    if (ed){
-      const proj = ed.dataset.workProj;
-      const it = (workData.items[proj] || []).find((x) => String(x.id) === String(ed.dataset.workEdit));
-      if (it) workEditOpen(it, proj);
-      return;
-    }
-    if (dl){
-      if (!confirm("真删这条技术记忆？（不可恢复 —— 技术记忆不软删除，过期的留着只会变噪音）")) return;
-      try{
-        await memApi("/app/work/item?id=" + encodeURIComponent(dl.dataset.workDel), { method: "DELETE" });
-        showToast("已删除");
-        await workLoad(); await workReloadOpen(); renderWork();
-      }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
-      return;
-    }
-    if (rn){
-      const name = rn.dataset.workRename;
-      const cur = (workData.projects || []).find((p) => p.name === name) || {};
-      const nn = prompt("文件夹改名（留空则不改名）", name);
-      if (nn === null) return;
-      const desc = prompt("一句话说明（这个夹子存什么）", cur.desc || "");
-      if (desc === null) return;
-      try{
-        await memApi("/app/work/projects", { method: "PUT",
-          body: JSON.stringify({ old: name, name: (nn.trim() || name), desc: desc }) });
-        showToast("已更新"); await workLoad(); renderWork();
-      }catch(err){ showToast("改名失败：" + ((err && err.message) || err)); }
-      return;
-    }
-    if (rf){
-      const name = rf.dataset.workRmfolder;
-      if (!confirm("删掉文件夹「" + name + "」以及里面的全部条目？（真删，不可恢复）")) return;
-      try{
-        await memApi("/app/work/projects?name=" + encodeURIComponent(name), { method: "DELETE" });
-        showToast("文件夹已删除");
-        delete workData.items[name]; delete workData.open[name];
-        await workLoad(); renderWork();
-      }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
-    }
-  });
-  ["workNewFolder", "workNew", "workSaveBtn", "workCancelBtn"].forEach((id) => {
-    const el = $("#" + id);
-    if (!el) return;
-    el.addEventListener("click", () => {
-      if (id === "workNewFolder"){
-        const name = prompt("新文件夹叫什么？（一个项目一个夹子）");
-        if (!name || !name.trim()) return;
-        const desc = prompt("一句话说明（可留空）") || "";
-        memApi("/app/work/projects", { method: "POST", body: JSON.stringify({ name: name.trim(), desc: desc }) })
-          .then(() => { showToast("文件夹已建好"); return workLoad(); })
-          .then(() => renderWork())
-          .catch((err) => showToast("建立失败：" + ((err && err.message) || err)));
-        return;
-      }
-      if (id === "workNew"){ workEditOpen(null, ""); return; }
-      if (id === "workSaveBtn"){ workSubmit(); return; }
-      workData.editId = null; $("#workEdit").classList.add("hidden");
-    });
-  });
-}
 
 if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
 if ($("#memoryClose")) $("#memoryClose").addEventListener("click", closeMemory);
@@ -16589,8 +16451,6 @@ if ($("#nfRun")) $("#nfRun").addEventListener("click", () => memRun(false));   /
 if ($("#nfAssemble")) $("#nfAssemble").addEventListener("click", memAssemble);
 if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
 if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));
-/* 世界书页那三个按钮的监听器已删 —— 那一页整个由 memory-pack.js 画，
-   元素不在这里了（留着 if 判断也只是永久为假，属于死代码）。 */
 if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
 if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay);
 if ($("#nfDays")) $("#nfDays").addEventListener("click", (e) => {
@@ -18298,12 +18158,9 @@ function makeMessage(rowData){
   if (atts.length) _inner += renderAttachments(atts);
   if (m.text) _inner += `<span class="txt">${renderText(m.text)}</span>`;
   /* 💭 看它当时在想什么（对齐 AionsHome：思考收在按钮里，点开弹层看）。
-     文本按 messageKey 存进 thinkStore —— 不塞进 data 属性（思考可以很长）。 */
-  if (rowData.thinking){
-    thinkStore.set(m._key, rowData.thinking);
-    _inner += `<button class="think-btn" type="button" data-think-btn="1" aria-label="看它当时在想什么" title="看它当时在想什么">`
-            + `<span aria-hidden="true">💭</span></button>`;
-  }
+     文本按 messageKey 存进 thinkStore —— 不塞进 data 属性（思考可以很长）。
+     ★ 按钮本身**不在这儿加**：它要待在气泡上方（见下面 row 那一处）。 */
+  if (rowData.thinking) thinkStore.set(m._key, rowData.thinking);
   _inner += `<span class="meta"></span>`;
   bubble.innerHTML = _inner;
   if (atts.length){ bubble.classList.add("has-att"); if (!m.text) bubble.classList.add("att-only"); }
@@ -18322,6 +18179,15 @@ function makeMessage(rowData){
     if (rt) rt.addEventListener("click", (ev) => { ev.stopPropagation(); retryFailed(m._key); });
     if (dl) dl.addEventListener("click", (ev) => { ev.stopPropagation(); deleteFailed(m._key); });
   }else fillMeta(metaEl, m.ts, m.from === "human");
+  /* 💭 那一行：**气泡之前**（order:-1 兜底），所以永远在消息上方。 */
+  if (rowData.thinking){
+    const tl = document.createElement("div");
+    tl.className = "think-line";
+    tl.innerHTML = '<button class="think-btn" type="button" data-think-btn="1" '
+      + 'aria-label="看它当时在想什么" title="看它当时在想什么">'
+      + '<span aria-hidden="true">💭</span></button>';
+    row.appendChild(tl);
+  }
   row.appendChild(bubble);
   // reaction chips — AI poke (one-way: AI → you), rendered only under your own bubbles; not under the AI's
   const reactions = (m.from === "human" && m.meta && m.meta.reactions && typeof m.meta.reactions === "object") ? m.meta.reactions : null;
@@ -19781,7 +19647,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v134";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v135";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

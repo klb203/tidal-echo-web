@@ -111,6 +111,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log("\n【③ 弹层：点开 / 内容 / 关闭】");
   const btn = rowThink.querySelector("[data-think-btn]");
   ok(!!btn, "按钮在 DOM 里");
+
+  /* ★ 位置：按钮要在**气泡外面**，而且排在那条气泡**之前**（也就是消息上方）。
+     两条必须一起验 —— 只说"在 row 里"不够（放在气泡之后也满足），
+     只说"不在 bubble 里"也不够（飘到行尾同样是错的）。
+     这一版就是从气泡里搬到上面的，所以这几条是防它搬回去。 */
+  const _bb = rowThink.querySelector(".bubble");
+  ok(!!_bb && !_bb.contains(btn), "★ 💭 按钮不在气泡里（气泡里只剩正文与时间）");
+  const _tl = rowThink.querySelector(".think-line");
+  ok(!!_tl && _tl === btn.parentElement, "★ 按钮住在 .think-line 里（专为它开的那一行）");
+  const _kids = Array.prototype.slice.call(rowThink.children);
+  ok(_kids.indexOf(_tl) >= 0 && _kids.indexOf(_tl) < _kids.indexOf(_bb),
+     "★ 那一行排在气泡之前 = 在消息上方", _kids.map((k) => k.className));
+  ok(/\.think-line\{[^}]*flex:\s*0 0 100%/.test(html) && /\.think-line\{[^}]*order:\s*-1/.test(html),
+     "CSS：.think-line 独占一行、且 order 排在前面（不换行就压不住气泡）");
+  ok(/\.row\{[^}]*flex-wrap:\s*wrap/.test(html), "CSS：.row 允许换行（否则那条 100% 宽的行会把气泡挤扁）");
   /* ★ 必须把行**插进文档**再点：点击是委托在 document 上的，
      游离节点的 click 冒泡不到 document —— 第一版就是这么假红的。 */
   d.body.appendChild(rowThink);

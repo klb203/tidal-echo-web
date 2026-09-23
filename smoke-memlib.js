@@ -14,7 +14,9 @@ function ok(c, m) { if (c) { pass++; console.log("  ✓ " + m); } else { fail++;
 
 const html = fs.readFileSync(path.join(DIR, "index.html"), "utf8");
 const START = "/* ════════════ 记忆库（AionsHome：日常 / 长期重要 两档）";
-const END = 'if ($("#dyList")) $("#dyList").addEventListener("click", (e) => {';
+/* ★ 边界换过一次：原来靠 `#dyList` 那条绑定收尾，日记/事件盒整体下线后它没了。
+   现在收在记忆库段之后、图片生成段之前 —— 那段的第一行就是下面这个常量。 */
+const END = 'const IG_KEY = "companion_image_gen";';
 const a = html.indexOf(START);
 const b = html.indexOf(END, a);
 if (a < 0 || b < 0) { console.log("✗ 抠不出记忆库代码段（锚点变了？）"); process.exit(1); }
@@ -24,7 +26,8 @@ console.log("抠出记忆库代码段：" + CODE.length + " 字符\n");
 // ── 假 DOM：把这一页用到的 id 都摆上 ──────────────────────────────────
 const IDS = ["mlLead", "mlTag", "mlTabs", "mlNew", "mlTidy", "mlRefresh", "mlStatus",
              "mlEdit", "mlBody", "mlKw", "mlReason", "mlTier", "mlImp", "mlImpVal",
-             "mlSaveBtn", "mlCancelBtn", "mlTidyBox", "mlList"];
+             "mlSaveBtn", "mlCancelBtn", "mlTidyBox", "mlList",
+             "mlQ", "mlCount", "mlUnres"];
 const dom = new JSDOM("<!doctype html><html><body>" +
   IDS.map((i) => '<div id="' + i + '"></div>').join("") +
   '<div id="mlTabsInner"></div>' +
@@ -221,6 +224,71 @@ ok(w.mlSourceLabel({ source: "nearfield" }) === "自动", "来源标：机器路
   await w.mlLoad(true);
   ok(/空/.test(w.$("#mlStatus").textContent), "空库时状态行有说明");
   ok(/arc-empty/.test(w.$("#mlList").innerHTML), "空库时列表区有占位文案");
+
+
+  // ── 11) 搜索：**本地**筛（对齐 AionsHome 顶部那个「🔍 搜索记忆...」）──
+  //    逐个网络往返地搜会让边打边筛卡顿，而且那也不是它的做法。
+  LIST_PAYLOAD = { items: [
+    { id: "1", kind: "event", source: "ai", content: "楼下那只橘猫又来了", keywords: ["橘猫"],
+      tier: "daily", importance: 5, label: "事件", ts: "2026-09-21T10:00:00" },
+    { id: "2", kind: "story", source: "", content: "她昨天搬了两盆花", keywords: ["搬家"],
+      tier: "long_term", importance: 9, label: "故事", ts: "2026-09-20T10:00:00" },
+  ] };
+  await w.mlLoad(true);
+  const listHits = () => reqs.filter((r) => r.url.indexOf("/app/memory/list") >= 0).length;
+  const n0 = listHits();
+  w.$("#mlQ").value = "橘猫";
+  w.mlRender();
+  ok(listHits() === n0, "★ 搜索不发请求（纯本地筛）");
+  ok(/橘猫/.test(w.$("#mlList").innerHTML), "搜正文能命中");
+  ok(!/搬了两盆花/.test(w.$("#mlList").innerHTML), "没命中的不显示");
+  ok(/1 \/ 2 条/.test(w.$("#mlCount").textContent), "计数写成 命中/总数：" + w.$("#mlCount").textContent);
+
+  w.$("#mlQ").value = "搬家";
+  w.mlRender();
+  ok(/搬了两盆花/.test(w.$("#mlList").innerHTML), "★ 关键词也能搜到（不只搜正文）");
+
+  w.$("#mlQ").value = "根本不存在的词";
+  w.mlRender();
+  ok(/没有匹配/.test(w.$("#mlList").innerHTML), "搜不到时列表里有说明（不是一片空白）");
+
+  w.$("#mlQ").value = "";
+  w.mlRender();
+  ok(/橘猫/.test(w.$("#mlList").innerHTML) && /搬了两盆花/.test(w.$("#mlList").innerHTML),
+     "清空搜索后恢复全部");
+
+  // ── 12) 「还没做 / 还没去」（📌 那一档，AionsHome 的 unresolved）──────
+  //    它决定了这条记忆在召回时会不会被顶到 [背景记忆] 最前面 —— 值不值得，看这里。
+  LIST_PAYLOAD = { items: [
+    { id: "9", kind: "event", source: "ai", content: "答应帮她问问那家店", keywords: ["店"],
+      tier: "daily", importance: 6, label: "事件", unresolved: true, ts: "2026-09-21T10:00:00" },
+    { id: "10", kind: "event", source: "ai", content: "普通的一条", keywords: [],
+      tier: "daily", importance: 6, label: "事件", ts: "2026-09-21T10:00:00" },
+  ] };
+  await w.mlLoad(true);
+  ok(/📌/.test(w.$("#mlList").innerHTML), "列表里带 📌 标记");
+  ok(/还没做/.test(w.$("#mlList").innerHTML), "📌 旁边有中文说明");
+
+  const un = w.__mlData.items.find((x) => String(x.id) === "9");
+  w.mlEditOpen(un);
+  ok(w.$("#mlUnres").checked === true, "编辑时勾选状态回填：true");
+  const plain = w.__mlData.items.find((x) => String(x.id) === "10");
+  w.mlEditOpen(plain);
+  ok(w.$("#mlUnres").checked === false, "编辑时勾选状态回填：false（不能残留上一条的状态）");
+
+  reqs.length = 0;
+  w.$("#mlBody").value = "答应帮她问问那家店";
+  w.$("#mlUnres").checked = true;
+  await w.mlSave();
+  const sv = reqs.find((r) => r.url.indexOf("/app/memory/save") >= 0);
+  ok(!!sv && sv.body.unresolved === true, "★ 保存时带 unresolved:true");
+
+  reqs.length = 0;
+  w.$("#mlBody").value = "已经问过了";
+  w.$("#mlUnres").checked = false;
+  await w.mlSave();
+  const sv2 = reqs.find((r) => r.url.indexOf("/app/memory/save") >= 0);
+  ok(!!sv2 && sv2.body.unresolved === false, "★ 取消勾选也要写回去（只在 true 时发 = 关不掉）");
 
   console.log("\n结果：" + pass + " 通过 / " + fail + " 失败");
   process.exit(fail ? 1 : 0);

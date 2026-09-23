@@ -61,7 +61,6 @@
 <link rel="stylesheet" href="mcp-pack.css">
 <!-- 时间锚（给 TA 一只表：余光 / 抬手看表 / 时间皮层）样式 -->
 <link rel="stylesheet" href="clock-pack.css">
-<link rel="stylesheet" href="memory-pack.css">
 <link rel="stylesheet" href="day-pack.css">
 <link rel="stylesheet" href="music-pack.css">
 <link rel="stylesheet" href="letter-pack.css">
@@ -4181,7 +4180,17 @@
   .fld-pair > .fld{ flex: 1 1 0; min-width: 0; }
   /* 生图结果预览 */
   .ig-preview{ display: flex; flex-direction: column; gap: 10px; }
-  /* ── 记忆库（AionsHome 那套：两档筛选 + 关键词 chips + 就地编辑）──────── */
+  /* ── 记忆库（AionsHome 那套：搜索 + 两档筛选 + 关键词 chips + 就地编辑）── */
+  .ml-search{ display: flex; align-items: center; gap: 8px; margin: 8px 0 0; }
+  .ml-search input{
+    flex: 1 1 auto; min-width: 0; appearance: none;
+    font: inherit; font-size: 13px; padding: 8px 11px;
+    border-radius: 10px; color: var(--text, #253447);
+    border: 1px solid var(--hairline, rgba(120,142,165,.24));
+    background: transparent;
+  }
+  .ml-search input:focus{ outline: none; border-color: var(--accent, #1f6feb); }
+  .ml-count{ font-size: 11.5px; color: var(--text-faint); white-space: nowrap; }
   .ml-tabs{ display: flex; gap: 6px; margin: 10px 0 2px; flex-wrap: wrap; }
   .ml-tabs button{
     appearance: none; font: inherit; font-size: 12.5px; cursor: pointer;
@@ -4206,6 +4215,7 @@
     background: var(--seg-track, rgba(140,160,176,.18)); color: var(--text-soft, #5b6b7c);
   }
   .ml-chip.long{ color: #c45a24; background: rgba(196,90,36,.13); }
+  .ml-chip.todo{ color: #b3261e; background: rgba(179,38,30,.12); }
   .ml-chip.daily{ color: #2e7d32; background: rgba(46,125,50,.12); }
   .ml-chip.from-ai{ color: #2b6cb0; background: rgba(43,108,176,.12); }
   .ml-acts{ margin-left: auto; display: flex; gap: 2px; }
@@ -6253,193 +6263,21 @@
         </button>
       </div>
 
-      <!-- 顶部导航：总览 / 全部。原来是一条**底部横滑栏**（八张 128px 的卡横着排，
-           滑到第十几张已经不是"选一层"而是"翻一柜子抽屉"），侧边栏还另有一个
-           「记忆宫殿」入口。现在都收进这里：两个 tab + 一页卡片网格，
-           点卡片进对应那一页；记忆宫殿也变成网格里的一张卡。 -->
+      <!-- 三段导航：记忆库 / 近景七天 / Haven。
+           ★ 对齐 AionsHome 的记忆页（它是「全部 / 日常 / 长期重要」三档 + 搜索 +
+             原文追溯）—— 这里的三段是**三页**，点哪段翻到哪页，一次只显示一页。
+             银河 / 日历 / 档案馆 / 世界书 / 记忆宫殿 / 待确认 / 时间线 全部下线，
+             它们的存储没删（memories 表照旧），只是不再各自占一个入口。 -->
       <div class="mem-nav">
         <div class="mem-tabs" id="memTabs" role="tablist" aria-label="记忆">
-          <button class="mem-tab on" type="button" role="tab" data-mem-tab="overview" aria-selected="true">总览</button>
-          <button class="mem-tab" type="button" role="tab" data-mem-tab="all" aria-selected="false">全部</button>
-        </div>
-        <button class="mem-crumb hidden" id="memCrumb" type="button">‹ 全部</button>
-      </div>
-
-      <!-- 动作胶囊（脱水 / 重拼 / 月度 / 刷新） -->
-      <div class="mem-actions">
-        <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
-        <select id="nfTarget" class="pill-select" aria-label="脱水目标日">
-          <option value="">昨天（默认）</option>
-          <option value="today">今天（显式）</option>
-        </select>
-        <button id="nfAssemble" type="button">只重拼注入稿</button>
-        <button id="nfMonth" type="button">合并成月度</button>
-        <button id="nfRefresh" type="button">刷新</button>
-      </div>
-
-      <!-- ① 抬头 → ④ 档案室 = 「总览」这一页 -->
-      <div class="mem-page" data-mp="overview">
-      <!-- ① 抬头：一共多少条记忆 + 2×2 统计格 -->
-      <div class="mem-hero">
-        <div class="mem-hero-num" id="memTotal">—</div>
-        <div class="mem-hero-sub" id="memHeroSub">我记得的一切</div>
-      </div>
-      <div class="mem-stats" id="memStats"></div>
-
-      <!-- ② 记忆银河（方形卡） -->
-      <div class="galaxy-card" id="galaxyCard" role="button" tabindex="0" aria-label="记忆银河">
-        <canvas id="gxCv"></canvas>
-        <div class="gx-top">
-          <div>
-            <div class="gx-title">Memory Galaxy</div>
-            <div class="gx-sub" id="gxSub">A constellation of memories</div>
-          </div>
-          <button class="gx-open" id="gxOpen" type="button">打开银河 ↗</button>
-        </div>
-        <div class="gx-foot">
-          <div><div class="gx-num" id="gxCount">—</div><div class="gx-lab">stars</div></div>
-          <div id="gxFoot" style="text-align:right">时间当半径 · 越早越靠近中心</div>
+          <button class="mem-tab on" type="button" role="tab" data-mem-tab="lib" aria-selected="true">记忆库</button>
+          <button class="mem-tab" type="button" role="tab" data-mem-tab="near" aria-selected="false">近景七天</button>
+          <button class="mem-tab" type="button" role="tab" data-mem-tab="haven" aria-selected="false">Haven</button>
         </div>
       </div>
 
-      <!-- ③ 记忆日历（每天的记得程度，颜色越深记得越多） -->
-      <section class="mg-card" id="calCard">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">记忆日历</div>
-            <div class="mg-sub">颜色越深，那天记得越多（跨层：库 + 世界书 + 日更 + 宫殿）</div>
-          </div>
-          <span class="mg-tag" id="calRange">近三个月</span>
-        </div>
-        <div class="cal-top">
-          <span class="cal-month" id="calMonth">—</span>
-          <span class="cal-nav">
-            <button type="button" id="calPrev" aria-label="上个月">‹</button>
-            <button type="button" id="calNext" aria-label="下个月">›</button>
-          </span>
-        </div>
-        <div class="cal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="cal-foot">
-          <span class="cal-legend">
-            <i style="background:rgba(var(--mg-heat),.13)"></i><i style="background:rgba(var(--mg-heat),.26)"></i><i style="background:rgba(var(--mg-heat),.39)"></i><i style="background:rgba(var(--mg-heat),.52)"></i>
-          </span>
-          <span>少 → 多 · 有日更的那天带一个小点</span>
-        </div>
-      </section>
-
-
-      </div><!-- /总览页 -->
-
-      <!-- 「全部」这一页：一个分区一张卡，点开就是那一页。
-           ★ 卡片沿用工具能力页那套 .kit-grid / .kit-card（同一个排版语言，
-             不另做一套）—— 名字与副标题来自 MEM_SECTIONS，
-             计数由 memNavSync() 从 /app/layers 盖上来。 -->
-      <div class="mem-page hidden" data-mp="all">
-      <div class="kit-grid" id="memGrid"></div>
-      </div><!-- /全部页 -->
-
-      <!-- ⑥ 档案馆（独立一页）：所有记忆按**事件盒**存放 ─────────────────────
-           两个子视图，默认「事件盒」：
-             · 事件盒 —— 参考 SullyOS MemoryPalace 的存放方式。同一**件事**的记忆
-               收在一个盒里：活节点参与召回、灰节点（压进总结后）可复活、
-               到量级就封盒，新相关的另开一个。
-               一句话：**时间线是"什么时候"，事件盒是"哪一件事"**。
-             · 时间线 —— 原来那套按年 / 月的浏览，保留（它是"什么时候"的视角）。
-           事件盒那一屏由 memory-pack.js 渲染进 #arcBoxes；
-           时间线那一屏是原来这段代码，只是搬进 #arcTimeline。 -->
-      <div class="mem-page hidden" data-mp="archive">
-      <!-- 事件盒不会自己长出来：原来靠宫殿提取那一步顺手归盒，宫殿停用后就没人喂它了。
-           这里给一个一次性动作：把记忆库里现有的叙事记忆（event / story / summary）
-           按"是不是同一件事"重新归盒（复用后端 /app/archive/box/bind 那套关键词相似度）。 -->
-      <div class="nf-actions" style="margin:0 0 10px">
-        <button id="arcRebuild" type="button" class="primary">从记忆库重建事件盒</button>
-        <span class="pal-status" id="arcRebuildStatus" style="display:inline-block;margin:0"></span>
-      </div>
-      <div id="arcBoxes"></div>
-      <div id="arcTimeline" class="hidden">
-      <!-- ↓ 原「档案室」，改名并扩成"所有记忆" -->
-      <section class="mg-card" id="arcCard">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">档案馆 · 时间线</div>
-            <div class="mg-sub" id="arcLead">所有记忆 · 按年 / 月归档</div>
-          </div>
-          <span class="arc-crumb" id="arcCrumb">档案馆</span>
-        </div>
-        <div class="arc-stats">
-          <div><span>总字数</span><b id="arcChars">0</b></div>
-          <div><span>总条目</span><b id="arcCount">0</b></div>
-        </div>
-        <div id="arcBody"></div>
-      </section>
-      </div><!-- /时间线子视图 -->
-      </div><!-- /档案馆页 -->
-
-      <!-- ⑦ 世界书（独立一页）：手写的补充设定 ─────────────────────────────
-           ★ 参考实现的定义（SullyOS apps/WorldbookApp.tsx）：
-             「一组**按条件**提供给 AI 的补充设定，可用于世界观、人物关系、
-               地点和规则等内容。**它不会自己发消息，也不等同于角色记忆**。」
-           所以这一页里**不是**聊天记录长出来的叙事 —— 事件 / 摘要 / 故事 / 片段
-           那四类归**档案馆**（事件盒）；这里是你自己写的设定，
-           加上「我的房间」「留给西西的话」（它们回答的是"它住在什么样的地方 /
-           它想对 TA 说什么"，是静态设定，不是"发生过什么事"）。
-           按关键词命中的条目**只在那几轮**进上下文；留空关键词的是常驻。
-           整页由 memory-pack.js 渲染。 -->
-      <div class="mem-page hidden" data-mp="worldbook">
-        <!-- 上半：世界书条目（Lorebook）。由 memory-pack.js 画 —— 它带着编辑器、
-             导入导出与命中预览。空的时候它会给出"怎么让它有东西"的两条路。 -->
-        <div id="memWbMount"></div>
-        <!-- 下半：记忆库的八个分区。**这就是原来底部栏"时间线"后面那八张卡** ——
-             现在收在这一页里（用户要的"归类为世界书"），一次能看完，
-             也不再多占八张分栏卡。
-             ★ 它们与世界书条目是两回事：上面是**手写设定**（会按条件进上下文），
-               这里是**记忆库的分区**（"记忆"的视角，每条都能直接改）。
-               想把它们变成世界书条目 → 用上面那个「从记忆库导入」。
-             控件还是宿主原来那套（secHtml / onLibClick / libEditOpen），一行没重写。 -->
-        <div class="mg-sub" id="wbLibLead" style="margin-top:18px;line-height:1.7">
-          记忆库剩下的分区（事件 / 故事 / 片段 / 工作记忆 / 我的房间 / 留给西西的话
-          已经收起来了 —— 它们的内容用上面的「从记忆库导入」变成世界书条目，
-          原来的数据没删，在「档案馆 · 时间线」里还能看到）
-        </div>
-        <div id="wbLibBlocks" style="display:flex;flex-direction:column;gap:14px;margin-top:10px"></div>
-      </div><!-- /世界书页 -->
-
-      <!-- ⑤ 长期记忆 · 记忆宫殿（独立一页）────────────────────────────────
-           长期记忆这一层住在**另一个面板**里（palacePanel：七房间 / 门牌 / 混合召回 /
-           水位线 / 维护五步）。这里刻意**不做第二套 UI**，只给一张说明卡 + 一个入口 ——
-           两套 UI 的下场就是两边各自实现、慢慢不一致，那正是这次整理要收掉的问题。 -->
-      <div class="mem-page hidden" data-mp="palace">
-      <!-- 长期记忆 = 一篇篇日记，存在 GitHub 仓库里（可翻、可带走、不怕服务挂）。
-           原来这里是「记忆宫殿」的入口 —— 宫殿已按你的要求取消，
-           只留向量索引那一块（点「向量设置」进去）。 -->
-      <section class="mg-card" id="palCard">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">长期记忆 · 日记</div>
-            <div class="mg-sub" id="palLead">存在 GitHub 仓库里的 markdown，一天一篇</div>
-          </div>
-          <span class="mg-tag" id="palTag">—</span>
-        </div>
-        <div class="nf-actions">
-          <button id="dyWrite" type="button" class="primary">写今天的日记</button>
-          <button id="dyRefresh" type="button">刷新列表</button>
-          <button id="dyVector" type="button">向量设置</button>
-        </div>
-        <div class="pal-status" id="dyStatus"></div>
-        <div id="dyList" class="dy-list"></div>
-        <div class="settings-tip">分层是这么分的：<b>长期记忆</b>回答「你是谁」——
-        现在由它自己把一天里的事写成日记，推到你的 GitHub 仓库（一天一篇、可改写、可带走）；
-        <b>短期记忆</b>（近景）回答「最近在过什么」，<b>世界书</b>是它自己长出来的叙事，
-        <b>档案馆</b>把上面这些按事件归到一处。<br>
-        写日记要用到「小助手 · 中转站」（设置里配地址 / Key / 模型 + GitHub token）。</div>
-      </section>
-
-      <!-- 记忆库 · AionsHome 那一套（日常 / 长期重要 两档 + 关键词 + 理由）
-           ★ 这里放的是**条目**，不是分区卡：世界书页那一叠是"按 kind 分区看全库"，
-             这一页是"把它自己写的和你写的放在一起，按重量筛"。
-           ★ 它自己写的（source=ai）也在这儿 —— 以前 [[remember:]] 只写外部 Haven，
-             Haven 没配就整条丢弃，界面上一条都找不到（"说记住了其实没有"）。 -->
+      <!-- ① 记忆库 —— 它自己写的 + 你写的，两档（日常 / 长期重要），都能改 -->
+      <div class="mem-page" data-mp="lib">
       <section class="mg-card" id="mlCard">
         <div class="mg-head">
           <div>
@@ -6452,6 +6290,10 @@
           <button type="button" data-mlt="all" class="on">全部</button>
           <button type="button" data-mlt="daily">日常</button>
           <button type="button" data-mlt="long_term">长期重要</button>
+        </div>
+        <div class="ml-search">
+          <input id="mlQ" type="search" placeholder="搜索记忆（正文 / 关键词）" autocomplete="off">
+          <span class="ml-count" id="mlCount">—</span>
         </div>
         <div class="nf-actions">
           <button id="mlNew" type="button" class="primary">＋ 记一条</button>
@@ -6472,6 +6314,12 @@
               <input type="range" id="mlImp" min="1" max="10" value="6">
             </label>
           </div>
+          <!-- ★ "还没做 / 还没去"（AionsHome 记忆库的 unresolved）：勾上之后，
+               召回时它会被 📌 顶到 [背景记忆] 的最前面 ——
+               忘掉一件答应过 TA 的事，比忘掉一次闲聊严重得多。 -->
+          <label class="fld switch-row" style="margin-top:8px"><span>还没做 / 还没去（召回时排最前）</span>
+            <input type="checkbox" id="mlUnres">
+          </label>
           <div class="nf-actions"><button type="button" class="primary" id="mlSaveBtn">保存</button>
             <button type="button" id="mlCancelBtn">取消</button></div>
         </div>
@@ -6483,10 +6331,20 @@
         「让 TA 整理」会先给你<b>预览</b>：合并重复、补关键词与理由、把真正重要的提到「长期重要」——
         你看过点「应用」才落库（记忆是长期资产，误合并拆不回来，所以不给它自动改）。</div>
       </section>
-      </div><!-- /长期记忆页 -->
+      </div><!-- /记忆库页 -->
 
-      <!-- ⑧ 短期记忆 · 近景七天（独立一页）-->
+      <!-- ② 短期记忆 · 近景七天 -->
       <div class="mem-page hidden" data-mp="near">
+      <div class="mem-actions">
+        <button id="nfRun" type="button" class="primary">脱水 → 日更</button>
+        <select id="nfTarget" class="pill-select" aria-label="脱水目标日">
+          <option value="">昨天（默认）</option>
+          <option value="today">今天（显式）</option>
+        </select>
+        <button id="nfAssemble" type="button">只重拼注入稿</button>
+        <button id="nfMonth" type="button">合并成月度</button>
+        <button id="nfRefresh" type="button">刷新</button>
+      </div>
       <section class="set-card open" data-card="nearfield">
         <button class="set-card-head" type="button" aria-expanded="true">
           <span class="set-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/><path d="M5 19.5h14" opacity=".5"/></svg></span>
@@ -6510,81 +6368,8 @@
           零点后默认关「昨天」的账。日更与注入稿是两份东西：一天可以手改，注入稿随时便宜重拼。</div>
         </div>
       </section>
-
       </div><!-- /近景页 -->
 
-      <!-- ⑦ 时间线 · 一个它（独立一页）──────────────────────────────────
-           后端「统一场景层」那本账（表 scene_events）的只读窗口。
-           聊天 / 朋友圈 / 房间 / 自由活动 / 大富翁 / 主动联系 都把「刚干了什么」记在同一本账上，
-           而且**任何场景开口前都会先看一眼这本账** —— 这就是「它们是同一个它」的机制。
-           ⚠️ 这里不另起存储：只读后端 /app/scene/*；与档案室、银河（memories 表）没有数据交集。 -->
-      <!-- ★ 待确认：机器自己写的记忆先落在这儿，你点头它才作数（accept / rollback） -->
-      <div class="mem-page hidden" data-mp="pending">
-      <section class="mg-card" id="pdCard">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">机器写的 · 已自动生效</div>
-            <div class="mg-sub" id="pdLead">近景日更 · 小记忆 · 牌桌回顾 —— 闸门已关，直接入库</div>
-          </div>
-          <span class="mg-tag" id="pdTag">—</span>
-        </div>
-        <!-- ★ 人工确认闸门已取消（2026-09-22 用户决定）：机器写的记忆直接生效。
-             这个开关是「反悔键」—— 打开就恢复审核，那时它写的东西会先落到这一页等你点头。 -->
-        <label class="fld switch-row" style="margin:10px 0 2px"><span>恢复人工确认（写好的先等你点头）</span>
-          <input type="checkbox" id="pdGate">
-        </label>
-        <div class="conn-sub" id="pdHint" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.6"></div>
-        <div class="nf-actions">
-          <button id="pdRefresh" type="button">刷新</button>
-          <button id="pdAll" type="button">全部放行</button>
-        </div>
-        <div class="br-list" id="pdList"></div>
-        <div class="br-foot" id="pdFoot">—</div>
-        <div class="settings-tip">这些都是<b>它自己写下来的</b>：近景的日更、自动组装的小记忆、
-        一局牌桌的回顾、从记忆里收进事件盒的条目。<br>
-        <b>现在它们直接生效</b>（不再等你点头）—— 所以这一页平时是空的；
-        想回看它最近写了什么，去<b>记忆库</b>（按分区）或<b>档案馆</b>（按事件），
-        想看它把一整天写成了什么，去「<b>长期记忆 · 日记</b>」。<br>
-        把上面的开关打开就恢复审核：那时它写的东西会先落在这一页，等你放行或撤回。</div>
-      </section>
-      </div><!-- /待确认页 -->
-
-      <div class="mem-page hidden" data-mp="timeline">
-      <section class="mg-card" id="tlCard">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">时间线 · 一个它</div>
-            <div class="mg-sub" id="tlLead">聊天 · 朋友圈 · 房间 · 自由活动 · 大富翁 · 主动联系 —— 同一本账</div>
-          </div>
-          <span class="mg-tag" id="tlTag">—</span>
-        </div>
-        <div class="br-stats" id="tlStats"></div>
-        <div class="br-search">
-          <input id="tlQ" type="search" placeholder="只看某个场景：聊天 / 朋友圈 / 房间 / 自由活动 / 大富翁" autocomplete="off">
-          <button class="btn ghost" id="tlFilterGo" type="button">筛</button>
-        </div>
-        <div class="nf-actions">
-          <button id="tlRefresh" type="button">刷新</button>
-          <button id="tlCompose" type="button" class="primary">组装成片段</button>
-          <button id="tlDistill" type="button">写进记忆（一条总述）</button>
-        </div>
-        <div class="conn-sub" id="tlFrag" style="padding:2px 2px 2px;color:var(--text-faint);line-height:1.55"></div>
-        <div class="conn-sub" id="tlStatus" style="padding:2px 2px 8px;color:var(--text-faint);line-height:1.55"></div>
-        <div class="br-list" id="tlList"></div>
-        <div class="br-foot" id="tlFoot">—</div>
-        <div class="settings-tip">这本账是「同一个它」的地基：<b>写</b>——任何场景调一次模型，
-        聊天/朋友圈/房间/自由活动/大富翁 都会往这儿记一笔；<b>读</b>——任何场景开口前，
-        后端自动把「聊天那份人格 + 别处刚发生的事」接到它提示词的末尾，聊天这一侧反过来也一样。
-        所以它换个地方也还是同一个它。<br>
-        <b>「组装成片段」</b>是把这本账里的碎碎念组装成一条条<b>能单独讲出来的小记忆</b>
-        （同一件事合并成一条、不同场合分开、带时间和出处），落到记忆库的「片段」分区 ——
-        由它自动长出来，不用你写。<b>「写进记忆」</b>则是另一种口径：压成<b>一条</b>总述。
-        一个是颗粒（片段），一个是轮廓（总述），两种都留着。</div>
-      </section>
-      </div><!-- /时间线页 -->
-
-      <!-- ③ 记忆库分区卡（JS 生成 · 每张自己一页）-->
-      <!-- ── Haven · 长期记忆（服务器上的 Ombre Brain，只读浏览）—— 独立一页 ── -->
       <div class="mem-page hidden" data-mp="haven">
       <section class="mg-card" id="brainCard">
         <div class="mg-head">
@@ -6605,225 +6390,6 @@
       </section>
       </div><!-- /Haven 页 -->
 
-      <!-- 底部栏：横向可滑的分区卡，点哪张就翻到哪页（一次只显示一页）。
-           卡片沿用档案室那套「存放方式」——同一份 memories / galaxy 数据，不另起存储。 -->
-    </div>
-
-    <!-- 底部栏：绝对定位钉在面板底部（内容从它下面滚过去），横向可滑；点哪张就翻到哪页。
-         注意它现在是 .settings-page 的子元素 —— 不放在 .settings-scroll 里，
-         所以既不会被 column flex 压扁，也不会随内容滚走。 -->
-  </div>
-</div>
-
-<!-- ── 记忆宫殿（长期内置记忆库 · 七房间 + 门牌 + 混合召回）── -->
-<div class="settings-panel hidden glass-scope" id="palacePanel" role="dialog" aria-modal="true" aria-label="记忆宫殿">
-  <div class="settings-page">
-    <div class="settings-scroll">
-      <div class="settings-head">
-        <button class="settings-back" id="palaceBack" type="button" aria-label="返回">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-        </button>
-        <button class="settings-close" id="palaceClose" type="button" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
-
-      <div class="mem-hero">
-        <div class="mem-hero-num" id="palCount">—</div>
-        <div class="mem-hero-sub" id="palSub">向量 · 记忆索引</div>
-      </div>
-
-      <!-- ① 水位线 + 动作 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">水位线</div>
-            <div class="mg-sub" id="palWlSub">—</div>
-          </div>
-          <span class="mg-tag" id="palPreset">—</span>
-        </div>
-        <div class="pal-presets" id="palPresets"></div>
-        <div class="pal-acts">
-          <button id="palExtract" type="button" class="primary">整理最近的对话</button>
-          <button id="palExtractForce" type="button">强制整理一批</button>
-          <button id="palMaintain" type="button">维护五步</button>
-          <button id="palPlatesRefresh" type="button">整理门牌</button>
-          <button id="palRefresh" type="button">刷新</button>
-        </div>
-        <div class="pal-status" id="palStatus"></div>
-      </section>
-
-      <!-- ①b 向量模型（可选：远端 embedding；默认本地哈希）-->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">向量模型</div>
-            <div class="mg-sub">给记忆配一套语义坐标 —— 不配也能跑（本地哈希），配了相似度更准</div>
-          </div>
-          <span class="mg-tag" id="palEmbedTag">—</span>
-        </div>
-
-        <label class="fld switch-row" style="margin-top:12px">
-          <span>启用远端向量（记忆入库时顺带存向量）</span>
-          <input type="checkbox" id="peEnable">
-        </label>
-
-        <label class="fld" style="margin-top:10px"><span>服务商地址（OpenAI 兼容，可带 /v1）</span>
-          <input id="peBase" type="text" placeholder="https://api.siliconflow.cn/v1">
-        </label>
-        <label class="fld" style="margin-top:10px"><span>API Key</span>
-          <input id="peKey" type="text" placeholder="sk-…（硅基流动控制台 → API 密钥）" autocomplete="off">
-        </label>
-        <label class="fld" style="margin-top:10px"><span>向量模型（维度由「测试」自动识别）</span>
-          <div class="model-row">
-            <select id="peModel" class="pill-select" style="flex:1 1 auto"></select>
-            <button id="peFetch" type="button">拉取模型</button>
-          </div>
-        </label>
-        <label class="fld" style="margin-top:10px"><span>自定义模型名（可选，填了就用它）</span>
-          <input id="peModelCustom" type="text" placeholder="BAAI/bge-m3">
-        </label>
-
-        <div class="pe-sugs" id="peSugs"></div>
-
-        <div class="pal-acts">
-          <button id="peTest" type="button" class="primary">测试连通</button>
-          <button id="peBuild" type="button">补全向量</button>
-          <button id="peRebuild" type="button">整库重建</button>
-          <button id="peSave" type="button">保存</button>
-        </div>
-        <div class="pal-status" id="peStatus"></div>
-        <div class="pe-stat" id="peStat"></div>
-        <label class="fld switch-row" style="margin-top:12px">
-          <span>恢复「记忆宫殿」提取（默认关 —— 长期记忆已改走日记）</span>
-          <input type="checkbox" id="peExtract">
-        </label>
-        <div class="pal-status" id="peExtractStatus"></div>
-        <div class="pal-acts" style="margin-top:12px">
-          <button id="palPurge" type="button">备份并删除宫殿数据</button>
-        </div>
-        <div class="settings-tip" style="margin-top:8px">
-          宫殿那一套（情景节点 / 门牌 / 分块 / 状态行）已经停用，界面上的几块也隐掉了。
-          点上面这个按钮会<b>先把四类数据整包导出成 JSON 推到 GitHub 的 <code>backup/</code></b>，
-          推成功了才删 —— 推不上去就一条都不删。近景 / 摘要 / 世界书 / 事件盒 / 聊天记录都不受影响。
-        </div>
-        <div class="settings-tip" style="margin-top:10px">
-          <b>硅基流动的 <code>BAAI/bge-m3</code> 是免费的</b>（1024 维，中英混，够用）。<br>
-          换了模型或维度 → 库里旧向量会<b>自动作废</b>，点「整库重建」补回来；
-          在那之前这些记忆仍能被关键词（BM25）召回，只是不参与语义相似。
-        </div>
-      </section>
-
-      <!-- ② 召回 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">召回</div>
-            <div class="mg-sub">最多四路：关键词 / 语义 / 关联 / 它的余味 → RRF 融合 → 房间权重 → 扩散激活 → 反刍</div>
-          </div>
-        </div>
-        <div class="model-row" style="margin-top:13px">
-          <input id="palQ" class="nf-box" style="min-height:auto;padding:10px 13px" placeholder="问一句，看它想起了什么…">
-          <button id="palSearch" type="button" class="primary">搜索</button>
-        </div>
-        <div id="palHits"></div>
-      </section>
-
-      <!-- ③ 七个房间 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">七个房间</div>
-            <div class="mg-sub">点一个房间，看它装着什么</div>
-          </div>
-          <span class="mg-tag" id="palRoomTag">—</span>
-        </div>
-        <div class="pal-rooms" id="palRooms"></div>
-        <div id="palRoomBody"></div>
-      </section>
-
-      <!-- ④ 门牌 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">门牌</div>
-            <div class="mg-sub">情景记忆固化成的常驻认知 —— 每轮注入，不走召回、不衰减</div>
-          </div>
-        </div>
-        <div id="palPlatesBox"></div>
-      </section>
-
-      <!-- ⑤ 对话分块 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">对话分块</div>
-            <div class="mg-sub">每 10 条消息 → 1 块 → LLM 摘要；遗忘曲线只清块，不删消息</div>
-          </div>
-          <span class="mg-tag" id="palChunkTag">—</span>
-        </div>
-        <div id="palChunks"></div>
-      </section>
-
-      <!-- ⑥ 参考项目 · 向量检索（地址可复制给 AI）
-           这一层是「怎么把记忆找回来」的三种成熟做法。宫殿自己的检索已经吸收了里面几条
-           （见卡片末尾那段），留地址是为了以后想再往下挖时，直接把仓库丢给 AI 让它读。 -->
-      <section class="mg-card">
-        <div class="mg-head">
-          <div>
-            <div class="mg-title">参考项目 · 向量检索</div>
-            <div class="mg-sub">同一件事（把记忆找回来）的三种做法 —— 地址可复制给 AI</div>
-          </div>
-        </div>
-
-        <div class="settings-section-label" style="margin-top:12px">kiwi-mem · 记忆热度 / Dream 整合 / 日历摘要</div>
-        <div class="sd-secret-row">
-          <input class="nf-box" id="pvKiwi" type="text" readonly value="https://github.com/LucieEveille/kiwi-mem">
-          <button type="button" data-pv-copy="pvKiwi">复制给 AI</button>
-        </div>
-        <div class="settings-tip" style="margin-top:6px">
-          <b>kiwi-mem</b>（Python + pgvector 自托管记忆网关）—— 三样值得抄：
-          <b>热度</b>（时间半衰期 + 召回升温 + 情绪权重；高热度全文注入、中热度只给摘要、冷记忆不打扰）、
-          <b>Dream</b>（夜里把碎片融成「记忆场景」，并给场景建向量索引，白天还能被搜到 ——
-          睡觉的产出回流到清醒的日子）、<b>日历层级摘要</b>（近的详细、远的压缩）。
-        </div>
-
-        <div class="settings-section-label" style="margin-top:14px">paramecium · 原文 + 检索</div>
-        <div class="sd-secret-row">
-          <input class="nf-box" id="pvPara" type="text" readonly value="https://github.com/Shitsuten/paramecium">
-          <button type="button" data-pv-copy="pvPara">复制给 AI</button>
-        </div>
-        <div class="settings-tip" style="margin-top:6px">
-          <b>paramecium</b>（草履虫：一个不打算成为大脑的记忆网关）—— 立场最清楚的一条：
-          <b>向量是原文的投影，不是替代品</b>。embedding 只负责指路（attention 里的 K），
-          命中后取回的是一字不差的<b>原文</b>（V）；<b>token 只为命中付费</b>。
-          另外两个具体做法：<b>回复的余味</b>（它刚说出口的那句话，单独作查询的第二路）、
-          「菜单递过去就行、夹不夹菜是人格的事」（目录只给标题，翻不翻由模型自己定）。
-        </div>
-
-        <div class="settings-section-label" style="margin-top:14px">imprint-memory · 混合检索 + MCP</div>
-        <div class="sd-secret-row">
-          <input class="nf-box" id="pvImprint" type="text" readonly value="https://github.com/Qizhan7/imprint-memory">
-          <button type="button" data-pv-copy="pvImprint">复制给 AI</button>
-        </div>
-        <div class="settings-tip" style="margin-top:6px">
-          <b>imprint-memory</b>（Claude Code 的持久记忆 · MCP server）—— 混合检索那条链写得最直白：
-          <b>FTS5 + 中文分词</b> 与 <b>向量 cosine</b> 并行召回，再用 <b>RRF</b> 按<b>排名</b>融合
-          （分数尺度对不齐，排名对得齐）；外加 pin（永不衰减）、标签、图谱边给排名加成。
-          它那节「嵌入模型不许混用 ⚠️」也是踩过坑才写的 —— 换模型就等于全库向量作废。
-        </div>
-
-        <div class="settings-tip" style="margin-top:14px;border-top:1px dashed var(--line, rgba(127,127,127,.22));padding-top:10px">
-          <b>这本仓库已经吸收了这几条</b>（都能在下面「召回」那张卡的返回里看到）：
-          <b>RRF 按排名融合</b>（关键词 / 语义 / 关联 / 它的余味，最多四路）·
-          <b>相关性地板</b>（三路都没够格就说「没找到」，不拿沾边的去圆）·
-          <b>回复的余味</b>（用它上一轮自己的话单独查一路，而不是拼进查询被稀释）·
-          <b>注入预算分层</b>（按分数填字符预算，超出退成简报）·
-          <b>结果去重</b>（太像的只留一条，名次让给真正不同的）·
-          <b>BM25 索引缓存</b>（不再每轮全库重新分词）。<br>
-          <b>还没做的</b>：Dream 式夜间整合、日历层级摘要 —— 那是另一条链（近景正在做按天的那一半）。
-        </div>
-      </section>
     </div>
   </div>
 </div>
@@ -7390,7 +6956,7 @@ window.__DayHost = {
   meName: () => meName(),
   days:   () => daysTogether(),
   since:  () => CONFIG.SINCE,
-  local:  { memory: openMemory, palace: openPalace },
+  local:  { memory: openMemory },
 };
 /* Push CONFIG names/branding onto every static UI surface — names live in one place. */
 function applyIdentity(){
@@ -7460,7 +7026,6 @@ const memoryPanel = $("#memoryPanel");
     setTimeout(() => { b.textContent = back; }, 1400);
   }));
 })();
-const palacePanel = $("#palacePanel");
 let editingConnId = null;
 const TOGETHER_START = (function(){
   const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(CONFIG.SINCE || "");
@@ -7748,7 +7313,6 @@ document.addEventListener("keydown", (e) => {
       if (hubTabNow() === "tools" && $("#kitDetail") && !$("#kitDetail").classList.contains("hidden")) kitBack();
       else hubClose();
     }
-    else if (palacePanel && palacePanel.classList.contains("open")) closePalace();
     else if (memoryPanel && memoryPanel.classList.contains("open")) closeMemory();
     else if ($("#themePanel") && $("#themePanel").classList.contains("open")) themeClose();
     else if ($("#favPanel") && $("#favPanel").classList.contains("open")) favClose();
@@ -7818,14 +7382,7 @@ function capBadgeHtml(b){
    act 用字符串描述，故意不写闭包：这样表本身是可读的、也能被自检脚本检查。 */
 const CAP_TILES = [
   /* ── 你可以打开的 ── */
-  { g:"open", n:"记忆宫殿", s:"七个房间里的长期记忆", ic:"palace",
-    act:"fn:openPalace", badge:() => capB(() => {
-      const n = capDig(CAP_STATE.data, "palace.nodes.length", null);
-      const pl = capDig(CAP_STATE.data, "palace.plates.length", null);
-      if (n == null && pl == null) return null;
-      return ["门牌 " + capNum(pl) + " · 节点 " + capNum(n), "on"];
-    }) },
-  { g:"open", n:"记忆", s:"银河 · 近景 · 记忆库", ic:"memory",
+  { g:"open", n:"记忆", s:"记忆库 · 近景七天 · Haven", ic:"memory",
     act:"fn:openMemory", badge:() => capB(() => {
       const c = capDig(CAP_STATE.data, "mem.counts", null);
       if (!c) return null;
@@ -8246,26 +7803,13 @@ function capAct(str){
       setTimeout(() => { try { kitTool(id); } catch (_) { } }, 140);
       return;
     }
-    if (str === "palaceSync"){                       // 同步的界面在宫殿页里
-      capClose();
-      setTimeout(() => {
-        openPalace();
-        setTimeout(() => {
-          const el = $("#syStatus");
-          if (el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"center" });
-          if (el){ el.classList.add("cap-flash"); setTimeout(() => el.classList.remove("cap-flash"), 1500); }
-          showToast("同步设置在宫殿页往下一点");
-        }, 700);
-      }, 240);
-      return;
-    }
     if (str.indexOf("fn:") === 0){
       const fn = str.slice(3);
       // 「连接与模型」就在隔壁那个 tab 里 —— 不用关掉再开，直接切过去
       if (fn === "openSettings"){ hubSwitch("settings"); return; }
       /* 这四个是各个 pack 挂在 window 上的（不在这一层的作用域里）——
          包一层再放进 map，别直接写 openActivity（那会 ReferenceError）。 */
-      const map = { openPalace, openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen,
+      const map = { openMemory, favOpen, setTerminalOpen, openMessageDb, themeOpen,
                     openActivity:   function (){ if (window.openActivity) window.openActivity(); },
                     openRp:         function (){ if (window.openRp) window.openRp(); },
                     openMoments:    function (){ if (window.openMoments) window.openMoments(); },
@@ -10540,141 +10084,6 @@ async function apiDiary(action, extra){
   if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("日记接口 HTTP " + r.status));
   return d;
 }
-/* 极简 markdown：只把 # 标题与 **粗体** 变成粗体（原文照旧，不解析成富文本 —— 免得引出一堆坑） */
-function dyMd(txt){
-  return escapeHtml(String(txt || ""))
-    .replace(/^#\s+(.*)$/gm, '<b class="dy-h1">$1</b>')
-    .replace(/^##\s+(.*)$/gm, '<b class="dy-h2">$1</b>')
-    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
-}
-let dyFiles = [], dyOpenPath = "";
-async function dyLoad(force){
-  const host = $("#dyList"), st = $("#dyStatus");
-  if (!host) return;
-  if (!dyFiles.length || force){
-    if (st) st.innerHTML = "正在读仓库里的日记…";
-    try{
-      const d = await apiDiary("list", {});
-      dyFiles = d.files || [];
-      const tag = $("#palTag"); if (tag) tag.textContent = d.count + " 篇";
-      const lead = $("#palLead");
-      if (lead) lead.textContent = d.owner + "/" + d.repo + " · " + (d.count || 0) + " 篇 markdown";
-    }catch(e){
-      if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
-      host.innerHTML = "";
-      return;
-    }
-  }
-  if (!dyFiles.length){
-    host.innerHTML = '<div class="arc-empty">仓库里还没有日记 —— 点上面「写今天的日记」开个头。</div>';
-    if (st) st.innerHTML = "";
-    return;
-  }
-  host.innerHTML = dyFiles.map((f) =>
-    '<button class="dy-item" type="button" data-dy="' + escapeHtml(f.path) + '">' +
-      '<span class="dy-date">' + escapeHtml(f.date || f.path) + "</span>" +
-      '<span class="dy-path">' + escapeHtml(f.path) + "</span>" +
-      '<span class="dy-size">' + Math.max(1, Math.round((f.size || 0) / 1024)) + " KB</span>" +
-    "</button>").join("");
-  if (st) st.innerHTML = "<span style=\"color:var(--text-faint)\">点一篇就能看；「写今天的日记」会覆盖今天那一篇。</span>";
-}
-async function dyOpen(path){
-  const st = $("#dyStatus"), host = $("#dyList");
-  if (dyOpenPath === path){ dyOpenPath = ""; dyLoad(); return; }
-  dyOpenPath = path;
-  if (st) st.innerHTML = "正在读 " + escapeHtml(path) + " …";
-  try{
-    const d = await apiDiary("read", { path: path });
-    if (host){
-      host.innerHTML = '<pre class="dy-body">' + dyMd(d.text) + "</pre>" +
-        '<div class="nf-actions" style="margin-top:8px"><button type="button" id="dyBack">‹ 回到列表</button>' +
-        '<a class="pal-mini" style="text-decoration:none" target="_blank" rel="noopener" href="' +
-        "https://github.com/" + escapeHtml(loadAssistant().owner + "/" + loadAssistant().repo) + "/blob/" +
-        escapeHtml(loadAssistant().branch) + "/" + escapeHtml(path) + '">去 GitHub 看 ↗</a></div>';
-      const back = $("#dyBack");
-      if (back) back.addEventListener("click", () => { dyOpenPath = ""; dyLoad(); });
-    }
-    if (st) st.innerHTML = "";
-  }catch(e){
-    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
-    dyOpenPath = "";
-  }
-}
-async function dyWrite(){
-  const st = $("#dyStatus"), btn = $("#dyWrite");
-  if (!assistantReady()){
-    showToast(assistantOn() ? "还缺 GitHub token（设置 → 小助手 · 中转站）" : "先去设置 → 小助手 · 中转站配好");
-    return;
-  }
-  btn.disabled = true; const old = btn.textContent; btn.textContent = "写着…";
-  if (st) st.innerHTML = "小助手正在翻这段时间的记忆、写今天的日记…（几十秒）";
-  try{
-    const d = await apiDiary("write", {});
-    if (st) st.innerHTML = "✅ 已经推到 GitHub：" + escapeHtml(d.path) +
-      (d.updated ? "（覆盖了同一天那篇）" : "（新的一篇）") +
-      (d.commit ? " · commit " + escapeHtml(d.commit) : "");
-    dyFiles = []; dyOpenPath = "";
-    await dyLoad(true);
-    showToast("日记已推到 GitHub");
-  }catch(e){
-    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
-  }finally{ btn.disabled = false; btn.textContent = old; }
-}
-/* 宫殿：界面上的几块整块隐掉（保留「向量模型」那一段）。
-   为什么用 JS 隐而不是删 HTML：删了标记，那些还在跑的配殿 JS 会去 find 一堆 null，
-   报错反而更难查；隐藏是"看得见的取消"，谁也炸不了。 */
-(function hidePalaceBlocks(){
-  const run = () => {
-    const panel = $("#palacePanel");
-    if (!panel) return;
-    const HIDE = ["水位线", "召回", "七个房间", "门牌", "对话分块", "参考项目 · 向量检索"];
-    Array.prototype.slice.call(panel.querySelectorAll(".mg-card")).forEach((card) => {
-      const t = ((card.querySelector(".mg-title") || {}).textContent || "").trim();
-      if (HIDE.some((h) => t.indexOf(h) === 0 || t === h)) card.hidden = true;
-    });
-    /* 面板抬头也改一下口径 */
-    const lead = $("#palLead2");
-    if (lead) lead.textContent = "向量 · 记忆索引（宫殿已取消）";
-  };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
-  else run();
-})();
-async function palLoadConfig(){
-  try{
-    const r = await fetch(appUrl("/app/palace/config"), { headers: authHeaders() });
-    const d = await r.json().catch(() => ({}));
-    const cb = $("#peExtract"), st = $("#peExtractStatus");
-    if (cb) cb.checked = !!d.extract_enabled;
-    if (st) st.innerHTML = d.extract_enabled
-      ? "⚠️ 宫殿提取是<b>开</b>的 —— 每轮对话后会往库里提纯情景节点。"
-      : "宫殿提取已关（长期记忆走日记）。想恢复就勾上。";
-  }catch(e){ /* 读不到就让开关保持原样 */ }
-}
-async function palPurge(){
-  const c = loadAssistant();
-  if (!c.token){
-    showToast("先填 GitHub token —— 备份要推到你的仓库里（设置 → 小助手 · 中转站）");
-    return;
-  }
-  if (!confirm("备份并删除「记忆宫殿」数据？\n\n会先把四类数据（情景节点 / 门牌 / 分块 / 状态行）整包导出成 JSON，推到 " + c.owner + "/" + c.repo + " 的 backup/ 目录；\n推成功了才从库里删除。删除不可逆。")) return;
-  const st = $("#peExtractStatus");
-  if (st) st.innerHTML = "正在导出并备份到 GitHub…（四类数据要读一遍库）";
-  try{
-    const r = await fetch(appUrl("/app/palace/purge"), {
-      method: "POST",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify(assistBody({ confirm: "DELETE" }))
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
-    const k = d.backup_kinds || {};
-    if (st) st.innerHTML = "✅ 已备份并删除。备份：" + escapeHtml(d.backup) +
-      "（节点 " + (k.palace||0) + " / 门牌 " + (k.palace_plate||0) + " / 分块 " + (k.palace_chunk||0) + " / 状态 " + (k.palace_state||0) + "）";
-    showToast("宫殿数据已备份到 GitHub 并删除");
-  }catch(e){
-    if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
-  }
-}
 /* 绑定 */
 ["asBase", "asKey", "asModel", "asOwner", "asRepo", "asBranch", "asToken", "asNote"].forEach((id) => {
   const el = $("#" + id);
@@ -10715,9 +10124,6 @@ if ($("#asTest")) $("#asTest").addEventListener("click", async () => {
     if (st) st.innerHTML = "⚠️ " + escapeHtml((e && e.message) || String(e));
   }
 });
-if ($("#dyWrite")) $("#dyWrite").addEventListener("click", dyWrite);
-if ($("#dyRefresh")) $("#dyRefresh").addEventListener("click", () => { dyFiles = []; dyOpenPath = ""; dyLoad(true); });
-if ($("#dyVector")) $("#dyVector").addEventListener("click", () => { if (window.palaceOpen) palaceOpen(); });
 /* ════════════ 记忆库（AionsHome：日常 / 长期重要 两档）════════════════
    ★ 为什么单独一页而不是并进世界书那叠分区卡：分区卡是"按 kind 看全库"，
      这一页是"把它自己写的和你写的放一起、按重量筛" —— 两件事，两个视图。
@@ -10773,10 +10179,24 @@ function mlRender(){
   const host = $("#mlList");
   if (!host) return;
   const f = mlData.filter;
-  const list = mlData.items.filter((it) => f === "all" || mlTierOf(it) === f);
+  /* ★ 搜索框对齐 AionsHome 的记忆页（它顶部就一个「🔍 搜索记忆...」，
+     在**当前这一档里**按正文 + 关键词过滤；不是走后端重查）。 */
+  const qEl = $("#mlQ");
+  const q = String((qEl && qEl.value) || "").trim().toLowerCase();
+  let list = mlData.items.filter((it) => f === "all" || mlTierOf(it) === f);
+  if (q){
+    list = list.filter((it) => {
+      const hay = [it.content, it.reason, it.title, (it.keywords || []).join(" ")]
+        .map((x) => String(x || "").toLowerCase()).join(" ");
+      return hay.indexOf(q) >= 0;
+    });
+  }
+  const cnt = $("#mlCount");
+  if (cnt) cnt.textContent = q ? (list.length + " / " + mlData.items.length + " 条") : (mlData.items.length + " 条");
   if (!list.length){
     host.innerHTML = '<div class="arc-empty">' +
-      (f === "all" ? "还没有内容。" : ("「" + (f === "daily" ? "日常" : "长期重要") + "」这一档是空的。")) +
+      (q ? ("没有匹配「" + escapeHtml(q) + "」的记忆。")
+         : (f === "all" ? "还没有内容。" : ("「" + (f === "daily" ? "日常" : "长期重要") + "」这一档是空的。"))) +
       "</div>";
     return;
   }
@@ -10787,6 +10207,7 @@ function mlRender(){
     const reason = it.reason ? (" · 理由：" + escapeHtml(String(it.reason))) : "";
     return '<div class="ml-item" data-mlid="' + escapeHtml(String(it.id)) + '">' +
       '<div class="ml-item-head">' +
+        (it.unresolved ? '<span class="ml-chip todo" title="还没做 / 还没去">📌 还没做</span>' : "") +
         '<span class="ml-chip ' + (tier === "long_term" ? "long" : "daily") + '">' +
           (tier === "long_term" ? "长期重要" : "日常") + "</span>" +
         '<span class="ml-chip' + (String(it.source || "") === "ai" ? " from-ai" : "") + '">' +
@@ -10815,6 +10236,7 @@ function mlEditOpen(it){
   const imp = it && it.importance ? it.importance : (it && mlTierOf(it) === "long_term" ? 8 : 6);
   $("#mlImp").value = imp;
   $("#mlImpVal").textContent = imp;
+  const ur = $("#mlUnres"); if (ur) ur.checked = !!(it && it.unresolved);
   const b = $("#mlSaveBtn"); if (b) b.textContent = it ? "保存修改" : "保存";
   $("#mlBody").focus();
 }
@@ -10827,7 +10249,8 @@ async function mlSave(){
     keywords: ($("#mlKw").value || "").trim(),
     reason: ($("#mlReason").value || "").trim(),
     tier: tier,
-    importance: parseInt($("#mlImp").value, 10) || 6
+    importance: parseInt($("#mlImp").value, 10) || 6,
+    unresolved: !!($("#mlUnres") && $("#mlUnres").checked)
   };
   if (mlData.editing) payload.id = mlData.editing;
   const btn = $("#mlSaveBtn"); const old = btn.textContent;
@@ -10837,9 +10260,10 @@ async function mlSave(){
     showToast(mlData.editing ? "改好了" : "记下了");
     $("#mlEdit").classList.add("hidden");
     mlData.editing = null;
-    memData.items = {}; memData.itemIndex = {};   /* 世界书那叠分区卡也要跟着变 */
+    memData.items = {}; memData.itemIndex = {};
     await mlLoad(true);
-    if (typeof renderLibs === "function") { try{ await memLoad(false); }catch(_){} }
+    /* 存完把面板上的计数刷一下（近景那张卡的副标题也跟着走）。 */
+    memNavSync();
   }catch(e){
     showToast("没存上：" + ((e && e.message) || e));
   }finally{ btn.disabled = false; btn.textContent = old; }
@@ -10925,6 +10349,7 @@ async function mlTidyApply(){
 }
 if ($("#mlNew")) $("#mlNew").addEventListener("click", () => mlEditOpen(null));
 if ($("#mlRefresh")) $("#mlRefresh").addEventListener("click", () => { mlLoad(true); });
+if ($("#mlQ")) $("#mlQ").addEventListener("input", mlRender);   /* 边打边筛（本地，不打后端） */
 if ($("#mlTidy")) $("#mlTidy").addEventListener("click", mlTidy);
 if ($("#mlCancelBtn")) $("#mlCancelBtn").addEventListener("click", () => {
   $("#mlEdit").classList.add("hidden"); mlData.editing = null;
@@ -10966,50 +10391,6 @@ if ($("#mlList")) $("#mlList").addEventListener("click", (e) => {
     }), { title: "记忆条码" });
   }
 });
-if ($("#dyList")) $("#dyList").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-dy]");
-  if (b) dyOpen(b.dataset.dy);
-});
-if ($("#arcRebuild")) $("#arcRebuild").addEventListener("click", async () => {
-  const btn = $("#arcRebuild"), st = $("#arcRebuildStatus");
-  btn.disabled = true; const old = btn.textContent; btn.textContent = "重建中…";
-  if (st) st.textContent = "正在读记忆库、按相似度归盒…";
-  try{
-    const r = await fetch(appUrl("/app/archive/rebuild"), {
-      method: "POST",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ limit: 400 })
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
-    if (st) st.textContent = d.bound
-      ? ("✅ 归了 " + d.bound + " 条（新开了 " + d.created + " 个盒）· 共 " + ((d.stats || {}).boxes || 0) + " 个盒")
-      : ("没有可归的：" + (d.message || ""));
-    memPackRender("archive", "#arcBoxes");     /* 让 memory-pack 重画那一屏 */
-    showToast(d.bound ? ("归了 " + d.bound + " 条") : "没有新的叙事记忆可归");
-  }catch(e){
-    if (st) st.textContent = "⚠️ " + ((e && e.message) || e);
-  }finally{ btn.disabled = false; btn.textContent = old; }
-});
-if ($("#palPurge")) $("#palPurge").addEventListener("click", palPurge);
-if ($("#peExtract")) $("#peExtract").addEventListener("change", async (e) => {
-  const want = !!e.target.checked;
-  try{
-    const r = await fetch(appUrl("/app/palace/config"), {
-      method: "POST",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ extract_enabled: want })
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.ok) throw new Error((d && d.error && d.error.message) || ("HTTP " + r.status));
-    showToast(want ? "已恢复宫殿提取" : "已关闭宫殿提取");
-    palLoadConfig();
-  }catch(err){
-    e.target.checked = !want;
-    showToast("没改成：" + ((err && err.message) || err));
-  }
-});
-
 const IG_KEY = "companion_image_gen";
 const IG_IMG_RE = /image|dall|flux|stable|sdxl|sd3|kolor|seedream|seededit|wanx|gpt-image|imagen|midjourney|nano-banana|t2i|i2i|draw|paint/i;
 function loadImageGen(){
@@ -16646,20 +16027,8 @@ if ($("#thWallReset")) $("#thWallReset").addEventListener("click", () => {
      长出来的叙事），合并进「世界书」那一页看才对；人自己写的四类（笔记本）仍旧各占一页。
    ★ 归属的**唯一**判据在后端 layers.WORLDBOOK_KINDS，这里只是标注渲染位置 ——
      两边不一致时以 layers 为准（/app/worldbook 就是这个口径）。 */
-const LIB_DEFS = [
-  { kind: "event",   name: "事件",       ico: "✦", tip: "发生过的事，一句话一条。" },
-  { kind: "summary", name: "摘要",       ico: "≡", tip: "对话压缩出来的长期摘要（自动生成）。" },
-  { kind: "story",   name: "故事",       ico: "❋", tip: "值得复述的片段。" },
-  { kind: "fragment",name: "片段",       ico: "◈", tip: "由时间线里的碎片**自动组装**出来的小场景（朋友圈 / 屋子 / 自由活动 / 大富翁…）。★ 它是**素材**不是记忆：跑过什么工具、参加过什么活动留下的原始碎片（带时间与出处、按场合分），所以**不进档案馆、不进银河、不归事件盒** —— 数据仍在，可以用世界书页的「从记忆库导入」把它导成条目。" },
-  { kind: "ref",     name: "参考资料",   ico: "❖", tip: "TA 喜欢的、要记住的资料。" },
-  { kind: "working", name: "工作记忆",   ico: "☰", tip: "正在进行、还没结束的事。" },
-  { kind: "room",    name: "我的房间",   ico: "⌂", tip: "你自己的一方天地。" },
-  { kind: "letter",  name: "留给西西的话", ico: "✉", tip: "想对 TA 说、但还没说出口的。" },
-];
 let memData = { status: null, current: "", counts: {}, items: {}, labels: {}, stars: 0, starList: [], itemIndex: {} };
 let memSelectedDay = "";
-let memLibEditing = {};        // kind -> {id, title, content} 正在编辑的那条
-let memCal = { month: "", days: {}, today: "", truncated: false };
 
 const MEM_ICO = {
   sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c1 5.6 4 8.6 9.6 9.6-5.6 1-8.6 4-9.6 9.6-1-5.6-4-8.6-9.6-9.6 5.6-1 8.6-4 9.6-9.6Z"/></svg>',
@@ -16673,366 +16042,7 @@ const MEM_ICO = {
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 7.2h14.4"/><path d="M9.4 7.2V5.4h5.2v1.8"/><path d="M6.6 7.2l.9 11.2h9l.9-11.2"/></svg>',
 };
 
-/* ── 抬头 + 2×2 统计格：数字全来自后端真实计数 ── */
-function memLibTotal(){
-  const c = memData.counts || {};
-  return LIB_DEFS.reduce((n, d) => n + (c[d.kind] || 0), 0);
-}
-function memRenderStats(){
-  const st = memData.status || {};
-  const days = (st.days || []).length;
-  const months = (st.months || []).length;
-  const lib = memLibTotal();
-  const stars = memData.stars || 0;
-  const tn = $("#memTotal");
-  if (tn) tn.textContent = (lib + days + months) || stars;
-  const hs = $("#memHeroSub");
-  if (hs){
-    let extra = "";
-    const f = memData.firstDay;
-    if (f){
-      const n = Math.round((Date.parse(memCal.today || new Date().toISOString().slice(0, 10) + "T00:00:00Z") -
-                            Date.parse(f + "T00:00:00Z")) / 86400000) + 1;
-      if (n >= 2) extra = " · 第 " + n + " 天";
-    }
-    hs.textContent = "我记得的一切" + extra;
-  }
-  const host = $("#memStats"); if (!host) return;
-  const defs = [
-    { n: lib,    name: "长期", sub: "重要的事",   c: "#d18ea6", ico: MEM_ICO.bookmark },
-    { n: st.max_days ? (days + "/" + st.max_days) : days,
-                 name: "近景", sub: "最近的事",   c: "#63b596", ico: MEM_ICO.clock },
-    { n: months, name: "月度", sub: "更早的骨架", c: "#7ba4d4", ico: MEM_ICO.layers },
-    { n: stars,  name: "银河", sub: "记忆星图",   c: "#9787d6", ico: MEM_ICO.sparkle },
-  ];
-  host.innerHTML = defs.map((d) => (
-    '<div class="mem-stat">' +
-      '<span class="ms-ico" style="color:' + d.c + '">' + d.ico + "</span>" +
-      '<div class="ms-num">' + escapeHtml(String(d.n)) + "</div>" +
-      '<div class="ms-name">' + d.name + "</div>" +
-      '<div class="ms-sub">' + d.sub + "</div>" +
-    "</div>"
-  )).join("");
-}
 
-/* ── 记忆日历：每天的热度由后端算好（对话条数 + 记忆条目），这里只画格子 ── */
-async function loadCalendar(){
-  if (!$("#calGrid")) return;
-  try{
-    const d = await memApi("/app/memory/calendar?months=3");
-    memCal.days = d.days || {};
-    memCal.today = d.today || "";
-    memCal.truncated = !!d.truncated;
-    if (!memCal.month) memCal.month = (d.today || "").slice(0, 7);
-    memRenderStats();                      // 拿到本地「今天」后重算「第 N 天」
-    const r = $("#calRange");
-    if (r) r.textContent = memCal.truncated ? "近三个月 · 统计有上限" : "近三个月";
-    renderCalendar();
-  }catch(err){
-    const g = $("#calGrid");
-    if (g) g.innerHTML = '<div class="lib-empty">日历读取失败</div>';
-  }
-}
-function memCalMove(delta){
-  const m = memCal.month || (memCal.today || "").slice(0, 7);
-  if (!m) return;
-  const t = new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 + delta, 1));
-  memCal.month = t.getUTCFullYear() + "-" + String(t.getUTCMonth() + 1).padStart(2, "0");
-  renderCalendar();
-}
-function renderCalendar(){
-  const grid = $("#calGrid"); if (!grid) return;
-  const m = memCal.month || (memCal.today || "").slice(0, 7);
-  if (!m) return;
-  const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7));
-  const lab = $("#calMonth"); if (lab) lab.textContent = y + " 年 " + mo + " 月";
-  const lead = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;   // 周一当一周之首
-  const dim = new Date(Date.UTC(y, mo, 0)).getUTCDate();
-  let html = "";
-  for (let i = 0; i < lead; i++) html += '<span class="cal-cell blank"></span>';
-  for (let d = 1; d <= dim; d++){
-    const ds = m + "-" + String(d).padStart(2, "0");
-    const row = memCal.days[ds] || { m: 0, k: 0, l: 0 };
-    const cls = ["cal-cell"];
-    if (ds === memCal.today) cls.push("today");
-    if (row.diary) cls.push("has-diary");
-    html += '<span class="' + cls.join(" ") + '" style="--lv:' + (row.l || 0) + '" title="' +
-            ds + " · 对话 " + (row.m || 0) + " 条" + (row.k ? (" · 记忆 " + row.k + " 条") : "") +
-            '">' + d + "</span>";
-  }
-  grid.innerHTML = html;
-}
-
-/* ── 档案室：年份文件夹 → 月份 → 本月记忆（TIME LOGS）────────────────────
-   数据直接来自银河星图（/app/galaxy.json 里每条记忆一颗星，带正文与分类），
-   所以归档不需要新接口；日更与月度也在这份数据里，天然一起归档。 */
-let arc = { level: 0, year: "", month: "", full: false, edit: null, ob: false };
-
-/* ── 档案室 · Haven(Ombre) 那一栏 ─────────────────────────────────────────
-   用户要「档案室合并 Haven/Ombre 摘要」。按约定的**限量设计**做：
-   · 后端 /app/ombre/archive 只取 OB 的**目录**（本来就只有名字与权重，不是正文），
-     并已经在服务端截断到 400 字 / 上限 60 条；
-   · 这里只**懒加载**（打开档案室时拉一次），自己再缓存 10 分钟，
-     点「刷新」才强制重拉 —— 这段是 CPU 密集的，免费档 0.1 核上不能每次打开都去够外网；
-   · 单独一栏，**不混进年份/月份树**：OB 条目没有本地日期，
-     硬塞进去会把它们全堆到"今天"那个月，反而把真正的时间线搅乱。 */
-let arcOb = { t: 0, items: [], note: "", loading: false };
-const ARC_OB_TTL = 10 * 60 * 1000;
-
-async function arcLoadOb(force){
-  if (!force && arcOb.items.length && (Date.now() - arcOb.t) < ARC_OB_TTL) return arcOb;
-  if (arcOb.loading) return arcOb;
-  arcOb.loading = true;
-  try{
-    const d = await memApi("/app/ombre/archive" + (force ? "?refresh=1" : ""));
-    arcOb.items = (d.items || []).map((x, i) => ({
-      key: "ob-" + i, kind: "ob", rawId: "",
-      // ★ OB 的条目**本来就带日期**（目录里就是 `2026-08-02 21-20-37 标题 | 分组 | 10`），
-      //   后端解析出来带 created。上一版按「没有日期」写的，把日期白丢了。
-      date: String(x.created || "").slice(0, 10),
-      created: x.created || "",
-      name: x.name || "", cat: (x.domain || "记忆"),
-      content: String(x.content || ""), canEdit: false, importance: x.importance,
-    }));
-    arcOb.note = d.note || "";
-    arcOb.t = Date.now();
-  }catch(e){
-    arcOb.note = "够不到 Haven：" + ((e && e.message) || e) +
-      "（Haven 的端口除了云安全组，机器上的 ufw 也要放行）";
-  }
-  arcOb.loading = false;
-  return arcOb;
-}
-
-function arcObCardHtml(){
-  const n = arcOb.items.length;
-  const badge = n ? (n + " 条") : (arcOb.loading ? "读取中…" : (arcOb.note ? "够不到" : "空"));
-  return '<button class="arc-card" type="button" data-arc-ob="1">' +
-    '<span class="arc-badge">' + escapeHtml(badge) + "</span>" +
-    '<span class="arc-ico">' + MEM_ICO.folder + "</span>" +
-    '<div class="arc-big">Haven</div>' +
-    '<div class="arc-sub">长期记忆 · Ombre</div>' +
-    "</button>";
-}
-
-function arcRenderOb(host){
-  const items = arcOb.items;
-  host.innerHTML =
-    '<div class="arc-back"><button type="button" data-arc-up="ob">' + MEM_ICO.back + "返回</button>" +
-    '<span class="arc-title2">Haven · 长期记忆</span>' +
-    '<span class="arc-crumb">' + escapeHtml(items.length + " 条") + "</span>" +
-    '<button class="arc-eye arc-eye-in" type="button" data-arc-ob-refresh="1" title="重新拉一次">' +
-      MEM_ICO.eye + "</button></div>" +
-    (arcOb.note ? '<div class="arc-empty">' + escapeHtml(arcOb.note) + "</div>" : "") +
-    (items.length ? '<div class="arc-hint">按权重排序，这里是前 ' + items.length +
-        " 条（Haven 那边总共比这多得多）。点右上角可以重新拉一次。</div>" : "") +
-    (items.length
-      ? '<div class="arc-tl">' + items.map((it) =>
-          '<div class="arc-entry">' +
-          (it.date ? '<span class="arc-chip">' + escapeHtml(it.date) + "</span>" : "") +
-          '<span class="arc-chip">#' + escapeHtml(it.cat) + "</span>" +
-          (it.importance ? '<span class="arc-chip">权重 ' + escapeHtml(String(it.importance)) + "</span>" : "") +
-          (it.name ? '<div class="arc-title">' + escapeHtml(it.name) + "</div>" : "") +
-          '<div class="arc-text' + (arc.full ? "" : " clamp") + '">' +
-            escapeHtml(it.content) + "</div></div>").join("") + "</div>"
-      : (arcOb.note ? "" :
-         '<div class="arc-empty">Haven 那边还没有可列出的记忆。<br>' +
-         "它每轮聊完都会 hold / grow 一些进去，压缩出来的摘要也会归档过去。</div>"));
-  arcCrumb("Haven · 长期记忆");
-}
-
-function arcItems(){
-  return (memData.starList || []).map((s) => {
-    const key = String(s.id || "");
-    const date = String(s.created || "").slice(0, 10);
-    let kind = "lib", rawId = "";
-    if (key.indexOf("nf-") === 0) kind = "day";
-    else if (key.indexOf("mon-") === 0) kind = "month";
-    else rawId = key.replace(/^m/, "");
-    const src = rawId ? (memData.itemIndex || {})[rawId] : null;
-    return {
-      key: key, kind: kind, rawId: rawId, date: date,
-      name: (src && src.title) || (kind === "lib" ? s.name : ""),
-      libKind: src ? src.kind : "",
-      cat: kind === "day" ? "近景日更" : kind === "month" ? "月度记忆" : (s.domain || "记忆"),
-      content: String(s.content || ""),
-      /* ★ ro（只读）由后端星图给：记忆宫殿节点在档案馆里没有对应的记忆库条目，
-         点开"编辑"会去更新一条不存在的记录 —— 所以它只看不改（要改去记忆宫殿页）。 */
-      ro: !!s.ro,
-      canEdit: !s.ro && (kind === "day" || !!(src && src.kind && rawId)),
-    };
-  }).filter((x) => !!x.date);
-}
-function arcIndex(){
-  const by = {};
-  arcItems().forEach((it) => {
-    const y = it.date.slice(0, 4), m = it.date.slice(0, 7);
-    if (!by[y]) by[y] = { y: y, n: 0, months: {}, order: [] };
-    by[y].n++;
-    if (!by[y].months[m]){ by[y].months[m] = { m: m, n: 0, items: [] }; by[y].order.push(m); }
-    by[y].months[m].n++;
-    by[y].months[m].items.push(it);
-  });
-  return Object.keys(by).sort().reverse().map((y) => {
-    const o = by[y];
-    o.months = o.order.sort().reverse().map((k) => {
-      o.months[k].items.sort((a, b) => (a.date < b.date ? 1 : -1));
-      return o.months[k];
-    });
-    return o;
-  });
-}
-function arcSync(){
-  const items = arcItems();
-  const chars = items.reduce((n, x) => n + x.content.length, 0);
-  const c1 = $("#arcChars"), c2 = $("#arcCount");
-  if (c1) c1.textContent = chars.toLocaleString("en-US");
-  if (c2) c2.textContent = items.length;
-}
-function arcCrumb(path){
-  const el = $("#arcCrumb"); if (!el) return;
-  el.textContent = path || "档案馆";
-  el.title = path ? ("档案馆 / " + path) : "档案馆";
-  const lead = $("#arcLead");
-  if (lead) lead.textContent = path ? ("档案馆 / " + path) : "所有记忆 · 按年 / 月归档";
-}
-function arcEntryHtml(it){
-  const chip = '<span class="arc-chip">#' + escapeHtml(it.cat) + "</span>";
-  if (arc.edit === it.key){
-    return '<div class="arc-entry">' + chip +
-      '<textarea class="nf-box arc-editbox" data-arc-box="' + escapeHtml(it.key) + '" rows="4">' +
-        escapeHtml(it.content) + "</textarea>" +
-      '<div class="arc-editacts">' +
-        '<button type="button" class="primary" data-arc-save="' + escapeHtml(it.key) + '">保存</button>' +
-        '<button type="button" data-arc-cancel="1">取消</button>' +
-      "</div></div>";
-  }
-  const acts = it.canEdit
-    ? '<span class="arc-acts"><button class="arc-act" type="button" data-arc-edit="' + escapeHtml(it.key) +
-      '" title="编辑">' + MEM_ICO.pen + "</button></span>"
-    : "";
-  const openAttr = it.ro ? "" : ' data-arc-open="' + escapeHtml(it.key) + '"';
-  const title = (it.kind === "lib" && it.name)
-    ? '<div class="arc-title"' + openAttr + '>' + escapeHtml(it.name) + "</div>" : "";
-  const cls = "arc-text" + (arc.full ? "" : " clamp");
-  return '<div class="arc-entry">' + chip + acts + title +
-    '<div class="' + cls + '"' + openAttr + '>' + escapeHtml(it.content) + "</div></div>";
-}
-function arcRender(){
-  const host = $("#arcBody"); if (!host) return;
-  arcSync();
-  if (arc.ob){ return arcRenderOb(host); }
-  const years = arcIndex();
-  // 全空的定义要放宽松：Haven 那栏可能已经有东西了，不能因为**本地**没年份就整页空掉
-  if (!years.length && !arcOb.items.length && !arcOb.loading){
-    host.innerHTML = '<div class="arc-empty">还没有归档的记忆。<br>在下面任意分区里加一条，或者跑一次「脱水 → 日更」，这里就会长出年份。</div>';
-    arcCrumb("");
-    return;
-  }
-  // ① 年份（前面挂一张 Haven 卡）
-  if (arc.level === 0){
-    host.innerHTML = '<div class="arc-grid">' + arcObCardHtml() + years.map((y) => (
-      '<button class="arc-card" type="button" data-arc-year="' + y.y + '">' +
-        '<span class="arc-badge">' + y.n + " 条</span>" +
-        '<span class="arc-ico">' + MEM_ICO.folder + "</span>" +
-        '<div class="arc-big">' + y.y + "</div>" +
-        '<div class="arc-sub">年度档案 · ' + y.months.length + " 个月</div>" +
-      "</button>"
-    )).join("") + "</div>";
-    arcCrumb("");
-    return;
-  }
-  const y = years.filter((x) => x.y === arc.year)[0];
-  if (!y){ arc.level = 0; return arcRender(); }
-  // ② 月份
-  if (arc.level === 1){
-    host.innerHTML =
-      '<div class="arc-back"><button type="button" data-arc-up="1">' + MEM_ICO.back + "返回</button>" +
-      '<span class="arc-title2">选择月份</span></div>' +
-      '<div class="arc-grid">' + y.months.map((m) => (
-        '<button class="arc-card" type="button" data-arc-month="' + m.m + '">' +
-          '<span class="arc-eye" data-arc-eye="1" title="' + (arc.full ? "收起正文" : "展开整月正文") + '">' + MEM_ICO.eye + "</span>" +
-          '<div class="arc-big">' + Number(m.m.slice(5, 7)) + "<small>月</small></div>" +
-          '<div class="arc-rule"></div>' +
-          '<div class="arc-sub">' + m.n + " 条</div>" +
-        "</button>"
-      )).join("") + "</div>";
-    arcCrumb(y.y);
-    return;
-  }
-  // ③ 本月条目
-  const mo = y.months.filter((x) => x.m === arc.month)[0];
-  if (!mo){ arc.level = 1; return arcRender(); }
-  const days = {}, order = [];
-  mo.items.forEach((it) => {
-    if (!days[it.date]){ days[it.date] = []; order.push(it.date); }
-    days[it.date].push(it);
-  });
-  host.innerHTML =
-    '<div class="arc-back"><button type="button" data-arc-up="2">' + MEM_ICO.back + "返回</button>" +
-    '<span class="arc-title2">本月记忆</span>' +
-    '<span class="arc-crumb">' + escapeHtml(mo.n + " 条") + "</span>" +
-    '<button class="arc-eye arc-eye-in" type="button" data-arc-eye="1" title="' +
-      (arc.full ? "收起正文" : "展开整月正文") + '">' + MEM_ICO.eye + "</button></div>" +
-    '<div class="arc-tl">' + order.sort().reverse().map((d) => (
-      '<div class="arc-day"><div class="arc-day-head"><span class="arc-day-date">' + escapeHtml(d) + "</span>" +
-      '<span class="arc-day-n">' + days[d].length + " 条</span></div>" +
-      days[d].map(arcEntryHtml).join("") + "</div>"
-    )).join("") + "</div>";
-  arcCrumb(y.y + " / " + Number(arc.month.slice(5, 7)) + "月");
-}
-async function arcSave(key){
-  const box = document.querySelector('[data-arc-box="' + key + '"]');
-  const it = arcItems().filter((x) => x.key === key)[0];
-  if (!box || !it) return;
-  const content = box.value.trim();
-  if (!content){ showToast("正文不能为空"); return; }
-  try{
-    if (it.kind === "day"){
-      await memApi("/app/nearfield/day", { method: "POST", body: JSON.stringify({ date: it.date, content: content }) });
-      arc.edit = null;
-      showToast("已保存并重拼注入稿");
-      await memLoad();                      // 日更要重拼，整体刷一遍
-    } else {
-      await memApi("/app/memory/save", { method: "POST",
-        body: JSON.stringify({ kind: it.libKind, title: it.name, content: content, id: it.rawId }) });
-      arc.edit = null;
-      showToast("已保存");
-      const lib = await memApi("/app/memory/list?limit=200");
-      memData.counts = lib.counts || {};
-      memData.items = {};
-      memData.itemIndex = {};
-      (lib.items || []).forEach((x) => {
-        (memData.items[x.kind] = memData.items[x.kind] || []).push(x);
-        memData.itemIndex[String(x.id)] = x;
-      });
-      renderLibs();
-      await loadGalaxy();
-      arcRender();
-    }
-  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
-}
-
-function memStatus(msg, kind){
-  const el = $("#nfStatus"); if (!el) return;
-  el.textContent = msg || "";
-  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--text-faint)");
-}
-async function memApi(path, opt){
-  const r = await fetch(appUrl(path), Object.assign({
-    headers: Object.assign({}, authHeaders(), (opt && opt.body) ? { "Content-Type": "application/json" } : {})
-  }, opt || {}));
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error((d && d.error && d.error.message) || (d && d.detail) || ("HTTP " + r.status));
-  return d;
-}
-/* ════════════ Haven · 长期记忆（服务器上的 Ombre Brain）════════════
-   这一层是**只读**的 —— 写、改、删都在模型自己手里（hold / grow）或 OB 的 Dashboard 里。
-   放这儿的意义只有一个：它翻到什么、记得什么，你能看见。
-
-   ★ 为什么不直接挂 OB 的 Dashboard：那套管理 REST 在服务器上只监听 127.0.0.1，
-     要在公网用就得把「写 / 删 / 导入 / 改配置」一整套一起搬出去。
-     为了一页只读视图把管理面暴露到公网，是拿大门换窗户。走 MCP 这条已经在用的链更干净。 */
 let brData = null;
 let brOpenIds = {};
 function brStatus(msg, kind){
@@ -17181,7 +16191,6 @@ async function openMemory(){
   if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
   memoryPanel.classList.remove("hidden");
   requestAnimationFrame(() => memoryPanel.classList.add("open"));
-  buildLibCards();
   buildMemNav();
   memLoad(true);
 }
@@ -17189,6 +16198,9 @@ function closeMemory(){
   memoryPanel.classList.remove("open");
   setTimeout(() => memoryPanel.classList.add("hidden"), 360);
 }
+/* 记忆面板只读三样：记忆库（/app/memory/list）、近景（/app/nearfield）、
+   Haven（/app/brain）。★ 以前这里还顺手拉银河 / 日历 / 档案馆 / 世界书 /
+   工作记忆 —— 那五页已整体下线，请求也一并去掉（少五个往返，打开快一截）。 */
 async function memLoad(verbose){
   if (verbose) memStatus("读取中…");
   try{
@@ -17205,135 +16217,18 @@ async function memLoad(verbose){
       memData.itemIndex[String(it.id)] = it;
     });
     renderNearfield();
-    renderLibs();
-    workLoad();
-    memRenderStats();
     memNavSync();
-    arcRender();
+    mlLoad(false);            // 记忆库那一页（它自己会判重，不会白拉第二遍）
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
     memStatus("读取失败：" + ((err && err.message) || err), "err");
   }
-  loadGalaxy();
-  loadCalendar();
-  brLoad(false);          // Haven 长期记忆：顺手读一次（它不在首屏，但翻下来就该有了）
-  /* 六层的定义与计数在后端 layers.py（唯一一处）。读到就用它刷副标题；
+  brLoad(false);              // Haven：顺手读一次（翻到那一页就不会是空壳）
+  /* 层的定义与计数在后端 layers.py（唯一一处）。读到就用它刷副标题；
      读不到保持内置文案 —— 离线也能画，只是没有数字。 */
   memApi("/app/layers").then((d) => {
     if (d && d.ok) { memData.layers = d; memNavSync(); }
   }).catch(() => {});
-}
-/* ── 银河方形卡：拉 /app/galaxy.json 画一张缩略星图（时间当半径）── */
-const GX_PAL = { "恋爱": "#ff8fc7", "家庭": "#ffd479", "日常": "#7fe3e0", "编程": "#9fa8ff",
-                 "思考": "#9fa8ff", "情绪": "#c39bff", "事件": "#ffb27a", "故事": "#ff9ec4",
-                 "参考资料": "#8fd6ff", "工作记忆": "#b9e08f", "摘要": "#c9c9d6",
-                 "我的房间": "#ffd479", "留给西西的话": "#ff9ec4", "月度记忆": "#b39ddb" };
-async function loadGalaxy(){
-  const cv = $("#gxCv"); if (!cv) return;
-  let stars = [];
-  try{
-    const g = await memApi("/app/galaxy.json");
-    stars = g.stars || [];
-  }catch(_){ stars = []; }
-  $("#gxCount").textContent = stars.length;
-  $("#gxSub").textContent = stars.length ? ("最近产出 " + (stars[stars.length - 1].created || "").slice(0, 10)) : "还没有星星";
-  memData.stars = stars.length;
-  memData.starList = stars;
-  if (stars.length) memData.firstDay = String(stars[0].created || "").slice(0, 10);
-  memRenderStats();
-  arcRender();
-  drawGalaxy(cv, stars);
-  /* 顺手把 Haven 那一栏读出来（懒加载 + 自身 10 分钟缓存；读到了再补一次渲染）。
-     放在这里而不是开面板时同步等：它是外网 + 本地 JSON 解析，不该挡在首屏上。 */
-  arcLoadOb(false).then(() => { if (arcOb.items.length || arcOb.note) arcRender(); }).catch(() => {});
-}
-function drawGalaxy(cv, stars){
-  const host = cv.parentElement, W = host.clientWidth || 320, H = host.clientHeight || W;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-  const ctx = cv.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  const cx = W / 2, cy = H * 0.46, R = Math.min(W, H) * 0.44;
-  // 背景星尘（确定性伪随机，重绘不跳）
-  let seed = 20260917;
-  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
-  for (let i = 0; i < 260; i++){
-    const a = rnd() * Math.PI * 2, r = Math.pow(rnd(), 0.6) * R * 1.12;
-    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.62;
-    ctx.globalAlpha = 0.10 + rnd() * 0.30;
-    ctx.fillStyle = "#cfc6ff";
-    ctx.fillRect(x, y, 1.1, 1.1);
-  }
-  ctx.globalAlpha = 1;
-  // 中心柔光
-  const g0 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
-  g0.addColorStop(0, "rgba(190,160,255,.30)"); g0.addColorStop(1, "rgba(190,160,255,0)");
-  ctx.fillStyle = g0; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, Math.PI * 2); ctx.fill();
-  if (!stars.length){
-    ctx.fillStyle = "rgba(230,224,255,.55)"; ctx.font = "12px system-ui"; ctx.textAlign = "center";
-    ctx.fillText("还没有记忆星 —— 在下面各分区里加几条", cx, cy + 4);
-    return;
-  }
-  const t0 = Date.parse(stars[0].created) || 0;
-  const t1 = Date.parse(stars[stars.length - 1].created) || (t0 + 1);
-  const span = Math.max(1, t1 - t0);
-  stars.forEach((s, i) => {
-    const p = Math.min(1, Math.max(0, ((Date.parse(s.created) || t0) - t0) / span));
-    const r = R * (0.10 + 0.90 * Math.pow(p, 0.85));
-    const a = i * 2.399963 + p * 1.7;                       // 黄金角 + 缓慢旋转
-    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.62;
-    const imp = Math.max(1, Math.min(10, Number(s.importance) || 5));
-    const sz = 1.2 + (imp >= 9 || s.pinned ? 3.0 : imp >= 7 ? 2.1 : 1.2);
-    const col = GX_PAL[s.domain] || "#cbb6ff";
-    ctx.globalAlpha = imp >= 7 ? 0.95 : 0.7;
-    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = imp >= 7 ? 10 : 5;
-    ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  });
-  ctx.globalAlpha = 1;
-  const core = stars[0];
-  ctx.fillStyle = "#fff6ff"; ctx.shadowColor = "#ffd9f2"; ctx.shadowBlur = 16;
-  ctx.beginPath(); ctx.arc(cx, cy, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-  $("#gxFoot").textContent = "核心 · " + (core.name || "最早的那条").slice(0, 14);
-}
-function galaxyUrl(){
-  const q = (host) => host.replace(/\/+$/, "") + "/app/galaxy.json";
-  try{
-    const h = (typeof cloudHost === "function" ? cloudHost() : "") || "";
-    return "galaxy.html" + (h ? ("?src=" + encodeURIComponent(q(h))) : "");
-  }catch(_){ return "galaxy.html"; }
-}
-
-/* ── 近景卡 ── */
-function renderNearfield(){
-  const st = memData.status || {};
-  const days = st.days || [];
-  const box = $("#nfDays");
-  if (box){
-    box.innerHTML = days.length ? days.map((d) => {
-      const on = d.date === memSelectedDay ? " on" : "";
-      return '<button class="nf-chip' + on + '" type="button" data-day="' + escapeHtml(d.date) + '">' +
-             "<b>" + escapeHtml(nfLabel(d.date)) + "</b><i>" + d.chars + "字</i></button>";
-    }).join("") : '<span class="lib-empty">还没有日更 —— 点右边「脱水 → 日更」生成昨天那篇。</span>';
-  }
-  const cur = (memData.current || "").trim();
-  $("#nfCurrent").textContent = cur || "（空）—— 有日更后点「只重拼注入稿」就会生成。";
-  $("#cardSubNear").textContent = days.length
-    ? (days.length + " 天 · 注入稿 " + cur.length + " 字")
-    : "还没生成";
-  const q = (st.quota || []).join("/");
-  memStatus("模型 " + (st.model || "-") + " · 近 " + (st.max_days || 7) + " 天 · 配额 " + q +
-            " · 时区 +" + (st.tz_offset != null ? st.tz_offset : 8) +
-            ((st.months || []).length ? (" · 月度 " + st.months.map((m) => m.month).join(",")) : ""));
-}
-function nfLabel(date){
-  const st = memData.status || {};
-  const t = st.today, y = st.yesterday;
-  if (date === t) return "今天";
-  if (date === y) return "昨天";
-  const dd = Math.round((Date.parse(t + "T00:00:00Z") - Date.parse(date + "T00:00:00Z")) / 86400000);
-  return dd > 0 ? (dd + " 天前") : date.slice(5);
 }
 async function memOpenDay(date){
   memSelectedDay = date;
@@ -17431,434 +16326,18 @@ async function memMonth(){
   finally{ btn.disabled = false; btn.textContent = old; }
 }
 
-/* ── 记忆库分区卡（7 张）── */
-function buildLibCards(){
-  /* ★ 宿主从 #libCards 改成 #wbLibBlocks —— 八个分区从"各自一页"变成
-     "世界书页里的一叠卡片"。函数名保留（叫惯了），入口就是上面那个容器。 */
-  const host = $("#wbLibBlocks"); if (!host || host.dataset.built) return;
-  host.dataset.built = "1";
-  /* 一张卡片的 HTML。open=true 时默认展开（世界书那一页就是来看它们的）。 */
-  const secHtml = (d, open) => (
-    '<section class="set-card' + (open ? " open" : "") + '" data-card="lib-' + d.kind + '">' +
-      '<button class="set-card-head" type="button" aria-expanded="' + (open ? "true" : "false") + '">' +
-        '<span class="set-card-ico" style="font-size:15px">' + d.ico + "</span>" +
-        '<span class="set-card-txt"><span class="set-card-name">' + escapeHtml(d.name) + "</span>" +
-        '<span class="set-card-sub" id="libSub-' + d.kind + '">—</span></span>' +
-        '<svg class="set-card-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-      "</button>" +
-      '<div class="set-card-body">' +
-        (d.kind === "working" ? (
-          /* 工作记忆不是「一堆条目」，而是「一堆装条目的文件夹」—— 结构不一样，所以单独一套控件 */
-          '<div id="workCards">' +
-            '<div id="libList-working"></div>' +
-            '<div class="nf-actions">' +
-              '<button type="button" id="workNewFolder">＋ 新建文件夹</button>' +
-              '<button type="button" id="workNew">＋ 记一条</button>' +
-            "</div>" +
-            '<div class="lib-edit hidden" id="workEdit">' +
-              '<input class="nf-box" id="workProj" placeholder="项目 / 文件夹名（不存在就新建一个）" style="min-height:auto;padding:9px 11px">' +
-              '<textarea class="nf-box" id="workText" rows="4" placeholder="这条技术记忆：做了什么、结论是什么、参数是多少、踩了什么坑"></textarea>' +
-              '<input class="nf-box" id="workTags" placeholder="标签（逗号分隔，可留空）" style="min-height:auto;padding:9px 11px">' +
-              '<div class="nf-actions"><button type="button" class="primary" id="workSaveBtn">保存</button>' +
-              '<button type="button" id="workCancelBtn">取消</button></div>' +
-            "</div>" +
-          "</div>"
-        ) : (
-          '<div id="libList-' + d.kind + '"></div>' +
-          '<div class="nf-actions"><button type="button" data-lib-new="' + d.kind + '">＋ 新建一条</button></div>' +
-          '<div class="lib-edit hidden" id="libEdit-' + d.kind + '">' +
-            '<input class="nf-box" id="libTitle-' + d.kind + '" placeholder="标题（一句话）" style="min-height:auto;padding:9px 11px">' +
-            '<textarea class="nf-box" id="libBody-' + d.kind + '" rows="4" placeholder="正文"></textarea>' +
-            '<div class="nf-actions"><button type="button" class="primary" data-lib-save="' + d.kind + '">保存</button>' +
-            '<button type="button" data-lib-cancel="' + d.kind + '">取消</button></div>' +
-          "</div>"
-        )) +
-        '<div class="settings-tip">' + escapeHtml(d.tip) +
-          (d.kind === "working"
-            ? "（技术记忆单独一层：按项目分文件夹、能真删、按项目查进度；情感记忆在 Ombre / 记忆宫殿那两层，两者互不干扰）"
-            : "（存在后端 memories 表，按 kind 分区）") + "</div>" +
-      "</div>" +
-    "</section>"
-  );
-  /* ★ 这六类**不在这里显示**（用户点名去掉的）：
-       事件 / 故事 / 片段 / 工作记忆 / 我的房间 / 留给西西的话
-     它们的内容归世界书 —— 用上面那个「从记忆库导入」复制成条目，
-     之后就在世界书条目列表里看、改、设关键词。
-     （数据一条都没删，只是不再单独占一块界面；想找它们还有两处：
-       「档案馆 · 时间线」看全部、以及导入面板里按类目挑。）
 
-     要改这份名单就改下面这个数组 —— 只留一个地方。 */
-  const LIB_HIDDEN = ["event", "story", "fragment", "working", "room", "letter"];
-  const shown = LIB_DEFS.filter((d) => LIB_HIDDEN.indexOf(d.kind) < 0);
-  if (!shown.length){ host.innerHTML = ""; }
-  else {
-    /* 默认折叠：它们在这儿是"顺带还能改"，不是这一页的主角（主角是世界书条目）。 */
-    host.innerHTML = shown.map((d) => secHtml(d, false)).join("");
-  }
 
-  /* 八个分区都挂在同一个宿主上，一个处理器。 */
-  const onLibClick = async (e) => {
-    const nw = e.target.closest("[data-lib-new]");
-    const sv = e.target.closest("[data-lib-save]");
-    const cx = e.target.closest("[data-lib-cancel]");
-    const del = e.target.closest("[data-lib-del]");
-    const item = e.target.closest("[data-lib-item]");
-    if (nw){ libEditOpen(nw.dataset.libNew, null); return; }
-    if (cx){ $("#libEdit-" + cx.dataset.libCancel).classList.add("hidden"); return; }
-    if (sv){ await libSave(sv.dataset.libSave); return; }
-    /* 条码：把这一条原样编进二维码 —— 扫出来就是正文，离线、换设备都能读。
-       （用户 2026-09-22：「摘要/参考资料删掉，直接建立条码的」） */
-    const qr = e.target.closest("[data-lib-qr]");
-    if (qr){
-      const kind = qr.dataset.libKind || "", id = qr.dataset.libQr;
-      const it = (memData.items[kind] || []).find((x) => String(x.id) === String(id));
-      if (it && window.Barcode) window.Barcode.show(window.Barcode.fromMemory(it),
-        { title: (it.title || "记忆条码"), note: "分区：" + kind });
-      else showToast("条码模块没加载 —— 刷新一次页面");
-      return;
-    }
-    if (del){ await libDelete(del.dataset.libDel); return; }
-    if (item){
-      const kind = item.dataset.libKind, id = item.dataset.libItem;
-      const it = (memData.items[kind] || []).find((x) => String(x.id) === String(id));
-      if (it) libEditOpen(kind, it);
-    }
-  };
-  host.querySelectorAll(".set-card-head").forEach((x) =>
-    x.addEventListener("click", () => toggleSetCard(x.closest(".set-card"))));
-  host.addEventListener("click", onLibClick);
-  wireWork();                       // 工作记忆那套控件是刚生成的，监听器得在这之后挂
-}
-/* ── 底部栏：横向可滑的分区卡（总览 / 近景 / Haven / 7 个记忆库）───────────
-   点一张翻一页 —— 一次只显示一个 .mem-page，其余 .hidden。
-   卡片沿用档案室那套「存放方式」：同一份 memories / galaxy 数据，
-   这里只是换个摆放，不另起一套存储。 */
-/* ════════════ 时间线 · 一个它（后端「统一场景层」那本账的只读窗口）═════════
-   为什么要有这一页：那本账本来只在后台长着 —— 它长没长、有没有真的互通，你看不见。
-   摊开之后一眼能看出来三件事：
-     ① 各场景到底有没有在往同一本账上记（统计条）；
-     ② 记的是什么（每条的时间、场景、正文）；
-     ③ 它有没有真的「带着别处的记忆」在说话（注入是后端自动做的，这里给的是原料）。
-   ⚠️ 只读。读后端 /app/scene/*，写只有「写进记忆」那一个动作（POST /app/scene/distill）。
-      与档案室 / 银河没有数据交集：那两处是 memories 表，这本账是 scene_events 表。 */
-let tlData = null, tlScene = "";
-const TL_ICO = { chat:"💬", moments:"🖼", room:"🚪", activity:"🚶", monopoly:"🎲", rp:"🎭",
-                 group:"👥", clock:"⏱", shadow:"🌙", wander:"🧭", mcp:"🔧", other:"•" };
-/* 中文输入直接当场景键用（用户不会去记 moments / monopoly 这些英文名） */
-const TL_ALIAS = { "聊天":"chat", "朋友圈":"moments", "房间":"room", "屋子":"room",
-                   "自由活动":"activity", "大富翁":"monopoly", "万花筒":"rp",
-                   "群聊":"group", "时钟":"clock", "主动联系":"shadow", "漫想":"wander" };
-function tlStatus(msg, kind){
-  const el = $("#tlStatus"); if (!el) return;
-  el.textContent = msg || "";
-  el.style.color = kind === "err" ? "var(--danger, #e06c75)"
-                 : (kind === "ok" ? "var(--ok, #7ec699)" : "var(--text-faint)");
-}
-function tlAgo(ts){
-  if (!ts) return "";
-  const d = new Date(ts); if (isNaN(d.getTime())) return "";
-  const s = (Date.now() - d.getTime()) / 1000;
-  if (s < 90) return "刚刚";
-  if (s < 3600) return Math.floor(s / 60) + " 分钟前";
-  if (s < 21600) return Math.floor(s / 3600) + " 小时前";
-  const p = (x) => String(x).padStart(2, "0");
-  return (d.getMonth() + 1) + "/" + d.getDate() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
-}
-function tlRowHtml(it){
-  const ico = TL_ICO[it.scene] || "•";
-  return '<div class="br-row" style="cursor:default">'
-    + '<div class="br-row-top">'
-      + '<span class="br-ico">' + ico + "</span>"
-      + '<span class="br-name">' + escapeHtml(it.label || it.scene || "别处") + "</span>"
-      + '<span class="br-meta">' + escapeHtml(it.ago || tlAgo(it.ts)) + "</span>"
-    + "</div>"
-    + (it.body ? '<div class="br-body">' + escapeHtml(it.body) + "</div>" : "")
-    + "</div>";
-}
-function tlRender(){
-  const host = $("#tlList"); if (!host) return;
-  const items = tlData || [];
-  if (!items.length){
-    host.innerHTML = '<div class="br-empty">这本账还是空的。'
-      + (tlScene ? "（当前只在看「" + escapeHtml(tlScene) + "」，点「筛」清空再看全部。）<br>" : "<br>")
-      + "去朋友圈点个赞、让它出门逛一趟、或者开一局大富翁 —— 那些事都会记到这儿，"
-      + "而且<b>它自己看得见</b>：下次聊天时它就知道自己在别处干了什么。</div>";
-    return;
-  }
-  host.innerHTML = items.map(tlRowHtml).join("");
-}
-async function tlLoad(verbose){
-  const tag = $("#tlTag");
-  if (verbose) tlStatus("读时间线…");
-  try{
-    const r = await memApi("/app/scene/recent?limit=60"
-      + (tlScene ? "&scene=" + encodeURIComponent(tlScene) : ""));
-    tlData = r.items || [];
-    if (tag) tag.textContent = tlScene ? ((r.labels && r.labels[tlScene]) || tlScene) : "全部";
-    /* 统计条：近 24 小时各场景记了多少（直接回答「有没有真的在互通」） */
-    let st = null;
-    try { st = await memApi("/app/scene/status?hours=24"); } catch (_) { st = null; }
-    const by = (st && st.by_scene) || {}, labels = (st && st.labels) || {};
-    const keys = Object.keys(by).sort((a, b) => by[b] - by[a]).slice(0, 6);
-    const pill = $("#tlStats");
-    if (pill){
-      pill.innerHTML = keys.length
-        ? keys.map((k) => '<span class="br-pill">' + escapeHtml(labels[k] || k)
-                          + " <b>" + by[k] + "</b></span>").join("")
-        : '<span class="br-pill">近 24 小时还没有记录</span>';
-    }
-    const lead = $("#tlLead");
-    if (lead) lead.textContent = (st && st.enabled === false)
-      ? "后端统一层已关闭（SCENE_UNIFY=0）"
-      : "聊天 · 朋友圈 · 房间 · 自由活动 · 大富翁 · 主动联系 —— 同一本账";
-    const foot = $("#tlFoot");
-    if (foot) foot.textContent = "共 " + tlData.length + " 条"
-      + (tlScene ? "（已按场景筛选）" : "（最近 60 条）")
-      + " · 每个场景开口前都会先看一眼这本账（后端自动注入，不需要前端配合）";
-    tlRender();
-    /* 片段组装的状态：还有多少碎片没被组装、已经组装出多少条。
-       这一行是「记忆怎么被组成」的仪表盘 —— 攒够了就值得点一次「组装成片段」。 */
-    try{
-      const cf = await memApi("/app/scene/fragments?limit=1");
-      const cs = (cf && cf.status) || {};
-      const el = $("#tlFrag");
-      if (el){
-        const autoOn = cs.auto !== false;
-        el.innerHTML = "片段：已组装 <b>" + (cs.fragments || 0) + "</b> 条 · 待组装 "
-          + "<b>" + (cs.pending || 0) + "</b> 条碎片"
-          + (cs.pending >= (cs.min || 3)
-              ? "（够一轮了，可以手动点「组装成片段」）"
-              : "（攒到 " + (cs.auto_min || 12) + " 条会自动组装）")
-          + "<br>自动组装：" + (autoOn
-              ? "开 —— 每聊完一轮顺手检查一次，攒够就自己长"
-                + (cs.auto_cooldown ? "（两次之间至少隔 " + Math.round(cs.auto_cooldown / 60) + " 分钟）" : "")
-                + (cs.auto_last ? " · 上次检查 " + escapeHtml(cs.auto_last) : "")
-              : "关（SCENE_COMPOSE_AUTO=0）");
-      }
-      const cb = $("#tlCompose");
-      if (cb) cb.disabled = !(cs.pending >= (cs.min || 3));
-    }catch(_){ }
-    if (verbose) tlStatus("已读取 " + tlData.length + " 条", "ok");
-  }catch(err){
-    tlData = [];
-    if (tag) tag.textContent = "连不上";
-    tlStatus("读不到时间线 —— " + ((err && err.message) || err), "err");
-    tlRender();
-  }
-}
-async function tlDistill(){
-  tlStatus("正在把这段时间的账脱水成一条记忆…");
-  const btn = $("#tlDistill"); if (btn) btn.disabled = true;
-  try{
-    const r = await memApi("/app/scene/distill", {
-      method: "POST", body: JSON.stringify({ hours: 24, kind: "summary" }) });
-    if (r && r.ok){
-      tlStatus(r.message || "已写进记忆", "ok");
-      try { memLoad(false); } catch (_) { }        // 让计数条跟着更新
-    }else{
-      tlStatus((r && r.message) || "没写成（记录太少？）", "err");
-    }
-  }catch(err){
-    tlStatus("总结失败 —— " + ((err && err.message) || err), "err");
-  }finally{
-    if (btn) btn.disabled = false;
-    tlLoad(false);
-  }
-}
-/* 「组装成片段」：把游标之后的碎片交给模型，组装成一条条独立的小记忆（kind=fragment）——
-   同一件事合并、不同场合分开，每条带时间和出处，落进记忆库的「片段」分区。
-   与上面那个 distill 的区别：那个压成一条总述，这个组装成若干条片段。 */
-async function tlCompose(){
-  tlStatus("正在把碎片组装成片段记忆…（要调一次模型，几十秒）");
-  const btn = $("#tlCompose"); if (btn) btn.disabled = true;
-  try{
-    const r = await memApi("/app/scene/compose", {
-      method: "POST", body: JSON.stringify({ max: 8 }) });
-    if (r && r.ok){
-      tlStatus((r.message || "已组装") + " —— 去「片段」那一页看", "ok");
-      try { memLoad(false); } catch (_) { }
-    }else{
-      tlStatus((r && r.message) || "没组装出来", "err");
-    }
-  }catch(err){
-    tlStatus("组装失败 —— " + ((err && err.message) || err), "err");
-  }finally{
-    if (btn) btn.disabled = false;
-    tlLoad(false);
-  }
-}
-if ($("#tlList")){
-  if ($("#tlRefresh")) $("#tlRefresh").addEventListener("click", () => tlLoad(true));
-  if ($("#tlDistill")) $("#tlDistill").addEventListener("click", tlDistill);
-  if ($("#tlCompose")) $("#tlCompose").addEventListener("click", tlCompose);
-  if ($("#tlFilterGo")) $("#tlFilterGo").addEventListener("click", () => {
-    const q = $("#tlQ");
-    let v = q ? String(q.value || "").trim().toLowerCase() : "";
-    tlScene = v ? (TL_ALIAS[v] || v) : "";
-    tlLoad(true);
-  });
-  if ($("#tlQ")) $("#tlQ").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && $("#tlFilterGo")) $("#tlFilterGo").click();
-  });
-}
-
-/* ════════════ 待确认 · 机器写的记忆（放行 / 撤回）════════════
-   Nocturne 那套：自动记住的东西**不静默生效**，先落进队列，人看过才作数。
-   为什么需要它：宫殿提取、近景日更、片段组装、牌桌回顾这四处都是机器自己写的，
-   以前一律闷头写库、立刻参与注入 —— 写错了（比如状态游标读失败导致重复提取）
-   没有任何地方看得见，也没有撤回入口，只能等它冒出重复记忆才被察觉。
-   现在它们先落 status=pending：不进召回、不进档案室与银河，在这里过目后才生效。 */
-let pdData = null;
-const PD_SRC = { palace: "宫殿提取", scenes: "片段组装", mono: "牌桌回顾",
-                 nearfield: "近景日更", fragment: "片段组装" };
-const PD_KIND = { event: "事件", ref: "参考资料", working: "工作记忆", summary: "摘要",
-                  story: "故事", room: "我的房间", letter: "留给西西的话",
-                  fragment: "片段", palace_node: "宫殿" };
-function pdStatus(msg, kind){
-  const el = $("#pdHint"); if (!el) return;
-  el.textContent = msg || "";
-  el.style.color = kind === "err" ? "var(--danger, #e06c75)"
-                 : (kind === "ok" ? "var(--ok, #7ec699)" : "var(--text-faint)");
-}
-function pdRowHtml(it){
-  const src = PD_SRC[it.source] || it.source || "机器";
-  const kind = PD_KIND[it.kind] || it.kind || "";
-  const body = String(it.content || "");
-  return '<div class="br-row" style="cursor:default" data-pdrow="' + escapeHtml(String(it.id)) + '">'
-    + '<div class="br-row-top">'
-      + '<span class="br-ico">' + (it.kind === "palace_node" ? "🏛" : "⧗") + "</span>"
-      + '<span class="br-name">' + escapeHtml(it.title || kind || "一条待确认") + "</span>"
-      + '<span class="br-meta">' + escapeHtml(src + (kind ? " · " + kind : "")) + "</span>"
-    + "</div>"
-    + (body ? '<div class="br-body">' + escapeHtml(body) + "</div>" : "")
-    + '<div class="nf-actions" style="margin-top:8px">'
-      + '<button type="button" class="btn ghost" data-pd-pass="' + escapeHtml(String(it.id)) + '">放行</button>'
-      + '<button type="button" class="btn ghost" data-pd-drop="' + escapeHtml(String(it.id)) + '">撤回</button>'
-    + "</div></div>";
-}
-function pdRender(){
-  const host = $("#pdList"); if (!host) return;
-  const items = pdData || [];
-  if (!items.length){
-    host.innerHTML = '<div class="br-empty">队列是空的 —— 没有等你过目的东西。'
-      + "<br>机器每写一笔都会先落这儿：宫殿从聊天里提取的片段、近景日更、"
-      + "自动组装的小记忆、一局牌桌的回顾。觉得它写得不对，就在这儿撤回。</div>";
-    return;
-  }
-  host.innerHTML = items.map(pdRowHtml).join("");
-}
-/* 闸门（机器写的记忆要不要人工点头）。默认关 —— 关着时这一页平时是空的，
-   所以副标题与 foot 文案都跟着它变，不然会出现"一条都没有却说等你过目"的矛盾。 */
-let pdGateOn = false;
-async function pdGateLoad(){
-  const cb = $("#pdGate"), lead = $("#pdLead");
-  try{
-    const r = await memApi("/app/memory/pending/config");
-    pdGateOn = !(r && r.auto_confirm);
-  }catch(_){ pdGateOn = false; }
-  if (cb) cb.checked = pdGateOn;
-  if (lead) lead.textContent = pdGateOn
-    ? "近景日更 · 小记忆 · 牌桌回顾 —— 等你过目"
-    : "近景日更 · 小记忆 · 牌桌回顾 —— 闸门已关，直接入库";
-}
-async function pdGateSet(on){
-  try{
-    await memApi("/app/memory/pending/config", { method: "POST", body: { auto_confirm: !on } });
-    pdGateOn = !!on;
-    showToast(on ? "已恢复人工确认：机器写的会先等你点头" : "已关闭人工确认：机器写的直接生效");
-    pdGateLoad();
-    pdLoad(true);
-  }catch(e){
-    showToast("没改成：" + ((e && e.message) || e));
-    pdGateLoad();
-  }
-}
-async function pdLoad(verbose){
-  if (verbose) pdStatus("读待确认…");
-  try{
-    const r = await memApi("/app/memory/pending?limit=200");
-    pdData = r.items || [];
-    const tag = $("#pdTag"); if (tag) tag.textContent = pdData.length + " 条";
-    const foot = $("#pdFoot");
-    if (foot) foot.textContent = pdData.length
-      ? "共 " + pdData.length + " 条待你过目 · 没放行之前它们不进召回、也不进档案室和银河"
-      : (pdGateOn
-          ? "共 0 条 · 机器写新东西时会自动出现在这里"
-          : "共 0 条 · 闸门关着：机器写的直接生效，不再堆到这里");
-    if (verbose) pdStatus(pdData.length ? ("读到 " + pdData.length + " 条") : "没有待确认的", "ok");
-    pdRender();
-  }catch(err){
-    pdStatus("读失败 —— " + ((err && err.message) || err), "err");
-    const host = $("#pdList");
-    if (host && !pdData) host.innerHTML = '<div class="br-empty">读不到待确认队列：'
-      + escapeHtml(String((err && err.message) || err)) + "</div>";
-  }
-}
-async function pdAct(ids, act){
-  if (!ids || !ids.length) return;
-  if (act === "rollback" && !confirm("撤回这 " + ids.length
-      + " 条？它们会被**直接删掉** —— 等于「这段我不认」。")) return;
-  pdStatus(act === "confirm" ? "正在放行…" : "正在撤回…");
-  try{
-    const r = await memApi(act === "confirm" ? "/app/memory/confirm" : "/app/memory/rollback",
-      { method: "POST", body: JSON.stringify(act === "confirm" ? { ids: ids } : { ids: ids }) });
-    pdStatus((r && r.message) || (act === "confirm" ? "已放行" : "已撤回"), "ok");
-    await pdLoad(false);
-    try { memLoad(false); } catch (_) { }        // 让各分区的计数跟着变
-  }catch(err){
-    pdStatus((act === "confirm" ? "放行失败 —— " : "撤回失败 —— ") + ((err && err.message) || err), "err");
-  }
-}
-if ($("#pdList")){
-  if ($("#pdGate")) $("#pdGate").addEventListener("change", (e) => pdGateSet(!!e.target.checked));
-if ($("#pdRefresh")) $("#pdRefresh").addEventListener("click", () => { pdGateLoad(); pdLoad(true); });
-pdGateLoad();
-
-  if ($("#pdAll")) $("#pdAll").addEventListener("click", () => {
-    const ids = (pdData || []).map((x) => x.id);
-    pdAct(ids, "confirm");
-  });
-  $("#pdList").addEventListener("click", (e) => {
-    const p = e.target.closest("[data-pd-pass]");
-    const d = e.target.closest("[data-pd-drop]");
-    if (p) pdAct([p.dataset.pdPass], "confirm");
-    else if (d) pdAct([d.dataset.pdDrop], "rollback");
-  });
-}
-
-/* 底部栏的固定分栏 —— 就是「六层记忆」加两个过程视图。
-   这个常量原来是**底部横滑栏**那八张卡的来源，所以叫 MEM_BAR_FIXED；
-   现在横滑栏没了，它是「全部」页的卡片表 —— 名字跟着改（一个名字只能指一个东西）。
-   顺序：长期（宫殿）→ 短期（近景）→ 外置（Haven）→ 世界书 → 档案馆
-        → 待确认 → 时间线。
-   ★ 「总览」不在这张表里：它是顶部第一个 tab。
-   名字与副标题在这里是**离线兜底**；连上后端后 memNavSync() 会用 /app/layers
-   的计数盖上来（层的定义在后端 layers.py，唯一一处）。 */
-const MEM_SECTIONS = [
-  { key: "palace",    ico: "✎", name: "长期记忆",   sub: "日记 · 存在 GitHub" },
-  { key: "near",      ico: "✦", name: "短期记忆",   sub: "近景 · 七天" },
-  { key: "haven",     ico: "☁", name: "外置记忆库", sub: "Haven Brain · 只读" },
-  { key: "worldbook", ico: "❋", name: "世界书",     sub: "手写的补充设定 · 按条件注入" },
-  { key: "archive",   ico: "▤", name: "档案馆",     sub: "所有记忆 · 按事件盒" },
-  { key: "pending",   ico: "⧗", name: "待确认",     sub: "机器写的" },
-  { key: "timeline",  ico: "◷", name: "时间线",     sub: "别处 · 聊天 合一" },
-];
+/* ── 记忆面板：三段导航（记忆库 / 近景七天 / Haven）──────────────────
+   MEM_TABS_V2
+   ★ 对齐 AionsHome 记忆页的形态：一页里分几档，点哪档筛哪档。
+     这里的三段是**三页** ——
+       · 记忆库  它自己写的 + 你写的（日常 / 长期重要 两档），都能改
+       · 近景    七天的薄记忆：日更正文 + 注入稿（Nearfield.md）
+       · Haven   外置只读库（别人服务器上的语义原话）
+     以前那七页（银河 / 日历 / 档案馆 / 世界书 / 宫殿 / 待确认 / 时间线）
+     整体下线：**存储一条没删**，只是不再各自占一个入口。 */
 function buildMemNav(){
-  /* tab 行与卡片网格都是静态壳（HTML 里就那两个容器），这里只填一次、绑一次 */
-  const grid = $("#memGrid");
-  if (grid && !grid.dataset.built){
-    grid.dataset.built = "1";
-    grid.innerHTML = MEM_SECTIONS.map((c) =>
-      '<button class="kit-card" type="button" data-mp-go="' + c.key + '">' +
-        '<span class="kit-card-t">' + c.ico + " " + escapeHtml(c.name) + "</span>" +
-        '<span class="kit-card-s">' + escapeHtml(c.sub || "—") + "</span>" +
-        '<span class="mem-n" id="mcNum-' + c.key + '"></span>' +
-      "</button>").join("");
-    grid.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-mp-go]");
-      if (b) memShowPage(b.dataset.mpGo);
-    });
-  }
   const tabs = $("#memTabs");
   if (tabs && !tabs.dataset.built){
     tabs.dataset.built = "1";
@@ -17867,171 +16346,36 @@ function buildMemNav(){
       if (b) memShowPage(b.dataset.memTab);
     });
   }
-  const crumb = $("#memCrumb");
-  if (crumb && !crumb.dataset.built){
-    crumb.dataset.built = "1";
-    crumb.addEventListener("click", () => memShowPage("all"));
-  }
   memNavSync();
 }
-/* 调 memory-pack 画那一页。
-   ★ 上一版这里是 `try { MemoryPack.render(...) } catch (_) { }` —— 静默吞掉一切。
-     后果：包没加载时那一页是**一片空白**，用户看到的是"打开没有"，
-     而真正的原因（脚本没到 / 后端报错 / 数据形状不对）谁也看不见。
-     排查成本全落在"再读一遍代码"上。所以这里分三种情况都说话。 */
-function memPackRender(page, sel){
-  const host = $(sel);
-  const name = page === "archive" ? "档案馆" : "世界书";
-  const box = (title, sub, body) =>
-    '<section class="mg-card"><div class="mg-head"><div>' +
-    '<div class="mg-title">' + title + '</div>' +
-    '<div class="mg-sub">' + sub + '</div></div></div>' +
-    '<div class="arc-empty">' + body + '</div></section>';
-  if (typeof MemoryPack === "undefined" || !MemoryPack || !MemoryPack.render){
-    if (host) host.innerHTML = box(name, "面板脚本没加载",
-      "memory-pack.js 没拿到 —— 通常是刚更新完（缓存里还是旧的那一份）或者网络断了一下。" +
-      "<br><br>刷新一次页面；装了到主屏的话，先关掉再打开。");
-    return;
-  }
-  /* 包自己也会在内部出错时把原因画出来（见 paintFailure）；这一层防的是
-     "render 本身就不是函数"这种更早的错。 */
-  try { MemoryPack.render(page); }
-  catch (e){
-    if (host) host.innerHTML = box(name, "这一页没能画出来",
-      escapeHtml(String((e && e.message) || e)));
-  }
-}
+/* 三页互斥显示。内容都是异步拉的 → 切过去时补一次，免得首屏没拉到就空着。 */
 function memShowPage(key){
   const panel = $("#memoryPanel"); if (!panel) return;
   const pages = Array.prototype.slice.call(panel.querySelectorAll(".mem-page"));
   let target = pages.filter((p) => p.dataset.mp === key)[0];
-  if (!target) target = pages.filter((p) => p.dataset.mp === "overview")[0];
+  if (!target) target = pages.filter((p) => p.dataset.mp === "lib")[0];
   if (!target) return;
   pages.forEach((p) => p.classList.toggle("hidden", p !== target));
-  /* 顶部两个 tab：总览 / 全部。二级页（长期记忆、档案馆…）都算在「全部」底下 ——
-     tab 仍停在「全部」，另给一条「‹ 全部」的面包屑，这样"我在哪、怎么回去"是明摆着的。 */
   const mp = target.dataset.mp;
-  const isOverview = mp === "overview";
   Array.prototype.slice.call(panel.querySelectorAll(".mem-tab")).forEach((t) => {
-    const on = (t.dataset.memTab === "overview") === isOverview;
+    const on = t.dataset.memTab === mp;
     t.classList.toggle("on", on);
     t.setAttribute("aria-selected", on ? "true" : "false");
   });
-  const crumb = $("#memCrumb");
-  if (crumb) crumb.classList.toggle("hidden", isOverview || mp === "all");
-  Array.prototype.slice.call(panel.querySelectorAll("[data-mp-go]")).forEach((c) => {
-    c.classList.toggle("on", c.dataset.mpGo === mp);
-  });
-  /* Haven 那一页的内容是异步拉的（/app/brain，走外网）：切过去时补一次，
-     免得首次没拉到就一直是空壳 —— 它现在不在首屏，没有别的时机来补。 */
-  if (target.dataset.mp === "haven") { try { brLoad(false); } catch (_) { } }
-  /* 时间线同理：它的内容也全靠异步拉（/app/scene/recent），不在首屏就没有别的时机补 */
-  if (target.dataset.mp === "timeline") { try { tlLoad(false); } catch (_) { } }
-  /* 待确认队列同理：机器写的东西随时在长，切过来时补一次 */
-  if (target.dataset.mp === "pending") { try { pdLoad(false); } catch (_) { } }
-  /* 档案馆是纯前端渲染（数据在 memLoad 里就取好了），但切过来时重画一次更保险：
-     它的编辑框/展开态是上一次留下的，重画能对齐当前数据。 */
-  /* 档案馆：默认是「事件盒」那一屏（memory-pack.js 渲染），
-     时间线那一屏是宿主自己的（原有 arcRender）—— 两屏都刷一次，
-     这样来回切的时候两边都是新的。 */
-  if (target.dataset.mp === "archive") {
-    try { arcRender(); } catch (_) { }
-    memPackRender("archive", "#arcBoxes");
-  }
-  /* 世界书上半页由 memory-pack.js 渲染（Lorebook 编辑器 + 命中预览）；
-     下半页那八个分区由 buildLibCards 铺好（本函数不用管）。
-     ★ 不在宿主里另做一套 Lorebook —— 那正是"同一条记忆两个入口"的来源。 */
-  if (target.dataset.mp === "worldbook") {
-    memPackRender("worldbook", "#memWbMount");
-  }
+  if (mp === "haven") { try { brLoad(false); } catch (_) { } }
+  if (mp === "lib") { try { mlLoad(false); } catch (_) { } }
   const sc = panel.querySelector(".settings-scroll");
   if (sc) sc.scrollTop = 0;
 }
 function memNavSync(){
   const st = memData.status || {};
   const days = (st.days || []).length;
-  const counts = memData.counts || {};
-  /* 计数写在「全部」页卡片右下那个小数字上（#mcNum-<key>）。
-     拿不到就不写 —— 空着比写 0 好（0 看起来像"空的"，那是撒谎）。 */
-  const put = (k, v) => { const el = $("#mcNum-" + k); if (el) el.textContent = v; };
   const tag = (id, v) => { const el = $(id); if (el) el.textContent = v; };
-  /* 六层的计数来自 /app/layers（后端按 layers.archive_kinds 数的）。
-     ★ 拿不到就退回内置文案 —— 副标题写错不要紧，写 0 才是撒谎（看起来像"空的"）。 */
-  const LC = (memData.layers && memData.layers.counts) || {};
-  const nx = (k) => (typeof LC[k] === "number" ? LC[k] : null);
-  const many = (k) => { const n = nx(k); return n === null ? "" : (n + " 条"); };
-
-  put("palace", many("palace"));
-  put("near", days ? (days + "/" + (st.max_days || days) + " 天") : "");
-  put("haven", "");                       // Haven 在别人服务器上，它自己那页会说话；这里不报数
-  put("worldbook", many("worldbook"));
-  put("archive", many("archive"));
-  put("pending", pdData && pdData.length ? (pdData.length + " 条待看") : "");
-  put("timeline", tlData ? (tlData.length + " 条") : "");
-  /* 八个分区的条数写在**卡片上**（#libSub-<kind>）——
-     它们在世界书页里是「顺带还能改」的那几叠，不走 put()。 */
-  LIB_DEFS.forEach((d) => tag("#libSub-" + d.kind, "共 " + (counts[d.kind] || 0) + " 条"));
-  tag("#palTag", nx("palace") === null ? "记忆宫殿" : (nx("palace") + " 条"));
-  /* #wbTag 没有了 —— 世界书那一页整个由 memory-pack.js 画（它自带统计格），
-     宿主不再越界去改别人地盘上的元素。 */
+  /* 近景那张卡的副标题：几天有日更。拿不到就写"还没生成" ——
+     写 0 看起来像"空的"，那是撒谎。 */
+  tag("#cardSubNear", days ? (days + " 天有日更") : "还没生成");
 }
 
-/* ── 手指在内容区**往右滑 = 回「全部」** ─────────────────────────────────
-   原来这里是"左右滑翻页"（按底部栏那张横滑表的顺序翻）。现在只有两个 tab，
-   那套顺序没意义了；改成在二级页里往右滑就退回卡片网格 —— 和「‹ 全部」同一个意思，
-   手感更顺。判定三条：① 单指 ② 往右位移 ≥ 48px ③ 横向大于纵向 1.5 倍
-   （免得把纵向滚动误判成翻页）。首页与「全部」页本身不响应。 */
-(function memSwipe(){
-  const panel = $("#memoryPanel"); if (!panel) return;
-  const zone = panel.querySelector(".settings-scroll"); if (!zone) return;
-  let sx = 0, sy = 0, armed = false;
-  zone.addEventListener("touchstart", (e) => {
-    if (!e.touches || e.touches.length !== 1) { armed = false; return; }
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; armed = true;
-  }, { passive: true });
-  zone.addEventListener("touchend", (e) => {
-    if (!armed) return;
-    armed = false;
-    const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
-    const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (dx < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;   // 只认"往右滑"
-    const cur = panel.querySelector(".mem-page:not(.hidden)");
-    const at = cur && cur.dataset.mp;
-    if (!at || at === "overview" || at === "all") return;        // 首页 / 全部页不响应
-    memShowPage("all");
-  }, { passive: true });
-})();
-
-function libEditOpen(kind, item){
-  const box = $("#libEdit-" + kind); if (!box) return;
-  memLibEditing[kind] = item ? item.id : null;
-  $("#libTitle-" + kind).value = item ? (item.title || "") : "";
-  $("#libBody-" + kind).value = item ? (item.content || "") : "";
-  box.classList.remove("hidden");
-  $(".set-card[data-card='lib-" + kind + "']").classList.add("open");
-  $("#libTitle-" + kind).focus();
-}
-async function libSave(kind){
-  const title = $("#libTitle-" + kind).value.trim();
-  const content = $("#libBody-" + kind).value.trim();
-  if (!content){ showToast("正文不能为空"); return; }
-  try{
-    await memApi("/app/memory/save", { method: "POST",
-      body: JSON.stringify({ kind: kind, title: title, content: content, id: memLibEditing[kind] || undefined }) });
-    $("#libEdit-" + kind).classList.add("hidden");
-    memLibEditing[kind] = null;
-    showToast("已保存");
-    await memLoad();
-  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
-}
-async function libDelete(id){
-  if (!confirm("删除这条记忆？")) return;
-  try{
-    await memApi("/app/memory/item?id=" + encodeURIComponent(id), { method: "DELETE" });
-    showToast("已删除");
-    await memLoad();
-  }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
-}
 /* ── 工作记忆 = 技术记忆（项目文件夹）──────────────────────────────────────
    参考「机的独立工作室」Machine-studio 的分法：**技术归技术，情感归情感。**
    · 情感 / 日常 / 羁绊 → Ombre（会浮现、会衰减、软删除）+ 记忆宫殿 + 近景；
@@ -18239,110 +16583,12 @@ function wireWork(){
   });
 }
 
-function renderLibs(){
-  LIB_DEFS.forEach((d) => {
-    if (d.kind === "working"){ renderWork(); return; }
-    const items = memData.items[d.kind] || [];
-    const sub = $("#libSub-" + d.kind);
-    if (sub) sub.textContent = items.length ? (items.length + " 条" + (items[0].title ? (" · " + items[0].title.slice(0, 18)) : "")) : "还没有内容";
-    const list = $("#libList-" + d.kind);
-    if (!list) return;
-    if (!items.length){ list.innerHTML = '<div class="arc-empty">还没有内容。点下面「＋ 新建一条」。</div>'; return; }
-    /* 分区内的条目也照参考稿：按月分组 + 时间线圆点 + 左上角分类 chip、右上角编辑/删除 */
-    const byMonth = {}, order = [];
-    items.forEach((it) => {
-      const k = String(it.ts || "").slice(0, 7) || "未记日期";
-      if (!byMonth[k]){ byMonth[k] = []; order.push(k); }
-      byMonth[k].push(it);
-    });
-    list.innerHTML = order.sort().reverse().map((mon) => (
-      '<div class="arc-day"><div class="arc-day-head"><span class="arc-day-date">' + escapeHtml(mon) + "</span>" +
-      '<span class="arc-day-n">' + byMonth[mon].length + " 条</span></div>" +
-      byMonth[mon].map((it) => (
-        '<div class="arc-entry">' +
-          '<span class="arc-chip">#' + escapeHtml(d.name) + "</span>" +
-          '<span class="arc-acts">' +
-            '<button class="arc-act" type="button" data-lib-item="' + escapeHtml(String(it.id)) +
-              '" data-lib-kind="' + d.kind + '" title="编辑">' + MEM_ICO.pen + "</button>" +
-            '<button class="arc-act" type="button" data-lib-qr="' + escapeHtml(String(it.id)) +
-              '" data-lib-kind="' + d.kind + '" title="条码">▦</button>' +
-            '<button class="arc-act" type="button" data-lib-del="' + escapeHtml(String(it.id)) +
-              '" title="删除">' + MEM_ICO.trash + "</button>" +
-          "</span>" +
-          '<div class="arc-title">' + escapeHtml(it.title || "(无标题)") + "</div>" +
-          '<div class="arc-text clamp">' + escapeHtml(String(it.content)) + "</div>" +
-          '<div class="arc-sub" style="margin-top:7px">' +
-            escapeHtml(String(it.ts || "").slice(0, 16).replace("T", " ")) + "</div>" +
-        "</div>"
-      )).join("") + "</div>"
-    )).join("");
-  });
-}
 if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
 if ($("#memoryClose")) $("#memoryClose").addEventListener("click", closeMemory);
 if ($("#nfRun")) $("#nfRun").addEventListener("click", () => memRun(false));   // 见 memRun 顶部：别把事件对象当 force
 if ($("#nfAssemble")) $("#nfAssemble").addEventListener("click", memAssemble);
 if ($("#nfMonth")) $("#nfMonth").addEventListener("click", memMonth);
 if ($("#nfRefresh")) $("#nfRefresh").addEventListener("click", () => memLoad(true));
-if ($("#calPrev")) $("#calPrev").addEventListener("click", () => memCalMove(-1));
-if ($("#calNext")) $("#calNext").addEventListener("click", () => memCalMove(1));
-/* 档案室：年份 → 月份 → 条目，以及条目内联编辑 */
-function arcScrollTop(){
-  const s = $("#memoryPanel .settings-scroll");
-  const c = $("#arcCard");
-  if (s && c) s.scrollTop = Math.max(0, c.getBoundingClientRect().top - s.getBoundingClientRect().top + s.scrollTop - 8);
-}
-function arcOpen(k){
-  const it = arcItems().filter((x) => x.key === k)[0];
-  if (!it) return;
-  if (it.kind === "lib" && it.libKind){
-    libEditOpen(it.libKind, memData.itemIndex[it.rawId]);          // 跳回该分区编辑
-    const card = document.querySelector(".set-card[data-card='lib-" + it.libKind + "']");
-    if (card){
-      const cardEl = card.querySelector(".set-card-body");
-      if (cardEl) card.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    return;
-  }
-  arc.edit = k; arcRender();
-  const b = document.querySelector('[data-arc-box="' + k + '"]');
-  if (b) b.focus();
-}
-if ($("#arcBody")) $("#arcBody").addEventListener("click", async (e) => {
-  // ⚠️ 刷新按钮也带 arc-eye 类，必须**先**判它，否则会被当成「展开正文」
-  const obr = e.target.closest("[data-arc-ob-refresh]");
-  if (obr){ e.stopPropagation(); await arcLoadOb(true); arcRender(); return; }
-  const eye = e.target.closest("[data-arc-eye]");
-  if (eye){ e.stopPropagation(); arc.full = !arc.full; arcRender(); return; }
-  const up = e.target.closest("[data-arc-up]");
-  if (up){
-    e.stopPropagation();
-    if (up.dataset.arcUp === "ob"){ arc.ob = false; arc.edit = null; arcRender(); arcScrollTop(); return; }
-    arc.level = up.dataset.arcUp === "1" ? 0 : 1; arc.edit = null; arcRender(); return;
-  }
-  const obc = e.target.closest("[data-arc-ob]");
-  if (obc){
-    e.stopPropagation();
-    arc.ob = true; arc.level = 0; arc.edit = null;
-    arcRender(); arcScrollTop();
-    await arcLoadOb(false); arcRender();
-    return;
-  }
-  const sv = e.target.closest("[data-arc-save]");
-  if (sv){ await arcSave(sv.dataset.arcSave); return; }
-  const cx = e.target.closest("[data-arc-cancel]");
-  if (cx){ arc.edit = null; arcRender(); return; }
-  const pen = e.target.closest("[data-arc-edit]");
-  if (pen){ arc.edit = pen.dataset.arcEdit; arcRender(); const b = document.querySelector('[data-arc-box="' + arc.edit + '"]'); if (b) b.focus(); return; }
-  const yr = e.target.closest("[data-arc-year]");
-  if (yr){ arc.year = yr.dataset.arcYear; arc.level = 1; arc.edit = null; arcRender(); arcScrollTop(); return; }
-  const mo = e.target.closest("[data-arc-month]");
-  if (mo){ arc.month = mo.dataset.arcMonth; arc.level = 2; arc.edit = null; arcRender(); arcScrollTop(); return; }
-  const op = e.target.closest("[data-arc-open]");
-  if (op) arcOpen(op.dataset.arcOpen);
-});
-/* 长期记忆那一页的入口 —— 直接调 openPalace()，不复制一套宫殿 UI */
-if ($("#palOpen")) $("#palOpen").addEventListener("click", () => { try { openPalace(); } catch (_) { } });
 /* 世界书页那三个按钮的监听器已删 —— 那一页整个由 memory-pack.js 画，
    元素不在这里了（留着 if 判断也只是永久为假，属于死代码）。 */
 if ($("#nfSaveDay")) $("#nfSaveDay").addEventListener("click", memSaveDay);
@@ -18350,551 +16596,6 @@ if ($("#nfDeleteDay")) $("#nfDeleteDay").addEventListener("click", memDeleteDay)
 if ($("#nfDays")) $("#nfDays").addEventListener("click", (e) => {
   const c = e.target.closest(".nf-chip");
   if (c) memOpenDay(c.dataset.day);
-});
-if ($("#gxOpen")) $("#gxOpen").addEventListener("click", (e) => {
-  e.stopPropagation();
-  window.open(galaxyUrl(), "_blank", "noopener");
-});
-if ($("#galaxyCard")) $("#galaxyCard").addEventListener("click", () => window.open(galaxyUrl(), "_blank", "noopener"));
-window.addEventListener("resize", () => { if (!$("#memoryPanel").classList.contains("hidden")) loadGalaxy(); });
-
-/* ════════════ 记忆宫殿（长期内置记忆库）════════════
-   七个房间 / 门牌 / 混合召回 / 水位线 / 维护五步。后端在 mem_palace.py。 */
-const PAL_ROOM_META = {
-  living_room: { c: "#7fa8d8", ico: '<path d="M3 14v3.6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V14"/><path d="M4 14V8.4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V14"/><path d="M2.4 14h19.2"/><path d="M7.4 14v-3.4h9.2V14"/>' },
-  bedroom:     { c: "#d98fa8", ico: '<path d="M3 18v-5.6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2V18"/><path d="M3 18h18"/><path d="M3 21v-3M21 21v-3"/><path d="M8 10.4V7.6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2.8"/>' },
-  study:       { c: "#b9a26a", ico: '<path d="M4 19.4A2.4 2.4 0 0 1 6.4 17H20"/><path d="M6.4 2.6H20v20H6.4A2.4 2.4 0 0 1 4 20.2V4.8a2.2 2.2 0 0 1 2.4-2.2Z"/><path d="M9 7.4h7M9 11.4h5"/>' },
-  user_room:   { c: "#63b596", ico: '<circle cx="12" cy="8" r="3.8"/><path d="M4.4 20.4c0-4.2 3.4-7.6 7.6-7.6s7.6 3.4 7.6 7.6"/>' },
-  self_room:   { c: "#9787d6", ico: '<path d="M12 3.4c.8 4.8 3.4 7.4 8.2 8.2-4.8.8-7.4 3.4-8.2 8.2-.8-4.8-3.4-7.4-8.2-8.2 4.8-.8 7.4-3.4 8.2-8.2Z"/>' },
-  attic:       { c: "#8a93a2", ico: '<path d="M3.6 9.6 12 3.6l8.4 6v10.8H3.6z"/><path d="M9 20.4v-5.6h6v5.6"/>' },
-  windowsill:  { c: "#e0a95f", ico: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/>' },
-};
-const PAL_MOOD_LABEL = { happy: "开心", sad: "难过", angry: "生气", anxious: "焦虑", tender: "温柔",
-  calm: "平静", excited: "兴奋", tired: "疲惫", lonely: "孤独", grateful: "感激", curious: "好奇", proud: "骄傲" };
-let palData = { status: null, room: "", nodes: [], editing: null, chunks: [], embed: {} };
-function palRoomOf(key){ return (palData.status && palData.status.rooms || []).filter((r) => r.key === key)[0] || null; }
-function palRoomName(key){ const r = palRoomOf(key); return r ? r.name : key; }
-
-function palStatus(msg, kind){
-  const el = $("#palStatus"); if (!el) return;
-  el.textContent = msg || "";
-  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--mg-dim)");
-}
-/* ── 向量模型（记忆宫殿的语义坐标：本地哈希 / 远端 embedding）──────────
-   默认本地哈希（零依赖），可切到任意 OpenAI 兼容 /embeddings，例如
-   硅基流动的免费模型 BAAI/bge-m3。后端在 mem_palace.py 的 embed_* 那一组。 */
-function peStatus(msg, kind){
-  const el = $("#peStatus"); if (!el) return;
-  el.textContent = msg || "";
-  el.style.color = (kind === "err") ? "#c0392b" : (kind === "ok" ? "var(--accent,#1f6feb)" : "var(--mg-dim)");
-}
-function peCustomModel(){
-  const c = ($("#peModelCustom") && $("#peModelCustom").value.trim()) || "";
-  return c || ($("#peModel") && $("#peModel").value) || "";
-}
-function peSyncCustom(){
-  /* 下拉里选了具体模型 → 自定义框留空；选了「自定义」→ 用输入框 */
-  const sel = $("#peModel");
-  if (!sel) return;
-  $("#peModelCustom").style.display = (sel.value === "__custom__") ? "" : "none";
-  if (sel.value !== "__custom__") $("#peModelCustom").value = "";
-}
-function peFillModels(list, keep){
-  const sel = $("#peModel"); if (!sel) return;
-  const cur = keep || peCustomModel() || ((palData.embed || {}).model || "");
-  let html = "";
-  (list || []).forEach((m) => {
-    const id = typeof m === "string" ? m : m.id;
-    const dim = (typeof m === "object" && m.dim) ? (" · " + m.dim + " 维") : "";
-    const note = (typeof m === "object" && m.note) ? (" · " + m.note) : "";
-    html += '<option value="' + escapeHtml(id) + '">' + escapeHtml(id + dim + note) + "</option>";
-  });
-  html += '<option value="__custom__">✎ 自定义模型名…</option>';
-  sel.innerHTML = html;
-  if (cur && !Array.prototype.some.call(sel.options, (o) => o.value === cur)){
-    const o = document.createElement("option");
-    o.value = cur; o.textContent = cur; sel.insertBefore(o, sel.options[0]);
-  }
-  sel.value = cur || "BAAI/bge-m3";
-  peSyncCustom();
-}
-function peRenderSugs(){
-  const box = $("#peSugs"); if (!box) return;
-  const list = ((palData.embed || {}).suggest) || [];
-  const cur = peCustomModel();
-  box.innerHTML = list.map((m) => (
-    '<button type="button" data-pe-sug="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' class="on"' : "") + ">" +
-    escapeHtml(m.id.split("/").pop()) + "<small>" + escapeHtml(m.note || "") + "</small></button>"
-  )).join("");
-}
-function peRender(){
-  const e = palData.embed || {};
-  const tag = $("#palEmbedTag");
-  if (tag) tag.textContent = e.active ? ("远端 · " + (e.model || "").split("/").pop()) : "本地哈希";
-  const en = $("#peEnable");
-  if (en) en.checked = !!e.enabled;
-  const b = $("#peBase");
-  if (b && !b.value) b.value = e.base || "";
-  const k = $("#peKey");
-  if (k && !k.value){
-    k.value = e.key_hint || "";
-    k.placeholder = e.key_from === "env" ? "已从后端环境变量读到 Key" : "sk-…（硅基流动控制台 → API 密钥）";
-  }
-  if ($("#peModel") && !$("#peModel").options.length) peFillModels(e.suggest || [], e.model);
-  if ($("#peModel") && e.model) peFillModels(e.suggest || [], e.model);
-  peRenderSugs();
-  const st = $("#peStat");
-  if (st){
-    const pend = e.pending || 0;
-    st.innerHTML =
-      "模式 <b>" + (e.mode === "remote" ? "远端" : "本地") + "</b> · 模型 <b>" +
-      escapeHtml((e.model || "-").split("/").pop()) + "</b> · 维度 <b>" + (e.dim || "-") + "</b><br>" +
-      "已向量化 <b>" + (e.vectorized || 0) + "</b> / " + (e.nodes || 0) + " 条" +
-      (pend ? (' <span class="pe-warn">（还有 ' + pend + " 条没向量，点「补全向量」）</span>") : " ✅") +
-      "<br><i>版本戳 " + escapeHtml(e.ver || "-") + " · Key " +
-      (e.key_set ? ("已配（" + escapeHtml(e.key_hint || "") + "，" + (e.key_from === "env" ? "来自环境变量" : "来自配置") + "）") : "未配") + "</i>" +
-      (e.last_build ? ("<br><i>上次重建：" + escapeHtml(String(e.last_build.at || "").slice(0, 16).replace("T", " ")) +
-        " · " + (e.last_build.filled || 0) + " 条" + (e.last_build.error ? (' <span class="pe-warn">' + escapeHtml(e.last_build.error) + "</span>") : "") + "</i>") : "");
-  }
-}
-async function peLoad(){
-  try{
-    const e = await memApi("/app/palace/embed");
-    palData.embed = e.embed || {};
-    peRender();
-  }catch(err){
-    peStatus("读取向量配置失败：" + ((err && err.message) || err), "err");
-  }
-}
-async function peFetchModels(){
-  peStatus("正在拉模型列表…");
-  try{
-    const d = await memApi("/app/palace/embed/models", { method: "POST", body: JSON.stringify({
-      base: ($("#peBase") || {}).value || "", key: ($("#peKey") || {}).value || "" }) });
-    if (!d.ok){
-      if ((d.embed_models || []).length){ peFillModels(d.embed_models); peRenderSugs(); }
-      peStatus("拉取失败：" + (d.error || "") + "（下面给的是常用候选，可直接选）", "err");
-      return;
-    }
-    peFillModels(d.embed_models || [], ($("#peModel") || {}).value);
-    palData.embed = Object.assign({}, palData.embed, { suggest: d.embed_models || [] });
-    peRenderSugs();
-    peStatus("拉到 " + d.total + " 个模型，其中向量模型 " + (d.embed_models || []).length + " 个（已排在前面）", "ok");
-  }catch(err){ peStatus("拉取失败：" + ((err && err.message) || err), "err"); }
-}
-async function peTest(){
-  const model = peCustomModel();
-  if (!model){ peStatus("先选或填一个模型名", "err"); return; }
-  peStatus("正在测试（会真调一次接口）…");
-  try{
-    const d = await memApi("/app/palace/embed/test", { method: "POST", body: JSON.stringify({
-      base: ($("#peBase") || {}).value || "", key: ($("#peKey") || {}).value || "", model: model,
-      enable: !!($("#peEnable") || {}).checked }) });
-    if (!d.ok){ peStatus("测试失败：" + (d.error || "未知错误"), "err"); return; }
-    peStatus("通了 ✅ " + d.model + " · " + d.dim + " 维 · " + d.ms + "ms · 前几维 [" +
-             (d.sample || []).slice(0, 3).join(", ") + "…" + "]" +
-             (d.note ? ("\n" + d.note) : "") + (d.next ? ("\n" + d.next) : ""), "ok");
-    await peLoad();
-  }catch(err){ peStatus("测试失败：" + ((err && err.message) || err), "err"); }
-}
-async function peSave(){
-  const model = peCustomModel();
-  if (!model){ peStatus("先选或填一个模型名", "err"); return; }
-  peStatus("保存中…");
-  try{
-    const d = await memApi("/app/palace/embed", { method: "POST", body: JSON.stringify({
-      enable: !!($("#peEnable") || {}).checked,
-      base: ($("#peBase") || {}).value || "",
-      key: ($("#peKey") || {}).value || "",
-      model: model }) });
-    palData.embed = d.embed || {};
-    peRender();
-    const pend = palData.embed.pending || 0;
-    peStatus("已保存 ✅" + (palData.embed.active ? (" · 远端向量生效（" + model + "）") : " · 未启用，仍用本地哈希") +
-             (pend ? ("\n还有 " + pend + " 条没向量 —— 点「补全向量」补上") : ""), "ok");
-    await palaceLoad();
-  }catch(err){ peStatus("保存失败：" + ((err && err.message) || err), "err"); }
-}
-async function peBuild(force){
-  peStatus((force ? "整库重建" : "补全") + "中…（会真调接口，条数多时慢一些）");
-  try{
-    const d = await memApi("/app/palace/embed/build", { method: "POST", body: JSON.stringify({ force: !!force }) });
-    if (!d.ok){
-      peStatus("失败：" + (d.error || d.reason || "未知错误") + "（已补 " + (d.filled || 0) + " 条）", "err");
-      return;
-    }
-    palData.embed = d.embed || palData.embed;
-    peRender();
-    peStatus("完成 ✅ 新写入 " + d.filled + " 条向量 · " + d.batches + " 批 · " + d.ms + "ms" +
-             (d.pending ? ("，还剩 " + d.pending + " 条") : ""), "ok");
-    await palaceLoad();
-  }catch(err){ peStatus("失败：" + ((err && err.message) || err), "err"); }
-}
-async function openPalace(){
-  if (!appBase()){ showToast("先在设置里填「云端后端地址」"); return; }
-  palacePanel.classList.remove("hidden");
-  requestAnimationFrame(() => palacePanel.classList.add("open"));
-  palData.room = "";
-  await palaceLoad(true);
-}
-function closePalace(){
-  palacePanel.classList.remove("open");
-  setTimeout(() => palacePanel.classList.add("hidden"), 360);
-}
-async function palaceLoad(verbose){
-  if (verbose) palStatus("读取中…");
-  try{
-    const d = await memApi("/app/palace");
-    palData.status = d.status || {};
-    try{
-      const c = await memApi("/app/palace/chunks");
-      palData.chunks = c.chunks || [];
-    }catch(_){ palData.chunks = palData.chunks || []; }
-    palData.embed = (palData.status || {}).embed_detail || palData.embed || {};
-    palRender();
-    if (verbose) palStatus("读好了 · " + (palData.status.total || 0) + " 条记忆在七个房间里", "ok");
-  }catch(err){
-    palStatus("读取失败：" + ((err && err.message) || err), "err");
-  }
-}
-function palRender(){
-  const st = palData.status || {};
-  const wl = st.waterline || {};
-  const n = $("#palCount"); if (n) n.textContent = st.total || 0;
-  const sub = $("#palSub");
-  const em = st.embed_detail || {};
-  if (sub) sub.textContent = (st.rooms || []).length + " 个房间 · 门牌 " +
-    (st.plates || []).length + " 块 · 向量 " +
-    (em.mode === "remote" ? ("远端 " + String(em.model || "").split("/").pop() + " · " + em.dim + " 维")
-                          : "本地哈希") +
-    (em.pending ? ("（" + em.pending + " 条待补）") : "");
-  const w = $("#palWlSub");
-  if (w) w.textContent = "热区 " + wl.hot + " 条 · 缓冲阈值 " + wl.buffer +
-    " · 待处理 " + wl.pending + "（可整理 " + wl.cold + "）· 已处理到 #" + wl.hwm;
-  const p = $("#palPreset");
-  if (p) p.textContent = wl.ready ? "缓冲已达标" : "水位线下";
-  // 预设
-  const pre = $("#palPresets");
-  if (pre){
-    const ps = st.presets || {};
-    pre.innerHTML = Object.keys(ps).map((k) => (
-      '<button type="button" data-pal-preset="' + k + '"' + (wl.preset === k ? ' class="on"' : "") + ">" +
-      escapeHtml(ps[k].label) + " · " + ps[k].keep + "/" + ps[k].buffer + "</button>"
-    )).join("");
-  }
-  // 房间
-  const rooms = $("#palRooms");
-  if (rooms){
-    rooms.innerHTML = (st.rooms || []).map((r) => {
-      const meta = PAL_ROOM_META[r.key] || {};
-      const cap = r.cap ? ("容量 " + r.cap) : "不限容量";
-      const dec = r.never_decay ? "永不衰减" : ("半衰期 " + r.half_life_h + "h");
-      const pct = r.cap ? Math.min(100, Math.round(100 * r.count / r.cap)) : (r.count ? 100 : 0);
-      return '<button class="pal-room' + (palData.room === r.key ? " on" : "") + '" type="button" data-pal-room="' + r.key +
-        '" style="--pal-c:' + (meta.c || "#8a93a2") + '">' +
-        '<span class="pr-cnt">' + r.count + "</span>" +
-        '<span class="pr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
-        'stroke-linecap="round" stroke-linejoin="round">' + (meta.ico || "") + "</svg></span>" +
-        '<span class="pr-n">' + escapeHtml(r.name) + "</span>" +
-        '<div class="pr-brain">' + escapeHtml(r.brain) + " · " + cap + "</div>" +
-        '<div class="pr-desc">' + escapeHtml(r.desc) + "</div>" +
-        '<div class="pr-bar"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="pr-decay">' + dec + "</div>" +
-      "</button>";
-    }).join("");
-  }
-  const rt = $("#palRoomTag");
-  if (rt) rt.textContent = "共 " + (st.total || 0) + " 条";
-  palRenderPlates();
-  palRenderChunks();
-  palRenderRoomBody();
-  peRender();
-}
-function palRenderRoomBody(){
-  const box = $("#palRoomBody"); if (!box) return;
-  if (!palData.room){ box.innerHTML = ""; return; }
-  const list = palData.nodes.filter((x) => x.room === palData.room);
-  const meta = PAL_ROOM_META[palData.room] || {};
-  let html = '<div class="arc-back" style="margin-top:16px">' +
-    '<span class="arc-title2" style="color:' + (meta.c || "inherit") + '">' + escapeHtml(palRoomName(palData.room)) + "</span>" +
-    '<span class="arc-crumb">' + list.length + " 条</span></div>";
-  html += '<div class="model-row" style="margin-top:11px">' +
-    '<input id="palNew" class="nf-box" style="min-height:auto;padding:10px 13px" placeholder="往这个房间手动放一条记忆…">' +
-    '<button type="button" id="palNewSave">放入</button></div>';
-  if (!list.length){
-    html += '<div class="arc-empty">这个房间还是空的。</div>';
-  }else{
-    html += list.slice().reverse().map(palNodeHtml).join("");
-  }
-  box.innerHTML = html;
-}
-function palNodeHtml(n){
-  if (palData.editing === String(n.id)){
-    const opts = Object.keys(PAL_ROOM_META).map((k) => (
-      '<option value="' + k + '"' + (k === n.room ? " selected" : "") + ">" + escapeHtml(palRoomName(k)) + "</option>"
-    )).join("");
-    return '<div class="arc-entry">' +
-      '<div class="model-row"><select class="pill-select" id="palEditRoom" style="flex:1 1 auto">' + opts + "</select>" +
-      '<select class="pill-select" id="palEditImp" style="flex:0 0 auto">' +
-      [3, 5, 7, 8, 9, 10].map((v) => '<option value="' + v + '"' + (v === n.importance ? " selected" : "") +
-        ">重要度 " + v + "</option>").join("") + "</select></div>" +
-      '<textarea class="nf-box arc-editbox" id="palEditText" rows="4">' + escapeHtml(n.text) + "</textarea>" +
-      '<div class="arc-editacts"><button type="button" class="primary" id="palEditSave">保存</button>' +
-      '<button type="button" id="palEditDel">删除</button>' +
-      '<button type="button" id="palEditCancel">取消</button></div></div>';
-  }
-  const meta = PAL_ROOM_META[n.room] || {};
-  return '<div class="arc-entry" data-pal-node="' + escapeHtml(String(n.id)) + '">' +
-    '<span class="arc-chip" style="color:' + (meta.c || "inherit") + '">#' + escapeHtml(palRoomName(n.room)) + "</span>" +
-    '<span class="arc-acts"><button class="arc-act" type="button" data-pal-edit="' + escapeHtml(String(n.id)) +
-      '" title="编辑">' + MEM_ICO.pen + "</button></span>" +
-    '<div class="arc-text">' + escapeHtml(n.text) + "</div>" +
-    '<div class="arc-sub" style="margin-top:8px">' + escapeHtml(String(n.created).slice(0, 16).replace("T", " ")) +
-      " · 重要度 " + n.importance +
-      (n.mood ? (" · " + escapeHtml(PAL_MOOD_LABEL[n.mood] || n.mood)) : "") +
-      (n.digested ? " · 已消化" : "") +
-      ((n.tags || []).length ? (" · " + n.tags.map((t) => "#" + escapeHtml(t)).join(" ")) : "") +
-    "</div></div>";
-}
-function palRenderPlates(){
-  const box = $("#palPlatesBox"); if (!box) return;
-  const ps = (palData.status && palData.status.plates) || [];
-  box.innerHTML = ps.map((p) => (
-    '<div class="pal-plate" data-plate="' + p.room + '">' +
-      '<div class="pp-head"><span class="pp-title">' + escapeHtml(p.title) + "</span>" +
-        '<span class="pp-cap">' + p.entries.length + "/" + p.cap + "</span>" +
-        '<span class="pp-acts"><button class="arc-act" type="button" data-pal-plate-help="' + p.room +
-          '" title="这块门牌收什么">?</button></span></div>' +
-      (p.entries.length
-        ? "<ul>" + p.entries.map((e, i) => '<li data-plate-item="' + i + '">' + escapeHtml(e.text) +
-            '<button class="arc-act pp-del" type="button" data-pal-plate-del="' + p.room + '" data-plate-idx="' + i +
-            '" title="删掉这条">' + MEM_ICO.trash + "</button></li>").join("") + "</ul>"
-        : '<div class="pp-empty">还没有条目 —— 点「整理门牌」让它自己长出来，或者在下面手动加一条。</div>') +
-      '<div class="pp-add"><input class="nf-box" id="palPlateNew-' + p.room +
-        '" style="min-height:auto;padding:9px 12px" placeholder="手动加一条（一句话）">' +
-        '<button type="button" data-pal-plate-add="' + p.room + '">加</button></div>' +
-    "</div>"
-  )).join("");
-}
-function palRenderChunks(){
-  const box = $("#palChunks"); if (!box) return;
-  const tag = $("#palChunkTag");
-  const n = palData.chunks || [];
-  if (tag) tag.textContent = ((palData.status || {}).chunks || n.length) + " 块";
-  box.innerHTML = n.length
-    ? n.slice(-12).reverse().map((c) => (
-        '<div class="pal-chunk"><b>#' + c.a + "–" + c.b + "</b><span>" + escapeHtml(c.summary || "") + "</span></div>"
-      )).join("")
-    : '<div class="arc-empty">还没有分块 —— 点「维护五步」里的分块/摘要会生成。</div>';
-}
-function palHitHtml(h, extra){
-  const meta = PAL_ROOM_META[h.room] || {};
-  const bar = (v) => '<i><b style="width:' + Math.max(2, Math.min(100, Math.round((v || 0) * 100))) + '%"></b></i>';
-  return '<div class="pal-hit" style="--pal-c:' + (meta.c || "#8a93a2") + '">' +
-    '<div class="ph-head"><span class="ph-room" style="color:' + (meta.c || "inherit") + '">' +
-      escapeHtml(palRoomName(h.room)) + '</span><span class="ph-date">' + escapeHtml(String(h.created).slice(0, 10)) +
-      '</span><span class="ph-score">' + (h.score || 0).toFixed(3) + "</span></div>" +
-    '<div class="ph-text">' + escapeHtml(h.text) + "</div>" +
-    (h.sim != null ? '<div class="ph-bars">' + bar(h.sim) + bar(h.bm25) + bar(h.recency) + "</div>" +
-      '<div class="ph-why">相似 ' + (h.sim || 0).toFixed(2) + " · 关键词 " + (h.bm25 || 0).toFixed(2) +
-      " · 时近 " + (h.recency || 0).toFixed(2) + " · 重要度 " + h.importance + (extra || "") + "</div>" : "") +
-  "</div>";
-}
-async function palSearchPal(){
-  const q = ($("#palQ") && $("#palQ").value.trim()) || "";
-  if (!q){ showToast("先写一句想问的"); return; }
-  const box = $("#palHits");
-  box.innerHTML = '<div class="arc-empty">在想…</div>';
-  try{
-    const d = await memApi("/app/palace/search?limit=8&q=" + encodeURIComponent(q));
-    let html = (d.hits || []).map((h) => palHitHtml(h)).join("");
-    if ((d.spread || []).length) html += '<div class="pal-rum">顺着链接又想起：</div>' +
-      (d.spread || []).map((h) => palHitHtml(h, " · 来自「" + (h.via || "关联") + "」链")).join("");
-    if (d.rumination) html += '<div class="pal-rum">阁楼里一直有件事没消化：' +
-      escapeHtml(d.rumination.text) + "</div>";
-    if (!html) html = '<div class="arc-empty">没想起什么相关的。记忆库共 ' + (d.counts || 0) + " 条。</div>";
-    if (d.degraded) html = '<div class="pal-rum">⚠️ 向量模型这轮没连上（' + escapeHtml(d.embed_error || "") +
-      "），这次是<b>只用关键词</b>的降级召回，可能不太准。</div>" + html;
-    else if (d.pending) html = '<div class="pal-rum">有 ' + d.pending +
-      " 条记忆还没有向量（刚换过模型？），它们的语义相似度暂时不算 —— 去上面点「补全向量」。</div>" + html;
-    if (d.mode === "remote") html += '<div class="ph-why" style="margin-top:10px">向量模型：' +
-      escapeHtml(String(d.model || "")) + " · 查询向量已用它现算</div>";
-    box.innerHTML = html;
-  }catch(err){
-    box.innerHTML = '<div class="arc-empty">搜索失败：' + escapeHtml((err && err.message) || String(err)) + "</div>";
-  }
-}
-async function palRun(path, body, label){
-  palStatus(label + "…");
-  try{
-    const d = await memApi(path, { method: "POST", body: JSON.stringify(body || {}) });
-    return d;
-  }catch(err){
-    palStatus(label + "失败：" + ((err && err.message) || err), "err");
-    return null;
-  }
-}
-async function palExtract(force){
-  const d = await palRun("/app/palace/extract", force ? { force: true, batch: 60 } : {}, force ? "强制整理" : "整理");
-  if (!d) return;
-  if (!d.ok){ palStatus("没整理：" + (d.reason || ""), "err"); return; }
-  palStatus("整理完 " + d.msgs + " 条对话 → 提取 " + d.extracted + " 条记忆（去重 " + d.dup +
-            "，晋升 " + (d.promoted || 0) + "，淘汰 " + (d.evicted || 0) + "）", "ok");
-  await palaceLoad();
-}
-async function palMaintain(){
-  const d = await palRun("/app/palace/maintain", {}, "维护五步");
-  if (!d) return;
-  const r = d.report || {};
-  palStatus("维护完成：\n· 向量 " + (r.embed ? r.embed.mode + "(" + r.embed.nodes + ")" : "-") +
-            "\n· 新增分块 " + ((r.chunk || {}).added || 0) +
-            "\n· 摘要 " + ((r.summary || {}).summarized || 0) +
-            "\n· 图谱 " + ((r.graph || {}).edges || 0) + " 条边 / " + ((r.graph || {}).nodes || 0) + " 个节点" +
-            "\n· 遗忘曲线清理 " + ((r.forget || {}).dropped || 0) + " 块（原始消息不动）", "ok");
-  await palaceLoad();
-}
-async function palPlatesRefresh(){
-  const d = await palRun("/app/palace/plates/refresh", {}, "整理门牌");
-  if (!d) return;
-  const r = d.result || {};
-  palStatus("门牌整理完 · 更新了 " + ((r.changed || []).join("、") || "无") +
-            ((r.fallback || []).length ? ("（其中 " + r.fallback.join("、") + " 是兜底并入）") : ""), "ok");
-  await palaceLoad();
-}
-async function palSetPreset(k){
-  try{
-    await memApi("/app/palace/waterline", { method: "POST", body: JSON.stringify({ preset: k }) });
-    await palaceLoad();
-    showToast("水位线已切换");
-  }catch(err){ showToast("切换失败：" + ((err && err.message) || err)); }
-}
-async function palOpenRoom(k){
-  if (palData.room === k){ palData.room = ""; palData.nodes = []; palRender(); return; }
-  palData.room = k; palData.editing = null;
-  try{
-    const d = await memApi("/app/palace/nodes?room=" + encodeURIComponent(k) + "&limit=200");
-    palData.nodes = d.nodes || [];
-  }catch(err){ palData.nodes = []; }
-  palRender();
-}
-async function palSaveNode(id, text, room, importance){
-  try{
-    await memApi("/app/palace/node", { method: "POST", body: JSON.stringify(
-      { id: id, content: text, room: room, importance: Number(importance) }) });
-    palData.editing = null;
-    await palOpenRoomRefresh(room);
-    showToast("已保存");
-  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
-}
-async function palDeleteNode(id, room){
-  if (!confirm("删掉这条记忆？（它不会回到任何房间）")) return;
-  try{
-    await memApi("/app/palace/node?id=" + encodeURIComponent(id), { method: "DELETE" });
-    palData.editing = null;
-    await palOpenRoomRefresh(room);
-    showToast("已删除");
-  }catch(err){ showToast("删除失败：" + ((err && err.message) || err)); }
-}
-async function palOpenRoomRefresh(room){
-  if (!room){ await palaceLoad(); return; }
-  try{
-    const d = await memApi("/app/palace/nodes?room=" + encodeURIComponent(room) + "&limit=200");
-    palData.nodes = d.nodes || [];
-  }catch(_){}
-  await palaceLoad();
-}
-async function palAddNode(room){
-  const el = $("#palNew");
-  const text = (el && el.value || "").trim();
-  if (text.length < 4){ showToast("至少写四个字"); return; }
-  try{
-    await memApi("/app/palace/node", { method: "POST", body: JSON.stringify(
-      { content: text, room: room, importance: 6 }) });
-    if (el) el.value = "";
-    await palOpenRoomRefresh(room);
-    showToast("放进「" + palRoomName(room) + "」了");
-  }catch(err){ showToast("保存失败：" + ((err && err.message) || err)); }
-}
-async function palPlateSave(room, entries){
-  try{
-    await memApi("/app/palace/plates", { method: "POST", body: JSON.stringify({ room: room, entries: entries }) });
-    await palaceLoad();
-  }catch(err){ showToast("门牌保存失败：" + ((err && err.message) || err)); }
-}
-async function palAddPlateEntry(room){
-  const el = $("#palPlateNew-" + room);
-  const text = (el && el.value || "").trim();
-  if (!text){ return; }
-  const p = ((palData.status || {}).plates || []).filter((x) => x.room === room)[0];
-  const entries = (p ? p.entries : []).map((e) => ({ text: e.text, basedOn: e.text }));
-  if (entries.length >= (p ? p.cap : 10)){ showToast("这块门牌满了（" + p.cap + " 条），先删一条"); return; }
-  entries.push({ text: text });
-  if (el) el.value = "";
-  await palPlateSave(room, entries);
-  showToast("加到「" + (p ? p.title : room) + "」了");
-}
-if ($("#palaceBack")) $("#palaceBack").addEventListener("click", closePalace);
-if ($("#palaceClose")) $("#palaceClose").addEventListener("click", closePalace);
-if ($("#palRefresh")) $("#palRefresh").addEventListener("click", () => palaceLoad(true));
-if ($("#palExtract")) $("#palExtract").addEventListener("click", () => palExtract(false));
-if ($("#palExtractForce")) $("#palExtractForce").addEventListener("click", () => palExtract(true));
-if ($("#palMaintain")) $("#palMaintain").addEventListener("click", palMaintain);
-if ($("#palPlatesRefresh")) $("#palPlatesRefresh").addEventListener("click", palPlatesRefresh);
-if ($("#palSearch")) $("#palSearch").addEventListener("click", palSearchPal);
-if ($("#peFetch")) $("#peFetch").addEventListener("click", peFetchModels);
-if ($("#peTest")) $("#peTest").addEventListener("click", peTest);
-if ($("#peSave")) $("#peSave").addEventListener("click", peSave);
-if ($("#peBuild")) $("#peBuild").addEventListener("click", () => peBuild(false));
-if ($("#peRebuild")) $("#peRebuild").addEventListener("click", () => {
-  if (confirm("整库重算所有记忆的向量？（换模型后需要；条数多时会调很多次接口）")) peBuild(true);
-});
-if ($("#peModel")) $("#peModel").addEventListener("change", peSyncCustom);
-if ($("#peSugs")) $("#peSugs").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-pe-sug]"); if (!b) return;
-  const id = b.dataset.peSug;
-  const sel = $("#peModel");
-  if (sel && Array.prototype.some.call(sel.options, (o) => o.value === id)){ sel.value = id; peSyncCustom(); }
-  else { sel.value = "__custom__"; peSyncCustom(); $("#peModelCustom").value = id; }
-  peRenderSugs();
-});
-if ($("#palQ")) $("#palQ").addEventListener("keydown", (e) => { if (e.key === "Enter") palSearchPal(); });
-if ($("#palacePanel")) $("#palacePanel").addEventListener("click", async (e) => {
-  const pre = e.target.closest("[data-pal-preset]");
-  if (pre){ await palSetPreset(pre.dataset.palPreset); return; }
-  const rm = e.target.closest("[data-pal-room]");
-  if (rm){ await palOpenRoom(rm.dataset.palRoom); return; }
-  const ed = e.target.closest("[data-pal-edit]");
-  if (ed){ palData.editing = ed.dataset.palEdit; palRenderRoomBody(); return; }
-  const del = e.target.closest("[data-plate-del]");
-  if (del){
-    const room = del.dataset.palPlateDel;
-    const p = ((palData.status || {}).plates || []).filter((x) => x.room === room)[0];
-    if (!p) return;
-    const entries = p.entries.filter((_x, i) => i !== Number(del.dataset.plateIdx))
-      .map((x) => ({ text: x.text, basedOn: x.text }));
-    await palPlateSave(room, entries);
-    return;
-  }
-  const ph = e.target.closest("[data-pal-plate-help]");
-  if (ph){
-    const p = ((palData.status || {}).plates || []).filter((x) => x.room === ph.dataset.palPlateHelp)[0];
-    if (p) showToast(p.rule);
-    return;
-  }
-  const pa = e.target.closest("[data-pal-plate-add]");
-  if (pa){ await palAddPlateEntry(pa.dataset.palPlateAdd); return; }
-});
-/* 编辑态是动态生成的，挂的是 doc 级代理 */
-document.addEventListener("click", async (e) => {
-  if (palacePanel.classList.contains("hidden")) return;
-  if (e.target.id === "palEditSave"){
-    await palSaveNode(palData.editing, ($("#palEditText") || {}).value || "",
-                      ($("#palEditRoom") || {}).value || palData.room, ($("#palEditImp") || {}).value || 5);
-    return;
-  }
-  if (e.target.id === "palEditDel"){ await palDeleteNode(palData.editing, palData.room); return; }
-  if (e.target.id === "palEditCancel"){ palData.editing = null; palRenderRoomBody(); return; }
-  if (e.target.id === "palNewSave"){ await palAddNode(palData.room); return; }
 });
 
 /* ════════════ API 层 ════════════ */
@@ -22047,7 +19748,6 @@ init().then(() => {
      makeMessage/onMessage（响应 AI 自己写的 [[clock]] 抬手看表）。
      排最后：它也包 renderText，后包的在外层 —— 先判断「这是不是我的标记」。 -->
 <script defer src="clock-pack.js"></script>
-<script defer src="memory-pack.js"></script>
 <script defer src="day-pack.js"></script>
 <script defer src="music-pack.js"></script>
 <script defer src="letter-pack.js"></script>
@@ -22081,7 +19781,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v133";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v134";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

@@ -71,7 +71,8 @@ console.log('\n=== 4. 结构：目录与页面一一对应（点 tab 不能静�
    （DIMS 里也是 { k: "close", ... }），于是"每个 tab 都有页面"永远红（第一次跑就是这条假红）。 */
 const tabsBlock = arrBlock(js, 'const TABS = [');
 const tabKeys = [...tabsBlock.matchAll(/\bk:\s*"([^"]+)"/g)].map((m) => m[1]);
-ok(tabKeys.length >= 5, 'TABS 有几个页：' + tabKeys.length);
+/* ★ 5 → 4：房间的页数减过一次（原来那条 >=5 从此永远红，是过时的期望值）。 */
+ok(tabKeys.length >= 4, 'TABS 有几个页：' + tabKeys.length);
 const pageFn = js.slice(js.indexOf('const PAGE = ()'), js.indexOf('const PAGE = ()') + 500);
 const pageKeys = [...pageFn.matchAll(/(\w+):\s*page\w+/g)].map((m) => m[1]);
 const missing = tabKeys.filter((k) => !pageKeys.includes(k));

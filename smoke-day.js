@@ -59,8 +59,8 @@ ok(/window\.__DayHost/.test(html), 'index.html 里有注入点 window.__DayHost'
 for (const f of ['aiName', 'meName', 'days', 'since']) {
   ok(new RegExp(f + '\\s*:').test(html), '注入点给了 ' + f);
 }
-ok(/local:\s*\{\s*memory:\s*openMemory,\s*palace:\s*openPalace\s*\}/.test(html),
-  '★ 记忆与宫殿是这一层的局部函数，从这里递进去（没挂在 window 上）');
+ok(/local:\s*\{\s*memory:\s*openMemory\s*\}/.test(html),
+  '★ 记忆是这一层的局部函数，从这里递进去（没挂在 window 上）　← 宫殿 2026-09-23 下线，注入点里只剩 memory');
 ok(/aiName:\s*\(\)\s*=>\s*msNameNow\(\)/.test(html),
   '名字取自 msNameNow()（读 #peerName）—— 和侧边栏状态卡同一个出口');
 ok(/days:\s*\(\)\s*=>\s*daysTogether\(\)/.test(html),

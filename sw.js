@@ -2,7 +2,7 @@
    IMPORTANT: bump CACHE on every front-end change, or installed clients keep the
    old shell (the precached index.html won't refresh until the SW reinstalls). */
 const AI_NAME = "DeepSeek";          // push-title fallback; keep in sync with index.html CONFIG.AI_NAME
-const CACHE = "companion-v133-aions";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
+const CACHE = "companion-v134-aions";        // v116：信箱的乌有乡接上了——列出它寄回来的明信片
                                                //       （字是它写的，邮戳是世界的），密钥就在那一栏里填
                                                // v115：Movie 里多了「看电影」——你放你的片，
                                                //       它在旁边说；每条话都记着说到第几秒
@@ -84,7 +84,6 @@ const PRECACHE = [
   "./vendor/qrcode.min.js",
   /* 静态收件：由 .github/workflows/mail-sync.yml 定时覆盖 */
   "./mail/inbox.json",
-  "./memory-pack.css", "./memory-pack.js",
   "./day-pack.css", "./day-pack.js",
   "./music-pack.css", "./music-pack.js",
   "./letter-pack.css", "./letter-pack.js",

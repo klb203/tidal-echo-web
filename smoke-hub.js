@@ -87,8 +87,9 @@ ok(/class="settings-scroll"/.test(hubSeg), '设置页的 .settings-scroll 在 hu
 const CARDS = /<section class="set-card[^"]*"[^>]*data-card="([\w-]+)"/g;
 const cardsAll = [...html.matchAll(CARDS)].map((m) => m[1]);
 const cardsHub = [...hubSeg.matchAll(CARDS)].map((m) => m[1]);
-ok(cardsAll.length === 16, '设置卡一共 16 张（含记忆面板那张）：' + cardsAll.length);
-ok(cardsHub.length === 15, '其中 15 张住在 hub 里：' + cardsHub.length);
+/* ★ 16 → 18：后面几轮又加过两张设置卡（旧的期望值没跟着改，一直是红的）。 */
+ok(cardsAll.length === 18, '设置卡一共 18 张（含记忆面板那张）：' + cardsAll.length);
+ok(cardsHub.length === 17, '其中 17 张住在 hub 里：' + cardsHub.length);
 eq([...new Set(cardsAll)].filter((k) => !cardsHub.includes(k)), ['nearfield'],
   '壳外那张是 nearfield —— 它属于记忆面板的「短期记忆」页，本来就不该在这里');
 

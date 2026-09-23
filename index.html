@@ -6345,6 +6345,38 @@
         「让 TA 整理」会先给你<b>预览</b>：合并重复、补关键词与理由、把真正重要的提到「长期重要」——
         你看过点「应用」才落库（记忆是长期资产，误合并拆不回来，所以不给它自动改）。</div>
       </section>
+
+      <!-- 向量模型（embedding）· 记忆库的语义索引 ──────────────────────────
+           给每条记忆算一份向量，召回时用 AionsHome 那张权重表的**第一项**：
+             向量相似度×0.6 + 关键词命中率×0.3 + 重要度×0.1
+           没配也能用 —— 召回会退回"词命中"那一档，只是**换个说法问**就找不到了
+           （问「上次那家店叫什么」，记忆里写的是「小馆子」就对不上）。
+           ★ 硅基流动：base 默认就是它的 /v1，模型 BAAI/bge-m3（1024 维，中文好且便宜）。 -->
+      <section class="mg-card" id="emCard">
+        <div class="mg-head">
+          <div>
+            <div class="mg-title">向量模型</div>
+            <div class="mg-sub" id="emLead">给记忆库算语义向量 · 召回更准</div>
+          </div>
+          <span class="mg-tag" id="emTag">—</span>
+        </div>
+        <label class="fld switch-row" style="margin:10px 0 2px"><span>启用向量召回</span>
+          <input type="checkbox" id="emOn">
+        </label>
+        <input class="nf-box" id="emBase" placeholder="接口地址 · 默认硅基流动 https://api.siliconflow.cn/v1" style="min-height:auto;padding:9px 11px;margin-top:8px">
+        <input class="nf-box" id="emKey" type="password" placeholder="API Key（硅基流动的 sk-...）" style="min-height:auto;padding:9px 11px;margin-top:8px">
+        <input class="nf-box" id="emModel" placeholder="模型 · 默认 BAAI/bge-m3" style="min-height:auto;padding:9px 11px;margin-top:8px">
+        <div class="nf-actions">
+          <button id="emSave" type="button" class="primary">保存</button>
+          <button id="emTest" type="button">测试</button>
+          <button id="emRebuild" type="button">给记忆补向量</button>
+          <button id="emRefresh" type="button">刷新</button>
+        </div>
+        <div class="pal-status" id="emStatus"></div>
+        <div class="settings-tip">配好之后点一次「给记忆补向量」，**老记忆**也会补上；之后新写的会自动挂。<br>
+        顺序建议：先「测试」通了再点「给记忆补向量」——不然会一条条失败、只看到一堆红字。<br>
+        硅基流动：地址 <code>https://api.siliconflow.cn/v1</code>，模型 <code>BAAI/bge-m3</code>。</div>
+      </section>
       </div><!-- /记忆库页 -->
 
       <!-- ② 短期记忆 · 近景七天 -->
@@ -16249,6 +16281,7 @@ async function memLoad(verbose){
     renderNearfield();
     memNavSync();
     mlLoad(false);            // 记忆库那一页（它自己会判重，不会白拉第二遍）
+    emLoad(false);            // 向量模型的设置卡（拿不到就只在卡上留一句提示）
     if (verbose) memStatus("读好了 · " + (memData.status.days || []).length + " 天有日更", "ok");
   }catch(err){
     memStatus("读取失败：" + ((err && err.message) || err), "err");
@@ -16444,6 +16477,95 @@ function memNavSync(){
    理由很实在：技术是会过期的东西（今天的报错方案明天就是坑），留在会反复浮现的记忆里
    只会变成噪音。所以它单独住一层，而且**只在聊到相关技术时**才被引用。
    下面用「文件夹折叠」的方式呈现：一个项目一个夹子，点开才看得到里面的条目。 */
+
+/* ── 向量模型（embedding）· 记忆库的语义索引 ─────────────────────────────
+   这张卡是"可选增强"的入口：没配的时候前面所有记忆功能照常跑
+   （后端 memrecall 会自动退回词命中），配了就把那一项换成真余弦。 */
+let emData = { cfg: {}, status: null };
+function emStatus(msg, kind){
+  const el = $("#emStatus"); if (!el) return;
+  el.textContent = msg || "";
+  el.className = "pal-status" + (kind === "err" ? " om-status err" : (kind === "ok" ? " om-status ok" : ""));
+}
+function emPaint(){
+  const st = emData.status || {};
+  const tag = $("#emTag");
+  if (tag) tag.textContent = st.enabled
+    ? ((st.with_vector || 0) + "/" + (st.total || 0) + " 条") : "未启用";
+  const lead = $("#emLead");
+  if (lead) lead.textContent = st.enabled
+    ? ("已启用 · " + (st.model || "—") + (st.dims ? (" · " + st.dims + " 维") : ""))
+    : "给记忆库算语义向量 · 召回更准";
+  const c = emData.cfg || {};
+  if ($("#emOn")) $("#emOn").checked = !!c.enabled;
+  /* 只在用户没动过那个框时回填 —— 否则一边打字一边被刷掉。 */
+  [["#emBase", "base"], ["#emKey", "key"], ["#emModel", "model"]].forEach(([sel, k]) => {
+    const el = $(sel);
+    if (el && !el.dataset.touched) el.value = c[k] || "";
+  });
+}
+async function emLoad(verbose){
+  try{
+    const d = await memApi("/app/embed/config");
+    emData.cfg = d.cfg || {};
+    emData.status = d.embedding || {};
+    emPaint();
+    if (verbose) emStatus(emData.status.enabled
+      ? ("已启用 · " + (emData.status.with_vector || 0) + "/" + (emData.status.total || 0) + " 条有向量")
+      : "还没启用 —— 填好三项、勾上开关，再点保存", emData.status.enabled ? "ok" : "");
+  }catch(e){ emStatus("读取失败：" + ((e && e.message) || e), "err"); }
+}
+async function emSave(){
+  const btn = $("#emSave"); const old = btn && btn.textContent;
+  if (btn){ btn.disabled = true; btn.textContent = "保存中…"; }
+  try{
+    const d = await memApi("/app/embed/config", { method: "POST", body: JSON.stringify({
+      enabled: !!($("#emOn") && $("#emOn").checked),
+      base: ($("#emBase") || {}).value || "",
+      key: ($("#emKey") || {}).value || "",
+      model: ($("#emModel") || {}).value || ""
+    }) });
+    emData.cfg = d.cfg || {}; emData.status = d.embedding || {};
+    ["#emBase", "#emKey", "#emModel"].forEach((s) => { const el = $(s); if (el) delete el.dataset.touched; });
+    emPaint();
+    showToast("存好了");
+    emStatus(emData.status.enabled ? "已保存 · 点「测试」验一下能不能通" : "已保存（当前是关着的）",
+             emData.status.enabled ? "ok" : "");
+  }catch(e){ emStatus("保存失败：" + ((e && e.message) || e), "err"); }
+  finally{ if (btn){ btn.disabled = false; btn.textContent = old; } }
+}
+async function emTest(){
+  const btn = $("#emTest"); const old = btn && btn.textContent;
+  if (btn){ btn.disabled = true; btn.textContent = "测着…"; }
+  emStatus("正在打一次接口…");
+  try{
+    const d = await memApi("/app/embed/test", { method: "POST", body: "{}" });
+    if (d.ok) emStatus("✅ 通了 · " + d.dims + " 维 · " + d.ms + "ms · " + (d.model || ""), "ok");
+    else emStatus("❌ " + (d.error || "失败"), "err");
+  }catch(e){ emStatus("测试失败：" + ((e && e.message) || e), "err"); }
+  finally{ if (btn){ btn.disabled = false; btn.textContent = old; } }
+}
+async function emRebuild(){
+  const btn = $("#emRebuild"); const old = btn && btn.textContent;
+  if (btn){ btn.disabled = true; btn.textContent = "补向量中…"; }
+  emStatus("正在给记忆补向量（一条条算，可能要一会儿）…");
+  try{
+    const d = await memApi("/app/embed/rebuild", { method: "POST", body: JSON.stringify({ limit: 400 }) });
+    if (!d.ok){ emStatus("❌ " + (d.error || "失败"), "err"); return; }
+    emStatus("✅ 这次补了 " + (d.done || 0) + " 条" + (d.dims ? (" · " + d.dims + " 维") : "")
+             + ((d.fails || []).length ? ("，" + d.fails.length + " 条没成功") : ""), "ok");
+    await emLoad(false);
+  }catch(e){ emStatus("补向量失败：" + ((e && e.message) || e), "err"); }
+  finally{ if (btn){ btn.disabled = false; btn.textContent = old; } }
+}
+if ($("#emSave")) $("#emSave").addEventListener("click", emSave);
+if ($("#emTest")) $("#emTest").addEventListener("click", emTest);
+if ($("#emRebuild")) $("#emRebuild").addEventListener("click", emRebuild);
+if ($("#emRefresh")) $("#emRefresh").addEventListener("click", () => emLoad(true));
+["#emBase", "#emKey", "#emModel"].forEach((s) => {
+  const el = $(s);
+  if (el) el.addEventListener("input", () => { el.dataset.touched = "1"; });
+});
 
 if ($("#memoryBack")) $("#memoryBack").addEventListener("click", closeMemory);
 if ($("#memoryClose")) $("#memoryClose").addEventListener("click", closeMemory);
@@ -19647,7 +19769,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v135";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v136";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

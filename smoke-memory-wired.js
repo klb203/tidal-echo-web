@@ -81,6 +81,7 @@ const w = dom.window, d = w.document;
     'mlLoad', 'mlRender', 'mlSave', 'mlDelete', 'mlEditOpen', 'mlTidy',
     'mlTierOf', 'mlSourceLabel',
     'brLoad', 'brRender', 'brSearch',
+    'emLoad', 'emSave', 'emTest', 'emRebuild', 'emPaint',
     'escapeHtml', 'appUrl', 'authHeaders',
   ];
   const missFn = NEED_FN.filter((f) => typeof w[f] !== 'function');
@@ -95,6 +96,8 @@ const w = dom.window, d = w.document;
     'nfDays', 'nfDay', 'nfCurrent', 'nfRun', 'nfTarget', 'nfAssemble',
     'nfMonth', 'nfRefresh', 'nfSaveDay', 'nfDeleteDay', 'nfStatus', 'cardSubNear',
     'brainCard', 'brList', 'brQ', 'brFoot', 'brStats',
+    'emCard', 'emLead', 'emTag', 'emOn', 'emBase', 'emKey', 'emModel',
+    'emSave', 'emTest', 'emRebuild', 'emRefresh', 'emStatus',
   ];
   const missEl = NEED_EL.filter((id) => !d.getElementById(id));
   ok(missEl.length === 0, '全部在（' + NEED_EL.length + ' 个）' + (missEl.length ? '　缺：' + missEl.join('、') : ''));

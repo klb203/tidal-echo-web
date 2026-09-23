@@ -769,6 +769,47 @@
     max-width: min(100%, 760px);
     text-align: center;
   }
+  /* ── 思考过程：气泡里的 💭 按钮 + 点开的弹层 ────────────────────────── */
+  .think-btn{
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    padding: 0 2px; margin-left: 4px; font-size: 12px; line-height: 1;
+    opacity: .58; transition: opacity .16s ease, transform .16s ease;
+    vertical-align: middle;
+  }
+  .think-btn:hover{ opacity: 1; transform: translateY(-1px); }
+  .think-btn:active{ transform: scale(.92); }
+  .think-pop{
+    position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
+    padding: 18px; background: rgba(12,22,34,.34); backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity .2s ease;
+  }
+  .think-pop.open{ opacity: 1; }
+  .think-pop-in{
+    width: min(560px, 100%); max-height: min(72vh, 620px); display: flex; flex-direction: column;
+    border-radius: 16px; overflow: hidden; background: var(--card, #fff);
+    border: 1px solid var(--hairline, rgba(120,142,165,.2));
+    box-shadow: 0 18px 48px rgba(20,40,70,.22);
+    transform: translateY(8px) scale(.99); transition: transform .2s ease;
+  }
+  .think-pop.open .think-pop-in{ transform: none; }
+  .think-pop-head{
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    border-bottom: 1px solid var(--hairline, rgba(120,142,165,.16));
+    font-size: 13px; font-weight: 600; color: var(--text, #253447);
+  }
+  .think-pop-t{ flex: 1 1 auto; display: flex; align-items: center; gap: 6px; }
+  .think-pop-x{
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    font-size: 13px; line-height: 1; padding: 4px 6px; border-radius: 8px;
+    color: var(--text-faint, #8A99A8);
+  }
+  .think-pop-x:hover{ background: var(--seg-track, rgba(140,160,176,.12)); color: var(--text, #253447); }
+  .think-pop-body{
+    flex: 1 1 auto; overflow-y: auto; padding: 14px 16px;
+    white-space: pre-wrap; word-break: break-word;
+    font-size: 13.5px; line-height: 1.85; color: var(--text, #253447);
+  }
+
   .think-toggle{
     appearance: none;
     -webkit-appearance: none;
@@ -20059,6 +20100,50 @@ function sendingTickHtml(){
     + '<line x1="12" y1="12" x2="15.2" y2="12"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2.1s" repeatCount="indefinite"/></line>'
     + '</svg></span>';
 }
+/* ════════════ 思考过程：💭 按钮 → 弹层（对齐 AionsHome）════════════
+   为什么收起来而不是铺在对话里：思考可以很长，铺着会把真正的对话淹掉；
+   而且它属于"内部过程"，多数时候你不想看。按钮 + 点开，两头都照顾到。 */
+const thinkStore = new Map();          // messageKey → 思考全文
+function closeThinkPop(){
+  const pop = $("#thinkPop");
+  if (!pop || pop.classList.contains("hidden")) return;
+  pop.classList.remove("open");
+  setTimeout(() => { if (!pop.classList.contains("open")) pop.classList.add("hidden"); }, 220);
+}
+function openThinkPop(text){
+  let pop = $("#thinkPop");
+  if (!pop){
+    pop = document.createElement("div");
+    pop.className = "think-pop hidden";
+    pop.id = "thinkPop";
+    pop.setAttribute("role", "dialog");
+    pop.setAttribute("aria-label", "它的思考过程");
+    pop.innerHTML = '<div class="think-pop-in">'
+      + '<div class="think-pop-head"><span class="think-pop-t"><span aria-hidden="true">💭</span> 它的思考过程</span>'
+      + '<button class="think-pop-x" type="button" data-think-close="1" aria-label="关闭">✕</button></div>'
+      + '<div class="think-pop-body"></div></div>';
+    document.body.appendChild(pop);
+    pop.addEventListener("click", (e) => {
+      if (e.target === pop || e.target.closest("[data-think-close]")) closeThinkPop();
+    });
+  }
+  const body = pop.querySelector(".think-pop-body");
+  /* 思考是模型的原话，可能含换行 —— 用 pre-wrap 保原样，不做 markdown（它不是给人读的正文） */
+  body.textContent = String(text || "");
+  body.scrollTop = 0;
+  pop.classList.remove("hidden");
+  requestAnimationFrame(() => pop.classList.add("open"));
+}
+/* 一个委托搞定：气泡里的 💭 按钮（列表是虚拟滚动，逐条绑定会被回收掉） */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-think-btn]");
+  if (!b) return;
+  const rowEl = b.closest("[data-message-key]");
+  const key = rowEl && rowEl.dataset.messageKey;
+  openThinkPop((key && thinkStore.get(key)) || "（这条没有留下思考过程）");
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeThinkPop(); });
+
 function renderMessage(m, opts = {}){
   const item = setMessage({ ...m, status: opts.optimistic ? "sending" : (m.status || "sent") });
   return item ? findRenderedMessageRow(item._key) : null;
@@ -20068,6 +20153,9 @@ function buildVirtualRows(){
   const rows = [];
   let lastDayKey = null;
   let prevBubble = null;
+  /* ★ 思考不再单独占一行：先挂在这儿，交给紧随其后的那条 AI 回复
+     （见下面的 row.thinking）。渲染成一个 💭 按钮，点开才看。 */
+  let pendingThink = "";
   /* 「你戳了戳 TA」这类**本地标记**：不塞进 chatMessages、不碰 lastId ——
      塞进去的话 since=lastId 的增量拉取会以为已经同步到很远的未来，新消息永远不来了。
      所以它们自己一条队列，按时间戳在渲染时插进正确的位置。 */
@@ -20093,8 +20181,12 @@ function buildVirtualRows(){
     }
     flushPoke(tsMs(m));
     if (m.kind === "thinking"){
-      rows.push({ type:"thinking", key:`m:${m._key}`, message:m });
-      prevBubble = null;
+      /* ★ 思考**不再**单独成行 —— 挂起，等下面那条 AI 回复来认领。
+         以前它既占一行、又打断气泡成组（prevBubble = null），
+         于是"想得多"的模型会让对话碎成一条条小气泡；
+         而且它和回复的对应关系是靠 id - 0.5 猜出来的（见 thinkingIdFor）。
+         现在改成显式关联，并且收进 💭 按钮 —— 与 AionsHome 一致。 */
+      pendingThink = String(m.text || "");
       return;
     }
     if (m.kind === "act"){
@@ -20113,6 +20205,8 @@ function buildVirtualRows(){
     const t = tsMs(m);
     const grouped = !!(prevBubble && prevBubble.from === m.from && Number.isFinite(t) && Number.isFinite(prevBubble.ts) && (t - prevBubble.ts < GROUP_GAP));
     const row = { type:"message", key:`m:${m._key}`, message:m, grouped, tail:true };
+    /* 这条 AI 回复认领前面挂起的思考（只给 AI，人的消息不该有） */
+    if (pendingThink && m.from === "ai"){ row.thinking = pendingThink; pendingThink = ""; }
     if (grouped && prevBubble.row) prevBubble.row.tail = false;
     rows.push(row);
     prevBubble = { from:m.from, ts:t, row };
@@ -20488,6 +20582,13 @@ function makeMessage(rowData){
   let _inner = "";
   if (atts.length) _inner += renderAttachments(atts);
   if (m.text) _inner += `<span class="txt">${renderText(m.text)}</span>`;
+  /* 💭 看它当时在想什么（对齐 AionsHome：思考收在按钮里，点开弹层看）。
+     文本按 messageKey 存进 thinkStore —— 不塞进 data 属性（思考可以很长）。 */
+  if (rowData.thinking){
+    thinkStore.set(m._key, rowData.thinking);
+    _inner += `<button class="think-btn" type="button" data-think-btn="1" aria-label="看它当时在想什么" title="看它当时在想什么">`
+            + `<span aria-hidden="true">💭</span></button>`;
+  }
   _inner += `<span class="meta"></span>`;
   bubble.innerHTML = _inner;
   if (atts.length){ bubble.classList.add("has-att"); if (!m.text) bubble.classList.add("att-only"); }
@@ -21966,7 +22067,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v131";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v132";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

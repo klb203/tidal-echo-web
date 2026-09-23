@@ -16123,6 +16123,7 @@ function favOpen(tab){
   if (tab) favState.tab = tab;
   panel.classList.remove("hidden");
   requestAnimationFrame(() => panel.classList.add("open"));
+  favPaintTabs();          // ★ 先按当前 tab 画一遍，别等网络
   favLoad();
 }
 function favClose(){
@@ -16191,6 +16192,10 @@ async function favLoad(verbose){
     const box = $("#favBody");
     if (box) box.innerHTML = '<div class="fav-empty"><div class="fav-empty-t">读不到收藏</div>'
       + '<div class="fav-empty-s">' + escapeHtml((e && e.message) || String(e)) + '</div></div>';
+    /* ★ 失败也要把 tab 的高亮/计数画上 —— 它是"当前在看哪一类"的事实，
+       跟这次请求成没成功无关。不画的话界面会自相矛盾：
+       高亮在"聊天"，内容却是"语音"的空状态。 */
+    favPaintTabs();
   }
 }
 if ($("#favClose")) $("#favClose").addEventListener("click", favClose);
@@ -16210,6 +16215,13 @@ if ($("#favTabs")) $("#favTabs").addEventListener("click", (e) => {
   if (!b) return;
   favState.tab = b.dataset.tab;
   favState.page = 1;
+  /* ★ 先**本地**把高亮和列表画一遍，再去请求。
+     以前 favPaintTabs() 只写在 favLoad **成功分支**里 —— 于是后端没配、不可达、
+     或只是慢一点的时候，点「语音」「图片」看起来**完全没反应**（高亮一直停在"聊天"），
+     用户的原话就是「选项卡不能使用」。
+     选中态是**点击的直接结果**，不该等一次网络往返。 */
+  favPaintTabs();
+  favPaintList();
   favLoad(false);
 });
 if ($("#favPrev")) $("#favPrev").addEventListener("click", () => {
@@ -21954,7 +21966,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v130";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v131";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 

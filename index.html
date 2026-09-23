@@ -769,6 +769,14 @@
     max-width: min(100%, 760px);
     text-align: center;
   }
+  /* ── 内心旁白：[心里嘀咕：xxx] → 一行浅色碎碎念（对齐 AionsHome）──────── */
+  .inner-mono{
+    display: inline-block; margin: 3px 0; padding: 2px 9px; border-radius: 9px;
+    background: var(--seg-track, rgba(140,160,176,.11));
+    color: var(--text-faint, #8A99A8);
+    font-size: .95em; font-style: italic; line-height: 1.6;
+  }
+
   /* ── 思考过程：气泡里的 💭 按钮 + 点开的弹层 ────────────────────────── */
   .think-btn{
     appearance: none; border: none; background: transparent; cursor: pointer;
@@ -19685,6 +19693,12 @@ function renderText(t){
            '<img class="att-img" decoding="async" loading="lazy" src="' + escapeHtml(u) + '" alt="' + alt + '"></a>';
   });
   s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  /* 「[心里嘀咕：xxx]」→ 一行浅色碎碎念（正则取自 AionsHome 的 chat.js）。
+     它和动作标记不一样：动作标记是**干活指令**（要被剥掉），
+     这个是**表达标记**（要留着、还要显示得不一样）—— 所以不走 stripRemember，
+     在这里就地渲染。模型不一定守格式（全角/半角括号都认）。 */
+  s = s.replace(/[\[【]心里嘀咕[：:]\s*([^\]】]+?)[\]】]/g,
+    '<span class="inner-mono" title="它心里想的">$1</span>');
   s = s.replace(/\n/g, "<br>");
   return s;
 }
@@ -20117,9 +20131,9 @@ function openThinkPop(text){
     pop.className = "think-pop hidden";
     pop.id = "thinkPop";
     pop.setAttribute("role", "dialog");
-    pop.setAttribute("aria-label", "它的思考过程");
+    pop.setAttribute("aria-label", "思考过程");
     pop.innerHTML = '<div class="think-pop-in">'
-      + '<div class="think-pop-head"><span class="think-pop-t"><span aria-hidden="true">💭</span> 它的思考过程</span>'
+      + '<div class="think-pop-head"><span class="think-pop-t"><span aria-hidden="true">💭</span> 思考过程</span>'
       + '<button class="think-pop-x" type="button" data-think-close="1" aria-label="关闭">✕</button></div>'
       + '<div class="think-pop-body"></div></div>';
     document.body.appendChild(pop);
@@ -22067,7 +22081,7 @@ init().then(() => {
 </style>
 <script>
 (function(){
-  var BUILD = "v132";                 // ★ 与 sw.js 的 CACHE 版本一起改
+  var BUILD = "v133";                 // ★ 与 sw.js 的 CACHE 版本一起改
   window.BUILD = BUILD;
   try { console.log("[build] 本页版本 " + BUILD); } catch (_) {}
 
